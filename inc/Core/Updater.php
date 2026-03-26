@@ -19,8 +19,8 @@ class Updater {
 		$this->file        = $file;
 		$this->username    = CHARTS_GITHUB_OWNER;
 		$this->repository  = CHARTS_GITHUB_REPO;
-		$this->basename    = CHARTS_PLUGIN_BASENAME;
-		$this->plugin_slug = dirname( $this->basename );
+		$this->basename    = plugin_basename( $file );
+		$this->plugin_slug = current( explode( '/', $this->basename ) );
 
 		$this->init();
 	}

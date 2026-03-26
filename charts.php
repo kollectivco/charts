@@ -86,13 +86,52 @@ final class Charts {
 
 		// Custom Update Link in Plugins List
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_updater_link' ) );
+
+		add_action( 'admin_init', array( $this, 'handle_manual_update_check' ) );
+		add_action( 'admin_notices', array( $this, 'show_update_notice' ) );
+	}
+
+	/**
+	 * Show success notice after update check.
+	 */
+	public function show_update_notice() {
+		if ( isset( $_GET['charts_updated_checked'] ) ) {
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Charts update cache cleared. Checking GitHub...', 'charts' ) . '</p></div>';
+		}
+	}
+
+	/**
+	 * Handle manual update check action.
+	 */
+	public function handle_manual_update_check() {
+		if ( ! is_admin() || ! isset( $_GET['charts_action'] ) || $_GET['charts_action'] !== 'check_updates' ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			return;
+		}
+
+		// Clear local GitHub check cache
+		delete_transient( 'charts_github_update_check' );
+		
+		// Force WP to check for updates
+		delete_site_transient( 'update_plugins' );
+
+		// Redirect back with a flag
+		$redirect_url = remove_query_arg( array( 'charts_action', '_wpnonce' ), admin_url( 'plugins.php' ) );
+		$redirect_url = add_query_arg( 'charts_updated_checked', '1', $redirect_url );
+		
+		wp_redirect( $redirect_url );
+		exit;
 	}
 
 	/**
 	 * Add "Check for updates" link to plugins list.
 	 */
 	public function add_updater_link( $links ) {
-		$update_link = '<a href="' . esc_url( admin_url( 'update-core.php?force-check=1' ) ) . '" style="font-weight:700;color:#6366f1;">Check for Update</a>';
+		$url = add_query_arg( 'charts_action', 'check_updates', admin_url( 'plugins.php' ) );
+		$update_link = '<a href="' . esc_url( $url ) . '" style="font-weight:700;color:#6366f1;">Check for Update</a>';
 		array_unshift( $links, $update_link );
 		return $links;
 	}
