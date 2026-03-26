@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Charts
+ * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Production-grade chart intelligence engine for WordPress. Scrapes, normalizes, and analyzes global music and video charts.
- * Version: 1.4.0
+ * Version: 1.4.1
  * Author: Kollectiv
  * Author URI: https://kollectiv.co
  * License: GPL2
@@ -16,10 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.3.0' );
+define( 'CHARTS_VERSION', '1.4.1' );
+define( 'CHARTS_PLUGIN_FILE', __FILE__ );
+define( 'CHARTS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'CHARTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CHARTS_URL', plugin_dir_url( __FILE__ ) );
-define( 'CHARTS_BASENAME', plugin_basename( __FILE__ ) );
 define( 'CHARTS_GITHUB_OWNER', 'kollectivco' );
 define( 'CHARTS_GITHUB_REPO', 'charts' );
 
@@ -132,7 +133,7 @@ final class Charts {
 		\Charts\Core\Bootstrap::init();
 
 		// Handle updates
-		new \Charts\Core\Updater( CHARTS_PATH . 'charts.php' );
+		new \Charts\Core\Updater( CHARTS_PLUGIN_FILE );
 		
 		// Initialize Admin if we are in admin
 		if ( is_admin() ) {

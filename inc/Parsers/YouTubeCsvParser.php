@@ -149,23 +149,41 @@ class YouTubeCsvParser {
 		$title  = $raw['item_title'] ?? '';
 		$rank   = isset( $raw['rank'] ) ? intval( preg_replace( '/[^0-9]/', '', $raw['rank'] ) ) : $line_num;
 
+		// 1. YouTube ID Extraction
+		$yt_id = $raw['youtube_id'] ?? '';
+		$url   = $raw['source_url'] ?? '';
+
+		if ( empty( $yt_id ) && ! empty( $url ) ) {
+			// Extract from various formats: watch?v=, youtu.be/, shorts/, embed/
+			if ( preg_match( '/(?:v=|\/shorts\/|\/embed\/|\/v\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m ) ) {
+				$yt_id = $m[1];
+			}
+		}
+
+		// 2. Thumbnail Generation
+		$image = $raw['image'] ?? '';
+		if ( empty( $image ) && ! empty( $yt_id ) ) {
+			// Generate hqdefault thumbnail URL
+			$image = "https://img.youtube.com/vi/{$yt_id}/hqdefault.jpg";
+			$raw['thumbnail_generated'] = true;
+		}
+
+		// 3. Identification Warnings
+		if ( empty( $yt_id ) && empty( $url ) ) {
+			$this->warnings[] = sprintf( 
+				__( 'Line %d: No YouTube ID or URL found. Metadata may be incomplete.', 'charts' ), 
+				$line_num 
+			);
+		}
+
 		// Fallback: use youtube_id as title if blank
-		if ( empty( $title ) && ! empty( $raw['youtube_id'] ) ) {
-			$title = $raw['youtube_id'];
+		if ( empty( $title ) && ! empty( $yt_id ) ) {
+			$title = $yt_id;
 		}
 
 		if ( empty( $title ) && $rank < 1 ) {
 			return null;
 		}
-
-		// Extract YouTube ID from URL if not given directly
-		$yt_id = $raw['youtube_id'] ?? '';
-		if ( empty( $yt_id ) && ! empty( $raw['source_url'] ) ) {
-			if ( preg_match( '/(?:v=|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/', $raw['source_url'], $m ) ) {
-				$yt_id = $m[1];
-			}
-		}
-
 
 		// Artist string
 		$artist_str = $raw['artist_names'] ?? '';
@@ -177,13 +195,14 @@ class YouTubeCsvParser {
 			'artist_names'   => $artist_str,
 			'artist_arr'     => array_values( $artist_arr ),
 			'views_count'    => isset( $raw['views_count'] ) ? intval( str_replace( array(',', ' '), '', $raw['views_count'] ) ) : 0,
-			'image'          => $raw['image'] ?? null,
-			'source_url'     => $raw['source_url'] ?? null,
+			'image'          => $image ?: null,
+			'source_url'     => $url ?: null,
 			'youtube_id'     => $yt_id ?: null,
 			'peak_rank'      => isset( $raw['peak_rank'] ) && $raw['peak_rank'] !== '' ? intval( $raw['peak_rank'] ) : $rank,
 			'previous_rank'  => isset( $raw['previous_rank'] ) && $raw['previous_rank'] !== '' ? intval( $raw['previous_rank'] ) : null,
 			'weeks_on_chart' => isset( $raw['weeks_on_chart'] ) && $raw['weeks_on_chart'] !== '' ? intval( $raw['weeks_on_chart'] ) : 1,
 			'raw_payload'    => $raw,
+			'thumbnail_generated' => $raw['thumbnail_generated'] ?? false,
 		);
 	}
 }

@@ -330,7 +330,7 @@ class Bootstrap {
 			if ( is_wp_error( $result ) ) {
 				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
 			} elseif ( is_array( $result ) ) {
-				$chart_url = home_url( '/charts/youtube/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
+				$chart_url = home_url( '/charts/' );
 				
 				$msg = sprintf(
 					__( 'YouTube import complete: <strong>%d entries saved</strong> from %d rows.', 'charts' ),
@@ -338,8 +338,16 @@ class Bootstrap {
 					$result['parsed']
 				);
 
+				if ( ! empty( $result['extracted'] ) ) {
+					$msg .= ' ' . sprintf( __( 'Extracted %d IDs from URLs.', 'charts' ), $result['extracted'] );
+				}
+
 				if ( ! empty( $result['enriched'] ) ) {
-					$msg .= ' ' . sprintf( __( 'Enriched %d rows using YouTube API.', 'charts' ), $result['enriched'] );
+					$msg .= ' ' . sprintf( __( 'Enriched %d rows via API.', 'charts' ), $result['enriched'] );
+				}
+
+				if ( ! empty( $result['generated_thumbs'] ) ) {
+					$msg .= ' ' . sprintf( __( 'Generated %d thumbnails.', 'charts' ), $result['generated_thumbs'] );
 				}
 
 				if ( ! empty( $result['missing_titles'] ) ) {
@@ -350,7 +358,7 @@ class Bootstrap {
 					$msg .= ' ' . sprintf( __( '%d rows skipped due to errors.', 'charts' ), $result['skipped'] );
 				}
 
-				$msg .= sprintf( ' <a href="%s" target="_blank">%s &rarr;</a>', esc_url( $chart_url ), __( 'View Chart', 'charts' ) );
+				$msg .= sprintf( ' <a href="%s" target="_blank">%s &rarr;</a>', esc_url( $chart_url ), __( 'View Charts', 'charts' ) );
 
 				add_settings_error( 'charts', 'import_success', $msg, 'success' );
 

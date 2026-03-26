@@ -1,4 +1,4 @@
-name: Release Plugin
+name: Production Release Build
 
 on:
   push:
@@ -6,30 +6,40 @@ on:
       - 'v*'
 
 jobs:
-  build:
-    name: Build & Release
+  build_release:
+    name: Build and Upload Release Archive
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Create Release ZIP
+      - name: Preparation
         run: |
-          mkdir -p charts
-          rsync -av ./ ./charts/ --exclude .git --exclude .github --exclude .gitignore --exclude .DS_Store --exclude sample-charts.csv --exclude RELEASE-CHECKLIST.md --exclude .smoke_test.php --exclude .raw_proof.php
-          zip -r charts-v${{ steps.get_version.outputs.VERSION }}.zip charts
-
+          mkdir -p build/charts
+          cp -r admin build/charts/
+          cp -r inc build/charts/
+          cp -r public build/charts/
+          cp -r languages build/charts/ 2>/dev/null || :
+          cp charts.php build/charts/
+          cp readme.txt build/charts/ 2>/dev/null || :
+          # Clean build from dev assets
+          rm -rf build/charts/**/*.zip
+          rm -rf build/charts/.git*
+          rm -rf build/charts/.agent*
+          rm -rf build/charts/tests
+          
+      - name: Create ZIP
+        run: |
+          cd build
+          zip -r charts.zip charts/
+          
       - name: Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: charts-v${{ steps.get_version.outputs.VERSION }}.zip
-          name: Release v${{ steps.get_version.outputs.VERSION }}
-          draft: false
-          prerelease: false
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: build/charts.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true

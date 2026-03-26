@@ -73,9 +73,11 @@ class YouTubeCsvImporter {
 			return new \WP_Error( 'period_failed', __( 'Could not create or find a matching period.', 'charts' ) );
 		}
 
-		$saved          = 0;
-		$parse_errors   = 0;
-		$missing_titles = 0;
+		$saved             = 0;
+		$parse_errors      = 0;
+		$missing_titles    = 0;
+		$generated_thumbs  = 0;
+		$extracted_ids     = 0;
 
 		// 6. Process rows
 		foreach ( $rows as $row ) {
@@ -83,6 +85,11 @@ class YouTubeCsvImporter {
 			$artist_str  = $row['artist_names'] ?? '';
 			$artist_arr  = $row['artist_arr'] ?? array();
 			$primary_name = ! empty( $artist_arr[0] ) ? $artist_arr[0] : ( $artist_str !== '' ? $artist_str : 'Unknown Artist' );
+
+			// Track stats
+			if ( ! empty( $row['thumbnail_generated'] ) ) $generated_thumbs++;
+			// If it wasn't in raw_payload but it is in $row, it was extracted
+			if ( empty( $row['raw_payload']['youtube_id'] ) && ! empty( $row['youtube_id'] ) ) $extracted_ids++;
 
 			if ( empty( $title ) || $title === $row['youtube_id'] ) {
 				if ( ! empty( $row['api_meta']['api_title'] ) ) {
@@ -104,7 +111,13 @@ class YouTubeCsvImporter {
 			} elseif ( $chart_type === 'top-videos' ) {
 				$item_type = 'video';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
-				$item_id   = $this->ensure_video( $title, $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null, $row['source_url'] ?? null );
+				$item_id   = $this->ensure_video( 
+					$title, 
+					$primary_artist_id, 
+					$row['youtube_id'] ?? null, 
+					$row['image'] ?? null, 
+					$row['source_url'] ?? null 
+				);
 				
 				// Link ALL artists
 				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
@@ -195,10 +208,12 @@ class YouTubeCsvImporter {
 			'source_id'      => $source_id,
 			'period_id'      => $period_id,
 			'run_id'         => $run_id,
-			'skipped'        => $parse_errors,
-			'enriched'       => $enriched_count,
-			'missing_titles' => $missing_titles,
-			'warnings'       => $this->csv_parser->get_warnings(),
+			'skipped'          => $parse_errors,
+			'enriched'         => $enriched_count,
+			'generated_thumbs' => $generated_thumbs,
+			'extracted'        => $extracted_ids,
+			'missing_titles'   => $missing_titles,
+			'warnings'         => $this->csv_parser->get_warnings(),
 		);
 	}
 
