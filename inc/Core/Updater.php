@@ -51,22 +51,37 @@ class Updater {
 			return $cached;
 		}
 
+		// 1. Try to fetch the latest official Release
 		$request_uri = sprintf( 'https://api.github.com/repos/%s/%s/releases/latest', $this->username, $this->repository );
-		
 		$args = array(
-			'headers' => array(
-				'User-Agent' => 'WordPress-Charts-Plugin-Updater',
-			),
+			'headers' => array( 'User-Agent' => 'WordPress-Charts-Plugin-Updater' ),
 		);
-		
 		$response = wp_remote_get( $request_uri, $args );
 
-		if ( is_wp_error( $response ) ) {
-			return false;
+		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+			$this->github_api_result = json_decode( wp_remote_retrieve_body( $response ) );
+		} else {
+			// 2. Fallback: No official Releases found, query the latest Tags
+			$tag_uri = sprintf( 'https://api.github.com/repos/%s/%s/tags', $this->username, $this->repository );
+			$tag_response = wp_remote_get( $tag_uri, $args );
+			
+			if ( ! is_wp_error( $tag_response ) && wp_remote_retrieve_response_code( $tag_response ) === 200 ) {
+				$tags = json_decode( wp_remote_retrieve_body( $tag_response ) );
+				if ( ! empty( $tags ) && is_array( $tags ) ) {
+					$latest_tag = $tags[0];
+					// Map tag properties to look like a release object for downstream logic
+					$this->github_api_result = (object) array(
+						'tag_name'     => $latest_tag->name,
+						'zipball_url'  => $latest_tag->zipball_url,
+						'html_url'     => 'https://github.com/' . $this->username . '/' . $this->repository,
+						'assets'       => array(), // Tags don't have explicit binary assets usually
+						'published_at' => date( 'Y-m-d H:i:s' ), // Fallback date
+						'body'         => 'New version available via Git Tag: ' . $latest_tag->name,
+					);
+				}
+			}
 		}
 
-		$this->github_api_result = json_decode( wp_remote_retrieve_body( $response ) );
-		
 		if ( $this->github_api_result ) {
 			set_transient( $cache_key, $this->github_api_result, 6 * HOUR_IN_SECONDS );
 		}
