@@ -1,0 +1,35 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release ZIP
+        run: |
+          mkdir -p charts
+          rsync -av ./ ./charts/ --exclude .git --exclude .github --exclude .gitignore --exclude .DS_Store --exclude sample-charts.csv --exclude RELEASE-CHECKLIST.md --exclude .smoke_test.php --exclude .raw_proof.php
+          zip -r charts-v${{ steps.get_version.outputs.VERSION }}.zip charts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: charts-v${{ steps.get_version.outputs.VERSION }}.zip
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -61,13 +61,21 @@ class SourceManager {
 		);
 
 		foreach ( $sources as $source ) {
-			// Check if source exists by Name + Platform
-			$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE source_name = %s AND platform = %s", $source['source_name'], $source['platform'] ) );
+			// Check if source exists by Core parameters to ensure migration
+			$exists = $wpdb->get_var( $wpdb->prepare( 
+				"SELECT id FROM $table WHERE platform = %s AND country_code = %s AND chart_type = %s AND frequency = %s", 
+				$source['platform'], $source['country_code'], $source['chart_type'], $source['frequency']
+			) );
+
 			if ( ! $exists ) {
 				$wpdb->insert( $table, $source );
 			} else {
-				// Update source_type for existing records
-				$wpdb->update( $table, array( 'source_type' => $source['source_type'], 'source_url' => $source['source_url'] ), array( 'id' => $exists ) );
+				// Update existing records with new metadata (type, url, parser)
+				$wpdb->update( $table, array( 
+					'source_type' => $source['source_type'], 
+					'source_url'  => $source['source_url'],
+					'parser_key'  => $source['parser_key']
+				), array( 'id' => $exists ) );
 			}
 		}
 	}

@@ -1,0 +1,16 @@
+# Exclude dev files from export-ignore (git archive)
+.github/ export-ignore
+.gitignore export-ignore
+.DS_Store export-ignore
+sample-charts.csv export-ignore
+RELEASE-CHECKLIST.md export-ignore
+.smoke_test.php export-ignore
+.raw_proof.php export-ignore
+tests/ export-ignore
+phpunit.xml export-ignore
+composer.json export-ignore
+composer.lock export-ignore
+node_modules/ export-ignore
+package.json export-ignore
+package-lock.json export-ignore
+README.md export-ignore
