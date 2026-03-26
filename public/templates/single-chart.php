@@ -1,9 +1,8 @@
 <?php
 /**
- * Single Chart Template
+ * Single Chart Template — Premium Editorial
  */
 get_header();
-
 global $wpdb;
 
 $platform  = get_query_var( 'charts_platform' );
@@ -11,187 +10,244 @@ $country   = get_query_var( 'charts_country' );
 $frequency = get_query_var( 'charts_frequency' );
 $type      = get_query_var( 'charts_type' );
 
-// 1. Find Source
-$source_table = $wpdb->prefix . 'charts_sources';
+$sources_table = $wpdb->prefix . 'charts_sources';
+$periods_table = $wpdb->prefix . 'charts_periods';
+$entries_table = $wpdb->prefix . 'charts_entries';
+
+// 1. Find source
 $source = $wpdb->get_row( $wpdb->prepare(
-	"SELECT * FROM $source_table WHERE platform = %s AND country_code = %s AND frequency = %s AND chart_type = %s",
+	"SELECT * FROM $sources_table WHERE platform = %s AND country_code = %s AND frequency = %s AND chart_type = %s",
 	$platform, $country, $frequency, $type
 ) );
 
 if ( ! $source ) {
-	echo '<div class="charts-container"><div class="chart-no-data"><h1>' . __( 'Chart Not Found', 'charts' ) . '</h1><p>' . esc_html("$platform / $country / $frequency / $type") . '</p></div></div>';
+	echo '<div style="max-width:800px;margin:80px auto;text-align:center;font-family:Inter,sans-serif;">';
+	echo '<h1 style="font-size:2rem;font-weight:900;color:#111;">Chart Not Found</h1>';
+	echo '<p style="color:#6b7280;margin-top:10px;">' . esc_html( "$platform / $country / $frequency / $type" ) . '</p>';
+	echo '<p style="margin-top:20px;"><a href="' . esc_url( home_url('/charts/') ) . '" style="color:#6366f1;font-weight:700;">← Back to Charts</a></p>';
+	echo '</div>';
 	get_footer();
 	return;
 }
 
-// 2. Find Latest Period for this source
-$period_table   = $wpdb->prefix . 'charts_periods';
-$entries_table  = $wpdb->prefix . 'charts_entries';
-
+// 2. Find latest period that has entries for this source
 $period = $wpdb->get_row( $wpdb->prepare(
-	"SELECT p.* FROM $period_table p
-	 INNER JOIN $entries_table e ON e.period_id = p.id
-	 WHERE e.source_id = %d
-	 ORDER BY p.id DESC LIMIT 1",
+	"SELECT p.* FROM $periods_table p
+	 INNER JOIN $entries_table e ON e.period_id = p.id AND e.source_id = %d
+	 ORDER BY p.period_start DESC LIMIT 1",
 	$source->id
 ) );
 
 if ( ! $period ) {
-	echo '<div class="charts-container"><div class="chart-no-data"><h1>' . esc_html( $source->source_name ) . '</h1><p>' . __( 'No chart data is available yet. Import a CSV or run an import to begin.', 'charts' ) . '</p></div></div>';
+	echo '<div style="max-width:800px;margin:80px auto;text-align:center;font-family:Inter,sans-serif;">';
+	echo '<h1 style="font-size:2rem;font-weight:900;color:#111;">' . esc_html( $source->source_name ) . '</h1>';
+	echo '<p style="color:#6b7280;margin-top:16px;">No chart data yet. <a href="' . admin_url('admin.php?page=charts-spotify-import') . '" style="color:#6366f1;font-weight:700;">Import a CSV →</a></p>';
+	echo '</div>';
 	get_footer();
 	return;
 }
 
-// 3. Get Entries directly (no join to non-existent tracks table)
+// 3. Get entries
 $entries = $wpdb->get_results( $wpdb->prepare(
 	"SELECT * FROM $entries_table WHERE source_id = %d AND period_id = %d ORDER BY rank_position ASC LIMIT 200",
 	$source->id, $period->id
 ) );
 
+// Page title for SEO
+$page_title = $source->source_name . ' — ' . date( 'M j, Y', strtotime( $period->period_start ) );
 ?>
-<div class="charts-container">
-	<header class="charts-header">
-		<div class="header-meta-bar">
-			<span class="bento-tag"><?php echo esc_html( strtoupper( $source->platform ) ); ?></span>
-			<span class="bento-tag bento-tag-country"><?php echo esc_html( strtoupper( $source->country_code ) ); ?></span>
-			<span class="bento-tag bento-tag-freq"><?php echo esc_html( strtoupper( $source->frequency ) ); ?></span>
-			<span class="bento-tag bento-tag-type"><?php echo esc_html( str_replace('-', ' ', strtoupper( $source->chart_type ) ) ); ?></span>
-		</div>
-		<h1><?php echo esc_html( $source->source_name ); ?></h1>
-		<p class="subtitle">
-			<?php echo sprintf( __( 'Week of %s', 'charts' ), date( 'M j, Y', strtotime( $period->period_start ) ) ); ?>
-			&nbsp;&middot;&nbsp;
-			<span><?php echo count( $entries ); ?> <?php _e( 'tracks', 'charts' ); ?></span>
-		</p>
-	</header>
-
-	<div class="chart-list">
-		<?php if ( empty( $entries ) ) : ?>
-			<div class="chart-row chart-empty-state">
-				<p><?php _e( 'No chart entries found for this period.', 'charts' ); ?></p>
-			</div>
-		<?php else : ?>
-			<?php foreach ( $entries as $i => $entry ) :
-				$movement_dir = $entry->movement_direction ?? 'same';
-				$movement_val = (int) ( $entry->movement_value ?? 0 );
-				$raw          = $entry->raw_payload_json ? json_decode( $entry->raw_payload_json, true ) : array();
-				$streams      = !empty( $entry->streams ) ? number_format( $entry->streams ) : ( $raw['streams'] ?? null );
-				$cover        = $entry->cover_image ?? null;
-				$spotify_id   = $entry->spotify_id ?? null;
-				$yt_id        = $entry->youtube_id ?? null;
-				$weeks        = !empty( $entry->weeks_on_chart ) ? (int) $entry->weeks_on_chart : 1;
-				$peak         = !empty( $entry->peak_rank ) ? (int) $entry->peak_rank : (int) $entry->rank_position;
-				$artist_str   = $entry->artist_names ?? '';
-				$track_name   = $entry->track_name ?? 'Unknown Track';
-			?>
-				<details class="chart-row" id="chart-entry-<?php echo $i + 1; ?>">
-					<summary class="chart-row-summary">
-						<div class="chart-rank-block">
-							<span class="chart-rank"><?php echo (int) $entry->rank_position; ?></span>
-							<?php if ( $movement_dir === 'up' ) : ?>
-								<span class="movement-up" title="Up <?php echo $movement_val; ?>">&#x25B2;</span>
-							<?php elseif ( $movement_dir === 'down' ) : ?>
-								<span class="movement-down" title="Down <?php echo $movement_val; ?>">&#x25BC;</span>
-							<?php elseif ( $movement_dir === 'new' ) : ?>
-								<span class="movement-new">NEW</span>
-							<?php else : ?>
-								<span class="movement-same">&bull;</span>
-							<?php endif; ?>
-						</div>
-
-						<?php if ( $cover ) : ?>
-							<img src="<?php echo esc_url( $cover ); ?>" class="chart-cover" loading="lazy" alt="<?php echo esc_attr( $track_name ); ?>">
-						<?php else : ?>
-							<div class="chart-cover chart-cover-placeholder">
-								<span><?php echo esc_html( strtoupper( substr( $track_name, 0, 1 ) ) ); ?></span>
-							</div>
-						<?php endif; ?>
-
-						<div class="chart-info">
-							<div class="chart-title"><?php echo esc_html( $track_name ); ?></div>
-							<div class="chart-artist"><?php echo esc_html( $artist_str ); ?></div>
-						</div>
-
-						<div class="chart-stat-block">
-							<?php if ( $streams ) : ?>
-								<div class="chart-streams"><?php echo esc_html( $streams ); ?></div>
-								<div class="chart-streams-label"><?php _e( 'streams', 'charts' ); ?></div>
-							<?php endif; ?>
-							<div class="chart-weeks"><?php echo $weeks; ?>W</div>
-						</div>
-					</summary>
-
-					<div class="chart-row-detail">
-						<div class="detail-grid">
-							<div class="detail-item">
-								<span class="detail-label"><?php _e( 'Peak Rank', 'charts' ); ?></span>
-								<span class="detail-value">#<?php echo $peak; ?></span>
-							</div>
-							<div class="detail-item">
-								<span class="detail-label"><?php _e( 'Weeks on Chart', 'charts' ); ?></span>
-								<span class="detail-value"><?php echo $weeks; ?></span>
-							</div>
-							<div class="detail-item">
-								<span class="detail-label"><?php _e( 'Previous Rank', 'charts' ); ?></span>
-								<span class="detail-value"><?php echo !empty($entry->previous_rank) ? '#' . (int) $entry->previous_rank : '–'; ?></span>
-							</div>
-							<?php if ( $streams ) : ?>
-							<div class="detail-item">
-								<span class="detail-label"><?php _e( 'Streams', 'charts' ); ?></span>
-								<span class="detail-value"><?php echo esc_html( $streams ); ?></span>
-							</div>
-							<?php endif; ?>
-						</div>
-						<div class="detail-links">
-							<?php if ( $spotify_id ) : ?>
-								<a href="https://open.spotify.com/track/<?php echo esc_attr( $spotify_id ); ?>" target="_blank" rel="noopener" class="detail-link detail-link-spotify">&#9654; Spotify</a>
-							<?php endif; ?>
-							<?php if ( $yt_id ) : ?>
-								<a href="https://www.youtube.com/watch?v=<?php echo esc_attr( $yt_id ); ?>" target="_blank" rel="noopener" class="detail-link detail-link-youtube">&#9654; YouTube</a>
-							<?php endif; ?>
-						</div>
-					</div>
-				</details>
-			<?php endforeach; ?>
-		<?php endif; ?>
-	</div>
-</div>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-<?php include CHARTS_PATH . 'public/assets/css/public.css'; ?>
-.chart-row { border-bottom: 1px solid var(--charts-border, #eee); list-style: none; }
-.chart-row-summary { display: flex; align-items: center; gap: 16px; padding: 14px 0; cursor: pointer; list-style: none; }
-.chart-row-summary::-webkit-details-marker { display: none; }
-.chart-rank-block { display: flex; flex-direction: column; align-items: center; min-width: 40px; }
-.chart-rank { font-size: 1.4rem; font-weight: 900; }
-.movement-up { color: #22c55e; font-size: 10px; }
-.movement-down { color: #ef4444; font-size: 10px; }
-.movement-new { font-size: 9px; font-weight: 700; color: #6366f1; background: #eef2ff; padding: 2px 5px; border-radius: 4px; }
-.movement-same { color: #9ca3af; font-size: 16px; line-height: 1; }
-.chart-cover { width: 52px; height: 52px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #f3f4f6; }
-.chart-cover-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; color: #d1d5db; }
-.chart-info { flex: 1; min-width: 0; }
-.chart-title { font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chart-artist { font-size: 0.8rem; color: #6b7280; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chart-stat-block { text-align: right; min-width: 60px; }
-.chart-streams { font-weight: 700; font-size: 0.85rem; }
-.chart-streams-label { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; letter-spacing: .04em; }
-.chart-weeks { font-size: 0.75rem; font-weight: 600; color: #6b7280; margin-top: 4px; }
-.chart-row-detail { padding: 16px 0 20px 56px; background: #fafafa; border-top: 1px solid #f3f4f6; }
-.detail-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 12px; }
-.detail-item { display: flex; flex-direction: column; gap: 2px; }
-.detail-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; font-weight: 600; }
-.detail-value { font-size: 0.95rem; font-weight: 800; }
-.detail-links { display: flex; gap: 10px; margin-top: 4px; }
-.detail-link { font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; text-decoration: none; }
-.detail-link-spotify { background: #1DB954; color: #fff; }
-.detail-link-youtube { background: #FF0000; color: #fff; }
-.chart-no-data { padding: 60px 20px; text-align: center; }
-.header-meta-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.bento-tag-country { background: #1a1a1a; color: #fff; }
-.bento-tag-freq { background: #374151; color: #fff; }
-.bento-tag-type { background: #4f46e5; color: #fff; }
+*,*::before,*::after{box-sizing:border-box}
+.sc-body{font-family:'Inter',sans-serif;background:#f8f8f8;min-height:100vh}
+.sc-wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
+
+/* ── Header ── */
+.sc-header{padding:48px 0 32px;border-bottom:2px solid #000}
+.sc-breadcrumb{font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+.sc-breadcrumb a{color:#9ca3af;text-decoration:none}
+.sc-breadcrumb a:hover{color:#111}
+.sc-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.sc-tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;background:#111;color:#fff}
+.sc-tag.platform-spotify{background:#1DB954;color:#fff}
+.sc-tag.platform-youtube{background:#FF0000;color:#fff}
+.sc-tag.plain{background:#f3f4f6;color:#374151}
+h1.sc-title{font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;letter-spacing:-.03em;color:#000;line-height:1.1}
+.sc-period{margin-top:10px;font-size:1rem;color:#6b7280;font-weight:600}
+.sc-period strong{color:#111}
+.sc-count{margin-top:4px;font-size:12px;color:#9ca3af;font-weight:600}
+
+/* ── Chart rows ── */
+.sc-list{margin-top:0}
+.sc-row{background:#fff;border-radius:0;border-bottom:1px solid #f0f0f0;transition:background .12s}
+.sc-row:first-child{border-top:none}
+.sc-row[open]{background:#fafafa}
+.sc-row summary{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:pointer;list-style:none;user-select:none}
+.sc-row summary::-webkit-details-marker{display:none}
+
+.sc-num{min-width:44px;text-align:center}
+.sc-num-rank{font-size:1.8rem;font-weight:900;color:#000;line-height:1}
+.sc-num-move{font-size:10px;font-weight:800;margin-top:2px;line-height:1}
+.sc-num-move.up{color:#22c55e}
+.sc-num-move.down{color:#ef4444}
+.sc-num-move.new{display:inline-flex;background:#eef2ff;color:#6366f1;padding:2px 5px;border-radius:4px}
+.sc-num-move.same{color:#d1d5db}
+
+.sc-art{width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f3f4f6}
+.sc-art-ph{width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#e5e7eb,#d1d5db);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:#9ca3af;flex-shrink:0;user-select:none}
+
+.sc-info{flex:1;min-width:0}
+.sc-track-name{font-size:1rem;font-weight:800;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-artist-name{font-size:.8rem;color:#6b7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+
+.sc-stats{text-align:right;flex-shrink:0}
+.sc-streams-val{font-size:.9rem;font-weight:800;color:#000}
+.sc-streams-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;font-weight:700;margin-top:1px}
+.sc-weeks{font-size:.75rem;font-weight:600;color:#9ca3af;margin-top:5px}
+
+/* ── Detail panel ── */
+.sc-detail{padding:16px 20px 24px 96px;background:#fafafa;border-top:1px solid #f0f0f0;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.sc-detail-grid{display:flex;flex-wrap:wrap;gap:20px 32px;margin-bottom:14px}
+.sc-detail-item{display:flex;flex-direction:column;gap:3px}
+.sc-detail-label{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af}
+.sc-detail-value{font-size:1rem;font-weight:800;color:#000}
+.sc-links{display:flex;gap:10px;flex-wrap:wrap}
+.sc-link{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;font-weight:700;padding:6px 14px;border-radius:8px;text-decoration:none;transition:opacity .15s}
+.sc-link:hover{opacity:.8}
+.sc-link-spotify{background:#1DB954;color:#fff}
+.sc-link-youtube{background:#FF0000;color:#fff}
+
+/* ── Empty ── */
+.sc-empty{padding:80px 20px;text-align:center;color:#6b7280;font-family:Inter,sans-serif}
+
+@media(max-width:580px){
+	.sc-row summary{gap:10px;padding:14px 12px}
+	.sc-detail{padding:14px 12px 20px}
+	.sc-num-rank{font-size:1.3rem}
+	.sc-art,.sc-art-ph{width:44px;height:44px}
+}
 </style>
+
+<div class="sc-body">
+<div class="sc-wrap">
+
+	<div class="sc-header">
+		<div class="sc-breadcrumb">
+			<a href="<?php echo esc_url( home_url('/charts/') ); ?>">Charts</a>
+			&nbsp;/&nbsp; <?php echo esc_html( strtoupper( $country ) ); ?>
+			&nbsp;/&nbsp; <?php echo esc_html( strtoupper( $platform ) ); ?>
+		</div>
+
+		<div class="sc-tags">
+			<span class="sc-tag platform-<?php echo esc_attr( $platform ); ?>"><?php echo esc_html( strtoupper( $platform ) ); ?></span>
+			<span class="sc-tag plain"><?php echo esc_html( strtoupper( $country ) ); ?></span>
+			<span class="sc-tag plain"><?php echo esc_html( strtoupper( $frequency ) ); ?></span>
+			<span class="sc-tag plain"><?php echo esc_html( str_replace('-', ' ', strtoupper( $type ) ) ); ?></span>
+		</div>
+
+		<h1 class="sc-title"><?php echo esc_html( $source->source_name ); ?></h1>
+		<p class="sc-period">
+			<strong><?php echo date( 'F j, Y', strtotime( $period->period_start ) ); ?></strong>
+			<?php if ( $period->period_end && $period->period_end !== $period->period_start ) : ?>
+				&ndash; <?php echo date( 'F j', strtotime( $period->period_end ) ); ?>
+			<?php endif; ?>
+		</p>
+		<p class="sc-count"><?php echo number_format( count( $entries ) ); ?> tracks</p>
+	</div>
+
+	<?php if ( empty( $entries ) ) : ?>
+		<div class="sc-empty">
+			<p style="font-size:1.1rem;font-weight:700;color:#374151;">No chart entries found for this period.</p>
+			<p style="margin-top:8px;font-size:.9rem;">Source ID: <?php echo $source->id; ?> · Period ID: <?php echo $period->id; ?></p>
+		</div>
+	<?php else : ?>
+		<div class="sc-list">
+			<?php foreach ( $entries as $i => $e ) :
+				$mv_dir = $e->movement_direction ?? 'same';
+				$mv_val = (int) ( $e->movement_value ?? 0 );
+				$raw    = $e->raw_payload_json ? json_decode( $e->raw_payload_json, true ) : array();
+				$streams = $e->streams > 0 ? number_format( $e->streams ) : null;
+				$weeks  = max( 1, (int) $e->weeks_on_chart );
+				$peak   = $e->peak_rank > 0 ? (int) $e->peak_rank : (int) $e->rank_position;
+				$prev   = $e->previous_rank > 0 ? '#' . (int) $e->previous_rank : '–';
+			?>
+			<details class="sc-row" id="row-<?php echo $i+1; ?>">
+				<summary>
+					<div class="sc-num">
+						<div class="sc-num-rank"><?php echo (int) $e->rank_position; ?></div>
+						<?php if ( $mv_dir === 'up' ) : ?>
+							<div class="sc-num-move up">&#x25B2; <?php echo $mv_val; ?></div>
+						<?php elseif ( $mv_dir === 'down' ) : ?>
+							<div class="sc-num-move down">&#x25BC; <?php echo $mv_val; ?></div>
+						<?php elseif ( $mv_dir === 'new' ) : ?>
+							<div class="sc-num-move new">NEW</div>
+						<?php else : ?>
+							<div class="sc-num-move same">—</div>
+						<?php endif; ?>
+					</div>
+
+					<?php if ( $e->cover_image ) : ?>
+						<img src="<?php echo esc_url( $e->cover_image ); ?>" class="sc-art" loading="lazy" alt="">
+					<?php else : ?>
+						<div class="sc-art-ph"><?php echo esc_html( mb_strtoupper( mb_substr( $e->track_name ?: '?', 0, 1 ) ) ); ?></div>
+					<?php endif; ?>
+
+					<div class="sc-info">
+						<div class="sc-track-name"><?php echo esc_html( $e->track_name ?: 'Unknown Track' ); ?></div>
+						<div class="sc-artist-name"><?php echo esc_html( $e->artist_names ?: '—' ); ?></div>
+					</div>
+
+					<div class="sc-stats">
+						<?php if ( $streams ) : ?>
+							<div class="sc-streams-val"><?php echo esc_html( $streams ); ?></div>
+							<div class="sc-streams-lbl">streams</div>
+						<?php endif; ?>
+						<div class="sc-weeks"><?php echo $weeks; ?>W</div>
+					</div>
+				</summary>
+
+				<div class="sc-detail">
+					<div class="sc-detail-grid">
+						<div class="sc-detail-item">
+							<span class="sc-detail-label">Peak Rank</span>
+							<span class="sc-detail-value">#<?php echo $peak; ?></span>
+						</div>
+						<div class="sc-detail-item">
+							<span class="sc-detail-label">Weeks on Chart</span>
+							<span class="sc-detail-value"><?php echo $weeks; ?></span>
+						</div>
+						<div class="sc-detail-item">
+							<span class="sc-detail-label">Previous Rank</span>
+							<span class="sc-detail-value"><?php echo $prev; ?></span>
+						</div>
+						<?php if ( $streams ) : ?>
+						<div class="sc-detail-item">
+							<span class="sc-detail-label">Streams</span>
+							<span class="sc-detail-value"><?php echo esc_html( $streams ); ?></span>
+						</div>
+						<?php endif; ?>
+					</div>
+					<div class="sc-links">
+						<?php if ( $e->spotify_id ) : ?>
+							<a href="https://open.spotify.com/track/<?php echo esc_attr( $e->spotify_id ); ?>" target="_blank" rel="noopener" class="sc-link sc-link-spotify">
+								&#x25B6; Open in Spotify
+							</a>
+						<?php endif; ?>
+						<?php if ( $e->youtube_id ) : ?>
+							<a href="https://www.youtube.com/watch?v=<?php echo esc_attr( $e->youtube_id ); ?>" target="_blank" rel="noopener" class="sc-link sc-link-youtube">
+								&#x25B6; Watch on YouTube
+							</a>
+						<?php endif; ?>
+					</div>
+				</div>
+			</details>
+			<?php endforeach; ?>
+		</div>
+	<?php endif; ?>
+
+</div>
+</div>
 
 <?php get_footer(); ?>
