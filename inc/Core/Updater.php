@@ -42,6 +42,15 @@ class Updater {
 			return $this->github_api_result;
 		}
 
+		$cache_key = 'charts_github_release_data';
+		$cached = get_transient( $cache_key );
+		$force_refresh = isset( $_GET['force-check'] ) || ( isset( $_GET['action'] ) && $_GET['action'] === 'upgrade-plugin' );
+
+		if ( ! $force_refresh && $cached ) {
+			$this->github_api_result = $cached;
+			return $cached;
+		}
+
 		$request_uri = sprintf( 'https://api.github.com/repos/%s/%s/releases/latest', $this->username, $this->repository );
 		
 		$args = array(
@@ -57,6 +66,11 @@ class Updater {
 		}
 
 		$this->github_api_result = json_decode( wp_remote_retrieve_body( $response ) );
+		
+		if ( $this->github_api_result ) {
+			set_transient( $cache_key, $this->github_api_result, 6 * HOUR_IN_SECONDS );
+		}
+
 		return $this->github_api_result;
 	}
 
