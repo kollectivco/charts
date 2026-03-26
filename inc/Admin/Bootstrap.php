@@ -210,12 +210,15 @@ class Bootstrap {
 
 		try {
 			$importer = new \Charts\Services\SpotifyCsvImporter();
-			$result = $importer->run( $csv_content, $meta );
-
+			$result   = $importer->run( $csv_content, $meta );
 			if ( is_wp_error( $result ) ) {
 				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+			} elseif ( is_array( $result ) ) {
+				$chart_url = home_url( '/charts/spotify/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
+				$msg = sprintf( __( 'Import complete: %1$d entries saved from %2$d rows. Source ID: %3$d, Period ID: %4$d. %5$d skipped. <a href="%6$s" target="_blank">View Chart</a>', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
+				add_settings_error( 'charts', 'import_success', $msg, 'success' );
 			} else {
-				add_settings_error( 'charts', 'import_success', sprintf( __( 'Imported %d entries successfully.', 'charts' ), $result ), 'success' );
+				add_settings_error( 'charts', 'import_success', sprintf( __( 'Import complete: %d entries.', 'charts' ), intval( $result ) ), 'success' );
 			}
 		} catch ( \Exception $e ) {
 			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
