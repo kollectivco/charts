@@ -60,6 +60,10 @@ class Bootstrap {
 			case 'import_spotify_csv':
 				self::process_spotify_csv_upload();
 				break;
+
+			case 'import_youtube_csv':
+				self::process_youtube_csv_upload();
+				break;
 		}
 	}
 
@@ -104,6 +108,15 @@ class Bootstrap {
 			'manage_options',
 			'charts-spotify-import',
 			array( self::class, 'render_spotify_import' )
+		);
+
+		add_submenu_page(
+			'charts',
+			__( 'YouTube Import', 'charts' ),
+			__( 'YouTube Import', 'charts' ),
+			'manage_options',
+			'charts-youtube-import',
+			array( self::class, 'render_youtube_import' )
 		);
 
 		add_submenu_page(
@@ -185,6 +198,10 @@ class Bootstrap {
 		self::render_view( 'import-sheet' );
 	}
 
+	public static function render_youtube_import() {
+		self::render_view( 'youtube-import' );
+	}
+
 	/**
 	 * Process Spotify CSV Upload.
 	 */
@@ -219,6 +236,50 @@ class Bootstrap {
 				add_settings_error( 'charts', 'import_success', $msg, 'success' );
 			} else {
 				add_settings_error( 'charts', 'import_success', sprintf( __( 'Import complete: %d entries.', 'charts' ), intval( $result ) ), 'success' );
+			}
+		} catch ( \Exception $e ) {
+			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
+		}
+	}
+
+	/**
+	 * Process YouTube CSV Upload.
+	 */
+	private static function process_youtube_csv_upload() {
+		if ( empty( $_FILES['youtube_csv']['tmp_name'] ) ) {
+			add_settings_error( 'charts', 'no_file', __( 'Please select a CSV file.', 'charts' ), 'error' );
+			return;
+		}
+
+		$meta = array(
+			'country'     => sanitize_text_field( $_POST['country'] ?? 'eg' ),
+			'chart_type'  => sanitize_text_field( $_POST['chart_type'] ?? 'top-songs' ),
+			'frequency'   => sanitize_text_field( $_POST['frequency'] ?? 'weekly' ),
+			'period_date' => sanitize_text_field( $_POST['period_date'] ?? '' ),
+			'source_name' => sanitize_text_field( $_POST['source_name'] ?? '' ),
+		);
+
+		$csv_content = file_get_contents( $_FILES['youtube_csv']['tmp_name'] );
+		if ( ! $csv_content ) {
+			add_settings_error( 'charts', 'read_error', __( 'Failed to read CSV file.', 'charts' ), 'error' );
+			return;
+		}
+
+		try {
+			$importer = new \Charts\Services\YouTubeCsvImporter();
+			$result   = $importer->run( $csv_content, $meta );
+
+			if ( is_wp_error( $result ) ) {
+				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+			} elseif ( is_array( $result ) ) {
+				$chart_url = home_url( '/charts/youtube/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
+				$msg = sprintf(
+					__( 'YouTube import complete: <strong>%1$d entries saved</strong> from %2$d rows. Source ID: %3$d · Period ID: %4$d · %5$d skipped. <a href="%6$s" target="_blank">View Chart &rarr;</a>', 'charts' ),
+					$result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url )
+				);
+				add_settings_error( 'charts', 'import_success', $msg, 'success' );
+			} else {
+				add_settings_error( 'charts', 'import_success', __( 'YouTube import complete.', 'charts' ), 'success' );
 			}
 		} catch ( \Exception $e ) {
 			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
