@@ -17,6 +17,7 @@ class Bootstrap {
 		
 		// AJAX Handlers
 		add_action( 'wp_ajax_charts_run_import', array( self::class, 'handle_run_import' ) );
+		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
 	}
 
 	/**
@@ -192,6 +193,15 @@ class Bootstrap {
 
 		add_submenu_page(
 			'charts',
+			__( 'Intelligence', 'charts' ),
+			__( 'Intelligence', 'charts' ),
+			'manage_options',
+			'charts-intelligence',
+			array( self::class, 'render_intelligence' )
+		);
+
+		add_submenu_page(
+			'charts',
 			__( 'Insights', 'charts' ),
 			__( 'Insights', 'charts' ),
 			'manage_options',
@@ -286,6 +296,9 @@ class Bootstrap {
 			if ( is_wp_error( $result ) ) {
 				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
 			} elseif ( is_array( $result ) ) {
+				// Recalculate Intelligence
+				\Charts\Core\Intelligence::recalculate_all();
+
 				$chart_url = home_url( '/charts/spotify/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
 				$msg = sprintf( __( 'Import complete: %1$d entries saved from %2$d rows. Source ID: %3$d, Period ID: %4$d. %5$d skipped. <a href="%6$s" target="_blank">View Chart</a>', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
 				add_settings_error( 'charts', 'import_success', $msg, 'success' );
@@ -330,6 +343,9 @@ class Bootstrap {
 			if ( is_wp_error( $result ) ) {
 				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
 			} elseif ( is_array( $result ) ) {
+				// Recalculate Intelligence
+				\Charts\Core\Intelligence::recalculate_all();
+
 				$chart_url = home_url( '/charts/' );
 				
 				$msg = sprintf(
@@ -392,6 +408,10 @@ class Bootstrap {
 		self::render_view( 'insights' );
 	}
 
+	public static function render_intelligence() {
+		self::render_view( 'intelligence' );
+	}
+
 	/**
 	 * AJAX logic to run an import.
 	 */
@@ -415,11 +435,29 @@ class Bootstrap {
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 			}
 
+			// Recalculate Intelligence
+			\Charts\Core\Intelligence::recalculate_all();
+
 			wp_send_json_success( array( 
 				'message' => sprintf( __( 'Successfully imported %d entries.', 'charts' ), $result ),
 				'count'   => $result
 			) );
 
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	public static function handle_recalculate_intel() {
+		check_ajax_referer( 'charts_intel', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'charts' ) ) );
+		}
+
+		try {
+			\Charts\Core\Intelligence::recalculate_all();
+			wp_send_json_success( array( 'message' => __( 'Intelligence recalculation successful.', 'charts' ) ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}

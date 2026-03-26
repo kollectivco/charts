@@ -285,6 +285,28 @@ class Schema {
 				KEY `is_featured` (`is_featured`),
 				KEY `menu_order` (`menu_order`)
 			) $charset_collate;",
+
+			// 14. Intelligence Layer
+			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_intelligence` (
+				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+				`entity_type` ENUM('track','video','artist','chart') NOT NULL,
+				`entity_id` BIGINT(20) UNSIGNED NOT NULL,
+				`momentum_score` DECIMAL(10,2) DEFAULT 0,
+				`growth_rate` DECIMAL(10,2) DEFAULT 0,
+				`trend_status` VARCHAR(20) DEFAULT 'stable',
+				`total_streams` BIGINT(20) DEFAULT 0,
+				`avg_rank` DECIMAL(10,2) DEFAULT 0,
+				`peaks_count` INT(11) DEFAULT 0,
+				`weeks_on_chart` INT(11) DEFAULT 0,
+				`volatility_score` DECIMAL(10,2) DEFAULT 0,
+				`metadata_json` LONGTEXT DEFAULT NULL,
+				`last_calculated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				PRIMARY KEY (`id`),
+				UNIQUE KEY `entity_unique` (`entity_type`,`entity_id`),
+				KEY `momentum` (`momentum_score`),
+				KEY `trend` (`trend_status`)
+			) $charset_collate;",
 		);
 
 		foreach ( $queries as $sql ) {

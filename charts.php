@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Production-grade chart intelligence engine for WordPress. Scrapes, normalizes, and analyzes global music and video charts.
- * Version: 1.4.1
+ * Version: 1.5.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.co
  * License: GPL2
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.4.1' );
+define( 'CHARTS_VERSION', '1.5.0' );
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'CHARTS_PATH', plugin_dir_path( __FILE__ ) );
@@ -84,6 +84,18 @@ final class Charts {
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 		
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
+
+		// Custom Update Link in Plugins List
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_updater_link' ) );
+	}
+
+	/**
+	 * Add "Check for updates" link to plugins list.
+	 */
+	public function add_updater_link( $links ) {
+		$update_link = '<a href="' . esc_url( admin_url( 'update-core.php?force-check=1' ) ) . '" style="font-weight:700;color:#6366f1;">Check for Update</a>';
+		array_unshift( $links, $update_link );
+		return $links;
 	}
 
 	/**
