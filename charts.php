@@ -2,13 +2,12 @@
 /**
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
- * Description: Production-grade chart intelligence engine for WordPress. Scrapes, normalizes, and analyzes global music and video charts.
- * Version: 1.5.0
+ * Description: Music charts intelligence platform.
+ * Version: 1.5.1
  * Author: Kollectiv
- * Author URI: https://kollectiv.co
- * License: GPL2
- * Text Domain: charts
+ * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
+ * Text Domain: kontentainment-charts
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.5.0' );
+define( 'CHARTS_VERSION', '1.5.1' );
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'CHARTS_PATH', plugin_dir_path( __FILE__ ) );
