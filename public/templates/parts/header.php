@@ -48,11 +48,19 @@ $week_date = date('F j, Y');
 			
 			<div style="display: flex; align-items: center; gap: 60px;">
 				<!-- Branding -->
+				<?php if ( $show_logo ) : ?>
 				<div class="charts-branding">
 					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-wordmark">
-						<?php echo esc_html( $wordmark ?: 'KCharts' ); ?>
+						<?php 
+						if ( $logo_id ) {
+							echo wp_get_attachment_image( $logo_id, 'medium', false, array( 'class' => 'charts-logo-img', 'alt' => $logo_alt ?: $wordmark ) );
+						} else {
+							echo esc_html( $wordmark ?: 'KCharts' ); 
+						}
+						?>
 					</a>
 				</div>
+				<?php endif; ?>
 
 				<!-- Navigation -->
 				<?php if ( $show_nav && $menu_id ) : ?>

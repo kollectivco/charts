@@ -23,6 +23,11 @@ class StandaloneLayout {
 	 */
 	public static function isolation_pass() {
 		if ( ! self::is_charts_page() ) return;
+		
+		// If standalone mode is disabled, do NOT isolate (allow theme assets)
+		if ( ! get_option( 'charts_standalone_layout', 1 ) ) {
+			return;
+		}
 
 		global $wp_styles, $wp_scripts;
 
@@ -108,14 +113,28 @@ class StandaloneLayout {
 	/**
 	 * Load the custom Charts header.
 	 */
+	/**
+	 * Load the custom Charts header if enabled.
+	 */
 	public static function get_header() {
-		include CHARTS_PATH . 'public/templates/parts/header.php';
+		if ( get_option( 'charts_custom_header', 1 ) ) {
+			include CHARTS_PATH . 'public/templates/parts/header.php';
+		} else {
+			\get_header();
+		}
 	}
 
 	/**
 	 * Load the custom Charts footer.
 	 */
+	/**
+	 * Load the custom Charts footer if enabled.
+	 */
 	public static function get_footer() {
-		include CHARTS_PATH . 'public/templates/parts/footer.php';
+		if ( get_option( 'charts_custom_footer', 1 ) ) {
+			include CHARTS_PATH . 'public/templates/parts/footer.php';
+		} else {
+			\get_footer();
+		}
 	}
 }

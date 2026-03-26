@@ -95,22 +95,31 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 					</div>
 					<div class="premium-form-grid" style="padding-top:20px;">
 						<div class="form-group">
-							<label for="country"><?php esc_html_e( 'Region / Country', 'charts' ); ?></label>
-							<select name="country" id="country" class="form-control">
-								<option value="eg"><?php esc_html_e( 'Egypt (EG)', 'charts' ); ?></option>
-								<option value="sa"><?php esc_html_e( 'Saudi Arabia (SA)', 'charts' ); ?></option>
-								<option value="ae"><?php esc_html_e( 'United Arab Emirates (AE)', 'charts' ); ?></option>
-								<option value="ma"><?php esc_html_e( 'Morocco (MA)', 'charts' ); ?></option>
-								<option value="global"><?php esc_html_e( 'Global', 'charts' ); ?></option>
+							<label for="chart_id"><?php esc_html_e( 'Target Chart Profile', 'charts' ); ?></label>
+							<select name="chart_id" id="chart_id" class="form-control" required>
+								<option value=""><?php esc_html_e( '— Select Chart Definition —', 'charts' ); ?></option>
+								<?php foreach ( $definitions as $definition ) : ?>
+									<option value="<?php echo (int) $definition->id; ?>" 
+											data-type="<?php echo esc_attr( $definition->item_type ); ?>" 
+											data-chart-type="<?php echo esc_attr( $definition->chart_type ); ?>"
+											data-country="<?php echo esc_attr( $definition->country_code ); ?>"
+											data-frequency="<?php echo esc_attr( $definition->frequency ); ?>">
+										<?php echo esc_html( $definition->title ); ?> (<?php echo esc_html( ucfirst($definition->item_type) ); ?>)
+									</option>
+								<?php endforeach; ?>
 							</select>
+							<span class="input-helper"><?php esc_html_e( 'Select the dynamic chart record to sync data into.', 'charts' ); ?></span>
 						</div>
+
+						<!-- Hidden fields to maintain backward compatibility with the import processor -->
+						<input type="hidden" name="chart_type" id="hidden_chart_type" value="top-songs">
+						
 						<div class="form-group">
-							<label for="chart_type"><?php esc_html_e( 'Chart Model', 'charts' ); ?></label>
-							<select name="chart_type" id="chart_type" class="form-control">
-								<option value="top-songs"><?php esc_html_e( 'Top Songs (Tracks)', 'charts' ); ?></option>
-								<option value="top-artists"><?php esc_html_e( 'Top Artists', 'charts' ); ?></option>
-								<option value="top-videos"><?php esc_html_e( 'Top Music Videos', 'charts' ); ?></option>
-								<option value="viral-50"><?php esc_html_e( 'Viral / Trending 50', 'charts' ); ?></option>
+							<label for="item_type"><?php esc_html_e( 'Chart Entity Type', 'charts' ); ?></label>
+							<select name="item_type" id="item_type" class="form-control" readonly style="background: #fdfdfd; pointer-events: none; opacity: 0.7;">
+								<option value="track"><?php esc_html_e( 'Tracks', 'charts' ); ?></option>
+								<option value="artist"><?php esc_html_e( 'Artists', 'charts' ); ?></option>
+								<option value="video"><?php esc_html_e( 'Videos', 'charts' ); ?></option>
 							</select>
 						</div>
 						<div class="form-group">
@@ -272,6 +281,17 @@ jQuery(document).ready(function($) {
 	const filePreview = $('.file-preview');
 	const uploadContent = $('.upload-content');
 	const removeBtn = $('.remove-file');
+
+	// Synchronize target chart metadata
+	$('#chart_id').on('change', function() {
+		const $opt = $(this).find('option:selected');
+		if ($opt.val()) {
+			$('#item_type').val($opt.data('type'));
+			$('#country').val($opt.data('country'));
+			$('#frequency').val($opt.data('frequency'));
+			$('#hidden_chart_type').val($opt.data('chart-type'));
+		}
+	});
 
 	fileInput.on('change', function(e) {
 		const file = e.target.files[0];

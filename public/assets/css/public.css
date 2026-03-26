@@ -36,6 +36,8 @@
 	color: var(--k-text);
 	-webkit-font-smoothing: antialiased;
 	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
 }
 
 .kc-container {
@@ -146,7 +148,12 @@
 	text-decoration: none;
 }
 
-/* 3. HERO */
+/* 3. MAIN WRAPPER */
+.charts-product-main {
+	flex: 1;
+}
+
+/* 4. HERO */
 .kc-hero-section {
 	height: 60vh;
 	display: flex;

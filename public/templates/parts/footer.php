@@ -12,7 +12,7 @@ $copyright   = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 
 </main><!-- /.charts-product-main -->
 
-<footer class="charts-product-footer kc-root">
+<footer class="charts-product-footer">
 	<div class="kc-container">
 		
 		<div class="footer-inner">
