@@ -129,7 +129,7 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 
 			<div class="kc-bento-grid">
 				<?php foreach ( $definitions as $idx => $def ) : 
-					$accent_color = $accents[ $idx % count($accents) ];
+					$accent_color = !empty($def->accent_color) ? $def->accent_color : '#6366f1';
 					// Fetch top 3 preview
 					$entries = $wpdb->get_results( $wpdb->prepare( "
 						SELECT e.* FROM {$wpdb->prefix}charts_entries e
@@ -138,7 +138,7 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
 					", $def->chart_type, $def->country_code ) );
 
-					$hero_img = ! empty( $entries[0]->cover_image ) ? $entries[0]->cover_image : CHARTS_URL . 'public/assets/img/placeholder.png';
+					$hero_img = ! empty( $def->cover_image_url ) ? $def->cover_image_url : (! empty( $entries[0]->cover_image ) ? $entries[0]->cover_image : CHARTS_URL . 'public/assets/img/placeholder.png');
 					$period_date = ! empty( $entries[0]->created_at ) ? date('M j, Y', strtotime($entries[0]->created_at)) : 'Latest Record';
 				?>
 					<article class="kc-chart-card">
@@ -150,7 +150,10 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 								<span class="kc-card-meta"><?php echo strtoupper($def->frequency); ?> CHART</span>
 								<h2 class="kc-card-title">
 									<?php echo esc_html($def->title); ?>
-									<span class="kc-dot" style="background: <?php echo $accent_color; ?>;"></span>
+									<?php if (!empty($def->title_ar)): ?>
+										<span style="font-size: 0.7em; opacity: 0.5; font-weight: 500; display: block; margin-top: 4px; letter-spacing: 0;"><?php echo esc_html($def->title_ar); ?></span>
+									<?php endif; ?>
+									<span class="kc-dot" style="background: <?php echo esc_attr($accent_color); ?>;"></span>
 								</h2>
 							</div>
 						</div>

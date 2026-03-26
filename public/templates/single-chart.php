@@ -90,11 +90,20 @@ $arabic_subtitle = "أفضل ١٠٠ أغنية";
 		</nav>
 
 		<!-- 3. PAGE HEADER / TITLE BLOCK -->
-		<header class="kc-page-intro" style="display: flex; justify-content: space-between; align-items: flex-end;">
+		<header class="kc-page-intro" style="display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 10;">
 			<div>
-				<div class="kc-label-bar"><?php echo strtoupper($definition->frequency); ?> &bull; <?php echo strtoupper($definition->chart_type); ?></div>
+				<div class="kc-label-bar">
+					<?php echo strtoupper($definition->frequency); ?> &bull; <?php echo strtoupper($definition->chart_type); ?>
+					<?php if ($definition->accent_color): ?>
+						<span class="kc-dot" style="background: <?php echo esc_attr($definition->accent_color); ?>; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 8px;"></span>
+					<?php endif; ?>
+				</div>
 				<h1 class="kc-page-title"><?php echo esc_html($definition->title); ?></h1>
-				<div class="kc-page-subtitle"><?php echo $arabic_subtitle; ?></div>
+				<?php if (!empty($definition->title_ar)): ?>
+					<div class="kc-page-subtitle" style="font-family: inherit; margin-top: 5px; opacity: 0.8;"><?php echo esc_html($definition->title_ar); ?></div>
+				<?php else: ?>
+					<div class="kc-page-subtitle"><?php echo $arabic_subtitle; ?></div>
+				<?php endif; ?>
 				<p class="kc-page-desc"><?php echo esc_html($definition->chart_summary); ?></p>
 			</div>
 			<div style="display: flex; gap: 32px; font-size: 11px; font-weight: 850; opacity: 0.6; text-transform: uppercase; margin-bottom: 24px;">

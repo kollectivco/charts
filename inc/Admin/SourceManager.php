@@ -252,17 +252,21 @@ class SourceManager {
 		$table = $wpdb->prefix . 'charts_definitions';
 
 		$fields = array(
-			'title'         => sanitize_text_field( $data['title'] ),
-			'slug'          => sanitize_title( $data['slug'] ),
-			'chart_summary' => sanitize_textarea_field( $data['chart_summary'] ),
-			'chart_type'    => sanitize_text_field( $data['chart_type'] ),
-			'item_type'     => sanitize_text_field( $data['item_type'] ),
-			'country_code'  => strtolower( sanitize_text_field( $data['country_code'] ) ),
-			'frequency'     => sanitize_text_field( $data['frequency'] ),
-			'platform'      => sanitize_text_field( $data['platform'] ?? 'all' ),
-			'is_public'     => isset( $data['is_public'] ) ? (int) $data['is_public'] : 1,
-			'is_featured'   => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
-			'menu_order'    => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
+			'title'           => sanitize_text_field( $data['title'] ),
+			'title_ar'        => sanitize_text_field( $data['title_ar'] ?? '' ),
+			'slug'            => sanitize_title( $data['slug'] ),
+			'chart_summary'   => sanitize_textarea_field( $data['chart_summary'] ),
+			'chart_type'      => sanitize_text_field( $data['chart_type'] ),
+			'item_type'       => sanitize_text_field( $data['item_type'] ),
+			'country_code'    => strtolower( sanitize_text_field( $data['country_code'] ) ),
+			'frequency'       => sanitize_text_field( $data['frequency'] ),
+			'platform'        => sanitize_text_field( $data['platform'] ?? 'all' ),
+			'cover_image_url' => esc_url_raw( $data['cover_image_url'] ?? '' ),
+			'accent_color'    => sanitize_text_field( $data['accent_color'] ?? '#6366f1' ),
+			'is_public'       => isset( $data['is_public'] ) ? (int) $data['is_public'] : 1,
+			'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
+			'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,
+			'menu_order'      => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
 		);
 
 		if ( ! empty( $data['id'] ) ) {

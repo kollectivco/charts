@@ -266,6 +266,7 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_definitions` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`title` VARCHAR(255) NOT NULL,
+				`title_ar` VARCHAR(255) DEFAULT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`chart_summary` TEXT DEFAULT NULL,
 				`chart_type` VARCHAR(50) NOT NULL,
@@ -273,8 +274,11 @@ class Schema {
 				`country_code` VARCHAR(10) NOT NULL,
 				`frequency` ENUM('daily','weekly','monthly') NOT NULL DEFAULT 'weekly',
 				`platform` VARCHAR(50) DEFAULT 'all',
+				`cover_image_url` TEXT DEFAULT NULL,
+				`accent_color` VARCHAR(20) DEFAULT '#6366f1',
 				`is_public` TINYINT(1) NOT NULL DEFAULT 1,
 				`is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+				`archive_enabled` TINYINT(1) NOT NULL DEFAULT 1,
 				`menu_order` INT(11) NOT NULL DEFAULT 0,
 				`display_settings_json` LONGTEXT DEFAULT NULL,
 				`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -371,6 +375,20 @@ class Schema {
 			$cols = $wpdb->get_col( "DESCRIBE $tbl", 0 );
 			if ( ! in_array( 'youtube_id', $cols, true ) ) {
 				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `youtube_id` VARCHAR(100) DEFAULT NULL" );
+			}
+		}
+		// Upgrade definitions table
+		$definitions_tbl = $wpdb->prefix . 'charts_definitions';
+		$def_cols = $wpdb->get_col( "DESCRIBE $definitions_tbl", 0 );
+		$def_needed = array(
+			'title_ar'        => "VARCHAR(255) DEFAULT NULL",
+			'cover_image_url' => "TEXT DEFAULT NULL",
+			'accent_color'    => "VARCHAR(20) DEFAULT '#6366f1'",
+			'archive_enabled' => "TINYINT(1) NOT NULL DEFAULT 1",
+		);
+		foreach ( $def_needed as $col => $definition ) {
+			if ( ! in_array( $col, $def_cols, true ) ) {
+				$wpdb->query( "ALTER TABLE `$definitions_tbl` ADD COLUMN `$col` $definition" );
 			}
 		}
 	}
