@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version: 1.6.3
+ * Version: 1.6.4
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,9 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.6.3' );
+define( 'CHARTS_VERSION', '1.6.4' );
+define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
-define( 'CHARTS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
 define( 'CHARTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CHARTS_URL', plugin_dir_url( __FILE__ ) );
 define( 'CHARTS_GITHUB_OWNER', 'kollectivco' );
@@ -84,7 +85,7 @@ final class Charts {
 		
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
 
-		// Custom Update Link in Plugins List
+		// Custom Update Link in Plugins List - Use ACTUAL basename for filter registration
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_updater_link' ) );
 
 		add_action( 'admin_init', array( $this, 'handle_manual_update_check' ) );

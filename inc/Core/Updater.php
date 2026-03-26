@@ -19,8 +19,8 @@ class Updater {
 		$this->file        = $file;
 		$this->username    = CHARTS_GITHUB_OWNER;
 		$this->repository  = CHARTS_GITHUB_REPO;
-		$this->basename    = plugin_basename( $file );
-		$this->plugin_slug = current( explode( '/', $this->basename ) );
+		$this->basename    = CHARTS_PLUGIN_BASENAME;
+		$this->plugin_slug = CHARTS_PLUGIN_SLUG;
 
 		$this->init();
 	}
@@ -79,7 +79,7 @@ class Updater {
 	 * Inject update data into the plugins transient.
 	 */
 	public function set_transient( $transient ) {
-		if ( empty( $transient->checked ) ) {
+		if ( empty( $transient ) || ! is_object( $transient ) ) {
 			return $transient;
 		}
 
@@ -103,6 +103,12 @@ class Updater {
 				$obj->plugin      = $this->basename;
 
 				$transient->response[ $this->basename ] = $obj;
+				
+				// Also inject into the ACTUAL basename if different (to catch mismatches)
+				$actual_basename = plugin_basename( $this->file );
+				if ( $actual_basename !== $this->basename ) {
+					$transient->response[ $actual_basename ] = $obj;
+				}
 			}
 		}
 
@@ -178,11 +184,10 @@ class Updater {
 	public function post_install( $true, $hooks, $result ) {
 		global $wp_filesystem;
 
-		$plugin_folder = CHARTS_PATH;
-		$plugin_slug   = basename($plugin_folder); // charts
-		$install_dir   = $result['destination']; // full path to new temp folder
+		$plugin_slug = CHARTS_PLUGIN_SLUG; // Always target canonical slug
+		$install_dir = $result['destination']; 
 
-		// If the new folder name is different (e.g. charts-0.1.0), rename it to our fixed slug
+		// If the new folder name is different (e.g. charts-0.1.0 or repo-main), rename it to our fixed canonical slug
 		if ( basename($install_dir) !== $plugin_slug ) {
 			$new_destination = trailingslashit( $result['local_destination'] ) . $plugin_slug;
 			
