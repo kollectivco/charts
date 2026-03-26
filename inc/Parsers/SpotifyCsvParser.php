@@ -11,18 +11,31 @@ class SpotifyCsvParser {
 	 * Parse CSV data.
 	 */
 	public function parse( $csv_content ) {
-		$lines = str_getcsv( trim( $csv_content ), "\n" );
-		if ( empty( $lines ) ) {
+		// 1. Strip UTF-8 BOM if present
+		$csv_content = preg_replace( '/^\xEF\xBB\xBF/', '', $csv_content );
+		$csv_content = trim( $csv_content );
+
+		if ( empty( $csv_content ) ) {
 			return new \WP_Error( 'empty_csv', __( 'The CSV file is empty.', 'charts' ) );
 		}
 
-		// Look for the header line. Spotify CSVs often have multiple comment lines at the start.
+		// 2. Explode by newline characters (supports LF and CRLF)
+		$lines = preg_split( '/\r\n|\r|\n/', $csv_content );
+
+		// 3. Look for the header line. Spotify CSVs often have multiple comment lines at the start.
 		$headers = null;
 		$row_start = 0;
 		foreach ( $lines as $index => $line ) {
 			$cols = str_getcsv( $line );
-			if ( in_array( 'rank', $cols ) && in_array( 'uri', $cols ) ) {
-				$headers = $cols;
+			
+			// Normalize headers for cross-platform robustness
+			$normalized_cols = array_map( function( $header ) {
+				$header = preg_replace( '/^\xEF\xBB\xBF/', '', (string) $header ); // extra safety per-col
+				return strtolower( trim( $header ) );
+			}, $cols );
+
+			if ( in_array( 'rank', $normalized_cols, true ) && in_array( 'uri', $normalized_cols, true ) ) {
+				$headers = $normalized_cols;
 				$row_start = $index + 1;
 				break;
 			}
@@ -33,14 +46,16 @@ class SpotifyCsvParser {
 		}
 
 		$rows = array();
+		$header_count = count( $headers );
 		for ( $i = $row_start; $i < count( $lines ); $i++ ) {
 			$cols = str_getcsv( $lines[$i] );
-			if ( count( $cols ) < count( $headers ) ) {
+			if ( count( $cols ) < $header_count ) {
 				continue;
 			}
 
-			$data = array_combine( $headers, array_slice( $cols, 0, count( $headers ) ) );
-			$rows[] = $this->transform_row( $data );
+			// Slice to match header count but pad if needed (Spotify format can vary slightly)
+			$row_data = array_combine( $headers, array_slice( $cols, 0, $header_count ) );
+			$rows[] = $this->transform_row( $row_data );
 		}
 
 		return array_filter( $rows );
