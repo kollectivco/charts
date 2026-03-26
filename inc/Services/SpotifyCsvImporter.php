@@ -11,12 +11,14 @@ class SpotifyCsvImporter {
 	private $csv_parser;
 	private $enricher;
 	private $matcher;
+	private $analyzer;
 
 	public function __construct() {
 		$this->importer_flow = new ImportFlow();
 		$this->csv_parser    = new \Charts\Parsers\SpotifyCsvParser();
 		$this->enricher      = new SpotifyEnrichmentService();
 		$this->matcher       = new Matcher();
+		$this->analyzer      = new Analyzer();
 	}
 
 	/**
@@ -48,6 +50,7 @@ class SpotifyCsvImporter {
 			if ( $item_id ) {
 				$entry_id = $this->importer_flow->upsert_entry( $source_id, $period_id, 'track', $item_id, $row );
 				if ( $entry_id ) {
+					$this->analyzer->analyze_entry( $entry_id );
 					$matched_items++;
 				}
 			}

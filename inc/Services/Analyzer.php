@@ -28,34 +28,53 @@ class Analyzer {
 
 		$update_data = array();
 
+		// 1. Determine Movement
 		if ( $previous ) {
-			// Movement
-			if ( $entry->rank_position < $previous->rank_position ) {
-				$update_data['movement_direction'] = 'up';
-				$update_data['movement_value']     = $previous->rank_position - $entry->rank_position;
-			} elseif ( $entry->rank_position > $previous->rank_position ) {
-				$update_data['movement_direction'] = 'down';
-				$update_data['movement_value']     = $entry->rank_position - $previous->rank_position;
-			} else {
-				$update_data['movement_direction'] = 'same';
-				$update_data['movement_value']     = 0;
+			if ( ! isset( $entry->movement_direction ) || empty( $entry->movement_direction ) ) {
+				if ( $entry->rank_position < $previous->rank_position ) {
+					$update_data['movement_direction'] = 'up';
+					$update_data['movement_value']     = $previous->rank_position - $entry->rank_position;
+				} elseif ( $entry->rank_position > $previous->rank_position ) {
+					$update_data['movement_direction'] = 'down';
+					$update_data['movement_value']     = $entry->rank_position - $previous->rank_position;
+				} else {
+					$update_data['movement_direction'] = 'same';
+					$update_data['movement_value']     = 0;
+				}
 			}
 
-			// Peaks & Weeks
-			$update_data['peak_rank']      = min( $entry->rank_position, $previous->peak_rank ?: 1000 );
-			$update_data['weeks_on_chart'] = $previous->weeks_on_chart + 1;
-			$update_data['is_new_entry']   = 0;
+			// 2. Peaks & Weeks (Respect CSV if non-zero/not null)
+			if ( empty( $entry->peak_rank ) ) {
+				$update_data['peak_rank'] = min( $entry->rank_position, $previous->peak_rank ?: 1000 );
+			}
 			
-			// Re-entry detection (if previous was far in the past - simplified for Phase 1)
-			$update_data['is_reentry'] = 0; 
+			if ( empty( $entry->weeks_on_chart ) || $entry->weeks_on_chart <= 1 ) {
+				$update_data['weeks_on_chart'] = $previous->weeks_on_chart + 1;
+			}
+			
+			$update_data['is_new_entry'] = 0;
+			
+			// Re-entry detection
+			if ( ! isset( $entry->is_reentry ) ) {
+				$update_data['is_reentry'] = 0; // Simplified re-entry
+			}
 		} else {
 			// Brand new entry
-			$update_data['movement_direction'] = 'new';
-			$update_data['movement_value']     = 0;
-			$update_data['peak_rank']          = $entry->rank_position;
-			$update_data['weeks_on_chart']     = 1;
-			$update_data['is_new_entry']       = 1;
-			$update_data['is_reentry']         = 0;
+			if ( ! isset( $entry->movement_direction ) || empty( $entry->movement_direction ) ) {
+				$update_data['movement_direction'] = 'new';
+				$update_data['movement_value']     = 0;
+			}
+			
+			if ( empty( $entry->peak_rank ) ) {
+				$update_data['peak_rank'] = $entry->rank_position;
+			}
+			
+			if ( empty( $entry->weeks_on_chart ) ) {
+				$update_data['weeks_on_chart'] = 1;
+			}
+			
+			$update_data['is_new_entry'] = 1;
+			$update_data['is_reentry']   = 0;
 		}
 
 		$wpdb->update( $table, $update_data, array( 'id' => $entry_id ) );

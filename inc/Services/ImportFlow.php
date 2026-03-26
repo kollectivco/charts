@@ -162,6 +162,7 @@ class ImportFlow {
 			'weeks_on_chart' => $row['weeks_on_chart'] ?? 1,
 			'streams_count'  => $row['streams'] ?? 0,
 			'views_count'    => $row['views'] ?? 0,
+			'raw_payload_json' => isset( $row['raw_payload'] ) ? json_encode( $row['raw_payload'] ) : null,
 			'updated_at'     => current_time( 'mysql' ),
 		);
 
