@@ -82,6 +82,23 @@ class Bootstrap {
 			case 'import_youtube_csv':
 				self::process_youtube_csv_upload();
 				break;
+			
+			case 'save_definition':
+				$manager = new SourceManager();
+				$result = $manager->save_definition( $_POST );
+				if ( $result ) {
+					add_settings_error( 'charts', 'def_saved', __( 'Chart definition saved.', 'charts' ), 'success' );
+				} else {
+					add_settings_error( 'charts', 'def_error', __( 'Failed to save chart definition.', 'charts' ), 'error' );
+				}
+				break;
+			
+			case 'delete_definition':
+				$manager = new SourceManager();
+				$id = intval( $_POST['id'] );
+				$manager->delete_definition( $id );
+				add_settings_error( 'charts', 'def_deleted', __( 'Chart definition deleted.', 'charts' ), 'success' );
+				break;
 		}
 	}
 
@@ -99,6 +116,15 @@ class Bootstrap {
 			array( self::class, 'render_dashboard' ),
 			$icon,
 			30
+		);
+
+		add_submenu_page(
+			'charts',
+			__( 'Manage Charts', 'charts' ),
+			__( 'Manage Charts', 'charts' ),
+			'manage_options',
+			'charts-definitions',
+			array( self::class, 'render_definitions' )
 		);
 
 		add_submenu_page(
@@ -213,6 +239,14 @@ class Bootstrap {
 
 	public static function render_sources() {
 		self::render_view( 'sources' );
+	}
+
+	public static function render_definitions() {
+		if ( isset( $_GET['action'] ) && $_GET['action'] === 'edit' ) {
+			self::render_view( 'definition-edit' );
+		} else {
+			self::render_view( 'definitions' );
+		}
 	}
 
 	public static function render_spotify_import() {

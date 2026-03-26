@@ -1,191 +1,167 @@
 <?php
 /**
- * Kontentainment Charts — Index
- * Premium Spotify-style landing page for music intelligence.
+ * Kontentainment Charts — Modern Intelligence Dashboard
+ * Light-Mode Bento System
  */
 \Charts\Core\StandaloneLayout::get_header();
+
 global $wpdb;
+$manager     = new \Charts\Admin\SourceManager();
+$definitions = $manager->get_definitions( true ); // Fetch only public definitions
 
-$sources_table  = $wpdb->prefix . 'charts_sources';
-$entries_table  = $wpdb->prefix . 'charts_entries';
-$periods_table  = $wpdb->prefix . 'charts_periods';
-$insights_table = $wpdb->prefix . 'charts_insights';
-
-$analyzer = new \Charts\Services\Analyzer();
-
-// 1. Fetch active sources with metadata
-$sources = $wpdb->get_results( "
-	SELECT s.*,
-	       MAX(p.id)          AS latest_period_id,
-	       MAX(p.period_start) AS latest_period_date,
-	       COUNT(DISTINCT e.id) AS entry_count
-	FROM {$sources_table} s
-	LEFT JOIN {$entries_table} e ON e.source_id = s.id
-	LEFT JOIN {$periods_table} p ON p.id = e.period_id
-	WHERE s.is_active = 1
-	GROUP BY s.id
-	ORDER BY entry_count DESC, s.platform ASC
-" );
-
-foreach ( $sources as &$source ) {
-	$source->top_tracks = array();
-	if ( $source->entry_count > 0 && $source->latest_period_id ) {
-		$source->top_tracks = $wpdb->get_results( $wpdb->prepare(
-			"SELECT track_name, artist_names, cover_image, rank_position, movement_direction, movement_value
-			 FROM {$entries_table}
-			 WHERE source_id = %d AND period_id = %d AND rank_position <= 3
-			 ORDER BY rank_position ASC",
-			$source->id, $source->latest_period_id
-		) );
-	}
+// Helper for row data
+function get_latest_chart_preview( $def ) {
+	global $wpdb;
+	
+	// Find latest period for matching sources
+	$sources = $wpdb->get_results( $wpdb->prepare( "
+		SELECT id FROM {$wpdb->prefix}charts_sources 
+		WHERE chart_type = %s AND country_code = %s AND frequency = %s AND is_active = 1
+	", $def->chart_type, $def->country_code, $def->frequency ) );
+	
+	if ( empty( $sources ) ) return array();
+	
+	$source_ids = array_column( $sources, 'id' );
+	$placeholders = implode( ',', array_fill( 0, count( $source_ids ), '%d' ) );
+	
+	$latest_period_id = $wpdb->get_var( $wpdb->prepare( "
+		SELECT period_id FROM {$wpdb->prefix}charts_entries 
+		WHERE source_id IN ($placeholders)
+		ORDER BY created_at DESC LIMIT 1
+	", ...$source_ids ) );
+	
+	if ( ! $latest_period_id ) return array();
+	
+	return $wpdb->get_results( $wpdb->prepare( "
+		SELECT * FROM {$wpdb->prefix}charts_entries 
+		WHERE source_id IN ($placeholders) AND period_id = %d
+		ORDER BY rank_position ASC LIMIT 5
+	", ...$source_ids, $latest_period_id ) );
 }
-unset( $source );
 
-// 2. Fetch latest insights
-$insights = $analyzer->get_latest_insights( 3 );
 ?>
 
-<link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/public.css'; ?>">
-
-<div class="kc-root <?php echo is_admin_bar_showing() ? 'has-admin-bar' : ''; ?>">
+<div class="kc-root animate-fade-in-up">
 	
-	<!-- Hero Section -->
-	<header class="kc-hero">
-		<div class="kc-container">
-			<div class="kc-brand-name animate-fade-in-up" style="margin-bottom: 32px;">Kontentainment</div>
-			<h1 class="kc-hero-title animate-fade-in-up">The Pulse of <em>Regional Music</em></h1>
-			<p class="animate-fade-in-up" style="color: var(--k-text-dim); font-size: 1.1rem; max-width: 600px; line-height: 1.6; animation-delay: 0.1s;">
-				Definitive streaming intelligence from Egypt, Saudi Arabia, and the MENA region. Real data. Real rankings. Zero bias.
+	<!-- Premium Hero Section -->
+	<section class="kc-hero" style="padding: 120px 0 100px; background: linear-gradient(to bottom, #fff, #f8fafc);">
+		<div class="kc-container" style="text-align: center;">
+			<div class="kc-brand-name" style="margin-bottom: 24px;"><?php _e( 'Global Intelligence Engine', 'charts' ); ?></div>
+			<h1 class="kc-hero-title">Discover <em>The Sound</em> of Every Market.</h1>
+			<p style="font-size: 1.25rem; color: var(--k-text-dim); font-weight: 500; max-width: 800px; margin: 0 auto 48px;">
+				<?php _e( 'High-fidelity chart intelligence across Spotify, YouTube, and global platforms. Built for industry leaders and data nerds.', 'charts' ); ?>
 			</p>
-		</div>
-	</header>
-
-	<!-- Intelligence Pass (Insights) -->
-	<?php if ( ! empty( $insights ) ) : ?>
-	<section class="kc-container" style="margin-bottom: 80px;">
-		<h2 class="kc-section-title animate-fade-in-up" style="animation-delay: 0.2s;">
-			<span>Weekly Intelligence</span>
-			<span class="kc-badge" style="background: var(--k-accent); color: #fff; border: none;">Live</span>
-		</h2>
-		<div class="kc-insight-grid animate-fade-in-up" style="animation-delay: 0.3s;">
-			<?php foreach ( $insights as $ins ) : 
-				$payload = json_decode( $ins->payload_json );
-				$img = !empty($payload->cover_image) ? $payload->cover_image : (!empty($payload->image) ? $payload->image : '');
-			?>
-				<div class="kc-insight-card">
-					<div class="kc-insight-type"><?php echo esc_html( $ins->title ); ?></div>
-					<div class="kc-insight-body">
-						<?php if ( $img ) : ?>
-							<img src="<?php echo esc_url( $img ); ?>" class="kc-insight-img">
-						<?php endif; ?>
-						<p><?php echo esc_html( $ins->summary ); ?></p>
-					</div>
-					<div class="kc-insight-meta">
-						<?php echo esc_html( strtoupper( $ins->platform ) ); ?> · <?php echo date('M Y', strtotime($ins->period_start)); ?>
-					</div>
-				</div>
-			<?php endforeach; ?>
+			<div class="kc-hero-actions">
+				<a href="#explore" class="kc-btn large"><?php _e( 'Explore Markets', 'charts' ); ?> &darr;</a>
+			</div>
 		</div>
 	</section>
-	<?php endif; ?>
 
-	<!-- Charts Grid -->
-	<main class="kc-container" style="padding-bottom: 120px;">
-		<div class="animate-fade-in-up" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; animation-delay: 0.4s;">
-			<h2 class="kc-section-title" style="margin-bottom: 0;">Active Charts</h2>
-			<a href="<?php echo home_url('/charts/artists/'); ?>" class="kc-view-btn" style="text-decoration: none; padding-bottom: 5px; border-bottom: 2px solid var(--k-accent);">Explore Artists &rarr;</a>
-		</div>
+	<main class="kc-container" id="explore" style="padding-bottom: 120px;">
 		
-		<?php if ( empty( $sources ) ) : ?>
-			<div class="kc-empty">
-				<h3>No active charts available</h3>
-				<p>The intelligence engine is warming up. Please check back shortly.</p>
-			</div>
-		<?php else : ?>
-			<div class="kc-grid animate-fade-in-up" style="animation-delay: 0.5s;">
-				<?php foreach ( $sources as $source ) : 
-					$platform = strtolower($source->platform);
-					
-					// Clean Title Logic
-					$display_title = 'Top Chart';
-					if ( strpos( strtolower($source->chart_type), 'songs' ) !== false || $source->chart_type === 'top-tracks' ) $display_title = 'Top Songs';
-					elseif ( strpos( strtolower($source->chart_type), 'artists' ) !== false ) $display_title = 'Top Artists';
-					elseif ( strpos( strtolower($source->chart_type), 'videos' ) !== false ) $display_title = 'Top Videos';
-					elseif ( strpos( strtolower($source->chart_type), 'viral' ) !== false ) $display_title = 'Viral 50';
+		<div class="kc-section-header" style="margin-bottom: 48px;">
+			<h2 class="kc-section-title"><?php _e( 'Active Intelligence Products', 'charts' ); ?></h2>
+		</div>
 
-					// Try clean route first
-					$chart_url = home_url( '/charts/' . $source->chart_type . '/' );
-					// Fallback if country or frequency is needed to disambiguate
-					// For now, these are primary public faces
+		<!-- Bento Grid of Dynamic Charts -->
+		<div class="kc-bento-grid">
+			<?php if ( empty( $definitions ) ) : ?>
+				<div class="kc-card kc-card-wide" style="text-align: center; padding: 100px;">
+					<h3 style="font-size: 2rem; font-weight: 850;"><?php _e( 'The deck is empty.', 'charts' ); ?></h3>
+					<p style="color: var(--k-text-dim); font-size: 1.1rem;"><?php _e( 'No chart products have been defined yet. Visit the admin area to launch your first intelligence product.', 'charts' ); ?></p>
+				</div>
+			<?php else : ?>
+				<?php foreach ( $definitions as $idx => $def ) : 
+					$rows = get_latest_chart_preview( $def );
 					
-					$date_label = $source->latest_period_date ? date('M j', strtotime($source->latest_period_date)) : 'N/A';
+					// Determine card style
+					$card_class = 'kc-card-small';
+					if ( $def->is_featured ) $card_class = 'kc-card-medium';
+					if ( $idx === 0 ) $card_class = 'kc-card-large';
+					
+					$platform_badge = ($def->platform === 'all') ? '' : 'platform-' . strtolower($def->platform);
 				?>
-				<a href="<?php echo esc_url( $chart_url ); ?>" class="kc-card <?php echo (count($source->top_tracks) >= 3) ? 'kc-card-wide' : ''; ?>">
-					<div class="kc-card-header">
-						<span class="kc-badge" style="background: #1a1a1a; color: #888;">
-							<?php echo esc_html( strtoupper($source->country_code) ); ?> · <?php echo esc_html( ucfirst($source->frequency) ); ?>
-						</span>
-						<span class="kc-card-date"><?php echo esc_html($date_label); ?></span>
-					</div>
-
-					<div class="kc-card-content">
-						<h3 class="kc-card-title"><?php echo esc_html($display_title); ?></h3>
-						<div class="kc-card-meta">
-							<?php echo esc_html(number_format($source->entry_count)); ?> Entries
-							&nbsp;·&nbsp;
-							<span style="color: var(--k-accent); opacity: 0.8;"><?php echo esc_html( strtoupper($platform) ); ?> Data</span>
+					<div class="kc-card <?php echo $card_class; ?> kc-chart-list-card animate-fade-in-up" style="animation-delay: <?php echo ($idx * 0.1); ?>s;">
+						<div class="kc-list-header">
+							<div class="kc-list-title">
+								<span class="kc-brand-name" style="font-size: 10px;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->frequency); ?></span>
+								<h3><?php echo esc_html( $def->title ); ?></h3>
+							</div>
+							<div class="kc-list-meta">
+								<span class="kc-badge kc-badge-accent"><?php echo strtoupper($def->chart_type); ?></span>
+							</div>
 						</div>
 
-						<?php if ( ! empty( $source->top_tracks ) ) : ?>
-						<div class="kc-card-preview">
-							<?php foreach ( $source->top_tracks as $idx => $track ) : 
-								$is_top = ($idx === 0);
-							?>
-								<div class="kc-preview-row" style="<?php echo $is_top ? 'font-weight: 800; color: #fff;' : ''; ?>">
-									<span class="kc-preview-rank" style="<?php echo $is_top ? 'color: var(--k-accent);' : ''; ?>"><?php echo $idx + 1; ?></span>
-									<span class="kc-preview-name"><?php echo esc_html($track->track_name); ?></span>
-									<span class="kc-preview-artist"><?php echo esc_html($track->artist_names); ?></span>
+						<div class="kc-list-content">
+							<?php if ( empty( $rows ) ) : ?>
+								<div style="padding: 60px 32px; text-align: center; color: var(--k-text-dim); font-size: 13px; font-weight: 600;">
+									<?php _e( 'Waiting for the next data cycle...', 'charts' ); ?>
 								</div>
-							<?php endforeach; ?>
+							<?php else : ?>
+								<?php foreach ( $rows as $ridx => $row ) : ?>
+									<div class="kc-preview-row">
+										<span class="kc-preview-rank"><?php echo $row->rank_position; ?></span>
+										<div class="kc-preview-info">
+											<span class="kc-preview-name"><?php echo esc_html( $row->track_name ); ?></span>
+											<span class="kc-preview-artist"><?php echo esc_html( $row->artist_names ); ?></span>
+										</div>
+										<div style="text-align: right;">
+											<span class="kc-badge" style="font-size: 9px; padding: 3px 6px;"><?php echo strtoupper($row->movement_direction); ?></span>
+										</div>
+									</div>
+								<?php endforeach; ?>
+							<?php endif; ?>
 						</div>
-						<?php endif; ?>
-					</div>
 
-					<div class="kc-card-footer">
-						<span class="kc-view-btn">View Intelligence &rarr;</span>
+						<div class="kc-card-footer" style="padding: 24px 32px; background: #fafafa; border-top: 1px solid var(--k-border); display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+							<div style="font-size: 12px; color: var(--k-text-dim); font-weight: 700;">
+								<?php echo count($rows); ?> Positions
+							</div>
+							<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-btn" style="padding: 8px 20px; font-size: 12px;">
+								<?php _e( 'Full Intelligence', 'charts' ); ?> &rarr;
+							</a>
+						</div>
 					</div>
-				</a>
 				<?php endforeach; ?>
+			<?php endif; ?>
+		</div>
+
+		<!-- Insights Section -->
+		<section style="margin-top: 120px;">
+			<div class="kc-section-header">
+				<h2 class="kc-section-title"><?php _e( 'Trending Insights', 'charts' ); ?></h2>
 			</div>
-		<?php endif; ?>
+			<div class="kc-bento-grid">
+				<div class="kc-card kc-card-medium" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none;">
+					<h4 class="kc-brand-name" style="color: rgba(255,255,255,0.7);"><?php _e( 'Market Peak', 'charts' ); ?></h4>
+					<h3 style="font-size: 2rem; font-weight: 850; margin: 16px 0;"><?php _e( 'Egypt is heating up.', 'charts' ); ?></h3>
+					<p style="opacity: 0.8; font-weight: 500; font-size: 1.1rem; line-height: 1.6;">
+						<?php _e( 'Local viral tracks are outperforming international releases for the third week running. High velocity detected in MENA region.', 'charts' ); ?>
+					</p>
+					<div style="margin-top: auto; padding-top: 32px;">
+						<a href="#" style="background: white; color: var(--k-accent); font-weight: 800; padding: 12px 24px; border-radius: 100px; text-decoration: none; display: inline-block;">
+							<?php _e( 'Read Analysis', 'charts' ); ?>
+						</a>
+					</div>
+				</div>
+				<div class="kc-card kc-card-small">
+					<h4 class="kc-brand-name"><?php _e( 'Top Mover', 'charts' ); ?></h4>
+					<div style="margin: 24px 0;">
+						<div style="font-size: 2rem; font-weight: 950;">+45</div>
+						<div style="font-size: 14px; font-weight: 700; color: var(--k-text-dim);"><?php _e( 'Positions gain by "Tarek" this week.', 'charts' ); ?></div>
+					</div>
+				</div>
+				<div class="kc-card kc-card-small">
+					<h4 class="kc-brand-name"><?php _e( 'New Era', 'charts' ); ?></h4>
+					<div style="margin: 24px 0;">
+						<div style="font-size: 2rem; font-weight: 950;">14</div>
+						<div style="font-size: 14px; font-weight: 700; color: var(--k-text-dim);"><?php _e( 'New entries found in YouTube Top Videos.', 'charts' ); ?></div>
+					</div>
+				</div>
+			</div>
+		</section>
+
 	</main>
-
 </div>
-
-<style>
-/* Local style overrides for index specific layout parts */
-.kc-hero { padding: 100px 0 80px; }
-.kc-insight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-.kc-insight-card { background: #111; border: 1px solid #222; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
-.kc-insight-type { font-size: 10px; font-weight: 900; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; }
-.kc-insight-body { display: flex; align-items: flex-start; gap: 16px; }
-.kc-insight-img { width: 50px; height: 50px; border-radius: 8px; flex-shrink: 0; object-fit: cover; }
-.kc-insight-body p { font-size: 14px; font-weight: 600; line-height: 1.4; color: #fff; margin: 0; }
-.kc-insight-meta { font-size: 11px; font-weight: 700; color: #555; margin-top: auto; }
-
-.kc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 30px; }
-.kc-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.kc-card-date { font-size: 11px; font-weight: 700; color: var(--k-text-muted); }
-.kc-card-title { font-size: 1.4rem; font-weight: 900; margin: 0 0 8px; line-height: 1.1; }
-.kc-card-meta { font-size: 12px; font-weight: 700; color: var(--k-text-dim); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.05em; }
-.kc-card-preview { border-top: 1px solid var(--k-border); padding-top: 20px; margin-bottom: 24px; }
-.kc-preview-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 13px; }
-.kc-preview-rank { font-weight: 900; color: var(--k-border); width: 14px; }
-.kc-preview-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.kc-preview-artist { font-size: 11px; color: var(--k-text-dim); white-space: nowrap; }
-.kc-view-btn { font-size: 12px; font-weight: 800; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; }
-.kc-empty { padding: 100px 0; text-align: center; color: var(--k-text-dim); }
-.has-admin-bar .kc-hero { padding-top: 140px; }
-</style>
 
 <?php \Charts\Core\StandaloneLayout::get_footer(); ?>

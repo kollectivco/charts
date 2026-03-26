@@ -28,7 +28,7 @@ $menu_id      = get_option( 'charts_header_menu_id' );
 <?php wp_body_open(); ?>
 
 <header class="charts-product-header">
-	<div class="charts-container">
+	<div class="kc-container">
 		<div class="header-inner">
 			
 			<!-- Logo / Wordmark -->

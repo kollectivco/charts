@@ -3,7 +3,7 @@
  * Plugin Name: Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Production-grade chart intelligence engine for WordPress. Scrapes, normalizes, and analyzes global music and video charts.
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.co
  * License: GPL2
@@ -141,6 +141,9 @@ final class Charts {
 
 		// Initialize Frontend
 		\Charts\Frontend\Bootstrap::init();
+
+		// Initialize Elementor Integration
+		\Charts\Integrations\Elementor\Bootstrap::init();
 	}
 }
 

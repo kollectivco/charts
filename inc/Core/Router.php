@@ -32,18 +32,19 @@ class Router {
 		// 4. Video Single
 		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_page=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
 
-		// 5. Clean Chart Type Routes (e.g., /charts/top-songs)
-		add_rewrite_rule( '^charts/(top-songs|top-artists|top-videos|viral)/?$', 'index.php?charts_type=$matches[1]', 'top' );
+		// 5. Dynamic Chart Definitions (e.g., /charts/top-songs)
+		$manager = new \Charts\Admin\SourceManager();
+		$definitions = $manager->get_definitions( true );
+		foreach ( $definitions as $def ) {
+			add_rewrite_rule( 
+				'^charts/' . preg_quote($def->slug) . '/?$', 
+				'index.php?charts_page=single-chart&charts_definition_id=' . $def->id, 
+				'top' 
+			);
+		}
 
 		// 6. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_page=index', 'top' );
-		
-		// 7. Canonical /charts/{platform}/{country}/{frequency}/{type} (Old/Detailed)
-		add_rewrite_rule( 
-			'^charts/([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$', 
-			'index.php?charts_platform=$matches[1]&charts_country=$matches[2]&charts_frequency=$matches[3]&charts_type=$matches[4]', 
-			'top' 
-		);
 	}
 
 	/**
@@ -55,6 +56,7 @@ class Router {
 		$vars[] = 'charts_country';
 		$vars[] = 'charts_frequency';
 		$vars[] = 'charts_type';
+		$vars[] = 'charts_definition_id';
 		$vars[] = 'charts_artist_slug';
 		$vars[] = 'charts_item_slug';
 		$vars[] = 'charts_item_type';

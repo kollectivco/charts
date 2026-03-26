@@ -261,6 +261,30 @@ class Schema {
 				KEY `chart_type` (`chart_type`),
 				KEY `insight_type` (`insight_type`)
 			) $charset_collate;",
+
+			// 13. Chart Definitions (Dynamic Charts)
+			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_definitions` (
+				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+				`title` VARCHAR(255) NOT NULL,
+				`slug` VARCHAR(255) NOT NULL,
+				`chart_summary` TEXT DEFAULT NULL,
+				`chart_type` VARCHAR(50) NOT NULL,
+				`item_type` VARCHAR(20) NOT NULL DEFAULT 'track',
+				`country_code` VARCHAR(10) NOT NULL,
+				`frequency` ENUM('daily','weekly','monthly') NOT NULL DEFAULT 'weekly',
+				`platform` VARCHAR(50) DEFAULT 'all',
+				`is_public` TINYINT(1) NOT NULL DEFAULT 1,
+				`is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+				`menu_order` INT(11) NOT NULL DEFAULT 0,
+				`display_settings_json` LONGTEXT DEFAULT NULL,
+				`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				PRIMARY KEY (`id`),
+				UNIQUE KEY `slug` (`slug`),
+				KEY `is_public` (`is_public`),
+				KEY `is_featured` (`is_featured`),
+				KEY `menu_order` (`menu_order`)
+			) $charset_collate;",
 		);
 
 		foreach ( $queries as $sql ) {

@@ -14,7 +14,7 @@ $copyright   = get_option( 'charts_footer_copyright' );
 </main><!-- /.charts-product-main -->
 
 <footer class="charts-product-footer">
-	<div class="charts-container">
+	<div class="kc-container">
 		
 		<!-- Widget Area -->
 		<?php if ( is_active_sidebar( 'charts-footer-widgets' ) ) : ?>
