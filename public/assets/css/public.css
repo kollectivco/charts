@@ -1,165 +1,331 @@
 /**
- * Premium Bento Style Public CSS for Charts
+ * Kontentainment Charts — Premium Design System
+ * Unified Visual Identity for Music Charts & Intelligence
  */
+
 :root {
-    --charts-bg: #ffffff;
-    --charts-text: #000000;
-    --charts-muted: #666666;
-    --charts-border: #eeeeee;
-    --charts-card-bg: #f9f9f9;
-    --charts-accent: #000000;
+	/* Colors */
+	--k-bg: #000000;
+	--k-surface: #111111;
+	--k-card: #1a1a1a;
+	--k-border: #333333;
+	--k-text: #ffffff;
+	--k-text-dim: #9ca3af;
+	--k-text-muted: #6b7280;
+	
+	/* Branding */
+	--k-accent: #6366f1; /* Intelligence Indigo */
+	--k-accent-hover: #818cf8;
+	
+	/* Platform Identity */
+	--k-spotify: #1DB954;
+	--k-youtube: #FF0000;
+	--k-apple: #FC3C44;
+	--k-deezer: #ef3340;
+	--k-tiktok: #000000;
+	
+	/* Spacing & Sizes */
+	--k-space-header: 120px;
+	--k-radius-card: 24px;
+	--k-radius-chip: 8px;
+	--k-gap: 24px;
 }
 
-.charts-container {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 20px;
-    font-family: 'Inter', -apple-system, system-ui, sans-serif;
-    color: var(--charts-text);
+/* ──────────────────────────────────────────────────────────────────────────
+   1. CORE RESET & BASE
+   ────────────────────────────────────────────────────────────────────────── */
+.kc-root {
+	font-family: 'Inter', -apple-system, system-ui, sans-serif;
+	background: var(--k-bg);
+	color: var(--k-text);
+	-webkit-font-smoothing: antialiased;
+	min-height: 100vh;
 }
 
-.charts-header {
-    text-align: center;
-    margin-bottom: 60px;
+.kc-container {
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: 0 40px;
 }
 
-.charts-header h1 {
-    font-size: 64px;
-    font-weight: 900;
-    letter-spacing: -0.05em;
-    margin: 0;
-    text-transform: uppercase;
+/* ──────────────────────────────────────────────────────────────────────────
+   2. TYPOGRAPHY
+   ────────────────────────────────────────────────────────────────────────── */
+.kc-hero-title {
+	font-size: clamp(2.5rem, 8vw, 4.5rem);
+	font-weight: 900;
+	letter-spacing: -0.05em;
+	line-height: 0.95;
+	margin-bottom: 24px;
 }
 
-.charts-bento-grid {
+.kc-hero-title em {
+	font-style: normal;
+	color: var(--k-accent);
+	background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.kc-section-title {
+	font-size: 1.8rem;
+	font-weight: 800;
+	letter-spacing: -0.03em;
+	margin-bottom: 32px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   3. BRANDING TREATMENTS
+   ────────────────────────────────────────────────────────────────────────── */
+.kc-brand-name {
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	font-size: 14px;
+	color: var(--k-accent);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   4. BADGE SYSTEM
+   ────────────────────────────────────────────────────────────────────────── */
+.kc-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 12px;
+	border-radius: var(--k-radius-chip);
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	background: var(--k-surface);
+	border: 1px solid var(--k-border);
+	transition: all 0.2s;
+}
+
+.kc-badge.platform-spotify { border-color: var(--k-spotify); color: var(--k-spotify); background: rgba(29, 185, 84, 0.1); }
+.kc-badge.platform-youtube { border-color: var(--k-youtube); color: var(--k-youtube); background: rgba(255, 0, 0, 0.1); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   5. CARD SYSTEM (Bento Influenced)
+   ────────────────────────────────────────────────────────────────────────── */
+.kc-card {
+	background: var(--k-surface);
+	border-radius: var(--k-radius-card);
+	border: 1px solid var(--k-border);
+	padding: 32px;
+	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, border-color 0.3s;
+	display: flex;
+	flex-direction: column;
+	text-decoration: none;
+	color: inherit;
+	overflow: hidden;
+}
+
+.kc-card:hover {
+	transform: translateY(-8px);
+	border-color: var(--k-accent);
+	box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.kc-card-large { grid-column: span 2; grid-row: span 2; }
+.kc-card-wide { grid-column: span 2; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   6. INTELLIGENCE LAYER
+   ────────────────────────────────────────────────────────────────────────── */
+.kc-insight-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 240px;
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
 }
 
-.bento-card {
-    background: var(--charts-card-bg);
+.kc-insight-card {
+    background: linear-gradient(145deg, #111, #0a0a0a);
+    border: 1px solid #1a1a1a;
     border-radius: 24px;
     padding: 32px;
+    transition: transform 0.3s ease, border-color 0.3s ease;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-decoration: none;
-    color: inherit;
-    overflow: hidden;
+    gap: 16px;
     position: relative;
-    border: 1px solid transparent;
+    overflow: hidden;
 }
 
-.bento-card:hover {
+.kc-insight-card:hover {
     transform: translateY(-5px);
-    border-color: #000;
+    border-color: #333;
 }
 
-.bento-card-large {
-    grid-column: span 2;
-    grid-row: span 2;
+.kc-insight-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent);
+    pointer-events: none;
 }
 
-.bento-card-tall {
-    grid-row: span 2;
+.kc-insight-type {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--k-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
 }
 
-.bento-card-wide {
-    grid-column: span 2;
+.kc-insight-body {
+    display: flex;
+    gap: 20px;
+    align-items: center;
 }
 
-.bento-tag {
-    font-size: 12px;
+.kc-insight-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #222;
+}
+
+.kc-insight-body p {
+    font-size: 15px;
     font-weight: 700;
+    line-height: 1.4;
+    color: #fff;
+    margin: 0;
+}
+
+.kc-insight-meta {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--k-text-dim);
+    margin-top: auto;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Artist System ── */
+.kc-artist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 32px;
+    margin-top: 40px;
+}
+
+.kc-artist-card {
+    text-align: center;
+    transition: transform 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.kc-artist-card:hover {
+    transform: translateY(-8px);
+}
+
+.kc-artist-thumb {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 2px solid #1a1a1a;
+    transition: border-color 0.3s ease;
+}
+
+.kc-artist-card:hover .kc-artist-thumb {
+    border-color: var(--k-accent);
+}
+
+.kc-artist-name {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0;
+}
+
+.kc-artist-count {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--k-text-dim);
+    text-transform: uppercase;
+}
+
+/* ── Artist Single ── */
+.kc-artist-header {
+    padding: 120px 0 60px;
+    display: flex;
+    align-items: flex-end;
+    gap: 40px;
+    background: linear-gradient(to bottom, #111, var(--k-bg));
+}
+
+.kc-artist-header-img {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+}
+
+.kc-artist-header-info h1 {
+    font-size: 4rem;
+    font-weight: 900;
+    margin: 0 0 16px;
+    line-height: 1;
+}
+
+.kc-stats-bar {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+}
+
+.kc-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.kc-stat-val {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--k-accent);
+}
+
+.kc-stat-lbl {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--k-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--charts-muted);
 }
 
-.bento-title {
-    font-size: 24px;
-    font-weight: 800;
-    line-height: 1.1;
-    margin-top: 12px;
+/* ── Table Styling Enhancements ── */
+.kc-table-section {
+    margin-top: 60px;
 }
 
-.bento-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-}
-
-.bento-icon {
-    width: 40px;
-    height: 40px;
-    background: #000;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-}
-
-/* Single Chart Styles */
-.chart-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.chart-row {
-    display: flex;
-    align-items: center;
-    padding: 16px;
-    background: #fff;
-    border: 1px solid var(--charts-border);
-    border-radius: 16px;
-    transition: all 0.2s;
-}
-
-.chart-row:hover {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-}
-
-.chart-rank {
-    font-size: 24px;
+.kc-table-section h2 {
+    font-size: 1.5rem;
     font-weight: 900;
-    width: 60px;
+    margin-bottom: 32px;
 }
 
-.chart-cover {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
-    background: #eee;
-    margin-right: 16px;
-    object-fit: cover;
+/* ── Animations ── */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.chart-info {
-    flex: 1;
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
 }
-
-.chart-title {
-    font-weight: 800;
-    font-size: 16px;
-}
-
-.chart-artist {
-    font-size: 14px;
-    color: var(--charts-muted);
-}
-
-.chart-meta {
-    text-align: right;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.movement-up { color: #10b981; }
-.movement-down { color: #ef4444; }
-.movement-new { color: #3b82f6; }

@@ -3,9 +3,9 @@
  * Plugin Name: Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Production-grade chart intelligence engine for WordPress. Scrapes, normalizes, and analyzes global music and video charts.
- * Version: 1.1.7
- * Author: Antigravity
- * Author URI: https://kontentainment.com
+ * Version: 1.2.0
+ * Author: Kollectiv
+ * Author URI: https://kollectiv.co
  * License: GPL2
  * Text Domain: charts
  * Update URI: https://github.com/kollectivco/charts
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.1.7' );
+define( 'CHARTS_VERSION', '1.2.0' );
 define( 'CHARTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CHARTS_URL', plugin_dir_url( __FILE__ ) );
 define( 'CHARTS_BASENAME', plugin_basename( __FILE__ ) );

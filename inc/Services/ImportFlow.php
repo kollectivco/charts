@@ -145,12 +145,14 @@ class ImportFlow {
 		global $wpdb;
 		$table        = $wpdb->prefix . 'charts_entries';
 		$rank         = intval( $row['rank'] ?? $row['rank_position'] ?? 0 );
-		$track_name   = sanitize_text_field( $flat['track_name'] ?? $row['track_name'] ?? $row['title'] ?? '' );
-		$artist_names = sanitize_text_field( $flat['artist_names'] ?? $row['artist_names_raw'] ?? ( isset( $row['artists'] ) ? implode( ', ', $row['artists'] ) : '' ) );
+		$track_name   = sanitize_text_field( $flat['track_name'] ?? $row['track_name'] ?? $row['item_title'] ?? $row['title'] ?? '' );
+		$artist_names = sanitize_text_field( $flat['artist_names'] ?? $row['artist_names_raw'] ?? $row['artist_names'] ?? ( isset( $row['artists'] ) ? ( is_array( $row['artists'] ) ? implode( ', ', $row['artists'] ) : $row['artists'] ) : '' ) );
 		$cover_image  = esc_url_raw( $flat['cover_image'] ?? $row['image'] ?? '' );
 		$spotify_id   = sanitize_text_field( $flat['spotify_id'] ?? $row['spotify_track_id'] ?? '' );
 		$youtube_id   = sanitize_text_field( $flat['youtube_id'] ?? $row['youtube_id'] ?? '' );
 		$streams      = intval( $flat['streams'] ?? $row['streams'] ?? 0 );
+		$views_count  = intval( $flat['views_count'] ?? $row['views_count'] ?? 0 );
+		$source_url   = esc_url_raw( $flat['source_url'] ?? $row['source_url'] ?? '' );
 
 		$existing_id = $wpdb->get_var( $wpdb->prepare(
 			"SELECT id FROM $table WHERE source_id = %d AND period_id = %d AND rank_position = %d",
@@ -160,20 +162,22 @@ class ImportFlow {
 		$data = array(
 			'source_id'        => intval( $source_id ),
 			'period_id'        => intval( $period_id ),
-			'item_type'        => $item_type,
+			'item_type'        => $item_type ?: 'track',
 			'item_id'          => intval( $item_id ),
 			'rank_position'    => $rank,
-			'previous_rank'    => $row['previous_rank'] ? intval( $row['previous_rank'] ) : null,
-			'peak_rank'        => $row['peak_rank'] ? intval( $row['peak_rank'] ) : $rank,
+			'previous_rank'    => ( isset( $row['previous_rank'] ) && $row['previous_rank'] !== '' ) ? intval( $row['previous_rank'] ) : null,
+			'peak_rank'        => ( isset( $row['peak_rank'] ) && $row['peak_rank'] !== '' ) ? intval( $row['peak_rank'] ) : $rank,
 			'weeks_on_chart'   => intval( $row['weeks_on_chart'] ?? 1 ),
 			'streams'          => $streams,
 			'streams_count'    => $streams,
+			'views_count'      => $views_count,
 			// Flat display columns — no JOIN needed on frontend
 			'track_name'       => $track_name,
 			'artist_names'     => $artist_names,
 			'cover_image'      => $cover_image ?: null,
 			'spotify_id'       => $spotify_id ?: null,
 			'youtube_id'       => $youtube_id ?: null,
+			'source_url'       => $source_url ?: null,
 			'raw_payload_json' => wp_json_encode( $row ),
 			'updated_at'       => current_time( 'mysql' ),
 		);

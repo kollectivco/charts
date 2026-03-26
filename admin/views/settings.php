@@ -39,6 +39,24 @@
 				</table>
 			</section>
 
+			<section class="settings-section" style="margin-top: 40px;">
+				<h2><?php esc_html_e( 'YouTube API Settings', 'charts' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Used for enriching YouTube manual imports with official titles, channel names, and high-quality artwork. Get an API Key from the Google Cloud Console.', 'charts' ); ?>
+				</p>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<label for="youtube_api_key"><?php esc_html_e( 'YouTube API Key', 'charts' ); ?></label>
+						</th>
+						<td>
+							<input type="password" name="youtube_api_key" id="youtube_api_key" value="<?php echo esc_attr( get_option( 'charts_youtube_api_key' ) ); ?>" class="regular-text">
+						</td>
+					</tr>
+				</table>
+			</section>
+
 			<?php submit_button( __( 'Save Settings', 'charts' ) ); ?>
 		</form>
 	</div>

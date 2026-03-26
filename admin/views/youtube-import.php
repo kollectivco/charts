@@ -6,6 +6,20 @@
 <div class="wrap charts-admin-wrap">
 	<h1><?php esc_html_e( 'YouTube CSV Import', 'charts' ); ?></h1>
 
+	<?php 
+	if ( empty( get_option( 'charts_youtube_api_key' ) ) ) : 
+	?>
+		<div class="notice notice-warning is-dismissible" style="margin: 20px 0; border-left: 4px solid #f59e0b; background: #fffbeb;">
+			<p>
+				<strong><?php esc_html_e( 'Notice: Metadata Enrichment Disabled', 'charts' ); ?></strong><br>
+				<?php printf( 
+					__( 'You have not configured a YouTube API Key. While the import will still work using the CSV data, the system cannot fetch official titles, channel names, or high-quality artwork via the YouTube API. <a href="%s">Configure YouTube API Key &rarr;</a>', 'charts' ),
+					admin_url('admin.php?page=charts-settings')
+				); ?>
+			</p>
+		</div>
+	<?php endif; ?>
+
 	<?php settings_errors( 'charts' ); ?>
 
 	<div class="charts-card">

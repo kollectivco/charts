@@ -37,7 +37,8 @@ class Bootstrap {
 			case 'save_settings':
 				update_option( 'charts_spotify_client_id', sanitize_text_field( $_POST['spotify_client_id'] ) );
 				update_option( 'charts_spotify_client_secret', sanitize_text_field( $_POST['spotify_client_secret'] ) );
-				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved successfully.', 'charts' ), 'success' );
+				update_option( 'charts_youtube_api_key', sanitize_text_field( $_POST['youtube_api_key'] ) );
+				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
 				break;
 
 			case 'save_source':
@@ -246,8 +247,11 @@ class Bootstrap {
 	 * Process YouTube CSV Upload.
 	 */
 	private static function process_youtube_csv_upload() {
+		if ( ! current_user_can( 'manage_options' ) ) return;
+		check_admin_referer( 'charts_admin_action' );
+
 		if ( empty( $_FILES['youtube_csv']['tmp_name'] ) ) {
-			add_settings_error( 'charts', 'no_file', __( 'Please select a CSV file.', 'charts' ), 'error' );
+			add_settings_error( 'charts', 'no_file', __( 'Please select a CSV file to upload.', 'charts' ), 'error' );
 			return;
 		}
 
@@ -273,13 +277,34 @@ class Bootstrap {
 				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
 			} elseif ( is_array( $result ) ) {
 				$chart_url = home_url( '/charts/youtube/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
+				
 				$msg = sprintf(
-					__( 'YouTube import complete: <strong>%1$d entries saved</strong> from %2$d rows. Source ID: %3$d · Period ID: %4$d · %5$d skipped. <a href="%6$s" target="_blank">View Chart &rarr;</a>', 'charts' ),
-					$result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url )
+					__( 'YouTube import complete: <strong>%d entries saved</strong> from %d rows.', 'charts' ),
+					$result['saved'],
+					$result['parsed']
 				);
+
+				if ( ! empty( $result['enriched'] ) ) {
+					$msg .= ' ' . sprintf( __( 'Enriched %d rows using YouTube API.', 'charts' ), $result['enriched'] );
+				}
+
+				if ( ! empty( $result['missing_titles'] ) ) {
+					$msg .= ' ' . sprintf( __( 'Warning: %d rows had missing titles.', 'charts' ), $result['missing_titles'] );
+				}
+
+				if ( ! empty( $result['skipped'] ) ) {
+					$msg .= ' ' . sprintf( __( '%d rows skipped due to errors.', 'charts' ), $result['skipped'] );
+				}
+
+				$msg .= sprintf( ' <a href="%s" target="_blank">%s &rarr;</a>', esc_url( $chart_url ), __( 'View Chart', 'charts' ) );
+
 				add_settings_error( 'charts', 'import_success', $msg, 'success' );
-			} else {
-				add_settings_error( 'charts', 'import_success', __( 'YouTube import complete.', 'charts' ), 'success' );
+
+				if ( ! empty( $result['warnings'] ) ) {
+					foreach ( $result['warnings'] as $warn ) {
+						add_settings_error( 'charts', 'import_warning', $warn, 'warning' );
+					}
+				}
 			}
 		} catch ( \Exception $e ) {
 			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );

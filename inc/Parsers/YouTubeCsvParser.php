@@ -25,11 +25,11 @@ class YouTubeCsvParser {
 
 	/** Map from normalized alias → canonical key */
 	private static $ALIASES = array(
-		'rank'           => array( 'rank', 'position', '#', 'no', 'chart_position' ),
-		'item_title'     => array( 'title', 'track_name', 'video_title', 'song', 'name', 'item_title', 'track', 'video_name' ),
-		'artist_names'   => array( 'artist', 'artist_name', 'artist_names', 'artists', 'channel', 'channel_name' ),
-		'views_count'    => array( 'views', 'weekly_views', 'view_count', 'streams', 'plays', 'views_count' ),
-		'image'          => array( 'thumbnail', 'image', 'cover', 'cover_image', 'thumbnail_url' ),
+		'rank'           => array( 'rank', 'position', '#', 'no', 'chart_position', 'current_position' ),
+		'item_title'     => array( 'title', 'track_name', 'video_title', 'song', 'name', 'item_title', 'track', 'video_name', 'video' ),
+		'artist_names'   => array( 'artist', 'artist_name', 'artist_names', 'artists', 'channel', 'channel_name', 'performer' ),
+		'views_count'    => array( 'views', 'weekly_views', 'view_count', 'streams', 'plays', 'views_count', 'count' ),
+		'image'          => array( 'thumbnail', 'image', 'cover', 'cover_image', 'thumbnail_url', 'artwork' ),
 		'source_url'     => array( 'youtube_url', 'video_url', 'url', 'source_url', 'link', 'video_link' ),
 		'youtube_id'     => array( 'youtube_id', 'video_id', 'id', 'yt_id' ),
 		'peak_rank'      => array( 'peak_rank', 'peak', 'best_rank', 'highest_rank' ),
@@ -37,11 +37,15 @@ class YouTubeCsvParser {
 		'weeks_on_chart' => array( 'weeks_on_chart', 'weeks', 'chart_weeks', 'run' ),
 	);
 
+	private $warnings = array();
+
 	/**
 	 * Parse CSV content into normalized rows.
 	 * @return array|\WP_Error
 	 */
 	public function parse( $csv_content ) {
+		$this->warnings = array();
+		
 		// Strip BOM
 		$csv_content = preg_replace( '/^\xEF\xBB\xBF/', '', $csv_content );
 		$csv_content = trim( $csv_content );
@@ -79,17 +83,21 @@ class YouTubeCsvParser {
 		}
 
 		$col_map = array(); // column_index → canonical_key
+		$mapped_canonicals = array();
+
 		foreach ( $headers as $i => $h ) {
 			if ( isset( $alias_reverse[ $h ] ) ) {
 				$col_map[ $i ] = $alias_reverse[ $h ];
+				$mapped_canonicals[] = $alias_reverse[ $h ];
+			} else {
+				$this->warnings[] = sprintf( __( 'Header "%s" is not mapped — will be stored in raw data only.', 'charts' ), $h );
 			}
 		}
 
-		// Must have at minimum rank + item_title
-		$canonical_found = array_values( $col_map );
-		if ( ! in_array( 'rank', $canonical_found, true ) && ! in_array( 'item_title', $canonical_found, true ) ) {
+		// Must have at minimum item_title OR youtube_id
+		if ( ! in_array( 'item_title', $mapped_canonicals, true ) && ! in_array( 'youtube_id', $mapped_canonicals, true ) ) {
 			return new \WP_Error( 'bad_headers',
-				sprintf( __( 'Could not map required columns. Found headers: %s', 'charts' ), implode( ', ', $headers ) )
+				sprintf( __( 'Could not map required columns (title or ID). Found headers: %s', 'charts' ), implode( ', ', $headers ) )
 			);
 		}
 
@@ -101,11 +109,18 @@ class YouTubeCsvParser {
 
 			$cols = str_getcsv( $line );
 			$raw  = array();
-			foreach ( $col_map as $ci => $key ) {
-				$raw[ $key ] = isset( $cols[ $ci ] ) ? trim( $cols[ $ci ] ) : '';
+			
+			// Fill raw data
+			foreach ( $headers as $idx => $h ) {
+				$raw_val = isset( $cols[ $idx ] ) ? trim( $cols[ $idx ] ) : '';
+				if ( isset( $col_map[ $idx ] ) ) {
+					$raw[ $col_map[ $idx ] ] = $raw_val;
+				}
+				// Original header names for reference
+				$raw['__csv_original_' . $h] = $raw_val;
 			}
 
-			$row = $this->normalize_row( $raw, $i + 1 );
+			$row = $this->normalize_row( $raw, $i - $row_start + 1 );
 			if ( $row ) {
 				$rows[] = $row;
 			}
@@ -118,29 +133,34 @@ class YouTubeCsvParser {
 		return $rows;
 	}
 
+	public function get_warnings() {
+		return $this->warnings;
+	}
+
 	/**
 	 * Normalize a raw mapped row into canonical structure.
 	 */
 	private function normalize_row( $raw, $line_num ) {
 		$title  = $raw['item_title'] ?? '';
-		$rank   = isset( $raw['rank'] ) ? intval( $raw['rank'] ) : $line_num;
+		$rank   = isset( $raw['rank'] ) ? intval( preg_replace( '/[^0-9]/', '', $raw['rank'] ) ) : $line_num;
 
-		if ( $title === '' && $rank === 0 ) {
-			return null;
+		// Fallback: use youtube_id as title if blank
+		if ( empty( $title ) && ! empty( $raw['youtube_id'] ) ) {
+			$title = $raw['youtube_id'];
 		}
 
-		// If rank wasn't in CSV, use line number as rank
-		if ( $rank === 0 ) {
-			$rank = $line_num;
+		if ( empty( $title ) && $rank < 1 ) {
+			return null;
 		}
 
 		// Extract YouTube ID from URL if not given directly
 		$yt_id = $raw['youtube_id'] ?? '';
-		if ( $yt_id === '' && ! empty( $raw['source_url'] ) ) {
-			if ( preg_match( '/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $raw['source_url'], $m ) ) {
+		if ( empty( $yt_id ) && ! empty( $raw['source_url'] ) ) {
+			if ( preg_match( '/(?:v=|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/', $raw['source_url'], $m ) ) {
 				$yt_id = $m[1];
 			}
 		}
+
 
 		// Artist string
 		$artist_str = $raw['artist_names'] ?? '';

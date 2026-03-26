@@ -20,10 +20,19 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Base /charts/
+		// 1. Artist Archive
+		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_page=artist-archive', 'top' );
+
+		// 2. Artist Single
+		add_rewrite_rule( '^charts/artist/([^/]+)/?$', 'index.php?charts_page=artist-single&charts_artist_slug=$matches[1]', 'top' );
+
+		// 3. Clean Chart Type Routes (e.g., /charts/top-songs)
+		add_rewrite_rule( '^charts/(top-songs|top-artists|top-videos|viral)/?$', 'index.php?charts_type=$matches[1]', 'top' );
+
+		// 4. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_page=index', 'top' );
 		
-		// 2. Canonical /charts/{platform}/{country}/{frequency}/{type}
+		// 5. Canonical /charts/{platform}/{country}/{frequency}/{type} (Old/Detailed)
 		add_rewrite_rule( 
 			'^charts/([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$', 
 			'index.php?charts_platform=$matches[1]&charts_country=$matches[2]&charts_frequency=$matches[3]&charts_type=$matches[4]', 
@@ -40,6 +49,7 @@ class Router {
 		$vars[] = 'charts_country';
 		$vars[] = 'charts_frequency';
 		$vars[] = 'charts_type';
+		$vars[] = 'charts_artist_slug';
 		return $vars;
 	}
 
@@ -49,19 +59,23 @@ class Router {
 	public static function load_template( $template ) {
 		$charts_page = get_query_var( 'charts_page' );
 		$platform    = get_query_var( 'charts_platform' );
+		$type        = get_query_var( 'charts_type' );
 
 		if ( $charts_page === 'index' ) {
-			$new_template = CHARTS_PATH . 'public/templates/index.php';
-			if ( file_exists( $new_template ) ) {
-				return $new_template;
-			}
+			return CHARTS_PATH . 'public/templates/index.php';
 		}
 
-		if ( $platform ) {
-			$new_template = CHARTS_PATH . 'public/templates/single-chart.php';
-			if ( file_exists( $new_template ) ) {
-				return $new_template;
-			}
+		if ( $charts_page === 'artist-archive' ) {
+			return CHARTS_PATH . 'public/templates/artist-archive.php';
+		}
+
+		if ( $charts_page === 'artist-single' ) {
+			return CHARTS_PATH . 'public/templates/artist-single.php';
+		}
+
+		// Support both long and short chart URLs
+		if ( $platform || $type ) {
+			return CHARTS_PATH . 'public/templates/single-chart.php';
 		}
 
 		return $template;

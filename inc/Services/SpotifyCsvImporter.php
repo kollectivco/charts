@@ -88,8 +88,8 @@ class SpotifyCsvImporter {
 				$primary_name = 'Unknown Artist';
 			}
 
-			// Resolve / create artist
-			$artist_id = $this->ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
+			// Resolve / create primary artist
+			$primary_artist_id = $this->ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
 
 			// Resolve / create track
 			$enrichment   = $row['enrichment'] ?? array();
@@ -97,11 +97,21 @@ class SpotifyCsvImporter {
 			$cover_image  = $enrichment['album']['cover_image'] ?? null;
 			$official_name = ! empty( $enrichment['official_name'] ) ? $enrichment['official_name'] : $track_name;
 
-			$track_id = $this->ensure_track( $official_name, $artist_id, $spotify_id, $cover_image );
+			$track_id = $this->ensure_track( $official_name, $primary_artist_id, $spotify_id, $cover_image );
 
 			if ( ! $track_id ) {
 				$parse_errors++;
 				continue;
+			}
+
+			// Link ALL artists (multi-artist support)
+			$all_artists = ! empty( $artists_arr ) ? $artists_arr : ( $artist_raw !== '' ? array_map('trim', explode(',', $artist_raw)) : array($primary_name) );
+			foreach ( $all_artists as $idx => $a_name ) {
+				$a_name = trim($a_name);
+				if ( empty($a_name) ) continue;
+				// Enrichment data only available for primary artist in current flow, but we can expand later
+				$a_id = $this->ensure_artist( $a_name );
+				$this->link_track_artist( $track_id, $a_id );
 			}
 
 			// Flat columns written directly to entries row (no JOIN needed on frontend)
@@ -142,11 +152,14 @@ class SpotifyCsvImporter {
 			'finished_at'         => current_time( 'mysql' ),
 		), array( 'id' => $run_id ) );
 
-		// 8. Stamp source
-		$wpdb->update( $wpdb->prefix . 'charts_sources', array(
-			'last_run_at'     => current_time( 'mysql' ),
-			'last_success_at' => current_time( 'mysql' ),
-		), array( 'id' => $source_id ) );
+		// 9. Run Intelligence Analysis
+		if ( $saved > 0 ) {
+			try {
+				( new Analyzer() )->analyze_period( $period_id, $source_id );
+			} catch ( \Exception $e ) {
+				// non-fatal
+			}
+		}
 
 		return array(
 			'saved'     => $saved,
@@ -242,6 +255,14 @@ class SpotifyCsvImporter {
 
 	private function normalize_name( $str ) {
 		return mb_strtolower( trim( preg_replace( '/\s+/', ' ', $str ) ) );
+	}
+
+	private function link_track_artist( $track_id, $artist_id ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"INSERT IGNORE INTO {$wpdb->prefix}charts_track_artists (track_id, artist_id) VALUES (%d, %d)",
+			$track_id, $artist_id
+		) );
 	}
 
 	private function unique_slug( $table, $slug ) {

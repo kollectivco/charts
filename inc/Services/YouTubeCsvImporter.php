@@ -14,10 +14,12 @@ class YouTubeCsvImporter {
 
 	private $import_flow;
 	private $csv_parser;
+	private $enrichment;
 
 	public function __construct() {
 		$this->import_flow = new ImportFlow();
 		$this->csv_parser  = new \Charts\Parsers\YouTubeCsvParser();
+		$this->enrichment  = new YouTubeEnrichmentService();
 	}
 
 	/**
@@ -37,16 +39,32 @@ class YouTubeCsvImporter {
 			return new \WP_Error( 'empty_csv', __( 'CSV parsed but contained no valid data rows.', 'charts' ) );
 		}
 
-		// 2. Source
+		$chart_type = strtolower( trim( $meta['chart_type'] ?? 'top-songs' ) );
+
+		// 2. Enrich from YouTube API (truth for metadata, file is truth for rank)
+		$enriched_count = 0;
+		if ( $this->enrichment->is_configured() ) {
+			$initial_rows = $rows;
+			$rows = $this->enrichment->enrich_batch( $rows, $chart_type );
+			
+			// Count how many were actually enriched (had api_meta added)
+			foreach ( $rows as $r ) {
+				if ( ! empty( $r['api_meta'] ) ) {
+					$enriched_count++;
+				}
+			}
+		}
+
+		// 3. Source
 		$source_id = $this->ensure_source( $meta );
 		if ( ! $source_id ) {
 			return new \WP_Error( 'source_failed', __( 'Could not create or find a YouTube source.', 'charts' ) );
 		}
 
-		// 3. Run record
+		// 4. Run record
 		$run_id = $this->start_run( $source_id, count( $rows ) );
 
-		// 4. Period
+		// 5. Period
 		$period_id = $this->import_flow->ensure_period(
 			strtolower( trim( $meta['frequency'] ?? 'weekly' ) ),
 			$meta['period_date'] ?? null
@@ -55,30 +73,57 @@ class YouTubeCsvImporter {
 			return new \WP_Error( 'period_failed', __( 'Could not create or find a matching period.', 'charts' ) );
 		}
 
-		$chart_type   = strtolower( trim( $meta['chart_type'] ?? 'top-songs' ) );
-		$saved        = 0;
-		$parse_errors = 0;
+		$saved          = 0;
+		$parse_errors   = 0;
+		$missing_titles = 0;
 
-		// 5. Process rows
+		// 6. Process rows
 		foreach ( $rows as $row ) {
 			$title       = $row['item_title'] ?? '';
 			$artist_str  = $row['artist_names'] ?? '';
 			$artist_arr  = $row['artist_arr'] ?? array();
-			$primary_name = ! empty( $artist_arr[0] ) ? $artist_arr[0] : ( $artist_str !== '' ? $artist_str : 'Unknown' );
+			$primary_name = ! empty( $artist_arr[0] ) ? $artist_arr[0] : ( $artist_str !== '' ? $artist_str : 'Unknown Artist' );
+
+			if ( empty( $title ) || $title === $row['youtube_id'] ) {
+				if ( ! empty( $row['api_meta']['api_title'] ) ) {
+					$title = $row['api_meta']['api_title'];
+				}
+			}
+
+			if ( empty( $title ) ) {
+				$missing_titles++;
+				$title = 'Unknown YouTube Item';
+			}
 
 			// Resolve item based on chart_type
 			if ( $chart_type === 'top-artists' ) {
 				$item_type = 'artist';
-				$item_id   = $this->ensure_artist( $primary_name ?: $title );
+				// For top-artists, the item_title IS the artist name in many YouTube exports
+				$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
+				$item_id     = $this->ensure_artist( $artist_name );
 			} elseif ( $chart_type === 'top-videos' ) {
 				$item_type = 'video';
-				$artist_id = $this->ensure_artist( $primary_name );
-				$item_id   = $this->ensure_video( $title, $artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null, $row['source_url'] ?? null );
+				$primary_artist_id = $this->ensure_artist( $primary_name );
+				$item_id   = $this->ensure_video( $title, $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null, $row['source_url'] ?? null );
+				
+				// Link ALL artists
+				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
+				foreach ( $all_artists as $a_name ) {
+					$a_id = $this->ensure_artist( trim($a_name) );
+					if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
+				}
 			} else {
 				// default: top-songs / tracks
 				$item_type = 'track';
-				$artist_id = $this->ensure_artist( $primary_name );
-				$item_id   = $this->ensure_track( $title, $artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
+				$primary_artist_id = $this->ensure_artist( $primary_name );
+				$item_id   = $this->ensure_track( $title, $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
+
+				// Link ALL artists
+				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
+				foreach ( $all_artists as $a_name ) {
+					$a_id = $this->ensure_artist( trim($a_name) );
+					if ( $item_id && $a_id ) $this->link_track_artist( $item_id, $a_id );
+				}
 			}
 
 			if ( ! $item_id ) {
@@ -106,15 +151,13 @@ class YouTubeCsvImporter {
 				'peak_rank'      => $row['peak_rank'] ?? $row['rank'],
 				'weeks_on_chart' => $row['weeks_on_chart'] ?? 1,
 				'streams'        => 0,
+				'views_count'    => $row['views_count'] ?? 0,
+				'source_url'     => $row['source_url'] ?? null,
 			);
 
 			$entry_id = $this->import_flow->upsert_entry( $source_id, $period_id, $item_type, $item_id, $entry_row, $flat );
 
 			if ( $entry_id ) {
-				// Update views_count on entries table
-				if ( ! empty( $row['views_count'] ) ) {
-					$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'views_count' => intval( $row['views_count'] ) ), array( 'id' => $entry_id ) );
-				}
 				try { ( new Analyzer() )->analyze_entry( $entry_id ); } catch ( \Exception $e ) {}
 				$saved++;
 			} else {
@@ -122,12 +165,13 @@ class YouTubeCsvImporter {
 			}
 		}
 
-		// 6. Complete run
+		// 7. Complete run
 		$wpdb->update( $wpdb->prefix . 'charts_import_runs', array(
 			'status'        => 'completed',
 			'parsed_rows'   => count( $rows ),
+			'enrichment_attempts' => count( $rows ),
 			'matched_items' => $saved,
-			'error_message' => $parse_errors > 0 ? "{$parse_errors} row(s) skipped." : null,
+			'error_message' => $parse_errors > 0 ? sprintf( __( '%d errors, %d missing titles.', 'charts' ), $parse_errors, $missing_titles ) : ( $missing_titles > 0 ? sprintf( __( '%d missing titles.', 'charts' ), $missing_titles ) : null ),
 			'finished_at'   => current_time( 'mysql' ),
 		), array( 'id' => $run_id ) );
 
@@ -136,15 +180,28 @@ class YouTubeCsvImporter {
 			'last_success_at' => current_time( 'mysql' ),
 		), array( 'id' => $source_id ) );
 
+		// 10. Run Intelligence Analysis
+		if ( $saved > 0 ) {
+			try {
+				( new \Charts\Services\Analyzer() )->analyze_period( $period_id, $source_id );
+			} catch ( \Exception $e ) {
+				// non-fatal
+			}
+		}
+
 		return array(
-			'saved'     => $saved,
-			'parsed'    => count( $rows ),
-			'source_id' => $source_id,
-			'period_id' => $period_id,
-			'run_id'    => $run_id,
-			'skipped'   => $parse_errors,
+			'saved'          => $saved,
+			'parsed'         => count( $rows ),
+			'source_id'      => $source_id,
+			'period_id'      => $period_id,
+			'run_id'         => $run_id,
+			'skipped'        => $parse_errors,
+			'enriched'       => $enriched_count,
+			'missing_titles' => $missing_titles,
+			'warnings'       => $this->csv_parser->get_warnings(),
 		);
 	}
+
 
 	// ─────────────────────────────────────────────
 	//  Entity helpers
@@ -281,6 +338,22 @@ class YouTubeCsvImporter {
 			'started_at'  => current_time( 'mysql' ),
 		) );
 		return $wpdb->insert_id;
+	}
+
+	private function link_track_artist( $track_id, $artist_id ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"INSERT IGNORE INTO {$wpdb->prefix}charts_track_artists (track_id, artist_id) VALUES (%d, %d)",
+			$track_id, $artist_id
+		) );
+	}
+
+	private function link_video_artist( $video_id, $artist_id ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"INSERT IGNORE INTO {$wpdb->prefix}charts_video_artists (video_id, artist_id) VALUES (%d, %d)",
+			$video_id, $artist_id
+		) );
 	}
 
 	private function unique_slug( $table, $slug ) {

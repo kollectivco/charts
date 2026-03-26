@@ -1,15 +1,19 @@
 <?php
 /**
- * Charts Index — Premium Editorial Design
+ * Kontentainment Charts — Index
+ * Premium Spotify-style landing page for music intelligence.
  */
 get_header();
 global $wpdb;
 
-$sources_table = $wpdb->prefix . 'charts_sources';
-$entries_table = $wpdb->prefix . 'charts_entries';
-$periods_table = $wpdb->prefix . 'charts_periods';
+$sources_table  = $wpdb->prefix . 'charts_sources';
+$entries_table  = $wpdb->prefix . 'charts_entries';
+$periods_table  = $wpdb->prefix . 'charts_periods';
+$insights_table = $wpdb->prefix . 'charts_insights';
 
-// Fetch active sources with latest period & entry count
+$analyzer = new \Charts\Services\Analyzer();
+
+// 1. Fetch active sources with metadata
 $sources = $wpdb->get_results( "
 	SELECT s.*,
 	       MAX(p.id)          AS latest_period_id,
@@ -23,12 +27,11 @@ $sources = $wpdb->get_results( "
 	ORDER BY entry_count DESC, s.platform ASC
 " );
 
-// For each source, grab top 3 entries for preview
 foreach ( $sources as &$source ) {
 	$source->top_tracks = array();
 	if ( $source->entry_count > 0 && $source->latest_period_id ) {
 		$source->top_tracks = $wpdb->get_results( $wpdb->prepare(
-			"SELECT track_name, artist_names, cover_image, rank_position, streams
+			"SELECT track_name, artist_names, cover_image, rank_position, movement_direction, movement_value
 			 FROM {$entries_table}
 			 WHERE source_id = %d AND period_id = %d AND rank_position <= 3
 			 ORDER BY rank_position ASC",
@@ -37,141 +40,150 @@ foreach ( $sources as &$source ) {
 	}
 }
 unset( $source );
+
+// 2. Fetch latest insights
+$insights = $analyzer->get_latest_insights( 3 );
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Charts — Music Intelligence</title>
-<meta name="description" content="The definitive pulse of Egyptian and Arabian streaming charts. Real rankings, real data.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#f5f5f5;color:#111;-webkit-font-smoothing:antialiased}
-a{text-decoration:none;color:inherit}
 
-/* ── Layout ── */
-.ch-wrap{max-width:1280px;margin:0 auto;padding:0 24px}
-.ch-hero{padding:72px 0 48px;text-align:center}
-.ch-hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-0.03em;line-height:1.05;color:#000}
-.ch-hero h1 em{font-style:normal;color:#6366f1}
-.ch-hero p{margin-top:14px;font-size:1.05rem;color:#6b7280;font-weight:500}
+<link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/public.css'; ?>">
 
-/* ── Grid ── */
-.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;padding-bottom:80px}
-
-/* ── Card ── */
-.ch-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 20px rgba(0,0,0,.05);transition:box-shadow .2s,transform .18s}
-.ch-card:hover{box-shadow:0 4px 24px rgba(0,0,0,.12);transform:translateY(-3px)}
-.ch-card-header{padding:20px 20px 16px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.ch-platform-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:6px;background:#f3f4f6;color:#374151}
-.ch-platform-badge.spotify{background:#e6f7ee;color:#14532d}
-.ch-platform-badge.youtube{background:#fef2f2;color:#991b1b}
-.ch-card-meta{font-size:11px;font-weight:600;color:#9ca3af;text-align:right;line-height:1.4}
-.ch-card-title{padding:16px 20px 4px;font-size:1.05rem;font-weight:800;color:#000;line-height:1.2}
-.ch-card-sub{padding:2px 20px 16px;font-size:12px;color:#9ca3af;font-weight:500}
-
-/* ── Track rows ── */
-.ch-track-list{border-top:1px solid #f3f4f6}
-.ch-track{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
-.ch-track:last-child{border-bottom:none}
-.ch-rank{font-size:22px;font-weight:900;color:#e5e7eb;min-width:32px;text-align:center;line-height:1}
-.ch-thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#f3f4f6}
-.ch-thumb-ph{width:40px;height:40px;border-radius:6px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#9ca3af;flex-shrink:0}
-.ch-track-info{flex:1;min-width:0}
-.ch-track-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111}
-.ch-track-artist{font-size:11px;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* ── Card Footer ── */
-.ch-card-footer{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f3f4f6}
-.ch-entry-count{font-size:12px;font-weight:700;color:#6b7280}
-.ch-view-btn{display:inline-flex;align-items:center;gap:6px;background:#111;color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:8px;transition:background .15s}
-.ch-view-btn:hover{background:#374151}
-.ch-no-data{font-size:13px;color:#d1d5db;padding:20px;text-align:center;font-weight:600}
-
-/* ── Empty state ── */
-.ch-empty{text-align:center;padding:120px 20px;color:#9ca3af}
-.ch-empty h2{font-size:1.6rem;font-weight:800;color:#374151;margin-bottom:12px}
-.ch-empty p{font-size:1rem;max-width:400px;margin:0 auto 24px}
-.ch-empty a{background:#6366f1;color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px}
-
-@media(max-width:600px){.ch-grid{grid-template-columns:1fr}.ch-hero{padding:40px 0 28px}}
-</style>
-</head>
-<body>
-<?php // Use WordPress header
-get_header(); ?>
-
-<div class="ch-wrap">
-
-	<div class="ch-hero">
-		<h1>Music <em>Intelligence</em></h1>
-		<p>The definitive pulse of Egyptian & regional streaming charts.</p>
-	</div>
-
-	<?php if ( empty( $sources ) ) : ?>
-		<div class="ch-empty">
-			<h2>No charts yet</h2>
-			<p>Import a Spotify CSV from the admin to populate the chart engine.</p>
-			<a href="<?php echo admin_url('admin.php?page=charts-spotify-import'); ?>">Import First Chart</a>
+<div class="kc-root <?php echo is_admin_bar_showing() ? 'has-admin-bar' : ''; ?>">
+	
+	<!-- Hero Section -->
+	<header class="kc-hero">
+		<div class="kc-container">
+			<div class="kc-brand-name animate-fade-in-up" style="margin-bottom: 32px;">Kontentainment</div>
+			<h1 class="kc-hero-title animate-fade-in-up">The Pulse of <em>Regional Music</em></h1>
+			<p class="animate-fade-in-up" style="color: var(--k-text-dim); font-size: 1.1rem; max-width: 600px; line-height: 1.6; animation-delay: 0.1s;">
+				Definitive streaming intelligence from Egypt, Saudi Arabia, and the MENA region. Real data. Real rankings. Zero bias.
+			</p>
 		</div>
-	<?php else : ?>
-		<div class="ch-grid">
-			<?php foreach ( $sources as $source ) :
-				$chart_url = home_url( '/charts/' . $source->platform . '/' . $source->country_code . '/' . $source->frequency . '/' . $source->chart_type . '/' );
-				$platform_class = strtolower( $source->platform );
-				$has_data = ! empty( $source->top_tracks );
-				$period_label = $source->latest_period_date ? date( 'M j, Y', strtotime( $source->latest_period_date ) ) : null;
+	</header>
+
+	<!-- Intelligence Pass (Insights) -->
+	<?php if ( ! empty( $insights ) ) : ?>
+	<section class="kc-container" style="margin-bottom: 80px;">
+		<h2 class="kc-section-title animate-fade-in-up" style="animation-delay: 0.2s;">
+			<span>Weekly Intelligence</span>
+			<span class="kc-badge" style="background: var(--k-accent); color: #fff; border: none;">Live</span>
+		</h2>
+		<div class="kc-insight-grid animate-fade-in-up" style="animation-delay: 0.3s;">
+			<?php foreach ( $insights as $ins ) : 
+				$payload = json_decode( $ins->payload_json );
+				$img = !empty($payload->cover_image) ? $payload->cover_image : (!empty($payload->image) ? $payload->image : '');
 			?>
-				<a href="<?php echo esc_url( $chart_url ); ?>" class="ch-card">
-					<div class="ch-card-header">
-						<span class="ch-platform-badge <?php echo esc_attr( $platform_class ); ?>">
-							<?php echo esc_html( strtoupper( $source->platform ) ); ?>
-							&nbsp;·&nbsp;<?php echo esc_html( strtoupper( $source->country_code ) ); ?>
+				<div class="kc-insight-card">
+					<div class="kc-insight-type"><?php echo esc_html( $ins->title ); ?></div>
+					<div class="kc-insight-body">
+						<?php if ( $img ) : ?>
+							<img src="<?php echo esc_url( $img ); ?>" class="kc-insight-img">
+						<?php endif; ?>
+						<p><?php echo esc_html( $ins->summary ); ?></p>
+					</div>
+					<div class="kc-insight-meta">
+						<?php echo esc_html( strtoupper( $ins->platform ) ); ?> · <?php echo date('M Y', strtotime($ins->period_start)); ?>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	</section>
+	<?php endif; ?>
+
+	<!-- Charts Grid -->
+	<main class="kc-container" style="padding-bottom: 120px;">
+		<div class="animate-fade-in-up" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; animation-delay: 0.4s;">
+			<h2 class="kc-section-title" style="margin-bottom: 0;">Active Charts</h2>
+			<a href="<?php echo home_url('/charts/artists/'); ?>" class="kc-view-btn" style="text-decoration: none; padding-bottom: 5px; border-bottom: 2px solid var(--k-accent);">Explore Artists &rarr;</a>
+		</div>
+		
+		<?php if ( empty( $sources ) ) : ?>
+			<div class="kc-empty">
+				<h3>No active charts available</h3>
+				<p>The intelligence engine is warming up. Please check back shortly.</p>
+			</div>
+		<?php else : ?>
+			<div class="kc-grid animate-fade-in-up" style="animation-delay: 0.5s;">
+				<?php foreach ( $sources as $source ) : 
+					$platform = strtolower($source->platform);
+					
+					// Clean Title Logic
+					$display_title = 'Top Chart';
+					if ( strpos( strtolower($source->chart_type), 'songs' ) !== false || $source->chart_type === 'top-tracks' ) $display_title = 'Top Songs';
+					elseif ( strpos( strtolower($source->chart_type), 'artists' ) !== false ) $display_title = 'Top Artists';
+					elseif ( strpos( strtolower($source->chart_type), 'videos' ) !== false ) $display_title = 'Top Videos';
+					elseif ( strpos( strtolower($source->chart_type), 'viral' ) !== false ) $display_title = 'Viral 50';
+
+					// Try clean route first
+					$chart_url = home_url( '/charts/' . $source->chart_type . '/' );
+					// Fallback if country or frequency is needed to disambiguate
+					// For now, these are primary public faces
+					
+					$date_label = $source->latest_period_date ? date('M j', strtotime($source->latest_period_date)) : 'N/A';
+				?>
+				<a href="<?php echo esc_url( $chart_url ); ?>" class="kc-card <?php echo (count($source->top_tracks) >= 3) ? 'kc-card-wide' : ''; ?>">
+					<div class="kc-card-header">
+						<span class="kc-badge" style="background: #1a1a1a; color: #888;">
+							<?php echo esc_html( strtoupper($source->country_code) ); ?> · <?php echo esc_html( ucfirst($source->frequency) ); ?>
 						</span>
-						<div class="ch-card-meta">
-							<?php echo esc_html( strtoupper( $source->frequency ) ); ?><br>
-							<?php if ( $period_label ) echo esc_html( $period_label ); ?>
-						</div>
+						<span class="kc-card-date"><?php echo esc_html($date_label); ?></span>
 					</div>
 
-					<div class="ch-card-title"><?php echo esc_html( $source->source_name ); ?></div>
-					<div class="ch-card-sub"><?php echo esc_html( str_replace( '-', ' ', ucfirst( $source->chart_type ) ) ); ?></div>
+					<div class="kc-card-content">
+						<h3 class="kc-card-title"><?php echo esc_html($display_title); ?></h3>
+						<div class="kc-card-meta">
+							<?php echo esc_html(number_format($source->entry_count)); ?> Entries
+							&nbsp;·&nbsp;
+							<span style="color: var(--k-accent); opacity: 0.8;"><?php echo esc_html( strtoupper($platform) ); ?> Data</span>
+						</div>
 
-					<?php if ( $has_data ) : ?>
-						<div class="ch-track-list">
-							<?php foreach ( $source->top_tracks as $track ) : ?>
-								<div class="ch-track">
-									<span class="ch-rank"><?php echo (int) $track->rank_position; ?></span>
-									<?php if ( $track->cover_image ) : ?>
-										<img src="<?php echo esc_url( $track->cover_image ); ?>" class="ch-thumb" loading="lazy" alt="">
-									<?php else : ?>
-										<div class="ch-thumb-ph"><?php echo esc_html( strtoupper( mb_substr( $track->track_name, 0, 1 ) ) ); ?></div>
-									<?php endif; ?>
-									<div class="ch-track-info">
-										<div class="ch-track-name"><?php echo esc_html( $track->track_name ); ?></div>
-										<div class="ch-track-artist"><?php echo esc_html( $track->artist_names ); ?></div>
-									</div>
+						<?php if ( ! empty( $source->top_tracks ) ) : ?>
+						<div class="kc-card-preview">
+							<?php foreach ( $source->top_tracks as $idx => $track ) : ?>
+								<div class="kc-preview-row">
+									<span class="kc-preview-rank"><?php echo $idx + 1; ?></span>
+									<span class="kc-preview-name"><?php echo esc_html($track->track_name); ?></span>
+									<span class="kc-preview-artist"><?php echo esc_html($track->artist_names); ?></span>
 								</div>
 							<?php endforeach; ?>
 						</div>
-					<?php else : ?>
-						<div class="ch-no-data">No data yet — import CSV to begin</div>
-					<?php endif; ?>
+						<?php endif; ?>
+					</div>
 
-					<div class="ch-card-footer">
-						<span class="ch-entry-count">
-							<?php if ( $source->entry_count > 0 ) echo number_format( $source->entry_count ) . ' tracks'; else echo 'No data yet'; ?>
-						</span>
-						<span class="ch-view-btn">View Chart &#8594;</span>
+					<div class="kc-card-footer">
+						<span class="kc-view-btn">View Intelligence &rarr;</span>
 					</div>
 				</a>
-			<?php endforeach; ?>
-		</div>
-	<?php endif; ?>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+	</main>
 
 </div>
+
+<style>
+/* Local style overrides for index specific layout parts */
+.kc-hero { padding: 100px 0 80px; }
+.kc-insight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.kc-insight-card { background: #111; border: 1px solid #222; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.kc-insight-type { font-size: 10px; font-weight: 900; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; }
+.kc-insight-body { display: flex; align-items: flex-start; gap: 16px; }
+.kc-insight-img { width: 50px; height: 50px; border-radius: 8px; flex-shrink: 0; object-fit: cover; }
+.kc-insight-body p { font-size: 14px; font-weight: 600; line-height: 1.4; color: #fff; margin: 0; }
+.kc-insight-meta { font-size: 11px; font-weight: 700; color: #555; margin-top: auto; }
+
+.kc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 30px; }
+.kc-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.kc-card-date { font-size: 11px; font-weight: 700; color: var(--k-text-muted); }
+.kc-card-title { font-size: 1.4rem; font-weight: 900; margin: 0 0 8px; line-height: 1.1; }
+.kc-card-meta { font-size: 12px; font-weight: 700; color: var(--k-text-dim); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.05em; }
+.kc-card-preview { border-top: 1px solid var(--k-border); padding-top: 20px; margin-bottom: 24px; }
+.kc-preview-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 13px; }
+.kc-preview-rank { font-weight: 900; color: var(--k-border); width: 14px; }
+.kc-preview-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.kc-preview-artist { font-size: 11px; color: var(--k-text-dim); white-space: nowrap; }
+.kc-view-btn { font-size: 12px; font-weight: 800; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; }
+.kc-empty { padding: 100px 0; text-align: center; color: var(--k-text-dim); }
+.has-admin-bar .kc-hero { padding-top: 140px; }
+</style>
 
 <?php get_footer(); ?>

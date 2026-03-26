@@ -108,32 +108,32 @@ class Updater {
 	 * Get the download URL from release assets.
 	 */
 	private function get_release_asset_url( $repo_info ) {
-		if ( ! empty( $repo_info->assets ) ) {
+		if ( ! empty( $repo_info->assets ) && is_array( $repo_info->assets ) ) {
 			foreach ( $repo_info->assets as $asset ) {
-				if ( false !== strpos( $asset->name, '.zip' ) ) {
+				if ( isset( $asset->name ) && false !== strpos( $asset->name, '.zip' ) ) {
 					return $asset->browser_download_url;
 				}
 			}
 		}
-		// Fallback to source zip if no asset found (not preferred as per task)
-		return $repo_info->zipball_url;
+		// Fallback to source zip only if no binary asset is found
+		return isset( $repo_info->zipball_url ) ? $repo_info->zipball_url : '';
 	}
 
 	/**
 	 * Set plugin info for the info modal.
 	 */
-	public function set_plugin_info( $false, $action, $response ) {
+	public function set_plugin_info( $res, $action, $args ) {
 		if ( 'plugin_information' !== $action ) {
-			return $false;
+			return $res;
 		}
 
-		if ( ! isset( $response->slug ) || $response->slug !== $this->plugin_slug ) {
-			return $false;
+		if ( ! isset( $args->slug ) || $args->slug !== $this->plugin_slug ) {
+			return $res;
 		}
 
 		$repo_info = $this->get_repository_info();
 		if ( ! $repo_info ) {
-			return $false;
+			return $res;
 		}
 
 		if ( ! function_exists( 'get_plugin_data' ) ) {
@@ -142,20 +142,21 @@ class Updater {
 
 		$plugin_data = get_plugin_data( $this->file );
 
-		$response->last_updated = $repo_info->published_at;
-		$response->slug = $this->plugin_slug;
-		$response->plugin_name  = $plugin_data['Name'];
-		$response->version = ltrim( $repo_info->tag_name, 'v' );
-		$response->author = $plugin_data['AuthorName'];
-		$response->homepage = $plugin_data['PluginURI'];
-		$response->download_link = $this->get_release_asset_url( $repo_info );
+		$res = new \stdClass();
+		$res->name = $plugin_data['Name'];
+		$res->slug = $this->plugin_slug;
+		$res->version = ltrim( $repo_info->tag_name, 'v' );
+		$res->author = $plugin_data['Author'];
+		$res->homepage = $plugin_data['PluginURI'];
+		$res->download_link = $this->get_release_asset_url( $repo_info );
+		$res->last_updated = $repo_info->published_at;
 
-		$response->sections = array(
+		$res->sections = array(
 			'description' => $plugin_data['Description'],
-			'changelog'   => $repo_info->body,
+			'changelog'   => isset( $repo_info->body ) ? wp_kses_post( $repo_info->body ) : '',
 		);
 
-		return $response;
+		return $res;
 	}
 
 	/**
