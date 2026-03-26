@@ -1,0 +1,7 @@
+.DS_Store
+.smoke_test.php
+.raw_proof.php
+/vendor/
+/node_modules/
+*.log
+.git/

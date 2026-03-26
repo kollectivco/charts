@@ -1,0 +1,115 @@
+<?php
+
+namespace Charts\Services;
+
+/**
+ * Client for Spotify Web API.
+ */
+class SpotifyApiClient {
+
+	private $client_id;
+	private $client_secret;
+	private $access_token;
+
+	public function __construct() {
+		$this->client_id     = get_option( 'charts_spotify_client_id' );
+		$this->client_secret = get_option( 'charts_spotify_client_secret' );
+	}
+
+	/**
+	 * Get or refresh access token using Client Credentials flow.
+	 */
+	public function get_access_token() {
+		if ( ! empty( $this->access_token ) ) {
+			return $this->access_token;
+		}
+
+		// Check cache
+		$cached_token = get_transient( 'charts_spotify_token' );
+		if ( $cached_token ) {
+			$this->access_token = $cached_token;
+			return $cached_token;
+		}
+
+		if ( empty( $this->client_id ) || empty( $this->client_secret ) ) {
+			return new \WP_Error( 'missing_credentials', __( 'Spotify API credentials not configured.', 'charts' ) );
+		}
+
+		$response = wp_remote_post( 'https://accounts.spotify.com/api/token', array(
+			'headers' => array(
+				'Authorization' => 'Basic ' . base64_encode( $this->client_id . ':' . $this->client_secret ),
+			),
+			'body' => array(
+				'grant_type' => 'client_credentials',
+			),
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( empty( $body['access_token'] ) ) {
+			return new \WP_Error( 'auth_failed', $body['error_description'] ?? __( 'Failed to retrieve access token.', 'charts' ) );
+		}
+
+		$this->access_token = $body['access_token'];
+		set_transient( 'charts_spotify_token', $this->access_token, $body['expires_in'] - 60 );
+
+		return $this->access_token;
+	}
+
+	/**
+	 * Fetch track metadata.
+	 */
+	public function get_track( $track_id ) {
+		return $this->request( "tracks/{$track_id}" );
+	}
+
+	/**
+	 * Fetch artist metadata.
+	 */
+	public function get_artist( $artist_id ) {
+		return $this->request( "artists/{$artist_id}" );
+	}
+
+	/**
+	 * Fetch multiple tracks in one request.
+	 */
+	public function get_tracks( array $track_ids ) {
+		if ( empty( $track_ids ) ) {
+			return array();
+		}
+		$ids = implode( ',', $track_ids );
+		$data = $this->request( "tracks?ids={$ids}" );
+		return $data['tracks'] ?? array();
+	}
+
+	/**
+	 * Private helper for API requests.
+	 */
+	private function request( $endpoint ) {
+		$token = $this->get_access_token();
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
+		$url = "https://api.spotify.com/v1/" . ltrim( $endpoint, '/' );
+		$response = wp_remote_get( $url, array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $token,
+			),
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( isset( $body['error'] ) ) {
+			return new \WP_Error( 'api_error', $body['error']['message'] ?? 'Unknown error' );
+		}
+
+		return $body;
+	}
+}
