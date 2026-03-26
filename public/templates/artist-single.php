@@ -2,7 +2,7 @@
 /**
  * Kontentainment Charts — Artist Profile
  */
-get_header();
+\Charts\Core\StandaloneLayout::get_header();
 global $wpdb;
 
 $artist_slug = get_query_var( 'charts_artist_slug' );
@@ -13,7 +13,7 @@ $artist = $wpdb->get_row( $wpdb->prepare(
 
 if ( ! $artist ) {
 	echo '<div class="kc-empty"><h1>Artist Not Found</h1></div>';
-	get_footer();
+	\Charts\Core\StandaloneLayout::get_footer();
 	exit;
 }
 
@@ -175,4 +175,4 @@ $hero_img = !empty($artist->image) ? $artist->image : 'https://www.gravatar.com/
 	</main>
 </div>
 
-<?php get_footer(); ?>
+<?php \Charts\Core\StandaloneLayout::get_footer(); ?>

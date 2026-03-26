@@ -26,13 +26,19 @@ class Router {
 		// 2. Artist Single
 		add_rewrite_rule( '^charts/artist/([^/]+)/?$', 'index.php?charts_page=artist-single&charts_artist_slug=$matches[1]', 'top' );
 
-		// 3. Clean Chart Type Routes (e.g., /charts/top-songs)
+		// 3. Track Single
+		add_rewrite_rule( '^charts/track/([^/]+)/?$', 'index.php?charts_page=item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
+
+		// 4. Video Single
+		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_page=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
+
+		// 5. Clean Chart Type Routes (e.g., /charts/top-songs)
 		add_rewrite_rule( '^charts/(top-songs|top-artists|top-videos|viral)/?$', 'index.php?charts_type=$matches[1]', 'top' );
 
-		// 4. Base /charts/
+		// 6. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_page=index', 'top' );
 		
-		// 5. Canonical /charts/{platform}/{country}/{frequency}/{type} (Old/Detailed)
+		// 7. Canonical /charts/{platform}/{country}/{frequency}/{type} (Old/Detailed)
 		add_rewrite_rule( 
 			'^charts/([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$', 
 			'index.php?charts_platform=$matches[1]&charts_country=$matches[2]&charts_frequency=$matches[3]&charts_type=$matches[4]', 
@@ -50,6 +56,8 @@ class Router {
 		$vars[] = 'charts_frequency';
 		$vars[] = 'charts_type';
 		$vars[] = 'charts_artist_slug';
+		$vars[] = 'charts_item_slug';
+		$vars[] = 'charts_item_type';
 		return $vars;
 	}
 
@@ -71,6 +79,10 @@ class Router {
 
 		if ( $charts_page === 'artist-single' ) {
 			return CHARTS_PATH . 'public/templates/artist-single.php';
+		}
+
+		if ( $charts_page === 'item-single' ) {
+			return CHARTS_PATH . 'public/templates/item-single.php';
 		}
 
 		// Support both long and short chart URLs

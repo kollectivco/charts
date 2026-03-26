@@ -2,7 +2,7 @@
 /**
  * Kontentainment Charts — Single Chart
  */
-get_header();
+\Charts\Core\StandaloneLayout::get_header();
 global $wpdb;
 
 $platform  = get_query_var( 'charts_platform' );
@@ -38,7 +38,7 @@ if ( ! $source ) {
 	echo '<p style="color:#6b7280;margin-top:10px;">' . esc_html( "Type: " . ($type ?: 'Unknown') ) . '</p>';
 	echo '<p style="margin-top:20px;"><a href="' . esc_url( home_url('/charts/') ) . '" style="color:#6366f1;font-weight:700;">← Back to Charts</a></p>';
 	echo '</div>';
-	get_footer();
+	\Charts\Core\StandaloneLayout::get_footer();
 	return;
 }
 
@@ -62,7 +62,7 @@ if ( ! $period ) {
 	echo '<p style="color:#6b7280;margin-top:16px;">The intelligence pass for this chart is currently processing.</p>';
 	echo '<p style="margin-top:20px;"><a href="' . esc_url( home_url('/charts/') ) . '" style="color:#6366f1;font-weight:700;">← Back to Home</a></p>';
 	echo '</div>';
-	get_footer();
+	\Charts\Core\StandaloneLayout::get_footer();
 	return;
 }
 
@@ -139,62 +139,138 @@ elseif ( strpos( strtolower($type), 'viral' ) !== false ) $display_title = 'Vira
 						$secondary = '';
 					}
 					if ( empty( $primary ) ) $primary = 'Unknown Item';
+
+					$is_featured = ($i === 0 && (int)$e->rank_position === 1);
 				?>
-				<details class="sc-row-item" style="border-bottom: 1px solid #111; outline: none;">
-					<summary style="display: flex; align-items: center; padding: 20px 0; cursor: pointer; list-style: none;">
-						<div class="sc-rank-box" style="width: 60px; text-align: center; flex-shrink: 0;">
-							<div style="font-size: 1.8rem; font-weight: 900; line-height: 1;"><?php echo (int) $e->rank_position; ?></div>
-							<div style="font-size: 9px; font-weight: 800; margin-top: 4px; color: <?php 
-								echo ($mv_dir === 'up') ? '#22c55e' : (($mv_dir === 'down') ? '#ef4444' : (($mv_dir === 'new') ? 'var(--k-accent)' : '#555')); 
-							?>">
-								<?php 
-								if ($mv_dir === 'up') echo '▲' . $mv_val;
-								elseif ($mv_dir === 'down') echo '▼' . $mv_val;
-								elseif ($mv_dir === 'new') echo 'NEW';
-								else echo '—';
-								?>
+				<details class="sc-row-item <?php echo $is_featured ? 'sc-featured-item' : ''; ?>" <?php echo $is_featured ? 'open' : ''; ?> style="border-bottom: 1px solid #111; outline: none;">
+					<summary style="display: flex; align-items: center; padding: <?php echo $is_featured ? '40px 0' : '20px 0'; ?>; cursor: pointer; list-style: none;">
+						
+						<?php if ( $is_featured ) : ?>
+							<!-- FEATURED #1 LAYOUT -->
+							<div class="sc-rank-featured" style="width: 100px; text-align: center; flex-shrink: 0;">
+								<div style="font-size: 4rem; font-weight: 900; line-height: 1; color: var(--k-accent);">1</div>
+								<div class="sc-featured-badge" style="display: inline-block; background: var(--k-accent); color: #fff; font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 4px; margin-top: 10px; letter-spacing: 0.1em;">TOP SPOT</div>
 							</div>
-						</div>
 
-						<?php if ( $e->cover_image ) : ?>
-							<img src="<?php echo esc_url( $e->cover_image ); ?>" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 20px; background: #111;">
-						<?php else : ?>
-							<div style="width: 60px; height: 60px; border-radius: 8px; background: #222; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #444;">
-								<?php echo esc_html(strtoupper(mb_substr($primary, 0, 1))); ?>
-							</div>
-						<?php endif; ?>
-
-						<div class="sc-info-box" style="flex: 1; min-width: 0;">
-							<div style="font-size: 1.1rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($primary); ?></div>
-							<?php if ( $secondary ) : ?>
-								<div style="font-size: 13px; color: var(--k-text-dim); margin-top: 4px; font-weight: 600;">
-									<?php 
-									$artists_arr = array_map('trim', explode(',', $secondary));
-									$links = array();
-									foreach ($artists_arr as $a_name) {
-										$a_slug = $wpdb->get_var($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_artists WHERE display_name = %s", $a_name));
-										if ($a_slug) {
-											$links[] = '<a href="' . home_url('/charts/artist/' . $a_slug . '/') . '" style="color:inherit;text-decoration:none;border-bottom:1px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'var(--k-accent)\'" onmouseout="this.style.borderColor=\'transparent\'">' . esc_html($a_name) . '</a>';
-										} else {
-											$links[] = esc_html($a_name);
-										}
-									}
-									echo implode(', ', $links);
-									?>
+							<?php if ( $e->cover_image ) : ?>
+								<div class="sc-featured-artwork" style="position: relative; margin-right: 40px;">
+									<img src="<?php echo esc_url( $e->cover_image ); ?>" style="width: 140px; height: 140px; border-radius: 12px; object-fit: cover; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+									<div style="position: absolute; -bottom: 10px; -right: 10px; background: #fff; color: #000; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+									</div>
 								</div>
 							<?php endif; ?>
-						</div>
 
-						<div class="sc-stats-box" style="text-align: right; width: 120px; flex-shrink: 0; padding-right: 10px;">
-							<?php if ( $val_display ) : ?>
-								<div style="font-size: 14px; font-weight: 900;"><?php echo esc_html($val_display); ?></div>
-								<div style="font-size: 9px; font-weight: 800; color: var(--k-text-muted); text-transform: uppercase; margin-top: 2px;"><?php echo esc_html($val_label); ?></div>
+							<div class="sc-info-box" style="flex: 1; min-width: 0;">
+								<div style="font-size: 2.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 8px;"><?php echo esc_html($primary); ?></div>
+								<?php if ( $secondary ) : ?>
+									<div style="font-size: 1.1rem; color: var(--k-text-dim); font-weight: 700;">
+										by 
+										<?php 
+										$artists_arr = array_map('trim', explode(',', $secondary));
+										$links = array();
+										foreach ($artists_arr as $a_name) {
+											$a_slug = $wpdb->get_var($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_artists WHERE display_name = %s", $a_name));
+											if ($a_slug) {
+												$links[] = '<a href="' . home_url('/charts/artist/' . $a_slug . '/') . '" style="color:inherit;text-decoration:none;border-bottom:2px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'var(--k-accent)\'" onmouseout="this.style.borderColor=\'transparent\'">' . esc_html($a_name) . '</a>';
+											} else {
+												$links[] = esc_html($a_name);
+											}
+										}
+										echo implode(', ', $links);
+										?>
+									</div>
+								<?php endif; ?>
+								
+								<div class="sc-featured-vitals" style="display: flex; gap: 32px; margin-top: 24px;">
+									<div class="vital-item">
+										<div style="font-size: 9px; font-weight: 800; color: var(--k-text-muted); text-transform: uppercase;">Peak</div>
+										<div style="font-size: 16px; font-weight: 900;">#1</div>
+									</div>
+									<div class="vital-item">
+										<div style="font-size: 9px; font-weight: 800; color: var(--k-text-muted); text-transform: uppercase;">Longevity</div>
+										<div style="font-size: 16px; font-weight: 900;"><?php echo $weeks; ?> Wks</div>
+									</div>
+									<div class="vital-item" style="color: <?php echo ($mv_dir === 'up') ? '#22c55e' : (($mv_dir === 'down') ? '#ef4444' : '#555'); ?>">
+										<div style="font-size: 9px; font-weight: 800; color: var(--k-text-muted); text-transform: uppercase;">Trend</div>
+										<div style="font-size: 16px; font-weight: 900;">
+											<?php 
+											if ($mv_dir === 'up') echo '▲' . $mv_val;
+											elseif ($mv_dir === 'down') echo '▼' . $mv_val;
+											elseif ($mv_dir === 'new') echo 'NEW';
+											else echo 'STABLE';
+											?>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="sc-stats-box" style="text-align: right; width: 140px; flex-shrink: 0;">
+								<?php if ( $val_display ) : ?>
+									<div style="font-size: 1.4rem; font-weight: 900; color: #fff;"><?php echo esc_html($val_display); ?></div>
+									<div style="font-size: 10px; font-weight: 800; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em;"><?php echo esc_html($val_label); ?></div>
+								<?php endif; ?>
+								<div style="margin-top: 24px;">
+									<span style="font-size: 11px; font-weight: 800; padding: 6px 14px; background: #111; border-radius: 20px; color: #fff; border: 1px solid #222;">Intelligence Detail</span>
+								</div>
+							</div>
+
+						<?php else : ?>
+							<!-- NORMAL ROW LAYOUT -->
+							<div class="sc-rank-box" style="width: 60px; text-align: center; flex-shrink: 0;">
+								<div style="font-size: 1.8rem; font-weight: 900; line-height: 1;"><?php echo (int) $e->rank_position; ?></div>
+								<div style="font-size: 9px; font-weight: 800; margin-top: 4px; color: <?php 
+									echo ($mv_dir === 'up') ? '#22c55e' : (($mv_dir === 'down') ? '#ef4444' : (($mv_dir === 'new') ? 'var(--k-accent)' : '#555')); 
+								?>">
+									<?php 
+									if ($mv_dir === 'up') echo '▲' . $mv_val;
+									elseif ($mv_dir === 'down') echo '▼' . $mv_val;
+									elseif ($mv_dir === 'new') echo 'NEW';
+									else echo '—';
+									?>
+								</div>
+							</div>
+
+							<?php if ( $e->cover_image ) : ?>
+								<img src="<?php echo esc_url( $e->cover_image ); ?>" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 20px; background: #111;">
+							<?php else : ?>
+								<div style="width: 60px; height: 60px; border-radius: 8px; background: #222; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #444;">
+									<?php echo esc_html(strtoupper(mb_substr($primary, 0, 1))); ?>
+								</div>
 							<?php endif; ?>
-							<div style="font-size: 11px; font-weight: 700; color: var(--k-text-dim); margin-top: 6px;"><?php echo $weeks; ?> WEEKS</div>
-						</div>
+
+							<div class="sc-info-box" style="flex: 1; min-width: 0;">
+								<div style="font-size: 1.1rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($primary); ?></div>
+								<?php if ( $secondary ) : ?>
+									<div style="font-size: 13px; color: var(--k-text-dim); margin-top: 4px; font-weight: 600;">
+										<?php 
+										$artists_arr = array_map('trim', explode(',', $secondary));
+										$links = array();
+										foreach ($artists_arr as $a_name) {
+											$a_slug = $wpdb->get_var($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_artists WHERE display_name = %s", $a_name));
+											if ($a_slug) {
+												$links[] = '<a href="' . home_url('/charts/artist/' . $a_slug . '/') . '" style="color:inherit;text-decoration:none;border-bottom:1px solid transparent;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'var(--k-accent)\'" onmouseout="this.style.borderColor=\'transparent\'">' . esc_html($a_name) . '</a>';
+											} else {
+												$links[] = esc_html($a_name);
+											}
+										}
+										echo implode(', ', $links);
+										?>
+									</div>
+								<?php endif; ?>
+							</div>
+
+							<div class="sc-stats-box" style="text-align: right; width: 120px; flex-shrink: 0; padding-right: 10px;">
+								<?php if ( $val_display ) : ?>
+									<div style="font-size: 14px; font-weight: 900;"><?php echo esc_html($val_display); ?></div>
+									<div style="font-size: 9px; font-weight: 800; color: var(--k-text-muted); text-transform: uppercase; margin-top: 2px;"><?php echo esc_html($val_label); ?></div>
+								<?php endif; ?>
+								<div style="font-size: 11px; font-weight: 700; color: var(--k-text-dim); margin-top: 6px;"><?php echo $weeks; ?> WEEKS</div>
+							</div>
+						<?php endif; ?>
 					</summary>
 
-					<div class="sc-expanded" style="padding: 24px 80px 40px; background: #080808; border-top: 1px solid #111; animation: fadeInUp 0.3s ease;">
+					<div class="sc-expanded" style="padding: <?php echo $is_featured ? '40px 100px 60px' : '24px 80px 40px'; ?>; background: #080808; border-top: 1px solid #111; animation: fadeInUp 0.3s ease;">
 						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 30px; margin-bottom: 32px;">
 							<div class="sc-pop-stat">
 								<div style="font-size: 10px; font-weight: 800; color: var(--k-text-muted); text-transform: uppercase;">Peak Position</div>
@@ -212,11 +288,18 @@ elseif ( strpos( strtolower($type), 'viral' ) !== false ) $display_title = 'Vira
 
 						<div class="sc-actions" style="display: flex; gap: 12px;">
 							<?php if ( $e->spotify_id ) : ?>
-								<a href="https://open.spotify.com/track/<?php echo esc_attr($e->spotify_id); ?>" target="_blank" class="sc-btn platform-spotify" style="text-decoration: none; background: var(--k-spotify); color: #fff; padding: 10px 20px; border-radius: 40px; font-size: 12px; font-weight: 800;">Open Spotify</a>
+								<a href="https://open.spotify.com/track/<?php echo esc_attr($e->spotify_id); ?>" target="_blank" class="sc-btn platform-spotify" style="text-decoration: none; background: var(--k-spotify); color: #fff; padding: 12px 24px; border-radius: 40px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px;">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.2.3-.6.4-.9.2-2.8-1.7-6.2-2.1-10.3-1.1-.3.1-.7-.1-.8-.4s.1-.7.4-.8c4.5-1 8.3-.6 11.4 1.3.3.1.4.5.2.8zm1.5-3.3c-.3.4-.8.5-1.1.3-3.2-1.9-8-2.5-11.8-1.4-.4.1-.9-.1-1-.5s.1-.9.5-1c4.3-1.3 9.6-.6 13.3 1.6.4.3.4.8.1 1.0zm.1-3.4C15.2 8.3 8.8 8.1 5.1 9.2c-.5.1-1.1-.1-1.2-.7-.1-.5.1-1.1.7-1.2 4.3-1.3 11.4-1.1 16.1 1.7.5.3.6.9.3 1.4-.3.5-.9.6-1.4.3z"/></svg>
+									Open Spotify
+								</a>
 							<?php endif; ?>
 							<?php if ( $e->youtube_id ) : ?>
-								<a href="https://www.youtube.com/watch?v=<?php echo esc_attr($e->youtube_id); ?>" target="_blank" class="sc-btn platform-youtube" style="text-decoration: none; background: var(--k-youtube); color: #fff; padding: 10px 20px; border-radius: 40px; font-size: 12px; font-weight: 800;">Watch YouTube</a>
+								<a href="https://www.youtube.com/watch?v=<?php echo esc_attr($e->youtube_id); ?>" target="_blank" class="sc-btn platform-youtube" style="text-decoration: none; background: var(--k-youtube); color: #fff; padding: 12px 24px; border-radius: 40px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px;">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+									Watch YouTube
+								</a>
 							<?php endif; ?>
+							<a href="<?php echo home_url('/charts/track/' . sanitize_title($primary) . '/'); ?>" class="sc-btn" style="text-decoration: none; background: #1a1a1a; color: #fff; padding: 12px 24px; border-radius: 40px; font-size: 13px; font-weight: 800; border: 1px solid #333;">Full Intelligence</a>
 						</div>
 					</div>
 				</details>
@@ -240,4 +323,4 @@ elseif ( strpos( strtolower($type), 'viral' ) !== false ) $display_title = 'Vira
 }
 </style>
 
-<?php get_footer(); ?>
+<?php \Charts\Core\StandaloneLayout::get_footer(); ?>

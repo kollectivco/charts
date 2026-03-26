@@ -14,6 +14,9 @@ class Bootstrap {
 		// Initialize Public Routing
 		\Charts\Core\Router::init();
 
+		// Initialize Standalone Layout system
+		\Charts\Core\StandaloneLayout::init();
+
 		// Register any core hooks
 		add_action( 'init', array( self::class, 'register_cron' ) );
 	}

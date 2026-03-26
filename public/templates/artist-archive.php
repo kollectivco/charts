@@ -2,7 +2,7 @@
 /**
  * Kontentainment Charts — Artist Archive
  */
-get_header();
+\Charts\Core\StandaloneLayout::get_header();
 global $wpdb;
 
 $artists_table = $wpdb->prefix . 'charts_artists';
@@ -64,4 +64,4 @@ $artists = $wpdb->get_results( "
 	</main>
 </div>
 
-<?php get_footer(); ?>
+<?php \Charts\Core\StandaloneLayout::get_footer(); ?>

@@ -100,7 +100,7 @@ class YouTubeCsvImporter {
 				$item_type = 'artist';
 				// For top-artists, the item_title IS the artist name in many YouTube exports
 				$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
-				$item_id     = $this->ensure_artist( $artist_name );
+				$item_id     = $this->ensure_artist( $artist_name, $row['image'] ?? null );
 			} elseif ( $chart_type === 'top-videos' ) {
 				$item_type = 'video';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
@@ -207,17 +207,25 @@ class YouTubeCsvImporter {
 	//  Entity helpers
 	// ─────────────────────────────────────────────
 
-	private function ensure_artist( $display_name ) {
+	private function ensure_artist( $display_name, $image = null ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_artists';
 		$normalized = mb_strtolower( trim( $display_name ) );
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
-		if ( $id ) return $id;
+		
+		if ( $id ) {
+			if ( $image ) {
+				$wpdb->update( $table, array( 'image' => $image, 'updated_at' => current_time('mysql') ), array( 'id' => $id ) );
+			}
+			return $id;
+		}
+
 		$slug = $this->unique_slug( $table, sanitize_title( $display_name ) );
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
 			'normalized_name' => $normalized,
 			'slug'            => $slug,
+			'image'           => $image,
 			'created_at'      => current_time( 'mysql' ),
 			'updated_at'      => current_time( 'mysql' ),
 		) );

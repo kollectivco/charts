@@ -38,6 +38,23 @@ class Bootstrap {
 				update_option( 'charts_spotify_client_id', sanitize_text_field( $_POST['spotify_client_id'] ) );
 				update_option( 'charts_spotify_client_secret', sanitize_text_field( $_POST['spotify_client_secret'] ) );
 				update_option( 'charts_youtube_api_key', sanitize_text_field( $_POST['youtube_api_key'] ) );
+
+				// Standalone Layout Settings
+				update_option( 'charts_standalone_layout', isset( $_POST['standalone_layout'] ) ? 1 : 0 );
+				update_option( 'charts_custom_header', isset( $_POST['custom_header'] ) ? 1 : 0 );
+				update_option( 'charts_logo_id', intval( $_POST['logo_id'] ?? 0 ) );
+				update_option( 'charts_logo_alt', sanitize_text_field( $_POST['logo_alt'] ?? '' ) );
+				update_option( 'charts_wordmark', sanitize_text_field( $_POST['wordmark'] ?? '' ) );
+				update_option( 'charts_show_logo', isset( $_POST['show_logo'] ) ? 1 : 0 );
+				update_option( 'charts_show_nav', isset( $_POST['show_nav'] ) ? 1 : 0 );
+				update_option( 'charts_show_country_selector', isset( $_POST['show_country_selector'] ) ? 1 : 0 );
+				update_option( 'charts_show_search', isset( $_POST['show_search'] ) ? 1 : 0 );
+				update_option( 'charts_header_menu_id', intval( $_POST['header_menu_id'] ?? 0 ) );
+
+				update_option( 'charts_custom_footer', isset( $_POST['custom_footer'] ) ? 1 : 0 );
+				update_option( 'charts_footer_description', sanitize_textarea_field( $_POST['footer_description'] ?? '' ) );
+				update_option( 'charts_footer_copyright', sanitize_text_field( $_POST['footer_copyright'] ?? '' ) );
+
 				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
 				break;
 
@@ -178,6 +195,9 @@ class Bootstrap {
 		wp_enqueue_style( 'charts-admin', CHARTS_URL . 'admin/assets/css/admin.css', array(), CHARTS_VERSION );
 		wp_enqueue_script( 'charts-admin', CHARTS_URL . 'admin/assets/js/admin.js', array( 'jquery' ), CHARTS_VERSION, true );
 		
+		// Enqueue WordPress Media for Logo Upload
+		wp_enqueue_media();
+
 		wp_localize_script( 'charts-admin', 'charts_admin', array(
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
 			'nonce'    => wp_create_nonce( 'charts_admin' ),

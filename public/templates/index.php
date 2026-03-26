@@ -3,7 +3,7 @@
  * Kontentainment Charts — Index
  * Premium Spotify-style landing page for music intelligence.
  */
-get_header();
+\Charts\Core\StandaloneLayout::get_header();
 global $wpdb;
 
 $sources_table  = $wpdb->prefix . 'charts_sources';
@@ -138,9 +138,11 @@ $insights = $analyzer->get_latest_insights( 3 );
 
 						<?php if ( ! empty( $source->top_tracks ) ) : ?>
 						<div class="kc-card-preview">
-							<?php foreach ( $source->top_tracks as $idx => $track ) : ?>
-								<div class="kc-preview-row">
-									<span class="kc-preview-rank"><?php echo $idx + 1; ?></span>
+							<?php foreach ( $source->top_tracks as $idx => $track ) : 
+								$is_top = ($idx === 0);
+							?>
+								<div class="kc-preview-row" style="<?php echo $is_top ? 'font-weight: 800; color: #fff;' : ''; ?>">
+									<span class="kc-preview-rank" style="<?php echo $is_top ? 'color: var(--k-accent);' : ''; ?>"><?php echo $idx + 1; ?></span>
 									<span class="kc-preview-name"><?php echo esc_html($track->track_name); ?></span>
 									<span class="kc-preview-artist"><?php echo esc_html($track->artist_names); ?></span>
 								</div>
@@ -186,4 +188,4 @@ $insights = $analyzer->get_latest_insights( 3 );
 .has-admin-bar .kc-hero { padding-top: 140px; }
 </style>
 
-<?php get_footer(); ?>
+<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
