@@ -81,10 +81,9 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 					<div class="kc-hero-label-row">
 						<span>ARTIST</span>
 						<span>&bull;</span>
-						<span>EGYPTIAN</span>
+						<span>OFFICIAL PROFILE</span>
 					</div>
 					<h1><?php echo esc_html($artist->display_name); ?></h1>
-					<div style="font-size: 1.5rem; font-weight: 700; color: var(--k-accent-red); margin-top: 12px;">عمرو دياب</div>
 				</div>
 			</div>
 		</div>

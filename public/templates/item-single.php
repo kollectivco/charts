@@ -61,7 +61,7 @@ $primary_artist_id = $item->primary_artist_id ?? 0;
 $related = array();
 if ( $primary_artist_id ) {
 	$related = $wpdb->get_results( $wpdb->prepare( "
-		SELECT t.title, a.display_name as artist_names, t.cover_image, i.total_streams as streams_count
+		SELECT t.title, t.slug, a.display_name as artist_names, a.slug as artist_slug, t.cover_image, i.total_streams as streams_count
 		FROM {$wpdb->prefix}charts_tracks t
 		JOIN {$wpdb->prefix}charts_artists a ON a.id = t.primary_artist_id
 		LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = t.id AND i.entity_type = 'track'
@@ -210,9 +210,11 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 
 				<!-- MORE BY ARTIST -->
 				<div class="kc-more-section" style="margin-top: 60px;">
-					<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);">MORE BY <?php echo strtoupper($item->artist_names); ?></h3>
 					<?php foreach ( $related as $rel ) : ?>
-						<a href="<?php echo home_url('/charts/' . $type . '/' . sanitize_title($rel->title)); ?>" class="kc-related-row">
+						<?php 
+						$rel_link = ( ! empty( $rel->slug ) ) ? home_url( '/charts/' . $type . '/' . $rel->slug ) : '#';
+						?>
+						<a href="<?php echo esc_url( $rel_link ); ?>" class="kc-related-row">
 							<img src="<?php echo esc_url($rel->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-related-art">
 							<div>
 								<div class="kc-related-title"><?php echo esc_html($rel->title); ?></div>
@@ -239,7 +241,15 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 					<div style="font-size: 13px; opacity: 0.6; font-weight: 600;">52.4M MONTHLY LISTENERS · <?php echo esc_html($item->artist_names); ?></div>
 				</div>
 			</div>
-			<a href="#" class="kc-banner-cta">View Artist &rarr;</a>
+			<?php 
+			// Handle artist slug from the 'related' join or from direct item meta if available
+			$artist_slug = $related[0]->artist_slug ?? null;
+			if ( ! $artist_slug && $primary_artist_id ) {
+				$artist_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_artists WHERE id = %d", $primary_artist_id ) );
+			}
+			$artist_link = $artist_slug ? home_url( '/charts/artist/' . $artist_slug ) : '#';
+			?>
+			<a href="<?php echo esc_url( $artist_link ); ?>" class="kc-banner-cta">View Artist &rarr;</a>
 		</section>
 
 		<!-- 7. MORE CHARTS SECTION -->

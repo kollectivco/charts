@@ -104,6 +104,26 @@ class Bootstrap {
 				$manager->delete_definition( $id );
 				add_settings_error( 'charts', 'def_deleted', __( 'Chart definition deleted.', 'charts' ), 'success' );
 				break;
+
+			case 'delete_entity':
+				global $wpdb;
+				$id    = intval( $_POST['id'] );
+				$type  = sanitize_text_field( $_POST['type'] );
+				$table = $wpdb->prefix . 'charts_' . ( $type === 'artist' ? 'artists' : 'tracks' );
+				
+				// 1. Delete the canonical metadata
+				$wpdb->delete( $table, array( 'id' => $id ) );
+				
+				// 2. Prevent orphaned relationships in historical entries
+				$wpdb->update( 
+					$wpdb->prefix . 'charts_entries', 
+					array( 'item_id' => 0 ), 
+					array( 'item_id' => $id, 'item_type' => $type ) 
+				);
+				
+				delete_transient( 'charts_intel_last_calc' );
+				add_settings_error( 'charts', 'entity_deleted', __( 'Entity deleted and relationships unlinked.', 'charts' ), 'success' );
+				break;
 		}
 	}
 
@@ -179,8 +199,26 @@ class Bootstrap {
 
 		add_submenu_page(
 			'charts',
-			__( 'Entities', 'charts' ),
-			__( 'Entities', 'charts' ),
+			__( 'Artists', 'charts' ),
+			__( 'Artists', 'charts' ),
+			'manage_options',
+			'charts-artists',
+			array( self::class, 'render_entities' )
+		);
+
+		add_submenu_page(
+			'charts',
+			__( 'Tracks', 'charts' ),
+			__( 'Tracks', 'charts' ),
+			'manage_options',
+			'charts-tracks',
+			array( self::class, 'render_entities' )
+		);
+
+		add_submenu_page(
+			'charts',
+			__( 'Metadata Center', 'charts' ),
+			__( 'Advanced Entities', 'charts' ),
 			'manage_options',
 			'charts-entities',
 			array( self::class, 'render_entities' )
@@ -419,12 +457,12 @@ class Bootstrap {
 		self::render_view( 'results' );
 	}
 
-	public static function render_matching() {
-		self::render_view( 'matching' );
-	}
-
 	public static function render_entities() {
-		self::render_view( 'entities' );
+		if ( isset( $_GET['action'] ) && $_GET['action'] === 'edit' ) {
+			self::render_view( 'entity-edit' );
+		} else {
+			self::render_view( 'entities' );
+		}
 	}
 
 	public static function render_insights() {
