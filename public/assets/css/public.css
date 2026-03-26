@@ -70,6 +70,18 @@
 	position: sticky;
 	top: 0;
 	z-index: 1000;
+	transition: top 0.3s;
+}
+
+/* Offset for WordPress Admin Bar */
+.admin-bar .charts-product-header {
+	top: 32px;
+}
+
+@media screen and (max-width: 782px) {
+	.admin-bar .charts-product-header {
+		top: 46px;
+	}
 }
 
 .header-inner {

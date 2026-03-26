@@ -2,12 +2,7 @@
 /**
  * Standalone Charts Header - Cinematic Dark Dashboard
  */
-$custom_header_enabled = get_option( 'charts_custom_header' );
-if ( ! $custom_header_enabled ) {
-	get_header(); // Fallback if setting is off
-	return;
-}
-
+// Force standalone for these templates
 $logo_id      = get_option( 'charts_logo_id' );
 $logo_alt     = get_option( 'charts_logo_alt' );
 $wordmark     = get_option( 'charts_wordmark', 'KCharts' ); // Use KCharts for cinematic feel per ref

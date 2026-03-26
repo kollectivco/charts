@@ -2,12 +2,7 @@
 /**
  * Standalone Charts Footer - Cinematic Architecture
  */
-$custom_footer_enabled = get_option( 'charts_custom_footer' );
-if ( ! $custom_footer_enabled ) {
-	get_footer(); // Fallback if setting is off
-	return;
-}
-
+// Force standalone for these templates
 global $wpdb;
 $definitions = $wpdb->get_results( "SELECT title, slug FROM {$wpdb->prefix}charts_definitions LIMIT 6" );
 

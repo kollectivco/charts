@@ -34,23 +34,51 @@ if ( ! $item ) {
 	exit;
 }
 
-// 2. FETCH HISTORY (Appearances)
+// 2. FETCH HISTORY (Appearances via explicit item_id)
 $history = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, d.title as chart_title, s.country_code
 	FROM {$wpdb->prefix}charts_entries e
 	JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
 	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
-	WHERE e.track_name = %s
+	WHERE e.item_id = %d AND e.item_type = %s
 	ORDER BY e.created_at DESC
-", $item->title ) );
+", $item->id, $type ) );
 
-// 3. FETCH RELATED (More by Artist)
-$related = $wpdb->get_results( $wpdb->prepare( "
-	SELECT DISTINCT track_name as title, artist_names, cover_image, streams_count, views_count
-	FROM {$wpdb->prefix}charts_entries 
-	WHERE artist_names = %s AND track_name != %s
-	LIMIT 3
-", $item->artist_names, $item->title ) );
+// Fallback if ID match fails (for backfilled items with title mismatches)
+if ( empty($history) && !empty($item->title) ) {
+	$history = $wpdb->get_results( $wpdb->prepare( "
+		SELECT e.*, d.title as chart_title, s.country_code
+		FROM {$wpdb->prefix}charts_entries e
+		JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+		LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
+		WHERE e.track_name = %s AND e.item_type = %s
+		ORDER BY e.created_at DESC
+	", $item->title, $type ) );
+}
+
+// 3. FETCH RELATED (More by Artist via explicit ID join)
+$primary_artist_id = $item->primary_artist_id ?? 0;
+$related = array();
+if ( $primary_artist_id ) {
+	$related = $wpdb->get_results( $wpdb->prepare( "
+		SELECT t.title, a.display_name as artist_names, t.cover_image, i.total_streams as streams_count
+		FROM {$wpdb->prefix}charts_tracks t
+		JOIN {$wpdb->prefix}charts_artists a ON a.id = t.primary_artist_id
+		LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = t.id AND i.entity_type = 'track'
+		WHERE t.primary_artist_id = %d AND t.slug != %s
+		LIMIT 3
+	", $primary_artist_id, $slug ) );
+}
+
+// Final fallback to string matching for legacy/unlinked data
+if ( empty($related) && !empty($item->artist_names) ) {
+	$related = $wpdb->get_results( $wpdb->prepare( "
+		SELECT DISTINCT track_name as title, artist_names, cover_image, streams_count, views_count
+		FROM {$wpdb->prefix}charts_entries 
+		WHERE artist_names = %s AND track_name != %s
+		LIMIT 3
+	", $item->artist_names, $item->title ) );
+}
 
 // 4. FETCH MORE CHARTS
 $more_charts = $wpdb->get_results( "SELECT title, slug, chart_type, country_code, frequency FROM {$wpdb->prefix}charts_definitions LIMIT 3" );

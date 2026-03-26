@@ -185,8 +185,12 @@ $arabic_subtitle = "أفضل ١٠٠ أغنية";
 						elseif ($row->movement_direction === 'down') { $dir_color = 'var(--k-accent-red)'; $dir_icon = '▼'; }
 						elseif ($row->movement_direction === 'new') { $dir_color = 'var(--k-accent-yellow)'; $dir_icon = 'NEW'; $val_move = ''; }
 					}
+
+					// Build item slug URL
+					$item_slug = $row->item_slug ?: sanitize_title($row->track_name);
+					$item_url = home_url('/charts/' . ($row->item_type === 'video' ? 'video' : 'track') . '/' . $item_slug);
 				?>
-					<a href="<?php echo home_url('/charts/' . ($row->item_type==='video' ? 'video' : 'track') . '/' . sanitize_title($row->track_name)); ?>" class="kc-rank-row">
+					<a href="<?php echo esc_url($item_url); ?>" class="kc-rank-row">
 						<div class="kc-rank-val"><?php echo $row->rank_position; ?></div>
 						<div class="kc-move-val" style="color: <?php echo $dir_color; ?>;">
 							<?php echo $dir_icon; ?> <?php echo $val_move; ?>

@@ -19,33 +19,36 @@ if ( ! $artist ) {
 	exit;
 }
 
-// 1. Charting Tracks (Recent appearances)
+// 1. Charting Tracks (Recent appearances via relation table)
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, d.title as chart_title 
 	FROM {$wpdb->prefix}charts_entries e
 	JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
 	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
-	WHERE e.artist_names LIKE %s AND e.item_type = 'track'
+	JOIN {$wpdb->prefix}charts_track_artists ta ON ta.track_id = e.item_id
+	WHERE ta.artist_id = %d AND e.item_type = 'track'
 	ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 2
-", '%' . $artist->display_name . '%' ) );
+", $artist->id ) );
 
-// 2. Popular Tracks (Historical performance)
+// 2. Popular Tracks (Historical performance via explicit track table)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT DISTINCT track_name as title, cover_image, streams_count, views_count
-	FROM {$wpdb->prefix}charts_entries 
-	WHERE artist_names LIKE %s AND item_type = 'track'
-	ORDER BY (streams_count + views_count) DESC LIMIT 2
-", '%' . $artist->display_name . '%' ) );
+	SELECT DISTINCT t.title, t.cover_image, i.total_streams as streams_count
+	FROM {$wpdb->prefix}charts_tracks t
+	JOIN {$wpdb->prefix}charts_track_artists ta ON ta.track_id = t.id
+	LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = t.id AND i.entity_type = 'track'
+	WHERE ta.artist_id = %d
+	ORDER BY i.total_streams DESC LIMIT 2
+", $artist->id ) );
 
-// 3. Chart Rankings (Artist-specific charts)
+// 3. Chart Rankings (Direct ID match for Artist Chart entries)
 $artist_rankings = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, d.title as chart_title 
 	FROM {$wpdb->prefix}charts_entries e
 	JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
 	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
-	WHERE (e.track_name = %s OR e.artist_names = %s) AND e.item_type = 'artist'
+	WHERE e.item_id = %d AND e.item_type = 'artist'
 	ORDER BY e.created_at DESC LIMIT 2
-", $artist->display_name, $artist->display_name ) );
+", $artist->id ) );
 
 // 4. Albums
 $albums = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_albums WHERE primary_artist_id = %d LIMIT 1", $artist->id ) );

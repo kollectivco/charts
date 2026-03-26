@@ -84,6 +84,10 @@ class Bootstrap {
 				self::process_youtube_csv_upload();
 				break;
 			
+			case 'unified_import':
+				self::process_unified_import();
+				break;
+			
 			case 'save_definition':
 				$manager = new SourceManager();
 				$result = $manager->save_definition( $_POST );
@@ -148,20 +152,11 @@ class Bootstrap {
 
 		add_submenu_page(
 			'charts',
-			__( 'Spotify Import', 'charts' ),
-			__( 'Spotify Import', 'charts' ),
+			__( 'Import Center', 'charts' ),
+			__( 'Import Center', 'charts' ),
 			'manage_options',
-			'charts-spotify-import',
-			array( self::class, 'render_spotify_import' )
-		);
-
-		add_submenu_page(
-			'charts',
-			__( 'YouTube Import', 'charts' ),
-			__( 'YouTube Import', 'charts' ),
-			'manage_options',
-			'charts-youtube-import',
-			array( self::class, 'render_youtube_import' )
+			'charts-import',
+			array( self::class, 'render_import_center' )
 		);
 
 		add_submenu_page(
@@ -260,11 +255,39 @@ class Bootstrap {
 	}
 
 	public static function render_spotify_import() {
-		self::render_view( 'import-sheet' );
+		wp_redirect( admin_url( 'admin.php?page=charts-import&source=spotify' ) );
+		exit;
 	}
 
 	public static function render_youtube_import() {
-		self::render_view( 'youtube-import' );
+		wp_redirect( admin_url( 'admin.php?page=charts-import&source=youtube' ) );
+		exit;
+	}
+
+	public static function render_import_center() {
+		self::render_view( 'import-center' );
+	}
+
+	/**
+	 * Process Unified Import.
+	 * Routes to the correct platform handler based on selection.
+	 */
+	private static function process_unified_import() {
+		$platform = sanitize_text_field( $_POST['platform'] ?? 'spotify' );
+		
+		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {
+			add_settings_error( 'charts', 'no_file', __( 'Please select a data file to upload.', 'charts' ), 'error' );
+			return;
+		}
+
+		// Inject the correct file name into the expected $_FILES location for compatibility
+		if ( $platform === 'spotify' ) {
+			$_FILES['spotify_csv'] = $_FILES['import_file'];
+			self::process_spotify_csv_upload();
+		} else {
+			$_FILES['youtube_csv'] = $_FILES['import_file'];
+			self::process_youtube_csv_upload();
+		}
 	}
 
 	/**

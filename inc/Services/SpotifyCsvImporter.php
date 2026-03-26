@@ -96,6 +96,7 @@ class SpotifyCsvImporter {
 			$spotify_id   = ! empty( $enrichment['spotify_id'] ) ? $enrichment['spotify_id'] : ( $row['spotify_track_id'] ?? null );
 			$cover_image  = $enrichment['album']['cover_image'] ?? null;
 			$official_name = ! empty( $enrichment['official_name'] ) ? $enrichment['official_name'] : $track_name;
+			$official_name = $this->import_flow->normalize_title( $official_name );
 
 			$track_id = $this->ensure_track( $official_name, $primary_artist_id, $spotify_id, $cover_image );
 
@@ -187,7 +188,7 @@ class SpotifyCsvImporter {
 		}
 
 		// Normalize name for matching
-		$normalized = $this->normalize_name( $display_name );
+		$normalized = mb_strtolower( $this->import_flow->normalize_title( $display_name ) );
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
 		if ( $id ) {
 			// Backfill spotify_id if now available
@@ -227,7 +228,7 @@ class SpotifyCsvImporter {
 		}
 
 		// Normalized title match
-		$normalized = $this->normalize_name( $title );
+		$normalized = mb_strtolower( $this->import_flow->normalize_title( $title ) );
 		$id = $wpdb->get_var( $wpdb->prepare(
 			"SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d",
 			$normalized, $artist_id

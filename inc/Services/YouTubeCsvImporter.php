@@ -107,12 +107,12 @@ class YouTubeCsvImporter {
 				$item_type = 'artist';
 				// For top-artists, the item_title IS the artist name in many YouTube exports
 				$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
-				$item_id     = $this->ensure_artist( $artist_name, $row['image'] ?? null );
+				$item_id     = $this->ensure_artist( $this->import_flow->normalize_title( $artist_name ), $row['image'] ?? null );
 			} elseif ( $chart_type === 'top-videos' ) {
 				$item_type = 'video';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
 				$item_id   = $this->ensure_video( 
-					$title, 
+					$this->import_flow->normalize_title( $title ), 
 					$primary_artist_id, 
 					$row['youtube_id'] ?? null, 
 					$row['image'] ?? null, 
@@ -122,19 +122,19 @@ class YouTubeCsvImporter {
 				// Link ALL artists
 				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
 				foreach ( $all_artists as $a_name ) {
-					$a_id = $this->ensure_artist( trim($a_name) );
+					$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
 					if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
 				}
 			} else {
 				// default: top-songs / tracks
 				$item_type = 'track';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
-				$item_id   = $this->ensure_track( $title, $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
+				$item_id   = $this->ensure_track( $this->import_flow->normalize_title( $title ), $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
 
 				// Link ALL artists
 				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
 				foreach ( $all_artists as $a_name ) {
-					$a_id = $this->ensure_artist( trim($a_name) );
+					$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
 					if ( $item_id && $a_id ) $this->link_track_artist( $item_id, $a_id );
 				}
 			}
@@ -225,7 +225,7 @@ class YouTubeCsvImporter {
 	private function ensure_artist( $display_name, $image = null ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_artists';
-		$normalized = mb_strtolower( trim( $display_name ) );
+		$normalized = mb_strtolower( $this->import_flow->normalize_title( trim( $display_name ) ) );
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
 		
 		if ( $id ) {
@@ -250,7 +250,7 @@ class YouTubeCsvImporter {
 	private function ensure_track( $title, $artist_id, $youtube_id = null, $image = null ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_tracks';
-		$normalized = mb_strtolower( trim( $title ) );
+		$normalized = mb_strtolower( $this->import_flow->normalize_title( trim( $title ) ) );
 
 		if ( $youtube_id ) {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE youtube_id = %s", $youtube_id ) );
@@ -284,7 +284,7 @@ class YouTubeCsvImporter {
 	private function ensure_video( $title, $artist_id, $youtube_id = null, $thumbnail = null, $video_url = null ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_videos';
-		$normalized = mb_strtolower( trim( $title ) );
+		$normalized = mb_strtolower( $this->import_flow->normalize_title( trim( $title ) ) );
 
 		if ( $youtube_id ) {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE youtube_id = %s", $youtube_id ) );
