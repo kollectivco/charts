@@ -105,6 +105,40 @@ class SourceManager {
 	}
 
 	/**
+	 * Save or update a source.
+	 */
+	public function save_source( $data ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_sources';
+
+		$fields = array(
+			'source_name'  => sanitize_text_field( $data['source_name'] ),
+			'platform'     => sanitize_text_field( $data['platform'] ),
+			'source_type'  => sanitize_text_field( $data['source_type'] ),
+			'source_url'   => esc_url_raw( $data['source_url'] ),
+			'country_code' => strtolower( sanitize_text_field( $data['country_code'] ) ),
+			'frequency'    => sanitize_text_field( $data['frequency'] ),
+			'chart_type'   => sanitize_text_field( $data['chart_type'] ),
+			'parser_key'   => sanitize_text_field( $data['parser_key'] ),
+			'is_active'    => isset( $data['is_active'] ) ? (int) $data['is_active'] : 1,
+		);
+
+		// Special case for manual imports
+		if ( $fields['source_type'] === 'manual_import' && empty( $fields['source_url'] ) ) {
+			$fields['source_url'] = 'manual';
+		}
+
+		if ( ! empty( $data['id'] ) ) {
+			$id = intval( $data['id'] );
+			$wpdb->update( $table, $fields, array( 'id' => $id ) );
+			return $id;
+		}
+
+		$wpdb->insert( $table, $fields );
+		return $wpdb->insert_id;
+	}
+
+	/**
 	 * Toggle source status.
 	 */
 	public function toggle_status( $id ) {

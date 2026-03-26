@@ -40,6 +40,23 @@ class Bootstrap {
 				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved successfully.', 'charts' ), 'success' );
 				break;
 
+			case 'save_source':
+				$manager = new SourceManager();
+				$result = $manager->save_source( $_POST );
+				if ( $result ) {
+					add_settings_error( 'charts', 'source_saved', __( 'Source saved successfully.', 'charts' ), 'success' );
+				} else {
+					add_settings_error( 'charts', 'source_error', __( 'Failed to save source.', 'charts' ), 'error' );
+				}
+				break;
+
+			case 'delete_source':
+				$manager = new SourceManager();
+				$id = intval( $_POST['id'] );
+				$manager->delete_source( $id );
+				add_settings_error( 'charts', 'source_deleted', __( 'Source deleted.', 'charts' ), 'success' );
+				break;
+
 			case 'import_spotify_csv':
 				self::process_spotify_csv_upload();
 				break;
