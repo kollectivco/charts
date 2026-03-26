@@ -157,21 +157,15 @@ class Bootstrap {
 	 * Render the Dashboard.
 	 */
 	public static function render_dashboard() {
-		include CHARTS_PATH . 'admin/views/dashboard.php';
+		self::render_view( 'dashboard' );
 	}
 
-	/**
-	 * Render the Sources.
-	 */
 	public static function render_sources() {
-		include CHARTS_PATH . 'admin/views/sources.php';
+		self::render_view( 'sources' );
 	}
 
-	/**
-	 * Render Spotify CSV Import.
-	 */
 	public static function render_spotify_import() {
-		include CHARTS_PATH . 'admin/views/spotify-import.php';
+		self::render_view( 'import-sheet' );
 	}
 
 	/**
@@ -215,28 +209,19 @@ class Bootstrap {
 	 * Render the Import Runs.
 	 */
 	public static function render_imports() {
-		include CHARTS_PATH . 'admin/views/imports.php';
+		self::render_view( 'results' );
 	}
 
-	/**
-	 * Render the Matching Center.
-	 */
 	public static function render_matching() {
-		include CHARTS_PATH . 'admin/views/matching.php';
+		self::render_view( 'matching' );
 	}
 
-	/**
-	 * Render the Entities.
-	 */
 	public static function render_entities() {
-		include CHARTS_PATH . 'admin/views/entities.php';
+		self::render_view( 'entities' );
 	}
 
-	/**
-	 * Render the Insights.
-	 */
 	public static function render_insights() {
-		include CHARTS_PATH . 'admin/views/insights.php';
+		self::render_view( 'insights' );
 	}
 
 	/**
@@ -276,6 +261,24 @@ class Bootstrap {
 	 * Render the Settings.
 	 */
 	public static function render_settings() {
-		include CHARTS_PATH . 'admin/views/settings.php';
+		self::render_view( 'settings' );
+	}
+
+	/**
+	 * Helper to safely render an admin view.
+	 */
+	private static function render_view( $name, $data = [] ) {
+		$file = CHARTS_PATH . "admin/views/{$name}.php";
+
+		if ( ! file_exists( $file ) ) {
+			echo '<div class="wrap"><div class="notice notice-error"><p>' . sprintf( __( 'Critical: View file not found: %s', 'charts' ), esc_html( $name ) ) . '</p></div></div>';
+			return;
+		}
+
+		if ( ! empty( $data ) ) {
+			extract( $data );
+		}
+
+		include $file;
 	}
 }

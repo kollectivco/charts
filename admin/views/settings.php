@@ -4,7 +4,7 @@
  */
 ?>
 <div class="wrap charts-admin-wrap">
-	<h1><?php _class( 'Settings' ); esc_html_e( 'Charts Settings', 'charts' ); ?></h1>
+	<h1><?php esc_html_e( 'Charts Settings', 'charts' ); ?></h1>
 	
 	<?php settings_errors( 'charts' ); ?>
 
