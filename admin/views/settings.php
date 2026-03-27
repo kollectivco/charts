@@ -48,15 +48,14 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 					<span class="input-helper">Used when no logo is selected or as high-fidelity fallback.</span>
 				</div>
 				<div class="form-group">
-					<label>Standalone Mode</label>
-					<div class="toggle-item" style="margin-top:10px;">
-						<label class="switch">
-							<input type="checkbox" name="standalone_layout" value="1" <?php checked( 1, get_option( 'charts_standalone_layout', 1 ) ); ?>>
-							<span class="slider"></span>
-						</label>
-						<label style="font-weight:600; font-size:13px;">Enable Standalone Architecture</label>
+					<label>Shell Configuration</label>
+					<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; font-size:12px; color:#64748b; line-height:1.5;">
+						<div style="display:flex; align-items:center; gap:10px; color:#0f172a; font-weight:700; margin-bottom:5px;">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+							Standalone Architecture Enabled
+						</div>
+						Charts routes automatically use a plugin-controlled cinematic shell for maximum performance and design fidelity. The main site remains unaffected.
 					</div>
-					<span class="input-helper">Bypasses active theme for an isolated, cinematic editorial experience.</span>
 				</div>
 				
 				<div class="form-group">
@@ -87,15 +86,10 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 			</div>
 			<div class="premium-form-grid">
 				<div class="form-group">
-					<label>Custom Header Status</label>
-					<div class="toggle-item" style="margin-top:10px;">
-						<label class="switch">
-							<input type="checkbox" name="custom_header" value="1" <?php checked( 1, get_option( 'charts_custom_header', 1 ) ); ?>>
-							<span class="slider"></span>
-						</label>
-						<label style="font-weight:600; font-size:13px;">Use Plugin Header</label>
+					<label>Header Context</label>
+					<div style="font-size:13px; font-weight:600; color:#64748b;">
+						The cinematic navigation bar is forced on all Charts-owned routes to ensure data-driven navigation remains functional.
 					</div>
-					<span class="input-helper">Injects the KCharts cinematic navigation bar.</span>
 				</div>
 				<div class="form-group">
 					<label for="header_menu_id"><?php esc_html_e( 'Assigned Navigation Menu', 'charts' ); ?></label>
@@ -137,15 +131,10 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 			</div>
 			<div class="premium-form-grid">
 				<div class="form-group">
-					<label>Custom Footer Status</label>
-					<div class="toggle-item" style="margin-top:10px;">
-						<label class="switch">
-							<input type="checkbox" name="custom_footer" value="1" <?php checked( 1, get_option( 'charts_custom_footer', 1 ) ); ?>>
-							<span class="slider"></span>
-						</label>
-						<label style="font-weight:600; font-size:13px;">Use Plugin Footer</label>
+					<label>Footer Context</label>
+					<div style="font-size:13px; font-weight:600; color:#64748b;">
+						The cinematic 4-column footer is forced on all Charts-owned routes to provide platform consistency and data attribution.
 					</div>
-					<span class="input-helper">Injects the cinematic 4-column footer at the bottom of the shell.</span>
 				</div>
 				<div class="form-group">
 					<label for="footer_copyright">Copyright Label</label>

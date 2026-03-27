@@ -23,50 +23,9 @@ class SourceManager {
 
 		$table = $wpdb->prefix . 'charts_sources';
 
-		$sources = array(
-			// Spotify Egypt
-			array(
-				'source_name'  => 'Spotify Egypt Weekly Top Songs',
-				'platform'     => 'spotify',
-				'source_type'  => 'manual_import',
-				'country_code' => 'eg',
-				'chart_type'   => 'top-songs',
-				'frequency'    => 'weekly',
-				'source_url'   => 'manual',
-				'parser_key'   => 'spotify-csv',
-			),
-			array(
-				'source_name'  => 'Spotify Egypt Daily Top Songs',
-				'platform'     => 'spotify',
-				'source_type'  => 'manual_import',
-				'country_code' => 'eg',
-				'chart_type'   => 'top-songs',
-				'frequency'    => 'daily',
-				'source_url'   => 'manual',
-				'parser_key'   => 'spotify-csv',
-			),
-			// YouTube Egypt
-			array(
-				'source_name'  => 'YouTube Egypt Weekly Top Songs',
-				'platform'     => 'youtube',
-				'source_type'  => 'live_scrape',
-				'country_code' => 'eg',
-				'chart_type'   => 'top-songs',
-				'frequency'    => 'weekly',
-				'source_url'   => 'https://charts.youtube.com/charts/TopSongs/eg/weekly',
-				'parser_key'   => 'youtube-v1',
-			),
-			array(
-				'source_name'  => 'YouTube Egypt Daily Top Music Videos',
-				'platform'     => 'youtube',
-				'source_type'  => 'live_scrape',
-				'country_code' => 'eg',
-				'chart_type'   => 'top-videos',
-				'frequency'    => 'daily',
-				'source_url'   => 'https://charts.youtube.com/charts/TopVideos/eg/daily',
-				'parser_key'   => 'youtube-v1',
-			),
-		);
+			// Sources are handled by user configuration
+			$sources = array();
+			// No mock sources
 
 		foreach ( $sources as $source ) {
 			// Check if source exists by Core parameters to ensure migration
@@ -95,52 +54,8 @@ class SourceManager {
 		global $wpdb;
 		$table = $wpdb->prefix . 'charts_definitions';
 
-		$definitions = array(
-			array(
-				'title'         => 'Top Songs Egypt',
-				'slug'          => 'top-songs',
-				'chart_summary' => 'The most streamed tracks in Egypt across all platforms.',
-				'chart_type'    => 'top-songs',
-				'item_type'     => 'track',
-				'country_code'  => 'eg',
-				'frequency'     => 'weekly',
-				'is_featured'   => 1,
-				'menu_order'    => 1,
-			),
-			array(
-				'title'         => 'Top Music Videos Egypt',
-				'slug'          => 'top-videos',
-				'chart_summary' => 'Trending music videos and visual hits in the Egyptian market.',
-				'chart_type'    => 'top-videos',
-				'item_type'     => 'video',
-				'country_code'  => 'eg',
-				'frequency'     => 'weekly',
-				'is_featured'   => 1,
-				'menu_order'    => 2,
-			),
-			array(
-				'title'         => 'Top Artists Egypt',
-				'slug'          => 'top-artists',
-				'chart_summary' => 'The most popular performers and creators in Egypt.',
-				'chart_type'    => 'top-artists',
-				'item_type'     => 'artist',
-				'country_code'  => 'eg',
-				'frequency'     => 'weekly',
-				'is_featured'   => 1,
-				'menu_order'    => 3,
-			),
-			array(
-				'title'         => 'Viral 50 Egypt',
-				'slug'          => 'viral',
-				'chart_summary' => 'The tracks gaining the most social traction and velocity right now.',
-				'chart_type'    => 'viral',
-				'item_type'     => 'track',
-				'country_code'  => 'eg',
-				'frequency'     => 'daily',
-				'is_featured'   => 0,
-				'menu_order'    => 4,
-			),
-		);
+		$definitions = array();
+		// No mock charts
 
 		foreach ( $definitions as $def ) {
 			$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE slug = %s", $def['slug'] ) );

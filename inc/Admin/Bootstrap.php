@@ -40,12 +40,7 @@ class Bootstrap {
 				update_option( 'charts_spotify_client_secret', sanitize_text_field( $_POST['spotify_client_secret'] ) );
 				update_option( 'charts_youtube_api_key', sanitize_text_field( $_POST['youtube_api_key'] ) );
 
-				// Standalone Layout & Shell Settings
-				update_option( 'charts_standalone_layout', isset( $_POST['standalone_layout'] ) ? 1 : 0 );
-				update_option( 'charts_custom_header', isset( $_POST['custom_header'] ) ? 1 : 0 );
-				update_option( 'charts_custom_footer', isset( $_POST['custom_footer'] ) ? 1 : 0 );
-				
-				// Branding
+				// Branding Settings
 				update_option( 'charts_logo_id', intval( $_POST['logo_id'] ?? 0 ) );
 				update_option( 'charts_logo_alt', sanitize_text_field( $_POST['logo_alt'] ?? '' ) );
 				update_option( 'charts_wordmark', sanitize_text_field( $_POST['wordmark'] ?? '' ) );

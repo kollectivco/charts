@@ -127,8 +127,14 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 				<a href="#" class="kc-header-link" style="color: var(--k-text-muted);">Browse All &rarr;</a>
 			</header>
 
-			<div class="kc-bento-grid">
-				<?php foreach ( $definitions as $idx => $def ) : 
+				<?php 
+				if ( empty( $definitions ) ) : ?>
+					<div class="kc-empty-grid-state" style="grid-column: 1 / -1; padding: 100px 40px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--k-border); border-radius: 24px;">
+						<div style="font-size: 14px; font-weight: 700; color: var(--k-text-muted); margin-bottom: 12px;">No Charts defined yet.</div>
+						<p style="font-size: 12px; opacity: 0.5; max-width: 300px; margin: 0 auto;">Head to the admin dashboard to create your first chart definition and begin importing data.</p>
+					</div>
+				<?php else :
+				foreach ( $definitions as $idx => $def ) : 
 					$accent_color = !empty($def->accent_color) ? $def->accent_color : '#6366f1';
 					// Fetch top 3 preview
 					$entries = $wpdb->get_results( $wpdb->prepare( "
@@ -161,8 +167,9 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 						<!-- Top 3 List -->
 						<section class="kc-card-list">
 							<?php if ( empty( $entries ) ) : ?>
-								<div style="padding: 40px; text-align: center; color: var(--k-text-muted); font-size: 11px; font-weight: 850;">
-									AWAITING DATA SYNC
+								<div class="kc-empty-chart-state" style="padding: 40px; text-align: center; border-top: 1px solid var(--k-border);">
+									<div style="font-size: 10px; font-weight: 900; color: var(--k-text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Synchronizing</div>
+									<div style="font-size: 13px; font-weight: 500; opacity: 0.4;">Data for this period is currently being processed.</div>
 								</div>
 							<?php else : ?>
 								<?php foreach ( $entries as $row ) : ?>
@@ -187,7 +194,7 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 						</footer>
 
 					</article>
-				<?php endforeach; ?>
+				<?php endforeach; endif; ?>
 			</div>
 		</section>
 

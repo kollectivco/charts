@@ -31,7 +31,7 @@ class Updater {
 	public function init() {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'set_transient' ) );
 		add_filter( 'plugins_api', array( $this, 'set_plugin_info' ), 20, 3 );
-		add_filter( 'upgrader_post_install', array( $this, 'post_install' ), 10, 3 );
+		add_filter( 'upgrader_source_selection', array( $this, 'source_selection' ), 10, 4 );
 	}
 
 	/**
@@ -179,26 +179,37 @@ class Updater {
 	}
 
 	/**
-	 * Ensure the plugin folder is corrected after update.
+	 * Rename the source folder to the canonical slug during install/update.
+	 * This prevents duplicate plugins if the ZIP folder name is different.
 	 */
-	public function post_install( $true, $hooks, $result ) {
-		global $wp_filesystem;
-
-		$plugin_slug = CHARTS_PLUGIN_SLUG; // Always target canonical slug
-		$install_dir = $result['destination']; 
-
-		// If the new folder name is different (e.g. charts-0.1.0 or repo-main), rename it to our fixed canonical slug
-		if ( basename($install_dir) !== $plugin_slug ) {
-			$new_destination = trailingslashit( $result['local_destination'] ) . $plugin_slug;
-			
-			if ( $wp_filesystem->exists( $new_destination ) ) {
-				$wp_filesystem->delete( $new_destination, true );
-			}
-
-			$wp_filesystem->move( $install_dir, $new_destination );
-			$result['destination'] = $new_destination;
+	public function source_selection( $source, $remote_source, $upgrader, $hook_extra ) {
+		// Only run for our plugin
+		if ( ! isset( $hook_extra['plugin'] ) && ! isset( $hook_extra['type'] ) ) return $source;
+		
+		$is_this_plugin = false;
+		if ( isset( $hook_extra['plugin'] ) && $hook_extra['plugin'] === $this->basename ) {
+			$is_this_plugin = true;
 		}
 
-		return $result;
+		// Also check if it's a manual upload containing our main entry file
+		if ( ! $is_this_plugin && isset( $source ) ) {
+			if ( file_exists( $source . '/charts.php' ) ) {
+				$is_this_plugin = true;
+			}
+		}
+
+		if ( ! $is_this_plugin ) return $source;
+
+		global $wp_filesystem;
+		
+		$corrected_source = trailingslashit( $remote_source ) . $this->plugin_slug;
+
+		if ( $source !== $corrected_source ) {
+			if ( $wp_filesystem->move( $source, $corrected_source ) ) {
+				return $corrected_source;
+			}
+		}
+
+		return $source;
 	}
 }
