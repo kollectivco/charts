@@ -91,6 +91,7 @@ class Updater {
 		$remote_version = ltrim( $repo_info->tag_name, 'v' );
 		$local_version  = CHARTS_VERSION;
 
+		// Check if remote version is newer
 		if ( version_compare( $remote_version, $local_version, '>' ) ) {
 			$package = $this->get_release_asset_url( $repo_info );
 			
@@ -100,14 +101,17 @@ class Updater {
 				$obj->new_version = $remote_version;
 				$obj->url         = $repo_info->html_url;
 				$obj->package     = $package;
-				$obj->plugin      = $this->basename;
+				$obj->plugin      = $this->basename; // 'kontentainment-charts/charts.php'
+				$obj->icons       = array( 'default' => CHARTS_URL . 'admin/assets/img/icon.png' );
+				$obj->banners     = array( 'low' => CHARTS_URL . 'admin/assets/img/banner.png' );
 
+				// Always target the hardcoded basename for canonical identity
 				$transient->response[ $this->basename ] = $obj;
 				
-				// Also inject into the ACTUAL basename if different (to catch mismatches)
-				$actual_basename = plugin_basename( $this->file );
-				if ( $actual_basename !== $this->basename ) {
-					$transient->response[ $actual_basename ] = $obj;
+				// ALSO target the actual current basename in case the folder was renamed
+				$current_basename = plugin_basename( $this->file );
+				if ( $current_basename !== $this->basename ) {
+					$transient->response[ $current_basename ] = $obj;
 				}
 			}
 		}
@@ -183,30 +187,39 @@ class Updater {
 	 * This prevents duplicate plugins if the ZIP folder name is different.
 	 */
 	public function source_selection( $source, $remote_source, $upgrader, $hook_extra ) {
-		// Only run for our plugin
-		if ( ! isset( $hook_extra['plugin'] ) && ! isset( $hook_extra['type'] ) ) return $source;
-		
+		global $wp_filesystem;
+
+		// 1. Identify if this is our plugin being installed/updated
 		$is_this_plugin = false;
+
+		// Case A: Normal Update Flow
 		if ( isset( $hook_extra['plugin'] ) && $hook_extra['plugin'] === $this->basename ) {
 			$is_this_plugin = true;
 		}
 
-		// Also check if it's a manual upload containing our main entry file
+		// Case B: Manual Upload Flow (Identify by main file 'charts.php' at root of extraction)
 		if ( ! $is_this_plugin && isset( $source ) ) {
 			if ( file_exists( $source . '/charts.php' ) ) {
 				$is_this_plugin = true;
 			}
 		}
 
-		if ( ! $is_this_plugin ) return $source;
+		if ( ! $is_this_plugin ) {
+			return $source;
+		}
 
-		global $wp_filesystem;
-		
-		$corrected_source = trailingslashit( $remote_source ) . $this->plugin_slug;
+		// 2. Determine the canonical path
+		$canonical_path = trailingslashit( $remote_source ) . $this->plugin_slug;
 
-		if ( $source !== $corrected_source ) {
-			if ( $wp_filesystem->move( $source, $corrected_source ) ) {
-				return $corrected_source;
+		// 3. Force the move to ensure folder name parity
+		if ( $source !== $canonical_path ) {
+			// If destination exists, we must handle it (usually WP handles this, but we force parity)
+			if ( $wp_filesystem->exists( $canonical_path ) ) {
+				$wp_filesystem->delete( $canonical_path, true );
+			}
+
+			if ( $wp_filesystem->move( $source, $canonical_path ) ) {
+				return $canonical_path;
 			}
 		}
 

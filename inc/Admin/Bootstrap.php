@@ -15,9 +15,25 @@ class Bootstrap {
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue_assets' ) );
 		add_action( 'admin_init', array( self::class, 'process_admin_actions' ) );
 		
+		// One-Time Migrations & Cleanup
+		self::run_one_time_migrations();
+		
 		// AJAX Handlers
 		add_action( 'wp_ajax_charts_run_import', array( self::class, 'handle_run_import' ) );
 		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
+	}
+
+	/**
+	 * Handle one-time database migrations and legacy cleanup.
+	 */
+	private static function run_one_time_migrations() {
+		$v = get_option( 'charts_db_version_migration', '0.0.0' );
+		
+		if ( version_compare( $v, '1.6.6', '<' ) ) {
+			$manager = new SourceManager();
+			$manager->cleanup_mock_data();
+			update_option( 'charts_db_version_migration', '1.6.6' );
+		}
 	}
 
 	/**
@@ -276,7 +292,21 @@ class Bootstrap {
 	 * Render the Dashboard.
 	 */
 	public static function render_dashboard() {
-		self::render_view( 'dashboard' );
+		global $wpdb;
+
+		$stats = array(
+			'charts_total'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions" ),
+			'charts_published' => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1" ),
+			'charts_draft'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions WHERE is_public = 0" ),
+			'tracks'           => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_tracks" ),
+			'artists'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_artists" ),
+			'albums'           => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_albums" ),
+			'sources_active'   => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_sources WHERE is_active = 1" ),
+			'pending'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries WHERE item_id = 0" ),
+			'imports'          => $wpdb->get_results( "SELECT i.*, s.source_name FROM {$wpdb->prefix}charts_import_runs i JOIN {$wpdb->prefix}charts_sources s ON s.id = i.source_id ORDER BY i.started_at DESC LIMIT 5" ),
+		);
+
+		self::render_view( 'dashboard', $stats );
 	}
 
 	public static function render_sources() {

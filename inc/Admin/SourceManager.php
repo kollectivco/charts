@@ -13,6 +13,7 @@ class SourceManager {
 	public function seed_defaults() {
 		$this->seed_sources();
 		$this->seed_definitions();
+		$this->cleanup_mock_data();
 	}
 
 	/**
@@ -191,5 +192,45 @@ class SourceManager {
 
 		$wpdb->insert( $table, $fields );
 		return $wpdb->insert_id;
+	}
+	/**
+	 * Safely remove legacy seeded records that match known demo signatures.
+	 * This protects user-created charts while cleaning up the DP 'Egypt' presets.
+	 */
+	public function cleanup_mock_data() {
+		global $wpdb;
+
+		// 1. Target legacy definitions
+		$mock_slugs = array( 'top-songs', 'top-videos', 'top-artists', 'viral' );
+		$mock_titles = array( 
+			'Top Songs Egypt', 
+			'Top Music Videos Egypt', 
+			'Top Artists Egypt', 
+			'Viral 50 Egypt' 
+		);
+
+		foreach ( $mock_slugs as $idx => $slug ) {
+			$title = $mock_titles[$idx];
+			// Delete ONLY if BOTH slug and title match the legacy seed exactly
+			$wpdb->query( $wpdb->prepare( 
+				"DELETE FROM {$wpdb->prefix}charts_definitions WHERE slug = %s AND title = %s", 
+				$slug, $title 
+			) );
+		}
+
+		// 2. Target legacy sources
+		$mock_sources = array(
+			'Spotify Egypt Weekly Top Songs',
+			'Spotify Egypt Daily Top Songs',
+			'YouTube Egypt Weekly Top Songs',
+			'YouTube Egypt Daily Top Music Videos'
+		);
+
+		foreach ( $mock_sources as $source_name ) {
+			$wpdb->query( $wpdb->prepare( 
+				"DELETE FROM {$wpdb->prefix}charts_sources WHERE source_name = %s", 
+				$source_name 
+			) );
+		}
 	}
 }
