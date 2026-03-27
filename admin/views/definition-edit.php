@@ -15,12 +15,13 @@ $chart_type      = $def ? $def->chart_type : 'top-songs';
 $item_type       = $def ? $def->item_type : 'track';
 $country         = $def ? $def->country_code : 'eg';
 $frequency       = $def ? $def->frequency : 'weekly';
+$platform        = $def ? $def->platform : 'all';
 $cover_image_url = $def ? $def->cover_image_url : '';
 $accent_color    = ($def && !empty($def->accent_color)) ? $def->accent_color : '#6366f1';
 $is_public       = $def ? (int)$def->is_public : 1;
 $is_featured     = $def ? (int)$def->is_featured : 0;
 $archive_enabled = $def ? (int)$def->archive_enabled : 1;
-$menu_order      = $def ? (int)$def->menu_order : 1;
+$menu_order      = $def ? (int)$def->menu_order : 0;
 ?>
 
 <div class="charts-admin-wrap premium-light">
@@ -67,22 +68,45 @@ $menu_order      = $def ? (int)$def->menu_order : 1;
 					<span class="input-helper">URL: /charts/<?php echo $slug ?: 'your-slug'; ?></span>
 				</div>
 
-				<!-- Row 2: Types -->
+				<!-- Row 2: Types & Model -->
 				<div class="form-group">
 					<label for="item_type">Entity Type <span class="required">*</span></label>
 					<select name="item_type" id="item_type" class="form-control">
-						<option value="track" <?php selected($item_type, 'track'); ?>>Tracks</option>
+						<option value="track" <?php selected($item_type, 'track'); ?>>Tracks (Audio)</option>
 						<option value="artist" <?php selected($item_type, 'artist'); ?>>Artists</option>
-						<option value="album" <?php selected($item_type, 'album'); ?>>Albums</option>
-						<option value="video" <?php selected($item_type, 'video'); ?>>Videos</option>
+						<option value="video" <?php selected($item_type, 'video'); ?>>Clips & Videos</option>
 					</select>
+					<span class="input-helper">This controls the data model and single page type.</span>
 				</div>
 				<div class="form-group">
-					<label for="frequency">Frequency</label>
+					<label for="chart_type">Chart Logic / Category <span class="required">*</span></label>
+					<select name="chart_type" id="chart_type" class="form-control">
+						<option value="top-songs" <?php selected($chart_type, 'top-songs'); ?>>Top Songs (General)</option>
+						<option value="top-videos" <?php selected($chart_type, 'top-videos'); ?>>Top Videos / Clips</option>
+						<option value="top-artists" <?php selected($chart_type, 'top-artists'); ?>>Top Artists</option>
+						<option value="viral" <?php selected($chart_type, 'viral'); ?>>Viral Trends</option>
+					</select>
+				</div>
+
+				<!-- Row 3: Meta Configuration -->
+				<div class="form-group">
+					<label for="country_code">Market / Country <span class="required">*</span></label>
+					<div style="display: flex; gap: 10px;">
+						<input type="text" id="country_code" name="country_code" value="<?php echo esc_attr($country); ?>" class="form-control" style="width: 80px; text-align: center; text-transform: uppercase;" placeholder="EG" maxlength="2" required>
+						<select id="platform" name="platform" class="form-control" style="flex: 1;">
+							<option value="all" <?php selected($platform, 'all'); ?>>Omni-Platform (Mixed)</option>
+							<option value="spotify" <?php selected($platform, 'spotify'); ?>>Spotify Only</option>
+							<option value="youtube" <?php selected($platform, 'youtube'); ?>>YouTube Only</option>
+						</select>
+					</div>
+					<span class="input-helper">ISO code (e.g. EG, US) and primary data source platform.</span>
+				</div>
+				<div class="form-group">
+					<label for="frequency">Frequency / Interval</label>
 					<select name="frequency" id="frequency" class="form-control">
-						<option value="daily" <?php selected($frequency, 'daily'); ?>>Daily</option>
-						<option value="weekly" <?php selected($frequency, 'weekly'); ?>>Weekly</option>
-						<option value="monthly" <?php selected($frequency, 'monthly'); ?>>Monthly</option>
+						<option value="daily" <?php selected($frequency, 'daily'); ?>>Daily Charts</option>
+						<option value="weekly" <?php selected($frequency, 'weekly'); ?>>Weekly Charts</option>
+						<option value="monthly" <?php selected($frequency, 'monthly'); ?>>Monthly Charts</option>
 					</select>
 				</div>
 

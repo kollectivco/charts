@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version: 1.7.0
+ * Version: 1.8.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.7.0' );
+define( 'CHARTS_VERSION', '1.8.0' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -141,7 +141,7 @@ final class Charts {
 	 * Activation hook
 	 */
 	public function activate() {
-		$this->migrate();
+		$this->run_migrations();
 		
 		// Flush rewrite rules
 		\Charts\Core\Router::add_rewrite_rules();
@@ -149,18 +149,26 @@ final class Charts {
 	}
 
 	/**
-	 * Migration logic
+	 * Database Migration & Versioning Logic
 	 */
-	public function migrate() {
-		// 1. Create/Update tables
+	public function run_migrations() {
+		// 1. Ensure Table Structures are up to date
 		$schema = new \Charts\Database\Schema();
 		$schema->install();
 		
-		// 2. Seed/Update sources
-		$sources = new \Charts\Admin\SourceManager();
-		$sources->seed_defaults();
+		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
 
-		update_option( 'charts_db_version', CHARTS_VERSION );
+		// 2. One-time Legacy Cleanup (Force remove the hardcoded mocks once and for all)
+		if ( ! get_option( 'kcharts_mock_cleaned' ) ) {
+			$sources = new \Charts\Admin\SourceManager();
+			$sources->cleanup_mock_data();
+			update_option( 'kcharts_mock_cleaned', '1' );
+		}
+
+		// 3. Update the stored DB version
+		if ( version_compare( $current_db_version, CHARTS_VERSION, '<' ) ) {
+			update_option( 'kcharts_db_version', CHARTS_VERSION );
+		}
 	}
 
 	/**
@@ -174,10 +182,10 @@ final class Charts {
 	 * Initialize the plugin
 	 */
 	public function init() {
-		// Version check for migrations
-		$db_version = get_option( 'charts_db_version' );
+		// Run versioned migrations
+		$db_version = get_option( 'kcharts_db_version', '1.0.0' );
 		if ( version_compare( $db_version, CHARTS_VERSION, '<' ) ) {
-			$this->migrate();
+			$this->run_migrations();
 		}
 
 		// Initialize core components

@@ -8,10 +8,16 @@
 global $wpdb;
 
 $manager      = new \Charts\Admin\SourceManager();
-$definition_id = get_query_var( 'charts_definition_id' );
+$definition_id   = get_query_var( 'charts_definition_id' );
+$definition_slug = get_query_var( 'charts_definition_slug' );
 
 // Data retrieval
-if ( ! $definition_id ) {
+if ( $definition_id ) {
+	$definition = $manager->get_definition( $definition_id );
+} elseif ( $definition_slug ) {
+	$definition = $manager->get_definition_by_slug( $definition_slug );
+} else {
+	// Legacy fallback for long-form parameters
 	$type      = get_query_var( 'charts_type' );
 	$country   = get_query_var( 'charts_country' ) ?: 'eg';
 	$frequency = get_query_var( 'charts_frequency' ) ?: 'weekly';
@@ -20,30 +26,63 @@ if ( ! $definition_id ) {
 		SELECT * FROM {$wpdb->prefix}charts_definitions 
 		WHERE chart_type = %s AND country_code = %s AND frequency = %s LIMIT 1
 	", $type, $country, $frequency ) );
-} else {
-	$definition = $manager->get_definition( $definition_id );
+}
+
+// Helper: Render Premium Empty State
+function kc_render_empty_state($title, $desc, $cta_text = 'Return Home', $cta_url = '/charts', $is_processing = false) {
+	echo '<div class="kc-root"><main class="kc-container" style="padding: 160px 0; text-align: center; color: white;">';
+	if ($is_processing) {
+		echo '<div class="kc-processing-spinner" style="width: 64px; height: 64px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--k-accent, #6366f1); border-radius: 50%; margin: 0 auto 32px; animation: kc-spin 1s linear infinite;"></div>';
+	} else {
+		echo '<div style="font-size: 80px; margin-bottom: 24px; opacity: 0.2;">⌬</div>';
+	}
+	echo '<h1 style="font-size: 48px; font-weight: 850; margin-bottom: 16px; letter-spacing: -0.02em;">' . esc_html($title) . '</h1>';
+	echo '<p style="opacity: 0.6; font-size: 18px; max-width: 540px; margin: 0 auto 48px; line-height: 1.6;">' . esc_html($desc) . '</p>';
+	echo '<div style="display: flex; gap: 16px; justify-content: center;">';
+	echo '<a href="' . esc_url($cta_url) . '" style="display: inline-block; padding: 14px 32px; background: white; color: black; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 13px; transition: transform 0.2s;">' . esc_html($cta_text) . '</a>';
+	if (current_user_can('manage_options')) {
+		echo '<a href="' . admin_url('admin.php?page=charts-import') . '" style="display: inline-block; padding: 14px 32px; background: rgba(255,255,255,0.1); color: white; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">Operator: Import Data</a>';
+	}
+	echo '</div>';
+	echo '</main></div>';
+	echo '<style>@keyframes kc-spin { to { transform: rotate(360deg); } }</style>';
+	\Charts\Core\StandaloneLayout::get_footer();
 }
 
 if ( ! $definition ) {
-	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>Chart Not Found</h1></div>';
-	\Charts\Core\StandaloneLayout::get_footer();
-	exit;
+	kc_render_empty_state(
+		'Chart Not Found', 
+		'The requested chart intelligence is not available in our current catalog. It may have been retired or the URL has changed.',
+		'Return to Directory'
+	);
+	return;
 }
 
-// Fetch matches sources
+// Fetch matched sources
 $sources = $wpdb->get_results( $wpdb->prepare( "
 	SELECT id FROM {$wpdb->prefix}charts_sources 
 	WHERE chart_type = %s AND country_code = %s AND frequency = %s AND is_active = 1
 ", $definition->chart_type, $definition->country_code, $definition->frequency ) );
 
 if ( empty( $sources ) ) {
-	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>Awaiting Intelligence</h1></div>';
-	\Charts\Core\StandaloneLayout::get_footer();
-	exit;
+	kc_render_empty_state(
+		'Awaiting Intelligence', 
+		'We are currently bridging data sources for this region and market. Our crawlers are initializing the pipeline.',
+		'Back to Charts',
+		'/charts'
+	);
+	return;
 }
 
 $source_ids = array_column( $sources, 'id' );
 $placeholders = implode( ',', array_fill( 0, count( $source_ids ), '%d' ) );
+
+// Check for ongoing processing
+$processing_run = $wpdb->get_row( $wpdb->prepare( "
+	SELECT id FROM {$wpdb->prefix}charts_import_runs 
+	WHERE source_id IN ($placeholders) AND status IN ('started', 'processing')
+	ORDER BY started_at DESC LIMIT 1
+", ...$source_ids ) );
 
 // Fetch period
 $period = $wpdb->get_row( $wpdb->prepare( "
@@ -54,9 +93,23 @@ $period = $wpdb->get_row( $wpdb->prepare( "
 ", ...$source_ids ) );
 
 if ( ! $period ) {
-	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>Awaiting Imports</h1></div>';
-	\Charts\Core\StandaloneLayout::get_footer();
-	exit;
+	if ($processing_run) {
+		kc_render_empty_state(
+			'Intelligence Incoming', 
+			'Our data pipeline is currently processing the latest market signals. The vault will be active in a few moments.',
+			'Refresh Intelligence',
+			'',
+			true
+		);
+	} else {
+		kc_render_empty_state(
+			'Awaiting Initial Load', 
+			'No historical records found for the latest period. Data initialization is required to activate this explorer.',
+			'Initialize Pipeline',
+			admin_url('admin.php?page=charts-import')
+		);
+	}
+	return;
 }
 
 // Fetch all entries

@@ -11,59 +11,21 @@ class SourceManager {
 	 * Seed default sources if they don't exist.
 	 */
 	public function seed_defaults() {
-		$this->seed_sources();
-		$this->seed_definitions();
-		$this->cleanup_mock_data();
+		// Seeding disabled - maintain for API compatibility if called elsewhere
 	}
 
 	/**
 	 * Seed default sources.
 	 */
 	private function seed_sources() {
-		global $wpdb;
-
-		$table = $wpdb->prefix . 'charts_sources';
-
-			// Sources are handled by user configuration
-			$sources = array();
-			// No mock sources
-
-		foreach ( $sources as $source ) {
-			// Check if source exists by Core parameters to ensure migration
-			$exists = $wpdb->get_var( $wpdb->prepare( 
-				"SELECT id FROM $table WHERE platform = %s AND country_code = %s AND chart_type = %s AND frequency = %s", 
-				$source['platform'], $source['country_code'], $source['chart_type'], $source['frequency']
-			) );
-
-			if ( ! $exists ) {
-				$wpdb->insert( $table, $source );
-			} else {
-				// Update existing records with new metadata (type, url, parser)
-				$wpdb->update( $table, array( 
-					'source_type' => $source['source_type'], 
-					'source_url'  => $source['source_url'],
-					'parser_key'  => $source['parser_key']
-				), array( 'id' => $exists ) );
-			}
-		}
+		// Seeding disabled
 	}
 
 	/**
 	 * Seed default chart definitions.
 	 */
 	public function seed_definitions() {
-		global $wpdb;
-		$table = $wpdb->prefix . 'charts_definitions';
-
-		$definitions = array();
-		// No mock charts
-
-		foreach ( $definitions as $def ) {
-			$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE slug = %s", $def['slug'] ) );
-			if ( ! $exists ) {
-				$wpdb->insert( $table, $def );
-			}
-		}
+		// Seeding disabled
 	}
 
 	/**

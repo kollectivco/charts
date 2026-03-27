@@ -20,6 +20,9 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
+		// 0. Catch-all for any /charts/ path to prevent theme leak (Lowest priority charts rule)
+		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_page=single-chart&charts_definition_slug=$matches[1]', 'top' );
+
 		// 1. Artist Archive
 		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_page=artist-archive', 'top' );
 
@@ -57,9 +60,11 @@ class Router {
 		$vars[] = 'charts_frequency';
 		$vars[] = 'charts_type';
 		$vars[] = 'charts_definition_id';
+		$vars[] = 'charts_definition_slug';
 		$vars[] = 'charts_artist_slug';
 		$vars[] = 'charts_item_slug';
 		$vars[] = 'charts_item_type';
+		$vars[] = 'charts_404'; // Internal flag for unhandled charts paths
 		return $vars;
 	}
 
@@ -91,8 +96,8 @@ class Router {
 			return CHARTS_PATH . 'public/templates/single-chart.php';
 		}
 
-		// Support both long and short chart URLs
-		if ( $platform || $type ) {
+		// Support both long and short chart URLs or catch-all fallback
+		if ( $platform || $type || strpos(get_query_var('charts_page'), 'single-chart') !== false ) {
 			return CHARTS_PATH . 'public/templates/single-chart.php';
 		}
 

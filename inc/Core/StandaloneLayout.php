@@ -88,7 +88,8 @@ class StandaloneLayout {
 			'charts_artist_slug',
 			'charts_item_slug',
 			'charts_item_type',
-			'charts_definition_id'
+			'charts_definition_id',
+			'charts_definition_slug'
 		);
 
 		foreach ( $vars as $v ) {
