@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version: 1.6.7
+ * Version: 1.6.8
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.6.7' );
+define( 'CHARTS_VERSION', '1.6.8' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -183,8 +183,20 @@ final class Charts {
 		// Initialize core components
 		\Charts\Core\Bootstrap::init();
 
-		// Handle updates
-		new \Charts\Core\Updater( CHARTS_PLUGIN_FILE );
+		// Handle installation integrity (folder parity)
+		\Charts\Core\Integrity::init();
+
+		// Initialize Update Checker (GitHub)
+		if ( file_exists( CHARTS_PATH . 'inc/Integrations/plugin-update-checker/plugin-update-checker.php' ) ) {
+			require_once CHARTS_PATH . 'inc/Integrations/plugin-update-checker/plugin-update-checker.php';
+			$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+				'https://github.com/' . CHARTS_GITHUB_OWNER . '/' . CHARTS_GITHUB_REPO . '/',
+				CHARTS_PLUGIN_FILE,
+				CHARTS_PLUGIN_SLUG
+			);
+			// Enable checking for release assets (zips)
+			$update_checker->getVcsApi()->enableReleaseAssets();
+		}
 		
 		// Initialize Admin if we are in admin
 		if ( is_admin() ) {

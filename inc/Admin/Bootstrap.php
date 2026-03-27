@@ -124,22 +124,55 @@ class Bootstrap {
 				global $wpdb;
 				$id    = intval( $_POST['id'] );
 				$type  = sanitize_text_field( $_POST['type'] );
-				$table = $wpdb->prefix . 'charts_' . ( $type === 'artist' ? 'artists' : 'tracks' );
-				
-				// 1. Delete the canonical metadata
-				$wpdb->delete( $table, array( 'id' => $id ) );
-				
-				// 2. Prevent orphaned relationships in historical entries
-				$wpdb->update( 
-					$wpdb->prefix . 'charts_entries', 
-					array( 'item_id' => 0 ), 
-					array( 'item_id' => $id, 'item_type' => $type ) 
-				);
-				
-				delete_transient( 'charts_intel_last_calc' );
+				self::delete_single_entity( $id, $type );
 				add_settings_error( 'charts', 'entity_deleted', __( 'Entity deleted and relationships unlinked.', 'charts' ), 'success' );
 				break;
+
+			case 'bulk_action':
+				global $wpdb;
+				$action = sanitize_text_field( $_POST['bulk_action_type'] );
+				$ids    = isset( $_POST['item_ids'] ) ? array_map( 'intval', $_POST['item_ids'] ) : array();
+				$type   = sanitize_text_field( $_POST['entity_type'] );
+
+				if ( empty( $ids ) ) {
+					add_settings_error( 'charts', 'no_ids', __( 'No items selected.', 'charts' ), 'error' );
+					break;
+				}
+
+				if ( $action === 'delete' ) {
+					foreach ( $ids as $id ) {
+						self::delete_single_entity( $id, $type );
+					}
+					add_settings_error( 'charts', 'bulk_deleted', sprintf( __( '%d entities deleted successfully.', 'charts' ), count( $ids ) ), 'success' );
+				}
+				break;
+
+			case 'run_integrity_check':
+				\Charts\Core\Integrity::recalculate_entity_links();
+				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
+				break;
 		}
+	}
+
+	/**
+	 * Deletes a single entity and cleans up relationships safely.
+	 */
+	private static function delete_single_entity( $id, $type ) {
+		global $wpdb;
+		$suffix = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'track' ) ? 'tracks' : 'videos' );
+		$table  = $wpdb->prefix . 'charts_' . $suffix;
+		
+		// 1. Delete the canonical metadata
+		$wpdb->delete( $table, array( 'id' => $id ) );
+		
+		// 2. Prevent orphaned relationships in historical entries
+		$wpdb->update( 
+			$wpdb->prefix . 'charts_entries', 
+			array( 'item_id' => 0 ), 
+			array( 'item_id' => $id, 'item_type' => $type ) 
+		);
+		
+		delete_transient( 'charts_intel_last_calc' );
 	}
 
 	/**
@@ -227,6 +260,15 @@ class Bootstrap {
 			__( 'Tracks', 'charts' ),
 			'manage_options',
 			'charts-tracks',
+			array( self::class, 'render_entities' )
+		);
+
+		add_submenu_page(
+			'charts',
+			__( 'Clips', 'charts' ),
+			__( 'Clips', 'charts' ),
+			'manage_options',
+			'charts-clips',
 			array( self::class, 'render_entities' )
 		);
 
@@ -500,6 +542,10 @@ class Bootstrap {
 
 	public static function render_intelligence() {
 		self::render_view( 'intelligence' );
+	}
+
+	public static function render_matching() {
+		self::render_view( 'matching' );
 	}
 
 	/**
