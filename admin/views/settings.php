@@ -31,7 +31,7 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 
 	<?php settings_errors( 'charts' ); ?>
 
-	<form method="post" action="">
+	<form method="post" action="" id="charts-settings-form">
 		<?php wp_nonce_field( 'charts_admin_action' ); ?>
 		<input type="hidden" name="charts_action" value="save_settings">
 

@@ -95,13 +95,15 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 							<label for="chart_id"><?php esc_html_e( 'Target Chart Profile', 'charts' ); ?></label>
 							<select name="chart_id" id="chart_id" class="form-control" required>
 								<option value=""><?php esc_html_e( '— Select Chart Definition —', 'charts' ); ?></option>
-								<?php foreach ( $definitions as $definition ) : ?>
+								<?php foreach ( $definitions as $definition ) : 
+									$type_label = ($definition->item_type === 'video') ? 'Clips' : ucfirst($definition->item_type) . 's';
+								?>
 									<option value="<?php echo (int) $definition->id; ?>" 
-											data-type="<?php echo esc_attr( $definition->item_type ); ?>" 
-											data-chart-type="<?php echo esc_attr( $definition->chart_type ); ?>"
-											data-country="<?php echo esc_attr( $definition->country_code ); ?>"
-											data-frequency="<?php echo esc_attr( $definition->frequency ); ?>">
-										<?php echo esc_html( $definition->title ); ?> (<?php echo esc_html( ucfirst($definition->item_type) ); ?>)
+											data-type="<?php echo esc_attr( $definition->item_type ?: 'track' ); ?>" 
+											data-chart-type="<?php echo esc_attr( $definition->chart_type ?: 'top-songs' ); ?>"
+											data-country="<?php echo esc_attr( $definition->country_code ?: 'eg' ); ?>"
+											data-frequency="<?php echo esc_attr( $definition->frequency ?: 'weekly' ); ?>">
+										<?php echo esc_html( $definition->title ); ?> — Target: <?php echo esc_html( $type_label ); ?>
 									</option>
 								<?php endforeach; ?>
 							</select>
@@ -114,11 +116,12 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 						
 						<div class="form-group">
 							<label for="item_type"><?php esc_html_e( 'Chart Entity Type', 'charts' ); ?></label>
-							<select name="item_type" id="item_type" class="form-control" readonly style="background: #fdfdfd; pointer-events: none; opacity: 0.7;">
-								<option value="track"><?php esc_html_e( 'Tracks', 'charts' ); ?></option>
+							<select name="item_type" id="item_type" class="form-control">
+								<option value="track"><?php esc_html_e( 'Tracks (Audio)', 'charts' ); ?></option>
 								<option value="artist"><?php esc_html_e( 'Artists', 'charts' ); ?></option>
-								<option value="video"><?php esc_html_e( 'Videos', 'charts' ); ?></option>
+								<option value="video"><?php esc_html_e( 'Clips & Videos', 'charts' ); ?></option>
 							</select>
+							<span class="input-helper"><?php esc_html_e( 'The underlying data model for this sync.', 'charts' ); ?></span>
 						</div>
 						<div class="form-group">
 							<label for="frequency"><?php esc_html_e( 'Data Frequency', 'charts' ); ?></label>

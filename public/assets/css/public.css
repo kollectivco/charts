@@ -100,6 +100,19 @@
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	text-decoration: none;
+	display: inline-block;
+}
+
+.charts-brand-link {
+	text-decoration: none;
+	display: flex;
+	align-items: center;
+}
+
+.charts-logo-img {
+	max-height: 40px;
+	width: auto;
+	display: block;
 }
 
 .charts-nav .charts-menu {
@@ -350,23 +363,152 @@
 .kc-app-movement { font-size: 11px; font-weight: 900; }
 .kc-app-rank { font-size: 2.8rem; font-weight: 950; letter-spacing: -0.05em; line-height: 1; }
 
-/* Related List */
-.kc-related-row {
-	display: grid;
-	grid-template-columns: 48px 1fr 100px 48px;
-	padding: 20px 0;
-	border-bottom: 1px solid var(--k-border);
-	align-items: center;
-	gap: 24px;
-	text-decoration: none;
-	color: inherit;
+.kc-rankings-panel {
+	background: var(--k-surface);
+	border: 1px solid var(--k-border);
+	border-radius: 24px;
+	overflow: hidden;
 }
 
-.kc-related-row:hover { opacity: 0.8; }
-.kc-related-row:last-child { border-bottom: none; }
-.kc-related-art { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
-.kc-related-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-.kc-related-subtitle { font-size: 12px; opacity: 0.4; }
+.kc-table-head, .kc-rank-row {
+	display: grid;
+	grid-template-columns: 60px 80px 56px 1fr 80px 80px 100px;
+	gap: 20px;
+	padding: 20px 40px;
+	align-items: center;
+}
+
+.kc-table-head {
+	border-bottom: 1px solid var(--k-border);
+	font-size: 10px;
+	font-weight: 950;
+	text-transform: uppercase;
+	letter-spacing: 0.15em;
+	color: var(--k-text-muted);
+}
+
+.kc-rank-row {
+	border-bottom: 1px solid rgba(255,255,255,0.03);
+	text-decoration: none;
+	color: inherit;
+	transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kc-rank-row:hover {
+	background: rgba(255,255,255,0.02);
+}
+
+.kc-rank-val {
+	font-size: 24px;
+	font-weight: 950;
+	letter-spacing: -0.05em;
+	color: white;
+}
+
+.kc-row-art {
+	width: 56px;
+	height: 56px;
+	border-radius: 8px;
+	object-fit: cover;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.kc-row-name {
+	display: block;
+	font-size: 16px;
+	font-weight: 800;
+	color: white;
+	margin-bottom: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.kc-row-artist {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	opacity: 0.5;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.kc-stat-val {
+	text-align: right;
+	font-size: 13px;
+	font-weight: 800;
+}
+
+.kc-stat-val.muted {
+	opacity: 0.4;
+	font-weight: 700;
+}
+
+/* 6. STAT PILLS (FROSTED GLASS) */
+.kc-stat-pill {
+	background: rgba(255,255,255,0.05);
+	padding: 12px 24px;
+	border-radius: 12px;
+	border: 1px solid rgba(255,255,255,0.05);
+	backdrop-filter: blur(10px);
+}
+
+.kc-stat-pill label {
+	display: block;
+	font-size: 9px;
+	font-weight: 900;
+	opacity: 0.4;
+	text-transform: uppercase;
+	margin-bottom: 4px;
+}
+
+.kc-stat-pill span {
+	font-size: 18px;
+	font-weight: 900;
+	color: white;
+}
+
+/* 7. ASSET FALLBACKS */
+.kc-artist-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	background: rgba(255,255,255,0.06);
+	padding: 6px 16px 6px 6px;
+	border-radius: 30px;
+	text-decoration: none;
+	color: white;
+	font-size: 12px;
+	font-weight: 700;
+	border: 1px solid rgba(255,255,255,0.05);
+	transition: background 0.2s;
+}
+
+.kc-artist-pill:hover { background: rgba(255,255,255,0.1); }
+
+@media (max-width: 1024px) {
+	.kc-table-head, .kc-rank-row {
+		grid-template-columns: 50px 60px 48px 1fr 60px 60px;
+		padding: 16px 24px;
+	}
+	.kc-table-head div:last-child, .kc-rank-row div:last-child { display: none; }
+}
+
+@media (max-width: 768px) {
+	.kc-table-head { display: none; }
+	.kc-rank-row {
+		grid-template-columns: 40px 48px 1fr 60px;
+		gap: 16px;
+		padding: 12px 20px;
+	}
+	.kc-rank-val { font-size: 18px; }
+	.kc-move-val, .kc-stat-val.muted { display: none; }
+	.kc-row-name { font-size: 14px; }
+	.kc-row-artist { font-size: 12px; }
+	.kc-item-hero-content { flex-direction: column; text-align: center; gap: 32px; }
+	.kc-hero-poster { width: 240px; height: 240px; margin: 0 auto; }
+}
 
 /* Artist Banner */
 .kc-artist-banner {

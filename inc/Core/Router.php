@@ -13,7 +13,9 @@ class Router {
 	public static function init() {
 		add_action( 'init', array( self::class, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( self::class, 'add_query_vars' ) );
-		add_filter( 'template_include', array( self::class, 'load_template' ) );
+		
+		// Priority 999 to ensure we override any other plugin or theme interference
+		add_filter( 'template_include', array( self::class, 'load_template' ), 999 );
 	}
 
 	/**

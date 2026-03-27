@@ -320,9 +320,6 @@ class Schema {
 
 		// ── Live ALTER TABLE upgrades for existing installs ──────────────────
 		$this->run_column_upgrades( $wpdb );
-
-		// ── Data Integrity: Backfill Entities from Flat Strings ────────────────
-		$this->run_backfill_migration( $wpdb );
 	}
 
 	/**

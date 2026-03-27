@@ -88,7 +88,7 @@ class Intelligence {
 			// Upsert to intelligence table
 			$wpdb->query($wpdb->prepare("
 				INSERT INTO $table (entity_type, entity_id, momentum_score, growth_rate, trend_status, total_streams, peaks_count, weeks_on_chart, last_calculated_at)
-				VALUES (%s, %d, %f, %f, %s, %L, %d, %d, NOW())
+				VALUES (%s, %d, %f, %f, %s, %s, %d, %d, NOW())
 				ON DUPLICATE KEY UPDATE 
 					momentum_score = VALUES(momentum_score),
 					growth_rate = VALUES(growth_rate),
@@ -97,7 +97,7 @@ class Intelligence {
 					peaks_count = VALUES(peaks_count),
 					weeks_on_chart = VALUES(weeks_on_chart),
 					last_calculated_at = NOW()
-			", $type, $item->item_id, $momentum, $growth, $trend, $stats->total_vol, $stats->peak, $stats->weeks));
+			", $type, $item->item_id, $momentum, $growth, $trend, (string)$stats->total_vol, (int)$stats->peak, (int)$stats->weeks));
 		}
 	}
 
@@ -131,7 +131,7 @@ class Intelligence {
 
 			$wpdb->query($wpdb->prepare("
 				INSERT INTO $table (entity_type, entity_id, momentum_score, total_streams, avg_rank, peaks_count, weeks_on_chart, last_calculated_at)
-				VALUES ('artist', %d, %f, %L, %f, %d, %d, NOW())
+				VALUES ('artist', %d, %f, %s, %f, %d, %d, NOW())
 				ON DUPLICATE KEY UPDATE 
 					momentum_score = VALUES(momentum_score),
 					total_streams = VALUES(total_streams),
@@ -139,7 +139,7 @@ class Intelligence {
 					peaks_count = VALUES(peaks_count),
 					weeks_on_chart = VALUES(weeks_on_chart),
 					last_calculated_at = NOW()
-			", $artist_id, $hotness, $stats->total_vol, $stats->avg_rank, $stats->peak, $stats->unique_entries));
+			", $artist_id, $hotness, (string)$stats->total_vol, (float)$stats->avg_rank, (int)$stats->peak, (int)$stats->unique_entries));
 		}
 	}
 

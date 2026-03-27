@@ -38,12 +38,17 @@ $week_date = date('F j, Y');
 				<!-- Branding -->
 				<?php if ( $show_logo ) : ?>
 				<div class="charts-branding">
-					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-wordmark">
+					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-brand-link">
 						<?php 
 						if ( $logo_id ) {
-							echo wp_get_attachment_image( $logo_id, 'medium', false, array( 'class' => 'charts-logo-img', 'alt' => $logo_alt ?: $wordmark ) );
+							$logo_html = wp_get_attachment_image( $logo_id, 'medium', false, array( 'class' => 'charts-logo-img', 'alt' => $logo_alt ?: $wordmark ) );
+							if ( $logo_html ) {
+								echo $logo_html;
+							} else {
+								echo '<span class="charts-wordmark">' . esc_html( $wordmark ?: 'KCharts' ) . '</span>';
+							}
 						} else {
-							echo esc_html( $wordmark ?: 'KCharts' ); 
+							echo '<span class="charts-wordmark">' . esc_html( $wordmark ?: 'KCharts' ) . '</span>';
 						}
 						?>
 					</a>

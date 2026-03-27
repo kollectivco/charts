@@ -14,8 +14,25 @@ class StandaloneLayout {
 		// Register footer widget area
 		add_action( 'widgets_init', array( self::class, 'register_sidebars' ) );
 		
-		// Dequeue theme styles/scripts on charts pages for isolation
+		// 1. ASSET ISOLATION PASS (Dequeue theme styles/scripts)
 		add_action( 'wp_enqueue_scripts', array( self::class, 'isolation_pass' ), 999 );
+
+		// 2. MARKUP ISOLATION PASS (Prevent theme from injecting headers/menus via hooks)
+		add_action( 'template_redirect', array( self::class, 'suppress_theme_hooks' ), 1 );
+	}
+
+	/**
+	 * Remove any theme hooks that might inject markup into standard locations.
+	 */
+	public static function suppress_theme_hooks() {
+		if ( ! self::is_charts_page() ) return;
+
+		// Prevent theme from injecting headers/menus in wp_body_open
+		remove_all_actions( 'wp_body_open' );
+		
+		// Often themes hook into wp_head to print their own menu wrappers
+		// but we want to keep essential WP core head actions.
+		// remove_all_actions( 'wp_head' ) is too aggressive as it breaks enqueues.
 	}
 
 	/**

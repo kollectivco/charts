@@ -25,14 +25,16 @@ class Bootstrap {
 
 	/**
 	 * Handle one-time database migrations and legacy cleanup.
+	 * Unified with charts.php versioning.
 	 */
 	private static function run_one_time_migrations() {
-		$v = get_option( 'charts_db_version_migration', '0.0.0' );
+		// Consolidate migration tracking to a single source of truth
+		$v = get_option( 'kcharts_db_version', '0.0.0' );
 		
-		if ( version_compare( $v, '1.6.6', '<' ) ) {
+		if ( version_compare( $v, '1.8.0', '<' ) ) {
 			$manager = new SourceManager();
 			$manager->cleanup_mock_data();
-			update_option( 'charts_db_version_migration', '1.6.6' );
+			// Note: kcharts_db_version is updated by charts.php after this finishes
 		}
 	}
 
@@ -72,6 +74,10 @@ class Bootstrap {
 				update_option( 'charts_footer_copyright', sanitize_text_field( $_POST['footer_copyright'] ?? '' ) );
 
 				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
+				
+				// Redirect to prevent form resubmission and ensure clean state
+				wp_redirect( add_query_arg( array( 'settings-updated' => 'true' ), admin_url( 'admin.php?page=charts-settings' ) ) );
+				exit;
 				break;
 
 			case 'save_source':
