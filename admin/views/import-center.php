@@ -7,19 +7,16 @@ $definitions = $manager->get_definitions( false );
 $pre_source  = $_GET['source'] ?? 'spotify';
 ?>
 <div class="wrap charts-admin-wrap premium-light">
+<div class="charts-admin-wrap premium-light">
 	<header class="charts-admin-header">
-		<div class="charts-admin-title-group">
-			<div style="display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; color:var(--charts-text-dim); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em;">
-				<span>Charts</span>
-				<span style="opacity:0.3;">&rsaquo;</span>
-				<span>Import Center</span>
-			</div>
+		<div>
 			<h1 class="charts-admin-title"><?php esc_html_e( 'Data Intelligence Import', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle">Unified workflow for Spotify and YouTube chart synchronization.</p>
+			<p class="charts-admin-subtitle"><?php _e( 'Unified workflow for Spotify and YouTube chart synchronization.', 'charts' ); ?></p>
 		</div>
 		<div class="charts-admin-actions">
 			<a href="<?php echo admin_url( 'admin.php?page=charts-imports' ); ?>" class="charts-btn-back">
-				View Import History
+				<span class="dashicons dashicons-backup" style="margin-right:8px;"></span>
+				<?php _e( 'View Import History', 'charts' ); ?>
 			</a>
 		</div>
 	</header>

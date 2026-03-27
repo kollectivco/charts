@@ -15,17 +15,17 @@ $wordmark = get_option( 'charts_wordmark', 'KCharts' );
 $footer_desc = get_option( 'charts_footer_description' );
 $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' );
 ?>
-<div class="wrap charts-admin-wrap premium-light">
-	
+<div class="charts-admin-wrap premium-light">
 	<header class="charts-admin-header">
-		<div class="charts-admin-title-group">
-			<div style="display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; color:var(--charts-text-dim); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em;">
-				<span>System</span>
-				<span style="opacity:0.3;">&rsaquo;</span>
-				<span>Settings</span>
-			</div>
-			<h1 class="charts-admin-title"><?php esc_html_e( 'Global Configuration', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle">Manage branding, standalone shell behavior, and API credentials.</p>
+		<div>
+			<h1 class="charts-admin-title"><?php esc_html_e( 'System Configuration', 'charts' ); ?></h1>
+			<p class="charts-admin-subtitle"><?php _e( 'Global architecture, branding identity, and third-party API connectivity.', 'charts' ); ?></p>
+		</div>
+		<div class="charts-admin-actions">
+			<button type="submit" class="charts-btn-create" form="charts-settings-form">
+				<span class="dashicons dashicons-saved" style="margin-right:8px;"></span>
+				<?php _e( 'Save System Configuration', 'charts' ); ?>
+			</button>
 		</div>
 	</header>
 

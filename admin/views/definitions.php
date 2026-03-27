@@ -6,15 +6,15 @@ $manager = new \Charts\Admin\SourceManager();
 $definitions = $manager->get_definitions();
 ?>
 
-<div class="charts-admin-wrap">
+<div class="charts-admin-wrap premium-light">
 	<header class="charts-admin-header">
-		<div class="charts-admin-title-group">
+		<div>
 			<h1 class="charts-admin-title"><?php _e( 'Charts Intelligence', 'charts' ); ?></h1>
 			<p class="charts-admin-subtitle"><?php _e( 'Manage your dynamic chart products and definitions.', 'charts' ); ?></p>
 		</div>
 		<div class="charts-admin-actions">
-			<a href="<?php echo admin_url( 'admin.php?page=charts-definitions&action=edit' ); ?>" class="charts-btn charts-btn-primary">
-				<span class="dashicons dashicons-plus"></span>
+			<a href="<?php echo admin_url( 'admin.php?page=charts-definitions&action=edit' ); ?>" class="charts-btn-create">
+				<span class="dashicons dashicons-plus" style="margin-right:8px;"></span>
 				<?php _e( 'Create New Chart', 'charts' ); ?>
 			</a>
 		</div>

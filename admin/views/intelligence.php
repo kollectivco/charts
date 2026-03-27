@@ -37,110 +37,87 @@ $hot_artists = $wpdb->get_results("
 ");
 ?>
 
-<div class="wrap kc-admin-wrap">
-	<h1 class="wp-heading-inline">Music Intelligence & Analytics</h1>
-	<hr class="wp-header-end">
-
-	<div class="kc-intel-dashboard" style="margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-		
-		<!-- Trending Tracks -->
-		<div class="kc-intel-col postbox">
-			<h2 class="hndle"><span>Top Trending Tracks</span></h2>
-			<div class="inside">
-				<table class="wp-list-table widefat fixed striped">
-					<thead>
-						<tr>
-							<th>Track</th>
-							<th>Momentum</th>
-							<th>Growth</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ($trending_tracks as $t): ?>
-						<tr>
-							<td>
-								<div style="display:flex; align-items:center; gap:10px;">
-									<img src="<?php echo esc_url($t->cover_image); ?>" style="width:30px; height:30px; border-radius:4px;">
-									<div style="font-weight:600; line-height:1.2; font-size:12px;">
-										<?php echo esc_html($t->track_name); ?><br>
-										<span style="opacity:0.5; font-weight:400;"><?php echo esc_html($t->artist_names); ?></span>
-									</div>
-								</div>
-							</td>
-							<td style="font-weight:700; color: #6366f1;"><?php echo number_format($t->momentum_score, 1); ?></td>
-							<td>+<?php echo number_format($t->growth_rate, 1); ?>%</td>
-						</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
+<div class="charts-admin-wrap premium-light">
+	<header class="charts-admin-header">
+		<div>
+			<h1 class="charts-admin-title"><?php _e( 'Market Insights', 'charts' ); ?></h1>
+			<p class="charts-admin-subtitle"><?php _e( 'Advanced market intelligence and historical trend analysis.', 'charts' ); ?></p>
 		</div>
+		<div class="charts-admin-actions">
+			<?php if ($has_data) : ?>
+				<button class="charts-btn-back" onclick="recalculateInsights()">
+					<span class="dashicons dashicons-update" style="margin-right:8px;"></span>
+					<?php _e( 'Refresh Analytics', 'charts' ); ?>
+				</button>
+			<?php endif; ?>
+		</div>
+	</header>
 
-		<!-- Fastest Risers -->
-		<div class="kc-intel-col postbox">
-			<h2 class="hndle"><span>Fastest Risers</span></h2>
-			<div class="inside">
-				<table class="wp-list-table widefat fixed striped">
-					<thead>
-						<tr>
-							<th>Track</th>
-							<th>Growth</th>
-							<th>Trend</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ($fastest_risers as $t): ?>
-						<tr>
-							<td>
-								<div style="display:flex; align-items:center; gap:10px;">
-									<img src="<?php echo esc_url($t->cover_image); ?>" style="width:30px; height:30px; border-radius:4px;">
-									<div style="font-weight:600; line-height:1.2; font-size:12px;">
-										<?php echo esc_html($t->track_name); ?><br>
-										<span style="opacity:0.5; font-weight:400;"><?php echo esc_html($t->artist_names); ?></span>
-									</div>
+	<?php settings_errors( 'charts' ); ?>
+
+			</header>
+			<table class="charts-table">
+				<thead>
+					<tr>
+						<th><?php _e( 'Track', 'charts' ); ?></th>
+						<th><?php _e( 'Growth', 'charts' ); ?></th>
+						<th><?php _e( 'Trend', 'charts' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($fastest_risers as $t): ?>
+					<tr>
+						<td>
+							<div style="display:flex; align-items:center; gap:10px;">
+								<img src="<?php echo esc_url($t->cover_image); ?>" style="width:30px; height:30px; border-radius:4px; border:1px solid var(--charts-border);">
+								<div style="font-weight:800; line-height:1.2; font-size:12px; color:var(--charts-primary);">
+									<?php echo esc_html($t->track_name); ?><br>
+									<span style="opacity:0.5; font-weight:600; font-size:10px;"><?php echo esc_html($t->artist_names); ?></span>
 								</div>
-							</td>
-							<td style="font-weight:700; color:#22c55e;">+<?php echo number_format($t->growth_rate, 1); ?>%</td>
-							<td><span class="kc-status-pill <?php echo $t->trend_status; ?>"><?php echo strtoupper($t->trend_status); ?></span></td>
-						</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
+							</div>
+						</td>
+						<td style="font-weight:700; color:var(--charts-success);">+<?php echo number_format($t->growth_rate, 1); ?>%</td>
+						<td><span class="status-badge <?php echo ( $t->trend_status === 'rising' || $t->trend_status === 'new' ) ? 'status-success' : 'status-pending'; ?>"><?php echo strtoupper($t->trend_status); ?></span></td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
 
 		<!-- Hot Artists -->
-		<div class="kc-intel-col postbox">
-			<h2 class="hndle"><span>Hot Artists</span></h2>
-			<div class="inside">
-				<table class="wp-list-table widefat fixed striped">
-					<thead>
-						<tr>
-							<th>Artist</th>
-							<th>Hotness</th>
-							<th>Peak</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ($hot_artists as $a): ?>
-						<tr>
-							<td>
-								<div style="display:flex; align-items:center; gap:10px;">
-									<img src="<?php echo esc_url($a->image); ?>" style="width:30px; height:30px; border-radius:50%;">
-									<div style="font-weight:600; line-height:1.2; font-size:12px;">
-										<?php echo esc_html($a->display_name); ?>
-									</div>
+		<div class="charts-table-card">
+			<header class="table-header">
+				<h2 class="table-title"><?php _e( 'Hot Artists', 'charts' ); ?></h2>
+				<div style="font-size:11px; color:var(--charts-text-dim); font-weight:700;">
+					<?php _e( 'Market Authority', 'charts' ); ?>
+				</div>
+			</header>
+			<table class="charts-table">
+				<thead>
+					<tr>
+						<th><?php _e( 'Artist', 'charts' ); ?></th>
+						<th><?php _e( 'Hotness', 'charts' ); ?></th>
+						<th><?php _e( 'Peak', 'charts' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($hot_artists as $a): ?>
+					<tr>
+						<td>
+							<div style="display:flex; align-items:center; gap:10px;">
+								<img src="<?php echo esc_url($a->image); ?>" style="width:30px; height:30px; border-radius:50%; border:1px solid var(--charts-border);">
+								<div style="font-weight:800; line-height:1.2; font-size:12px; color:var(--charts-primary);">
+									<?php echo esc_html($a->display_name); ?>
 								</div>
-							</td>
-							<td style="font-weight:700; color:#8b5cf6;"><?php echo number_format($a->momentum_score, 1); ?></td>
-							<td>#<?php echo $a->peaks_count; ?></td>
-						</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
+							</div>
+						</td>
+						<td style="font-weight:700; color:var(--charts-accent-purple);"><?php echo number_format($a->momentum_score, 1); ?></td>
+						<td style="font-weight:700; color:var(--charts-primary);">#<?php echo $a->peaks_count; ?></td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
-
 	</div>
 
 	<div class="kc-intel-actions" style="margin-top: 40px;">

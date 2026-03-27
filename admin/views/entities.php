@@ -119,11 +119,17 @@ if ( $type === 'artist' ) {
 }
 
 ?>
-<div class="charts-admin-wrap">
-	<header class="charts-header">
+<div class="charts-admin-wrap premium-light">
+	<header class="charts-admin-header">
 		<div>
-			<h1><?php echo esc_html( $title ); ?></h1>
-			<p class="subtitle"><?php printf( _n( '%s record found', '%s records found', $total, 'charts' ), number_format( $total ) ); ?></p>
+			<h1 class="charts-admin-title"><?php echo esc_html( $page_title ); ?></h1>
+			<p class="charts-admin-subtitle"><?php printf( __( 'Canonical library containing %d indexed %s entities.', 'charts' ), $total_items, strtolower($page_title) ); ?></p>
+		</div>
+		<div class="charts-admin-actions">
+			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
+				<span class="dashicons dashicons-plus" style="margin-right:8px;"></span>
+				<?php printf( __( 'Add New %s', 'charts' ), rtrim($page_title, 's') ); ?>
+			</a>
 		</div>
 		<div class="charts-actions">
 			<form method="get" action="">
@@ -137,17 +143,13 @@ if ( $type === 'artist' ) {
 
 	<!-- KPI Analytics Bar -->
 	<?php if ( ! empty( $kpis ) ) : ?>
-		<div class="charts-grid" style="margin-top: 24px;">
+		<div class="kc-cards-grid">
 			<?php foreach ( $kpis as $kpi ) : ?>
-				<div class="charts-card stats-card" style="grid-column: span 3; position: relative;">
-					<div class="label" style="font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #9ca3af; text-transform: uppercase;">
-						<?php echo esc_html( $kpi['label'] ); ?>
-					</div>
-					<div class="value" style="font-size: 28px; font-weight: 800; margin-top: 5px; color: #1f2937;">
-						<?php echo number_format( $kpi['value'] ); ?>
-					</div>
-					<div style="position: absolute; top: 15px; right: 20px; width: 32px; height: 32px; background: <?php echo $kpi['color']; ?>15; color: <?php echo $kpi['color']; ?>; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-						<span class="dashicons <?php echo $kpi['icon']; ?>" style="font-size: 18px; width: 18px; height: 18px;"></span>
+				<div class="kc-card">
+					<div class="kc-label"><?php echo esc_html( $kpi['label'] ); ?></div>
+					<div class="kc-value"><?php echo number_format( $kpi['value'] ); ?></div>
+					<div class="kc-card-icon" style="background: <?php echo $kpi['color']; ?>15; color: <?php echo $kpi['color']; ?>;">
+						<span class="dashicons <?php echo $kpi['icon']; ?>"></span>
 					</div>
 					<div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: <?php echo $kpi['color']; ?>; border-top-left-radius: 12px; border-bottom-left-radius: 12px; opacity: 0.6;"></div>
 				</div>

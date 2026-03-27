@@ -29,71 +29,69 @@ $sources = $source_manager->get_sources();
 
 	<?php settings_errors( 'charts' ); ?>
 
-	<div class="charts-grid">
+	<div class="charts-bento-grid" style="grid-template-columns: 1fr;">
 		<?php if ( $action === 'list' ) : ?>
-			<div class="charts-card" style="grid-column: span 12; padding: 0; position: relative; overflow: hidden;">
+			<div class="charts-table-card">
+				<header class="table-header">
+					<h2 class="table-title"><?php _e( 'Active Ingestion Registry', 'charts' ); ?></h2>
+					<div style="font-size:11px; color:var(--charts-text-dim); font-weight:700;">
+						<?php printf( __( '%d sources configured', 'charts' ), count( $sources ) ); ?>
+					</div>
+				</header>
 				<table class="charts-table">
 					<thead>
 						<tr>
-							<th style="padding-left: 24px;"><?php _e( 'Source Name', 'charts' ); ?></th>
-							<th><?php _e( 'Platform', 'charts' ); ?></th>
-							<th><?php _e( 'Type', 'charts' ); ?></th>
-							<th><?php _e( 'Country', 'charts' ); ?></th>
-							<th><?php _e( 'Frequency', 'charts' ); ?></th>
+							<th><?php _e( 'Source Name', 'charts' ); ?></th>
+							<th><?php _e( 'Intelligence Profile', 'charts' ); ?></th>
+							<th><?php _e( 'Market', 'charts' ); ?></th>
 							<th><?php _e( 'Status', 'charts' ); ?></th>
-							<th><?php _e( 'Last Run', 'charts' ); ?></th>
-							<th style="text-align: right; padding-right: 24px;"><?php _e( 'Actions', 'charts' ); ?></th>
+							<th><?php _e( 'Ingestion Health', 'charts' ); ?></th>
+							<th style="text-align: right; padding-right: 24px;"><?php _e( 'Operations', 'charts' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php if ( empty( $sources ) ) : ?>
 							<tr>
-								<td colspan="8" style="text-align: center; color: var(--charts-gray-500); padding: 40px;">
-									<div style="font-size: 14px; margin-bottom: 10px;"><?php _e( 'No sources found in the registry.', 'charts' ); ?></div>
-									<button class="charts-btn charts-btn-secondary" onclick="location.reload();"><?php _e( 'Refresh registry', 'charts' ); ?></button>
+								<td colspan="6" style="text-align: center; padding: 60px 20px;">
+									<div class="dashicons dashicons-database" style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.15; color: var(--charts-text-dim);"></div>
+									<div style="font-weight: 600; font-size:15px; color: var(--charts-text-dim);"><?php _e( 'No data sources defined.', 'charts' ); ?></div>
 								</td>
 							</tr>
 						<?php else : ?>
-							<?php foreach ( $sources as $source ) : ?>
+							<?php foreach ( $sources as $source ) : 
+								$status_class = ($source->is_active) ? 'status-success' : 'status-error';
+							?>
 								<tr data-source-id="<?php echo esc_attr( $source->id ); ?>">
-									<td style="padding-left: 24px;">
-										<div style="font-weight: 800; color: #000;"><?php echo esc_html( $source->source_name ); ?></div>
-										<div style="font-size: 11px; font-weight: 500; color: var(--charts-gray-500); margin-top: 2px;">
-											<?php echo $source->source_type === 'manual_import' ? '<em>' . esc_html__('Manual CSV Import', 'charts') . '</em>' : esc_html( $source->source_url ); ?>
+									<td>
+										<div style="font-weight: 800; color: var(--charts-primary);"><?php echo esc_html( $source->source_name ); ?></div>
+										<div style="font-size: 10px; font-weight: 600; color: var(--charts-text-dim); margin-top: 2px; text-transform: uppercase;">
+											<?php echo esc_html( $source->platform ); ?> — <?php echo str_replace('_', ' ', esc_html( $source->source_type ) ); ?>
 										</div>
 									</td>
 									<td>
-										<span class="source-icon source-<?php echo strtolower($source->platform); ?>" style="width: 20px; height: 20px; font-size: 9px; border-radius: 4px; display: inline-flex; align-items: center; justify-self: center;">
-											<?php echo substr($source->platform, 0, 1); ?>
-										</span>
-										<span style="font-size: 12px; font-weight: 600; text-transform: uppercase; margin-left: 6px;"><?php echo esc_html( $source->platform ); ?></span>
+										<div style="font-weight:600; font-size:13px;"><?php echo strtoupper( esc_html( $source->frequency ) ); ?></div>
+										<div style="font-size:10px; color:var(--charts-text-dim);"><?php echo esc_html( $source->chart_type ); ?></div>
 									</td>
 									<td>
-										<span class="charts-badge <?php echo $source->source_type === 'manual_import' ? 'charts-badge-neutral' : 'charts-badge-success'; ?>" style="font-size: 9px; border-radius: 20px;">
-											<?php echo str_replace('_', ' ', strtoupper( esc_html( $source->source_type ) ) ); ?>
-										</span>
+										<span class="charts-badge charts-badge-neutral"><?php echo strtoupper( esc_html( $source->country_code ) ); ?></span>
 									</td>
-									<td><span style="font-weight: 800;"><?php echo strtoupper( esc_html( $source->country_code ) ); ?></span></td>
-									<td><span class="charts-badge charts-badge-neutral"><?php echo strtoupper( esc_html( $source->frequency ) ); ?></span></td>
 									<td>
-										<span class="charts-badge charts-badge-<?php echo ($source->is_active) ? 'success' : 'neutral'; ?>">
+										<span class="status-badge <?php echo $status_class; ?>">
 											<?php echo ($source->is_active) ? 'ACTIVE' : 'DISABLED'; ?>
 										</span>
 									</td>
 									<td>
-										<div style="font-size: 12px; font-weight: 600; color: #000;"><?php echo $source->last_run_at ? date('M j, H:i', strtotime($source->last_run_at)) : '–'; ?></div>
+										<div style="font-size: 12px; font-weight: 600; color: var(--charts-primary);"><?php echo $source->last_run_at ? date('M j, H:i', strtotime($source->last_run_at)) : '–'; ?></div>
+										<div style="font-size:10px; color:var(--charts-text-dim);"><?php _e( 'Last sync attempt', 'charts' ); ?></div>
 									</td>
 									<td style="text-align: right; padding-right: 24px;">
 										<div style="display: flex; gap: 8px; justify-content: flex-end;">
-											<?php if ( $source->source_type === 'live_scrape' ) : ?>
-												<button class="charts-btn charts-btn-primary handle-run-import" style="padding: 6px 12px; font-size: 11px;"><?php _e( 'Fetch Now', 'charts' ); ?></button>
-											<?php endif; ?>
-											<a href="<?php echo admin_url( 'admin.php?page=charts-sources&action=edit&id=' . $source->id ); ?>" class="charts-btn charts-btn-secondary" style="padding: 6px 12px; font-size: 11px; text-decoration: none;"><?php _e( 'Edit', 'charts' ); ?></a>
+											<a href="<?php echo admin_url( 'admin.php?page=charts-sources&action=edit&id=' . $source->id ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'Configure', 'charts' ); ?></a>
 											<form method="post" action="" onsubmit="return confirm('Delete this source?');" style="display:inline;">
 												<?php wp_nonce_field('charts_admin_action'); ?>
 												<input type="hidden" name="charts_action" value="delete_source">
 												<input type="hidden" name="id" value="<?php echo $source->id; ?>">
-												<button type="submit" class="charts-btn" style="padding: 6px 12px; font-size: 11px; color: red; border-color: rgba(255,0,0,0.1); background: transparent;"><?php _e( 'Delete', 'charts' ); ?></button>
+												<button type="submit" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;"><?php _e( 'Remove', 'charts' ); ?></button>
 											</form>
 										</div>
 									</td>
