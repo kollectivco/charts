@@ -102,14 +102,17 @@ class YouTubeCsvImporter {
 				$title = 'Unknown YouTube Item';
 			}
 
-			// Resolve item based on chart_type
-			if ( $chart_type === 'top-artists' ) {
-				$item_type = 'artist';
+			// Resolve item based on item_type override or chart_type mapping
+			$item_type = $meta['item_type'] ?? null;
+			if ( ! $item_type ) {
+				$item_type = ( $chart_type === 'top-artists' ) ? 'artist' : ( ( $chart_type === 'top-videos' ) ? 'video' : 'track' );
+			}
+
+			if ( $item_type === 'artist' ) {
 				// For top-artists, the item_title IS the artist name in many YouTube exports
 				$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
 				$item_id     = $this->ensure_artist( $this->import_flow->normalize_title( $artist_name ), $row['image'] ?? null );
-			} elseif ( $chart_type === 'top-videos' ) {
-				$item_type = 'video';
+			} elseif ( $item_type === 'video' ) {
 				$primary_artist_id = $this->ensure_artist( $primary_name );
 				$item_id   = $this->ensure_video( 
 					$this->import_flow->normalize_title( $title ), 
@@ -126,7 +129,7 @@ class YouTubeCsvImporter {
 					if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
 				}
 			} else {
-				// default: top-songs / tracks
+				// default: tracks
 				$item_type = 'track';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
 				$item_id   = $this->ensure_track( $this->import_flow->normalize_title( $title ), $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );

@@ -87,6 +87,10 @@ class Router {
 			return CHARTS_PATH . 'public/templates/item-single.php';
 		}
 
+		if ( $charts_page === 'single-chart' ) {
+			return CHARTS_PATH . 'public/templates/single-chart.php';
+		}
+
 		// Support both long and short chart URLs
 		if ( $platform || $type ) {
 			return CHARTS_PATH . 'public/templates/single-chart.php';

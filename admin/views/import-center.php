@@ -110,6 +110,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 
 						<!-- Hidden fields to maintain backward compatibility with the import processor -->
 						<input type="hidden" name="chart_type" id="hidden_chart_type" value="top-songs">
+						<input type="hidden" name="country" id="country" value="eg">
 						
 						<div class="form-group">
 							<label for="item_type"><?php esc_html_e( 'Chart Entity Type', 'charts' ); ?></label>
@@ -131,10 +132,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 							<label for="period_date"><?php esc_html_e( 'Reporting Date', 'charts' ); ?></label>
 							<input type="date" name="period_date" id="period_date" value="<?php echo date('Y-m-d'); ?>" class="form-control">
 						</div>
-						<div class="form-group form-group-full">
-							<label for="source_name"><?php esc_html_e( 'Source Label (Optional override)', 'charts' ); ?></label>
-							<input type="text" name="source_name" id="source_name" placeholder="<?php esc_html_e( 'e.g. Official Spotify Weekly Egypt', 'charts' ); ?>" class="form-control">
-						</div>
+						<!-- Retired Source Label Override field per UI cleanup request -->
 					</div>
 				</div>
 

@@ -79,7 +79,7 @@ function kc_fmt($n) {
 $arabic_subtitle = "أفضل ١٠٠ أغنية";
 ?>
 
-<div class="kc-root">
+<div class="kc-root" <?php if (!empty($definition->accent_color)) echo 'style="--k-accent: ' . esc_attr($definition->accent_color) . '; --k-accent-yellow: ' . esc_attr($definition->accent_color) . ';"'; ?>>
 	<main class="kc-container">
 		
 		<!-- 2. BREADCRUMBS -->

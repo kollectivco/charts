@@ -177,7 +177,7 @@ class SourceManager {
 			'frequency'       => sanitize_text_field( $data['frequency'] ),
 			'platform'        => sanitize_text_field( $data['platform'] ?? 'all' ),
 			'cover_image_url' => esc_url_raw( $data['cover_image_url'] ?? '' ),
-			'accent_color'    => sanitize_text_field( $data['accent_color'] ?? '#6366f1' ),
+			'accent_color'    => !empty($data['accent_color']) ? (strpos($data['accent_color'], '#') === 0 ? sanitize_text_field($data['accent_color']) : '#' . sanitize_text_field($data['accent_color'])) : '#6366f1',
 			'is_public'       => isset( $data['is_public'] ) ? (int) $data['is_public'] : 1,
 			'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
 			'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,

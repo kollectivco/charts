@@ -409,11 +409,12 @@ class Bootstrap {
 		}
 
 		$meta = array(
-			'country'     => sanitize_text_field( $_POST['country'] ),
-			'chart_type'  => sanitize_text_field( $_POST['chart_type'] ),
-			'frequency'   => sanitize_text_field( $_POST['frequency'] ),
-			'period_date' => sanitize_text_field( $_POST['period_date'] ),
-			'source_name' => sanitize_text_field( $_POST['source_name'] ),
+			'country'     => sanitize_text_field( $_POST['country'] ?? 'eg' ),
+			'chart_type'  => sanitize_text_field( $_POST['chart_type'] ?? 'top-songs' ),
+			'frequency'   => sanitize_text_field( $_POST['frequency'] ?? 'weekly' ),
+			'period_date' => sanitize_text_field( $_POST['period_date'] ?? '' ),
+			'source_name' => sanitize_text_field( $_POST['source_name'] ?? '' ),
+			'item_type'   => sanitize_text_field( $_POST['item_type'] ?? 'track' ),
 		);
 
 		$csv_content = file_get_contents( $_FILES['spotify_csv']['tmp_name'] );
@@ -460,6 +461,7 @@ class Bootstrap {
 			'frequency'   => sanitize_text_field( $_POST['frequency'] ?? 'weekly' ),
 			'period_date' => sanitize_text_field( $_POST['period_date'] ?? '' ),
 			'source_name' => sanitize_text_field( $_POST['source_name'] ?? '' ),
+			'item_type'   => sanitize_text_field( $_POST['item_type'] ?? 'track' ),
 		);
 
 		$csv_content = file_get_contents( $_FILES['youtube_csv']['tmp_name'] );

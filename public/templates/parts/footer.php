@@ -62,13 +62,13 @@ $copyright   = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 		<!-- Bottom Strip -->
 		<div class="footer-bottom-strip">
 			<div class="bottom-left">
-				&copy; <?php echo date('Y'); ?> <?php echo esc_html($copyright); ?> All rights reserved.
+				All Rights Reserved @ Kontentainment 2026
 			</div>
 			<div class="bottom-center">
 				<span class="muted">Updated weekly &middot; Charts based on multi-platform streaming data</span>
 			</div>
 			<div class="bottom-right">
-				<a href="<?php echo admin_url('admin.php?page=charts-dashboard'); ?>" style="color: inherit; text-decoration: none;">DASHBOARD</a>
+				<!-- Dashboard Link Retired for cleaner UI pass -->
 			</div>
 		</div>
 

@@ -27,19 +27,7 @@ $week_date = date('F j, Y');
 <body <?php body_class( 'charts-standalone kc-root' ); ?>>
 <?php wp_body_open(); ?>
 
-<!-- 1. TOP MICRO BAR -->
-<div class="kc-micro-bar">
-	<div class="kc-container">
-		<div class="kc-micro-inner">
-			<div class="micro-left">
-				KONTENTAINMENT CHARTS &middot; WEEK OF <?php echo strtoupper($week_date); ?>
-			</div>
-			<div class="micro-right">
-				Powered by streaming data from Spotify &middot; YouTube Music &middot; TikTok
-			</div>
-		</div>
-	</div>
-</div>
+<!-- Top Micro Bar Retired for cleaner UI pass -->
 
 <!-- 2. MAIN HEADER -->
 <header class="charts-product-header">
@@ -89,18 +77,7 @@ $week_date = date('F j, Y');
 				<?php endif; ?>
 			</div>
 
-			<!-- Actions -->
-			<div class="charts-header-actions">
-				<?php if ( $show_search ) : ?>
-					<button class="search-trigger" style="background: none; border: none; color: white; opacity: 0.6; cursor: pointer;">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-					</button>
-				<?php endif; ?>
-
-				<a href="<?php echo admin_url('admin.php?page=charts-dashboard'); ?>" class="kc-btn-dashboard">
-					DASHBOARD
-				</a>
-			</div>
+			<!-- Actions Retired (Search/Dashboard) per UI cleanup request -->
 
 		</div>
 	</div>

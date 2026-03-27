@@ -115,17 +115,19 @@ class SpotifyCsvImporter {
 				$this->link_track_artist( $track_id, $a_id );
 			}
 
-			// Flat columns written directly to entries row (no JOIN needed on frontend)
-			$flat = array(
-				'track_name'   => $official_name,
-				'artist_names' => $artist_raw !== '' ? $artist_raw : $primary_name,
-				'cover_image'  => $cover_image,
-				'spotify_id'   => $spotify_id,
-				'youtube_id'   => null,
-				'streams'      => intval( $row['streams'] ?? 0 ),
-			);
+			$item_type = $meta['item_type'] ?? 'track';
 
-			$entry_id = $this->import_flow->upsert_entry( $source_id, $period_id, 'track', $track_id, $row, $flat );
+			if ( $item_type === 'artist' ) {
+				$item_id = $primary_artist_id;
+				$flat['track_name'] = $primary_name; // For artists, name is title
+			} elseif ( $item_type === 'video' ) {
+				// We don't have separate ensure_video in Spotify importer yet, but can use track logic or expand
+				$item_id = $track_id; 
+			} else {
+				$item_id = $track_id;
+			}
+
+			$entry_id = $this->import_flow->upsert_entry( $source_id, $period_id, $item_type, $item_id, $row, $flat );
 
 			if ( $entry_id ) {
 				// Best-effort movement analysis

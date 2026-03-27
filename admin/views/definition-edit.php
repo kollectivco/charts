@@ -16,7 +16,7 @@ $item_type       = $def ? $def->item_type : 'track';
 $country         = $def ? $def->country_code : 'eg';
 $frequency       = $def ? $def->frequency : 'weekly';
 $cover_image_url = $def ? $def->cover_image_url : '';
-$accent_color    = $def ? $def->accent_color : '#6366f1';
+$accent_color    = ($def && !empty($def->accent_color)) ? $def->accent_color : '#6366f1';
 $is_public       = $def ? (int)$def->is_public : 1;
 $is_featured     = $def ? (int)$def->is_featured : 0;
 $archive_enabled = $def ? (int)$def->archive_enabled : 1;
@@ -113,7 +113,7 @@ $menu_order      = $def ? (int)$def->menu_order : 1;
 					<label for="accent_color">Brand Accent Color</label>
 					<div class="color-picker-wrap">
 						<div class="color-swatch" style="background: <?php echo esc_attr($accent_color); ?>;"></div>
-						<input type="text" id="accent_color" name="accent_color" value="<?php echo esc_attr($accent_color); ?>" class="form-control" style="font-family:monospace; text-transform:uppercase;">
+						<input type="text" id="accent_color" name="accent_color" value="<?php echo esc_attr($accent_color); ?>" class="form-control" style="font-family:monospace; text-transform:uppercase;" placeholder="#6366F1">
 					</div>
 					<span class="input-helper">Used for dots, links, and UI accents on the frontend.</span>
 					
