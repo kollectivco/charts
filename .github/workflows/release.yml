@@ -15,23 +15,23 @@ jobs:
 
       - name: Preparation
         run: |
-          mkdir -p build/charts
-          cp -r admin build/charts/
-          cp -r inc build/charts/
-          cp -r public build/charts/
-          cp -r languages build/charts/ 2>/dev/null || :
-          cp charts.php build/charts/
-          cp readme.txt build/charts/ 2>/dev/null || :
+          mkdir -p build/kontentainment-charts
+          cp -r admin build/kontentainment-charts/
+          cp -r inc build/kontentainment-charts/
+          cp -r public build/kontentainment-charts/
+          cp -r languages build/kontentainment-charts/ 2>/dev/null || :
+          cp charts.php build/kontentainment-charts/
+          cp readme.txt build/kontentainment-charts/ 2>/dev/null || :
           # Clean build from dev assets
-          rm -rf build/charts/**/*.zip
-          rm -rf build/charts/.git*
-          rm -rf build/charts/.agent*
-          rm -rf build/charts/tests
+          rm -rf build/kontentainment-charts/**/*.zip
+          rm -rf build/kontentainment-charts/.git*
+          rm -rf build/kontentainment-charts/.agent*
+          rm -rf build/kontentainment-charts/tests
           
       - name: Create ZIP
         run: |
           cd build
-          zip -r charts.zip charts/
+          zip -r kontentainment-charts.zip kontentainment-charts/
           
       - name: Create GitHub Release
         id: create_release
@@ -39,7 +39,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: build/charts.zip
+          files: build/kontentainment-charts.zip
           draft: false
           prerelease: false
           generate_release_notes: true
