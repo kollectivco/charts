@@ -53,9 +53,13 @@ class ImportFlow {
 			$item_type = $source->chart_type === 'top-artists' ? 'artist'
 				: ( $source->chart_type === 'top-videos' ? 'video' : 'track' );
 
-			$item_id = $item_type === 'artist'
-				? $artist_id
-				: $this->quick_track( $this->normalize_title( $title ), $artist_id, $row['image'] ?? null );
+			if ( $item_type === 'artist' ) {
+				$item_id = $artist_id;
+			} elseif ( $item_type === 'video' ) {
+				$item_id = $this->quick_video( $this->normalize_title( $title ), $artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
+			} else {
+				$item_id = $this->quick_track( $this->normalize_title( $title ), $artist_id, $row['image'] ?? null );
+			}
 
 			if ( ! $item_id ) continue;
 
@@ -272,6 +276,30 @@ class ImportFlow {
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
+			'cover_image'       => $image,
+			'created_at'        => current_time( 'mysql' ),
+			'updated_at'        => current_time( 'mysql' ),
+		) );
+		return $wpdb->insert_id;
+	}
+
+	private function quick_video( $title, $artist_id, $youtube_id = null, $image = null ) {
+		global $wpdb;
+		$table      = $wpdb->prefix . 'charts_videos';
+		$normalized = mb_strtolower( $this->normalize_title( trim( $title ) ) );
+		$id = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d",
+			$normalized, $artist_id
+		) );
+		if ( $id ) return $id;
+
+		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
+		$wpdb->insert( $table, array(
+			'title'             => $title,
+			'normalized_title'  => $normalized,
+			'slug'              => $slug,
+			'primary_artist_id' => $artist_id,
+			'youtube_id'        => $youtube_id,
 			'cover_image'       => $image,
 			'created_at'        => current_time( 'mysql' ),
 			'updated_at'        => current_time( 'mysql' ),

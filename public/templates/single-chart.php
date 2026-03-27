@@ -109,6 +109,8 @@ if ( ! $period ) {
 			admin_url('admin.php?page=charts-import')
 		);
 	}
+}
+
 /**
  * 3. MAIN RENDER PATH
  */

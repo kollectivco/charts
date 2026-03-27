@@ -121,8 +121,13 @@ class SpotifyCsvImporter {
 				$item_id = $primary_artist_id;
 				$flat['track_name'] = $primary_name; // For artists, name is title
 			} elseif ( $item_type === 'video' ) {
-				// We don't have separate ensure_video in Spotify importer yet, but can use track logic or expand
-				$item_id = $track_id; 
+				// Use video helper
+				$item_id = $this->ensure_video( $official_name, $primary_artist_id, $row['youtube_id'] ?? null, $cover_image );
+				// Link video artists
+				foreach ( $all_artists as $a_name ) {
+					$a_id = $this->ensure_artist( trim($a_name) );
+					if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
+				}
 			} else {
 				$item_id = $track_id;
 			}
@@ -266,6 +271,43 @@ class SpotifyCsvImporter {
 			"INSERT IGNORE INTO {$wpdb->prefix}charts_track_artists (track_id, artist_id) VALUES (%d, %d)",
 			$track_id, $artist_id
 		) );
+	}
+
+	private function link_video_artist( $video_id, $artist_id ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"INSERT IGNORE INTO {$wpdb->prefix}charts_video_artists (video_id, artist_id) VALUES (%d, %d)",
+			$video_id, $artist_id
+		) );
+	}
+
+	private function ensure_video( $title, $artist_id, $youtube_id = null, $cover_image = null ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_videos';
+
+		$normalized = mb_strtolower( $this->import_flow->normalize_title( $title ) );
+		$id = $wpdb->get_var( $wpdb->prepare(
+			"SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d",
+			$normalized, $artist_id
+		) );
+
+		if ( $id ) {
+			if ( $cover_image ) $wpdb->update( $table, array( 'cover_image' => $cover_image ), array( 'id' => $id ) );
+			return $id;
+		}
+
+		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
+		$wpdb->insert( $table, array(
+			'title'             => $title,
+			'normalized_title'  => $normalized,
+			'slug'              => $slug,
+			'primary_artist_id' => $artist_id,
+			'youtube_id'        => $youtube_id,
+			'cover_image'       => $cover_image,
+			'created_at'        => current_time( 'mysql' ),
+			'updated_at'        => current_time( 'mysql' ),
+		) );
+		return $wpdb->insert_id;
 	}
 
 	private function unique_slug( $table, $slug ) {

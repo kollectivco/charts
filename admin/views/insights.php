@@ -97,38 +97,44 @@ if ($has_data) {
     <?php else : ?>
         
         <!-- Premium Analytics KPIs -->
-        <div class="charts-grid" style="margin-top: 24px;">
-            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid var(--charts-border);">
-                <div class="label" style="text-transform: uppercase; font-size: 10px; font-weight: 850; letter-spacing: 0.1em; color: var(--charts-text-dim);"><?php _e( 'Market Freshness', 'charts' ); ?></div>
-                <div class="value" style="font-size: 28px; font-weight: 900; color: var(--charts-primary); margin: 8px 0;"><?php echo number_format($new_entries_count); ?></div>
-                <div class="trend" style="color: #22c55e; font-size: 11px; font-weight: 700;">+<?php _e( 'New entries (30d)', 'charts' ); ?></div>
+        <div class="charts-grid" style="margin-top: 32px; gap: 24px;">
+            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--charts-border); padding: 32px; transition: transform 0.2s ease; cursor: default;">
+                <div class="label" style="text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--charts-text-dim); margin-bottom: 12px;"><?php _e( 'Market Freshness', 'charts' ); ?></div>
+                <div class="value" style="font-size: 36px; font-weight: 900; color: var(--charts-primary); margin: 0;"><?php echo number_format($new_entries_count); ?></div>
+                <div class="trend" style="color: #22c55e; font-size: 13px; font-weight: 700; margin-top: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span class="dashicons dashicons-arrow-up-alt2" style="font-size: 16px; width: 16px; height: 16px;"></span>
+                    +<?php _e( 'New entries (30d)', 'charts' ); ?>
+                </div>
             </div>
-            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid var(--charts-border);">
-                <div class="label" style="text-transform: uppercase; font-size: 10px; font-weight: 850; letter-spacing: 0.1em; color: var(--charts-text-dim);"><?php _e( 'Avg. Longevity', 'charts' ); ?></div>
-                <div class="value" style="font-size: 28px; font-weight: 900; color: var(--charts-primary); margin: 8px 0;"><?php echo number_format($avg_longevity, 1); ?></div>
-                <div class="trend" style="color: #6366f1; font-size: 11px; font-weight: 700;"><?php _e( 'Avg. Weeks on chart', 'charts' ); ?></div>
+            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--charts-border); padding: 32px; transition: transform 0.2s ease; cursor: default;">
+                <div class="label" style="text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--charts-text-dim); margin-bottom: 12px;"><?php _e( 'Avg. Longevity', 'charts' ); ?></div>
+                <div class="value" style="font-size: 36px; font-weight: 900; color: var(--charts-primary); margin: 0;"><?php echo number_format($avg_longevity, 1); ?></div>
+                <div class="trend" style="color: #6366f1; font-size: 13px; font-weight: 700; margin-top: 12px;"><?php _e( 'Avg. Weeks on chart', 'charts' ); ?></div>
             </div>
-            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid var(--charts-border);">
-                <div class="label" style="text-transform: uppercase; font-size: 10px; font-weight: 850; letter-spacing: 0.1em; color: var(--charts-text-dim);"><?php _e( 'Market Volume', 'charts' ); ?></div>
-                <div class="value" style="font-size: 28px; font-weight: 900; color: var(--charts-primary); margin: 8px 0;"><?php echo ($market_volume > 1000000) ? number_format($market_volume / 1000000, 1) . 'M' : number_format($market_volume); ?></div>
-                <div class="trend" style="color: grey; font-size: 11px; font-weight: 700;"><?php _e( 'Total interactions recorded', 'charts' ); ?></div>
+            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--charts-border); padding: 32px; transition: transform 0.2s ease; cursor: default;">
+                <div class="label" style="text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--charts-text-dim); margin-bottom: 12px;"><?php _e( 'Market Volume', 'charts' ); ?></div>
+                <div class="value" style="font-size: 36px; font-weight: 900; color: var(--charts-primary); margin: 0;"><?php echo ($market_volume > 1000000) ? number_format($market_volume / 1000000, 1) . 'M' : number_format($market_volume); ?></div>
+                <div class="trend" style="color: grey; font-size: 13px; font-weight: 700; margin-top: 12px;"><?php _e( 'Total interactions recorded', 'charts' ); ?></div>
             </div>
-            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid var(--charts-border);">
-                <div class="label" style="text-transform: uppercase; font-size: 10px; font-weight: 850; letter-spacing: 0.1em; color: var(--charts-text-dim);"><?php _e( 'Last Updated', 'charts' ); ?></div>
-                <div class="value" style="font-size: 20px; font-weight: 900; color: var(--charts-primary); margin: 15px 0;">
+            <div class="charts-card stats-card" style="grid-column: span 3; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--charts-border); padding: 32px; transition: transform 0.2s ease; cursor: default;">
+                <div class="label" style="text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--charts-text-dim); margin-bottom: 12px;"><?php _e( 'Last Updated', 'charts' ); ?></div>
+                <div class="value" style="font-size: 24px; font-weight: 900; color: var(--charts-primary); margin: 0; height: 36px; display: flex; align-items: center;">
                     <?php echo $last_update ? date('M d, H:i', strtotime($last_update)) : '—'; ?>
                 </div>
-                <div class="trend" style="color: var(--charts-accent-purple); font-size: 11px; font-weight: 700;"><?php _e( 'Data Sync Status', 'charts' ); ?></div>
+                <div class="trend" style="color: var(--charts-accent-purple); font-size: 13px; font-weight: 700; margin-top: 12px;"><?php _e( 'Data Sync Status', 'charts' ); ?></div>
             </div>
         </div>
 
-        <div class="charts-grid" style="margin-top: 32px;">
+        <div class="charts-grid" style="margin-top: 40px; gap: 32px;">
             
             <!-- Performance: Top Gainers -->
-            <div class="charts-table-card" style="grid-column: span 6; padding: 0; background: #fff; border-radius: 12px; border: 1px solid var(--charts-border); overflow: hidden;">
-                <header class="table-header" style="padding: 24px; border-bottom: 1px solid var(--charts-border); display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0; font-size: 15px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.05em; color: var(--charts-primary);"><?php _e( 'Momentum: Market Gainers', 'charts' ); ?></h3>
-                    <span class="charts-badge charts-badge-success" style="font-size: 9px; font-weight: 900;"><?php _e( 'Rising Fast', 'charts' ); ?></span>
+            <div class="charts-table-card" style="grid-column: span 6; padding: 0; background: #fff; border-radius: 16px; border: 1px solid var(--charts-border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <header class="table-header" style="padding: 28px 32px; border-bottom: 1px solid var(--charts-border); display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: var(--charts-primary);"><?php _e( 'Momentum: Market Gainers', 'charts' ); ?></h3>
+                        <p style="margin: 4px 0 0; font-size: 11px; color: var(--charts-text-dim); font-weight: 600;">Biggest rank improvements this period.</p>
+                    </div>
+                    <span class="charts-badge charts-badge-success" style="font-size: 10px; font-weight: 900; padding: 6px 12px; border-radius: 8px;"><?php _e( 'Rising Fast', 'charts' ); ?></span>
                 </header>
                 <table class="charts-table">
                     <thead>
