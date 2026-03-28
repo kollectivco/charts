@@ -1,202 +1,107 @@
 <?php
 /**
- * Kontentainment Charts — Premium Editorial Landing
+ * Charts Directory Template - High Fidelity Integration
+ * Rebuilt from scratch to resolve PHP parsing corruption.
  */
+
+global $wpdb;
+
+// 1. DATA LOOKUP
+$manager     = new \Charts\Admin\SourceManager();
+$definitions = $manager->get_definitions( true ); // Only active/public charts
+
+// Helper to fetch top 3 preview for a definition
+function kc_get_preview_entries($def) {
+	global $wpdb;
+	return $wpdb->get_results( $wpdb->prepare( "
+		SELECT e.* FROM {$wpdb->prefix}charts_entries e
+		JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+		WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+		ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
+	", $def->chart_type, $def->country_code ) );
+}
+
 get_header();
 ?>
 
-// Fetch all active chart definitions
-$manager     = new \Charts\Admin\SourceManager();
-$definitions = $manager->get_definitions( true );
-
-// Separate out Top Artists for the featured strip if possible
-$artists_chart = null;
-foreach ( $definitions as $def ) {
-	if ( stripos( $def->title, 'Artist' ) !== false ) {
-		$artists_chart = $def;
-		break;
-	}
-}
-
-// Accent palette for grid cards per reference
-$accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec4899', '#eab308' );
-?>
-
 <div class="kc-root kc-integrated">
-	
-	<!-- 3. HERO SECTION -->
-	<section class="kc-hero-section">
-		<!-- Atmospheric blurred background could go here per ref -->
-		<div class="kc-hero-content kc-container">
-			<h1>Intelligence Explorer</h1>
-		</div>
-	</section>
-
-	<!-- TRENDING NOW BLOCK -->
-	<?php 
-		$trending = $wpdb->get_results("
-			SELECT i.*, e.track_name, e.artist_names, e.cover_image, e.item_type
-			FROM {$wpdb->prefix}charts_intelligence i
-			JOIN {$wpdb->prefix}charts_entries e ON e.item_id = i.entity_id AND e.item_type = i.entity_type
-			WHERE i.entity_type IN ('track','video')
-			GROUP BY i.entity_id
-			ORDER BY i.momentum_score DESC LIMIT 5
-		");
-	?>
-	<?php if ($trending): ?>
-	<section style="background: var(--k-surface); border-bottom: 1px solid var(--k-border); padding: 50px 0; margin-bottom: 60px;">
-		<div class="kc-container">
-			<header class="kc-section-header" style="padding-top: 0; margin-bottom: 24px;">
-				<div>
-					<div class="kc-header-label" style="color: var(--k-accent-red);">
-						<span class="kc-dot" style="background: var(--k-accent-red); margin-right: 8px;"></span>
-						LIVE MOMENTUM
-					</div>
-					<h2 class="kc-header-title" style="font-size: 24px;">Trending Now</h2>
-				</div>
-			</header>
-			<div style="display: flex; gap: 40px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none;">
-				<?php foreach ($trending as $t): ?>
-					<a href="<?php echo home_url('/charts/' . ($t->item_type==='video' ? 'video' : 'track') . '/' . sanitize_title($t->track_name)); ?>" style="display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit; flex-shrink: 0; min-width: 250px; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 16px; border: 1px solid var(--k-border);">
-						<img src="<?php echo esc_url($t->cover_image); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
-						<div style="min-width: 0;">
-							<div style="font-size: 13px; font-weight: 850; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($t->track_name); ?></div>
-							<div style="font-size: 11px; opacity: 0.4; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($t->artist_names); ?></div>
-						</div>
-						<div style="margin-left: auto; font-size: 10px; font-weight: 950; color: var(--k-accent-red); padding-left: 10px;">
-							↑ <?php echo number_format($t->momentum_score, 0); ?>
-						</div>
-					</a>
-				<?php endforeach; ?>
-			</div>
-		</div>
-	</section>
-	<?php endif; ?>
-
 	<div class="kc-container">
 		
-		<!-- 4. FEATURED TOP STRIP (TOP ARTISTS) -->
-		<?php if ( $artists_chart ) : 
-			// Fetch top 5 artists
-			$top_artists = $wpdb->get_results( $wpdb->prepare( "
-				SELECT e.* FROM {$wpdb->prefix}charts_entries e
-				JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-				WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-				ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 5
-			", $artists_chart->chart_type, $artists_chart->country_code ) );
-		?>
-		<section class="kc-featured-strip">
-			<header class="kc-section-header">
-				<div>
-					<div class="kc-header-label">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-						CHART
-					</div>
-					<h2 class="kc-header-title">Top Artists</h2>
-				</div>
-				<a href="<?php echo home_url('/charts/' . $artists_chart->slug . '/'); ?>" class="kc-header-link">Full Chart &rarr;</a>
-			</header>
-
-			<div class="kc-artists-strip">
-				<?php foreach ( $top_artists as $idx => $art ) : ?>
-					<div class="kc-artist-card">
-						<span class="kc-artist-rank">#<?php echo $art->rank_position; ?></span>
-						<img src="<?php echo esc_url($art->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="<?php echo esc_attr($art->artist_names); ?>">
-						<div class="kc-artist-info">
-							<span class="kc-artist-name"><?php echo esc_html($art->artist_names); ?></span>
-							<span class="kc-artist-genre">MEDITERRANEAN POP</span>
-						</div>
-					</div>
-				<?php endforeach; ?>
+		<!-- DIRECTORY HEADER -->
+		<header class="kc-dir-header" style="padding: 100px 0 60px;">
+			<div style="font-size: 11px; font-weight: 900; color: #6366f1; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 20px;">
+				<span style="display:inline-block; width: 8px; height: 8px; background: #6366f1; border-radius: 50%; margin-right: 12px;"></span>
+				Intelligence Explorer
 			</div>
-		</section>
-		<?php endif; ?>
+			<h1 style="font-size: clamp(3rem, 6vw, 6rem); font-weight: 950; letter-spacing: -0.05em; line-height: 0.85; margin: 0; color: white;">Charts Directory</h1>
+		</header>
 
-		<!-- 5. EXPLORE / ALL CHARTS (4-COLUMN GRID) -->
-		<section class="kc-all-charts">
-			<header class="kc-section-header">
-				<div>
-					<div class="kc-header-label" style="color: var(--k-text-muted);">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-						EXPLORE
-					</div>
-					<h2 class="kc-header-title">All Charts</h2>
+		<!-- CHART GRID -->
+		<div class="kc-chart-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 40px; margin-bottom: 120px;">
+			
+			<?php if ( empty( $definitions ) ) : ?>
+				<div class="kc-empty-grid" style="grid-column: 1 / -1; padding: 120px 40px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 32px;">
+					<h2 style="font-size: 24px; font-weight: 800; color: white;">No active charts found.</h2>
+					<p style="opacity: 0.4;">Register chart definitions and map sources in the dashboard to begin.</p>
 				</div>
-				<a href="#" class="kc-header-link" style="color: var(--k-text-muted);">Browse All &rarr;</a>
-			</header>
-
-				<?php 
-				if ( empty( $definitions ) ) : ?>
-					<div class="kc-empty-grid-state" style="grid-column: 1 / -1; padding: 100px 40px; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--k-border); border-radius: 24px;">
-						<div style="font-size: 14px; font-weight: 700; color: var(--k-text-muted); margin-bottom: 12px;">No Charts defined yet.</div>
-						<p style="font-size: 12px; opacity: 0.5; max-width: 300px; margin: 0 auto;">Head to the admin dashboard to create your first chart definition and begin importing data.</p>
-					</div>
-				<?php else :
-				foreach ( $definitions as $idx => $def ) : 
-					$accent_color = !empty($def->accent_color) ? $def->accent_color : '#6366f1';
-					// Fetch top 3 preview
-					$entries = $wpdb->get_results( $wpdb->prepare( "
-						SELECT e.* FROM {$wpdb->prefix}charts_entries e
-						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-						WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
-					", $def->chart_type, $def->country_code ) );
-
-					$hero_img = ! empty( $def->cover_image_url ) ? $def->cover_image_url : (! empty( $entries[0]->cover_image ) ? $entries[0]->cover_image : CHARTS_URL . 'public/assets/img/placeholder.png');
-					$period_date = ! empty( $entries[0]->created_at ) ? date('M j, Y', strtotime($entries[0]->created_at)) : 'Latest Record';
+			<?php else : ?>
+				
+				<?php foreach ( $definitions as $def ) : 
+					$entries = kc_get_preview_entries($def);
+					$accent  = !empty($def->accent_color) ? $def->accent_color : '#6366f1';
+					$hero    = !empty($def->cover_image_url) ? $def->cover_image_url : (!empty($entries[0]->cover_image) ? $entries[0]->cover_image : CHARTS_URL . 'public/assets/img/placeholder.png');
 				?>
-					<article class="kc-chart-card">
+					<article class="kc-card" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 32px; overflow: hidden; transition: transform 0.3s ease;">
 						
-						<!-- Hero Card Top -->
-						<div class="kc-card-hero">
-							<img src="<?php echo esc_url($hero_img); ?>" class="kc-card-hero-img" alt="Background">
-							<div style="position: relative; z-index: 10;">
-								<span class="kc-card-meta"><?php echo strtoupper($def->frequency); ?> CHART</span>
-								<h2 class="kc-card-title">
-									<?php echo esc_html($def->title); ?>
-									<?php if (!empty($def->title_ar)): ?>
-										<span style="font-size: 0.7em; opacity: 0.5; font-weight: 500; display: block; margin-top: 4px; letter-spacing: 0;"><?php echo esc_html($def->title_ar); ?></span>
-									<?php endif; ?>
-									<span class="kc-dot" style="background: <?php echo esc_attr($accent_color); ?>;"></span>
-								</h2>
+						<!-- Card Hero -->
+						<div style="position: relative; height: 260px; overflow: hidden;">
+							<img src="<?php echo esc_url($hero); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+							<div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);"></div>
+							<div style="position: absolute; bottom: 32px; left: 32px; right: 32px;">
+								<span style="font-size: 10px; font-weight: 900; letter-spacing: 0.1em; color: rgba(255,255,255,0.6); text-transform: uppercase;"><?php echo strtoupper($def->frequency); ?> CHART</span>
+								<h2 style="font-size: 28px; font-weight: 900; margin: 8px 0 0; color: white; line-height: 1;"><?php echo esc_html($def->title); ?></h2>
 							</div>
 						</div>
 
-						<!-- Top 3 List -->
-						<section class="kc-card-list">
-							<?php if ( empty( $entries ) ) : ?>
-								<div class="kc-empty-chart-state" style="padding: 40px; text-align: center; border-top: 1px solid var(--k-border);">
-									<div style="font-size: 10px; font-weight: 900; color: var(--k-text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Synchronizing</div>
-									<div style="font-size: 13px; font-weight: 500; opacity: 0.4;">Data for this period is currently being processed.</div>
-								</div>
+						<!-- Card Preview List -->
+						<div style="padding: 32px;">
+							<?php if ( empty($entries) ) : ?>
+								<div style="padding: 20px 0; font-size: 13px; opacity: 0.3; font-weight: 600;">Data synchronizing...</div>
 							<?php else : ?>
-								<?php foreach ( $entries as $row ) : ?>
-									<div class="kc-card-item">
-										<div class="kc-item-rank"><?php echo $row->rank_position; ?></div>
-										<img src="<?php echo esc_url( $row->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png' ); ?>" class="kc-item-art" alt="Art">
-										<div class="kc-item-info">
-											<span class="kc-item-name"><?php echo esc_html($row->track_name); ?></span>
-											<span class="kc-item-artist"><?php echo esc_html($row->artist_names); ?></span>
+								<div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px;">
+									<?php foreach ( $entries as $e ) : ?>
+										<div style="display: flex; align-items: center; gap: 16px;">
+											<span style="font-size: 14px; font-weight: 900; color: <?php echo $accent; ?>; width: 20px;"><?php echo $e->rank_position; ?></span>
+											<div style="flex: 1; min-width: 0;">
+												<div style="font-size: 14px; font-weight: 800; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($e->track_name); ?></div>
+												<div style="font-size: 12px; opacity: 0.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($e->artist_names); ?></div>
+											</div>
 										</div>
-									</div>
-								<?php endforeach; ?>
+									<?php endforeach; ?>
+								</div>
 							<?php endif; ?>
-						</section>
 
-						<!-- Card Footer -->
-						<footer class="kc-card-footer">
-							<span class="kc-card-date">Week of <?php echo $period_date; ?></span>
-							<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-card-cta" style="color: <?php echo $accent_color; ?>;">
-								See Full Chart &rarr;
+							<!-- CTA -->
+							<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="display: block; width: 100%; text-align: center; padding: 14px; background: rgba(255,255,255,0.05); color: white; text-decoration: none; border-radius: 16px; font-size: 13px; font-weight: 800; transition: background 0.2s;">
+								Explore Rankings &rarr;
 							</a>
-						</footer>
+						</div>
 
 					</article>
-				<?php endforeach; endif; ?>
-			</div>
-		</section>
+				<?php endforeach; ?>
+
+			<?php endif; ?>
+
+		</div>
 
 	</div>
 </div>
+
+<style>
+.kc-root.kc-integrated { background: #000; color: #fff; min-height: 1000px; }
+.kc-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+.kc-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.04) !important; }
+.kc-card a:hover { background: rgba(255,255,255,0.1) !important; }
+</style>
 
 <?php get_footer(); ?>
