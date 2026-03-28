@@ -30,9 +30,15 @@ class StandaloneLayout {
 		// Prevent theme from injecting headers/menus in wp_body_open
 		remove_all_actions( 'wp_body_open' );
 		
-		// Often themes hook into wp_head to print their own menu wrappers
-		// but we want to keep essential WP core head actions.
-		// remove_all_actions( 'wp_head' ) is too aggressive as it breaks enqueues.
+		// Aggressively remove common theme hooks in wp_head
+		remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10 );
+		remove_action( 'wp_head', 'wp_generator' );
+		remove_action( 'wp_head', 'rel_canonical' );
+		
+		// Many themes use these hooks to inject their own header/footer logic
+		remove_all_actions( 'wp_meta' );
+		remove_all_actions( 'get_header' );
+		remove_all_actions( 'get_footer' );
 	}
 
 	/**
@@ -52,9 +58,10 @@ class StandaloneLayout {
 				if ( in_array( $handle, $keep_styles ) ) continue;
 
 				$src = $wp_styles->registered[$handle]->src ?? '';
-				// Strict but safe: Only dequeue if it clearly belongs to a theme
-				if ( stripos( $src, '/themes/' ) !== false ) {
+				// Strict isolation: Dequeue if it clearly belongs to a theme OR if it is from another plugin (except core charts)
+				if ( stripos( $src, '/themes/' ) !== false || ( stripos( $src, '/plugins/' ) !== false && stripos( $src, 'kontentainment' ) === false ) ) {
 					wp_dequeue_style( $handle );
+					wp_deregister_style( $handle );
 				}
 			}
 		}
@@ -68,9 +75,10 @@ class StandaloneLayout {
 				if ( in_array( $handle, $keep_scripts ) ) continue;
 
 				$src = $wp_scripts->registered[$handle]->src ?? '';
-				// Only dequeue scripts inside the themes folder
-				if ( stripos( $src, '/themes/' ) !== false ) {
+				// Strict isolation for scripts
+				if ( stripos( $src, '/themes/' ) !== false || ( stripos( $src, '/plugins/' ) !== false && stripos( $src, 'kontentainment' ) === false && stripos( $handle, 'jquery' ) === false ) ) {
 					wp_dequeue_script( $handle );
+					wp_deregister_script( $handle );
 				}
 			}
 		}

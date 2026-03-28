@@ -17,8 +17,51 @@ class Bootstrap {
 		// Initialize Standalone Layout system
 		\Charts\Core\StandaloneLayout::init();
 
+		// Force Standalone Render Intercept
+		add_action( 'template_redirect', array( self::class, 'force_standalone_render' ), 1 );
+
 		// Register any core hooks
 		add_action( 'init', array( self::class, 'register_cron' ) );
+	}
+
+	/**
+	 * Force Standalone Render for plugin routes.
+	 * This exits before the theme can render its header/footer.
+	 */
+	public static function force_standalone_render() {
+		$route = get_query_var( 'charts_route' );
+		if ( ! $route ) return;
+
+		// Clean the environment
+		status_header( 200 );
+
+		$template_path = '';
+		switch ( $route ) {
+			case 'index':
+				$template_path = CHARTS_PATH . 'public/templates/index.php';
+				break;
+			case 'single':
+				$template_path = CHARTS_PATH . 'public/templates/single-chart.php';
+				break;
+			case 'artist-archive':
+				$template_path = CHARTS_PATH . 'public/templates/artist-archive.php';
+				break;
+			case 'artist-single':
+				$template_path = CHARTS_PATH . 'public/templates/artist-single.php';
+				break;
+			case 'item-single':
+				$template_path = CHARTS_PATH . 'public/templates/item-single.php';
+				break;
+		}
+
+		if ( $template_path && file_exists( $template_path ) ) {
+			// Ensure StandaloneLayout isolation pass has run
+			\Charts\Core\StandaloneLayout::isolation_pass();
+			\Charts\Core\StandaloneLayout::suppress_theme_hooks();
+			
+			include $template_path;
+			exit;
+		}
 	}
 
 	/**

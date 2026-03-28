@@ -19,7 +19,7 @@ class Bootstrap {
 	 */
 	public static function enqueue_assets() {
 		// Only load if on a charts page
-		if ( get_query_var( 'charts_page' ) || get_query_var( 'charts_platform' ) ) {
+		if ( get_query_var( 'charts_route' ) || get_query_var( 'charts_page' ) || get_query_var( 'charts_platform' ) ) {
 			wp_enqueue_style( 'charts-public', CHARTS_URL . 'public/assets/css/public.css', array(), CHARTS_VERSION );
 		}
 	}
