@@ -100,7 +100,7 @@ $total_unmatched = count($unmatched_candidates);
 									</div>
 								</td>
 								<td style="text-align: right; padding-right: 24px;">
-									<a href="<?php echo admin_php_url('page=charts-entities&s=' . urlencode($label)); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none; font-weight:700;"><?php _e( 'Run Intelligent Match', 'charts' ); ?></a>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=charts-entities&s=' . urlencode( $label ) ) ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none; font-weight:700;"><?php _e( 'Run Intelligent Match', 'charts' ); ?></a>
 								</td>
 							</tr>
 						<?php endforeach; ?>
@@ -110,14 +110,3 @@ $total_unmatched = count($unmatched_candidates);
 		</div>
 	<?php endif; ?>
 </div>
-
-<?php
-/**
- * Helper to generate admin URL for research
- */
-if ( ! function_exists( 'admin_php_url' ) ) {
-	function admin_php_url( $path ) {
-		return admin_url( 'admin.php?' . $path );
-	}
-}
-?>

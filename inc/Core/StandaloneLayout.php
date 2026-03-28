@@ -14,11 +14,9 @@ class StandaloneLayout {
 		// Register footer widget area
 		add_action( 'widgets_init', array( self::class, 'register_sidebars' ) );
 		
-		// 1. ASSET ISOLATION PASS (Dequeue theme styles/scripts)
-		add_action( 'wp_enqueue_scripts', array( self::class, 'isolation_pass' ), 999 );
-
-		// 2. MARKUP ISOLATION PASS (Prevent theme from injecting headers/menus via hooks)
-		add_action( 'template_redirect', array( self::class, 'suppress_theme_hooks' ), 1 );
+		// Isolation pass disabled per integrated theme request
+		// add_action( 'wp_enqueue_scripts', array( self::class, 'isolation_pass' ), 999 );
+		// add_action( 'template_redirect', array( self::class, 'suppress_theme_hooks' ), 1 );
 	}
 
 	/**

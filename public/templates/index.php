@@ -1,11 +1,9 @@
 <?php
 /**
  * Kontentainment Charts — Premium Editorial Landing
- * 1:1 Reference Match - High-Fidelity Design System
  */
-\Charts\Core\StandaloneLayout::get_header();
-
-global $wpdb;
+get_header();
+?>
 
 // Fetch all active chart definitions
 $manager     = new \Charts\Admin\SourceManager();
@@ -24,7 +22,7 @@ foreach ( $definitions as $def ) {
 $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec4899', '#eab308' );
 ?>
 
-<div class="kc-root">
+<div class="kc-root kc-integrated">
 	
 	<!-- 3. HERO SECTION -->
 	<section class="kc-hero-section">
@@ -201,4 +199,4 @@ $accents = array( '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec489
 	</div>
 </div>
 
-<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
+<?php get_footer(); ?>

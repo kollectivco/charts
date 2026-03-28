@@ -28,31 +28,43 @@ if ( $definition_id ) {
  * 2. PREMIUM RENDER GATES (Handle logic checks BEFORE header)
  */
 function kc_render_empty_state($title, $desc, $cta_text = 'Return Home', $cta_url = '/charts', $is_processing = false) {
-	\Charts\Core\StandaloneLayout::get_header();
-	echo '<div class="kc-root"><main class="kc-container" style="padding: 160px 0; text-align: center; color: white;">';
+	global $definition_slug, $definition_id;
+	get_header();
+	echo '<div class="kc-root kc-integrated"><main class="kc-container" style="padding: 100px 0; text-align: center; color: white; background: #050505;">';
+	
+	// Admin Diagnostic Panel
+	if (current_user_can('manage_options')) {
+		echo '<div style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 40px; text-align: left; font-family: monospace; font-size: 11px; color: #ffaa00;">';
+		echo '<div style="font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Operator Debug: Resolution Failure</div>';
+		echo 'Query Slug: ' . esc_html($definition_slug ?: 'NULL') . '<br>';
+		echo 'Query ID: ' . esc_html($definition_id ?: 'NULL') . '<br>';
+		echo 'Action Source: ' . esc_html($_SERVER['REQUEST_URI']) . '<br>';
+		echo '</div>';
+	}
+
 	if ($is_processing) {
 		echo '<div class="kc-processing-spinner" style="width: 64px; height: 64px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--k-accent, #6366f1); border-radius: 50%; margin: 0 auto 32px; animation: kc-spin 1s linear infinite;"></div>';
 	} else {
 		echo '<div style="font-size: 120px; margin-bottom: 24px; opacity: 0.1; font-weight: 100;">⌬</div>';
 	}
-	echo '<h1 style="font-size: 48px; font-weight: 850; margin-bottom: 16px; letter-spacing: -0.02em;">' . esc_html($title) . '</h1>';
-	echo '<p style="opacity: 0.6; font-size: 18px; max-width: 540px; margin: 0 auto 48px; line-height: 1.6;">' . esc_html($desc) . '</p>';
+	echo '<h1 style="font-size: 32px; font-weight: 850; margin-bottom: 16px; letter-spacing: -0.02em; color: white;">' . esc_html($title) . '</h1>';
+	echo '<p style="opacity: 0.6; font-size: 16px; max-width: 500px; margin: 0 auto 40px; line-height: 1.6;">' . esc_html($desc) . '</p>';
 	echo '<div style="display: flex; gap: 16px; justify-content: center;">';
-	echo '<a href="' . esc_url($cta_url) . '" style="display: inline-block; padding: 14px 32px; background: white; color: black; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 13px;">' . esc_html($cta_text) . '</a>';
+	echo '<a href="' . esc_url($cta_url) . '" style="display: inline-block; padding: 12px 28px; background: white; color: black; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 13px;">' . esc_html($cta_text) . '</a>';
 	if (current_user_can('manage_options')) {
-		echo '<a href="' . admin_url('admin.php?page=charts-import') . '" style="display: inline-block; padding: 14px 32px; background: rgba(255,255,255,0.1); color: white; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">Operator: Import Data</a>';
+		echo '<a href="' . admin_url('admin.php?page=charts-import') . '" style="display: inline-block; padding: 12px 28px; background: rgba(255,255,255,0.1); color: white; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 13px; border: 1px solid rgba(255,255,255,0.1);">Operator: Import</a>';
 	}
 	echo '</div>';
 	echo '</main></div>';
-	echo '<style>@keyframes kc-spin { to { transform: rotate(360deg); } }</style>';
-	\Charts\Core\StandaloneLayout::get_footer();
-	exit; // Force termination of entire WordPress render to prevent leak
+	echo '<style>@keyframes kc-spin { to { transform: rotate(360deg); } } .kc-integrated { background: #000; min-height: 600px; }</style>';
+	get_footer();
+	return; 
 }
 
 if ( ! $definition ) {
 	kc_render_empty_state(
 		'Chart Not Found', 
-		'The requested chart intelligence is not available in our current catalog. It may have been retired or the URL has changed.',
+		'The requested chart intelligence is not available in our current catalog or the slug provided is invalid.',
 		'Return to Directory'
 	);
 	return;
@@ -66,23 +78,16 @@ $sources = $wpdb->get_results( $wpdb->prepare( "
 
 if ( empty( $sources ) ) {
 	kc_render_empty_state(
-		'Awaiting Intelligence', 
-		'We are currently bridging data sources for this region and market. Our crawlers are initializing the pipeline.',
-		'Back to Charts',
-		'/charts'
+		'Data Pipeline Disconnected', 
+		'This chart definition exists, but no active data sources are mapped to its configuration (Region: ' . strtoupper($definition->country_code) . ', Type: ' . $definition->chart_type . ').',
+		'Check Sources',
+		admin_url('admin.php?page=charts-sources')
 	);
 	return;
 }
 
 $source_ids = array_column( $sources, 'id' );
 $placeholders = implode( ',', array_fill( 0, count( $source_ids ), '%d' ) );
-
-// Check for ongoing processing
-$processing_run = $wpdb->get_row( $wpdb->prepare( "
-	SELECT id FROM {$wpdb->prefix}charts_import_runs 
-	WHERE source_id IN ($placeholders) AND status IN ('started', 'processing')
-	ORDER BY started_at DESC LIMIT 1
-", ...$source_ids ) );
 
 // Fetch period
 $period = $wpdb->get_row( $wpdb->prepare( "
@@ -93,28 +98,36 @@ $period = $wpdb->get_row( $wpdb->prepare( "
 ", ...$source_ids ) );
 
 if ( ! $period ) {
+	// Check for ongoing processing
+	$processing_run = $wpdb->get_row( $wpdb->prepare( "
+		SELECT id FROM {$wpdb->prefix}charts_import_runs 
+		WHERE source_id IN ($placeholders) AND status IN ('started', 'processing')
+		ORDER BY started_at DESC LIMIT 1
+	", ...$source_ids ) );
+
 	if ($processing_run) {
 		kc_render_empty_state(
 			'Intelligence Incoming', 
-			'Our data pipeline is currently processing the latest market signals. The vault will be active in a few moments.',
-			'Refresh Intelligence',
+			'Our data pipeline is currently processing the latest market signals for this chart. The rankings will be active in a few moments.',
+			'Refresh Explorer',
 			'',
 			true
 		);
 	} else {
 		kc_render_empty_state(
 			'Awaiting Initial Load', 
-			'No historical records found for the latest period. Data initialization is required to activate this explorer.',
+			'No historical records found for the latest period. Data initialization or a manual import is required to activate this explorer.',
 			'Initialize Pipeline',
 			admin_url('admin.php?page=charts-import')
 		);
 	}
+	return;
 }
 
 /**
  * 3. MAIN RENDER PATH
  */
-\Charts\Core\StandaloneLayout::get_header();
+get_header();
 
 // Fetch all entries
 $entries = $wpdb->get_results( $wpdb->prepare( "
@@ -136,7 +149,7 @@ function kc_fmt($n) {
 $arabic_subtitle = "أفضل ١٠٠ أغنية";
 ?>
 
-<div class="kc-root" <?php if (!empty($definition->accent_color)) echo 'style="--k-accent: ' . esc_attr($definition->accent_color) . '; --k-accent-yellow: ' . esc_attr($definition->accent_color) . ';"'; ?>>
+<div class="kc-root kc-integrated" <?php if (!empty($definition->accent_color)) echo 'style="--k-accent: ' . esc_attr($definition->accent_color) . '; --k-accent-yellow: ' . esc_attr($definition->accent_color) . ';"'; ?>>
 	<main class="kc-container">
 		
 		<!-- 2. BREADCRUMBS -->
@@ -289,4 +302,4 @@ $arabic_subtitle = "أفضل ١٠٠ أغنية";
 	</main>
 </div>
 
-<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
+<?php get_footer(); ?>

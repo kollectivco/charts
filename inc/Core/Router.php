@@ -14,7 +14,8 @@ class Router {
 		add_action( 'init', array( self::class, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( self::class, 'add_query_vars' ) );
 		
-		// Remove template_include override as we now handle this via template_redirect + exit
+		// Priority 999 to ensure we override any other plugin or theme interference
+		add_filter( 'template_include', array( self::class, 'load_template' ), 999 );
 	}
 
 	/**
@@ -55,5 +56,29 @@ class Router {
 		$vars[] = 'charts_item_slug';
 		$vars[] = 'charts_item_type';
 		return $vars;
+	}
+
+	/**
+	 * Load custom templates for charts.
+	 */
+	public static function load_template( $template ) {
+		$route = get_query_var( 'charts_route' );
+
+		if ( ! $route ) return $template;
+
+		switch ( $route ) {
+			case 'index':
+				return CHARTS_PATH . 'public/templates/index.php';
+			case 'single-chart':
+				return CHARTS_PATH . 'public/templates/single-chart.php';
+			case 'artist-archive':
+				return CHARTS_PATH . 'public/templates/artist-archive.php';
+			case 'artist-single':
+				return CHARTS_PATH . 'public/templates/artist-single.php';
+			case 'item-single':
+				return CHARTS_PATH . 'public/templates/item-single.php';
+		}
+
+		return $template;
 	}
 }
