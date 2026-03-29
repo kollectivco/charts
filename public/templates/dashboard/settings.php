@@ -1,0 +1,80 @@
+<?php
+/**
+ * Kontentainment Charts — Bento Settings Module (External)
+ */
+global $wpdb;
+
+$spotify_id = get_option( 'charts_spotify_client_id' );
+$spotify_secret = get_option( 'charts_spotify_client_secret' );
+$youtube_key = get_option( 'charts_youtube_api_key' );
+
+$wordmark = get_option( 'charts_wordmark', 'KCharts' );
+$show_logo = get_option( 'charts_show_logo', 1 );
+$show_nav = get_option( 'charts_show_nav', 1 );
+
+// Re-using same form action as admin
+?>
+
+<div class="bento-grid">
+    <!-- 1. API CONNECTORS (SPAN 2) -->
+    <div class="bento-card span-2 row-2">
+        <h3 style="margin:0 0 32px; font-size:18px; font-weight:900;">Intelligence Connectors</h3>
+        
+        <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+            <?php wp_nonce_field( 'charts_admin_action' ); ?>
+            <input type="hidden" name="action" value="charts_action">
+            <input type="hidden" name="charts_action" value="save_settings">
+
+            <div style="margin-bottom:32px;">
+                <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; color:var(--db-text-muted); margin-bottom:12px;">Spotify Intelligence API</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <input type="text" name="spotify_client_id" value="<?php echo esc_attr($spotify_id); ?>" placeholder="Client ID" style="width:100%; border-radius:8px; border:1px solid var(--db-border); padding:10px; background:var(--db-bg); color:var(--db-text);">
+                    <input type="password" name="spotify_client_secret" value="<?php echo esc_attr($spotify_secret); ?>" placeholder="Client Secret" style="width:100%; border-radius:8px; border:1px solid var(--db-border); padding:10px; background:var(--db-bg); color:var(--db-text);">
+                </div>
+            </div>
+
+            <div style="margin-bottom:32px;">
+                <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; color:var(--db-text-muted); margin-bottom:12px;">YouTube Data API v3</label>
+                <input type="password" name="youtube_api_key" value="<?php echo esc_attr($youtube_key); ?>" placeholder="API Key" style="width:100%; border-radius:8px; border:1px solid var(--db-border); padding:10px; background:var(--db-bg); color:var(--db-text);">
+            </div>
+
+            <div style="margin-bottom:32px; padding-top:20px; border-top:1px solid var(--db-border);">
+                <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; color:var(--db-text-muted); margin-bottom:12px;">Brand Wordmark</label>
+                <input type="text" name="wordmark" value="<?php echo esc_attr($wordmark); ?>" style="width:100%; border-radius:8px; border:1px solid var(--db-border); padding:10px; background:var(--db-bg); color:var(--db-text);">
+            </div>
+
+            <button type="submit" class="db-btn db-btn-primary" style="width:100%;">Commit System Changes</button>
+        </form>
+    </div>
+
+    <!-- 2. DIAGNOSTICS -->
+    <div class="bento-card">
+        <label class="kpi-title">Core Health</label>
+        <div style="margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span style="font-size:13px; font-weight:700;">DB Version</span>
+                <span class="status-pill status-active">1.9.5</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:13px; font-weight:700;">Isolation</span>
+                <span class="status-pill status-active">Active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. BRAND CONFIG -->
+    <div class="bento-card">
+        <label class="kpi-title">Control Flags</label>
+        <div style="margin-top:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span style="font-size:12px; font-weight:650;">Branded Header</span>
+                <span class="status-pill <?php echo $show_logo ? 'status-active' : 'status-pending'; ?>"><?php echo $show_logo ? 'On' : 'Off'; ?></span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; font-weight:650;">Product Nav</span>
+                <span class="status-pill <?php echo $show_nav ? 'status-active' : 'status-pending'; ?>"><?php echo $show_nav ? 'On' : 'Off'; ?></span>
+            </div>
+        </div>
+    </div>
+
+</div>

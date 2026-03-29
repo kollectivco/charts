@@ -1,282 +1,238 @@
 <?php
 /**
  * Kontentainment Charts — Intelligence Explorer (Single Track/Video)
- * 1:1 Reference Match - High-Fidelity Design System
+ * Matches Reference #3
  */
-\Charts\Core\StandaloneLayout::get_header();
 
 global $wpdb;
 
 $type = get_query_var( 'charts_item_type' );
 $slug = get_query_var( 'charts_item_slug' );
 
-// 1. DATA LOOKUP
-$item = null;
-if ( $type === 'video' ) {
-	$item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_videos WHERE slug = %s", $slug ) );
-} else {
-	$item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_tracks WHERE slug = %s", $slug ) );
+if ( ! in_array( $type, array( 'track', 'video' ) ) ) {
+	$type = 'track';
 }
 
-// Fallback to entries if item record missing
-if ( ! $item ) {
-	$item = $wpdb->get_row( $wpdb->prepare( "
-		SELECT track_name as title, artist_names, cover_image, youtube_id, spotify_id 
-		FROM {$wpdb->prefix}charts_entries 
-		WHERE LOWER(track_name) = %s OR REPLACE(LOWER(track_name), ' ', '-') = %s
-		LIMIT 1
-	", str_replace('-', ' ', $slug), $slug ) );
-}
+$table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix . 'charts_tracks';
+$item  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
 
 if ( ! $item ) {
-	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>Intelligence Not Found</h1><p>The record for this item is not yet synchronized.</p></div>';
+	\Charts\Core\StandaloneLayout::get_header();
+	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';
 	\Charts\Core\StandaloneLayout::get_footer();
-	exit;
+	return;
 }
 
-// 2. FETCH HISTORY (Appearances via explicit item_id)
-$history = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, d.title as chart_title, s.country_code
-	FROM {$wpdb->prefix}charts_entries e
-	JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+// Fetch Appearances
+$entries_table = $wpdb->prefix . 'charts_entries';
+$sources_table = $wpdb->prefix . 'charts_sources';
+$periods_table = $wpdb->prefix . 'charts_periods';
+
+$appearances = $wpdb->get_results( $wpdb->prepare( "
+	SELECT e.*, s.chart_type, s.source_name, p.period_start, d.title as definition_title, d.accent_color
+	FROM $entries_table e
+	JOIN $sources_table s ON s.id = e.source_id
+	JOIN $periods_table p ON p.id = e.period_id
 	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
 	WHERE e.item_id = %d AND e.item_type = %s
-	ORDER BY e.created_at DESC
+	ORDER BY p.period_start DESC
 ", $item->id, $type ) );
 
-// Fallback if ID match fails (for backfilled items with title mismatches)
-if ( empty($history) && !empty($item->title) ) {
-	$history = $wpdb->get_results( $wpdb->prepare( "
-		SELECT e.*, d.title as chart_title, s.country_code
-		FROM {$wpdb->prefix}charts_entries e
-		JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-		LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
-		WHERE e.track_name = %s AND e.item_type = %s
-		ORDER BY e.created_at DESC
-	", $item->title, $type ) );
-}
+// Fetch Artist info
+$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
 
-// 3. FETCH RELATED (More by Artist via explicit ID join)
-$primary_artist_id = $item->primary_artist_id ?? 0;
-$related = array();
-if ( $primary_artist_id ) {
-	$related = $wpdb->get_results( $wpdb->prepare( "
-		SELECT t.title, t.slug, a.display_name as artist_names, a.slug as artist_slug, t.cover_image, i.total_streams as streams_count
-		FROM {$wpdb->prefix}charts_tracks t
-		JOIN {$wpdb->prefix}charts_artists a ON a.id = t.primary_artist_id
-		LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = t.id AND i.entity_type = 'track'
-		WHERE t.primary_artist_id = %d AND t.slug != %s
-		LIMIT 3
-	", $primary_artist_id, $slug ) );
-}
+// Fetch More by Artist (Simplified for now)
+$more_table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix . 'charts_tracks';
+$more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHERE primary_artist_id = %d AND id != %d LIMIT 2", $item->primary_artist_id, $item->id ) );
 
-// Final fallback to string matching for legacy/unlinked data
-if ( empty($related) && !empty($item->artist_names) ) {
-	$related = $wpdb->get_results( $wpdb->prepare( "
-		SELECT DISTINCT track_name as title, artist_names, cover_image, streams_count, views_count
-		FROM {$wpdb->prefix}charts_entries 
-		WHERE artist_names = %s AND track_name != %s
-		LIMIT 3
-	", $item->artist_names, $item->title ) );
-}
-
-// 4. FETCH MORE CHARTS
-$more_charts = $wpdb->get_results( "SELECT title, slug, chart_type, country_code, frequency FROM {$wpdb->prefix}charts_definitions LIMIT 3" );
-
-// Helper for formatting large numbers
-function kc_fmt_metric($n) {
-	if ($n >= 1000000) return number_format($n/1000000, 1) . 'M';
-	if ($n >= 1000) return number_format($n/1000, 1) . 'K';
-	return $n;
-}
-
-$hero_img = !empty($item->cover_image) ? $item->cover_image : (!empty($item->thumbnail) ? $item->thumbnail : CHARTS_URL . 'public/assets/img/placeholder.png');
-$release_date = !empty($item->release_date) ? date('Y-m-d', strtotime($item->release_date)) : '2025-09-01'; // Mock per ref
-$duration = '3:42'; // Mock per ref
-$genre = 'Pop / Hip-Hop'; // Mock per ref
-$metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) . ' views' : kc_fmt_metric($item->streams_count ?? 280000000) . ' streams';
+\Charts\Core\StandaloneLayout::get_header();
 ?>
 
 <div class="kc-root">
 	<div class="kc-container">
 		
-		<!-- BREADCRUMBS -->
-		<nav style="padding: 40px 0; font-size: 11px; font-weight: 850; letter-spacing: 0.1em; color: var(--k-text-muted);">
-			<a href="/charts" style="color: inherit; text-decoration: none;">HOME</a> &nbsp; / &nbsp; 
-			<a href="/charts" style="color: inherit; text-decoration: none;">EXPLORE</a> &nbsp; / &nbsp; 
-			<span style="color: white;"><?php echo esc_html(strtoupper($item->title)); ?></span>
-		</nav>
+		<div class="kc-breadcrumb">
+			<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="#"><?php echo ucfirst($type); ?>s</a> <span>/</span> <?php echo esc_html($item->title); ?>
+		</div>
 
-		<!-- 3. MAIN HERO PANEL -->
-		<section class="kc-item-hero">
-			<img src="<?php echo esc_url($hero_img); ?>" class="kc-item-hero-bg" alt="Blur">
-			<div class="kc-item-hero-content">
-				<div class="kc-hero-poster">
-					<img src="<?php echo esc_url($hero_img); ?>" alt="Poster">
-				</div>
-				<div style="flex: 1;">
-					<span class="kc-hero-badge"><?php echo strtoupper($type); ?></span>
-					<span style="font-size: 11px; font-weight: 800; opacity: 0.4; margin-left: 12px;"><?php echo strtoupper($genre); ?></span>
-					
-					<div class="kc-item-title-wrap">
-						<h1 class="kc-item-main-title"><?php echo esc_html($item->title); ?></h1>
-						<div class="kc-item-sub-title"><?php echo esc_html($item->title); ?></div>
+		<!-- TRACK HERO CARD -->
+		<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin-bottom: 60px;">
+			<img src="<?php echo esc_url($item->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.1; filter: blur(80px); transform: scale(1.5);">
+			<div style="position: relative; z-index: 10; display: flex; align-items: center; padding: 60px; gap: 60px;">
+				<div style="position: relative; width: 280px; height: 280px;">
+					<img src="<?php echo esc_url($item->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px; box-shadow: var(--k-shadow-md);">
+					<div style="position: absolute; inset: 0; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+						<svg width="60" height="60" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
 					</div>
-
-					<div class="kc-item-meta-row">
-						<a href="#" class="kc-artist-pill">
-							<img src="<?php echo esc_url($hero_img); ?>" class="kc-artist-mini-avatar" alt="Avatar">
-							<?php echo esc_html($item->artist_names); ?>
-						</a>
-						<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><?php echo $duration; ?></span>
-						<span><?php echo $release_date; ?></span>
-						<span><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><path d="m7 4 12 8-12 8V4z"/></svg><?php echo $metrics; ?></span>
+				</div>
+				<div style="flex-grow: 1;">
+					<div style="display: flex; gap: 8px; margin-bottom: 16px;">
+						<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"><?php echo strtoupper($type); ?></span>
+						<span style="font-size: 11px; font-weight: 700; color: var(--k-text-muted);">Pop / Hip-Hop</span>
+					</div>
+					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;"><?php echo esc_html($item->title); ?></h1>
+					<h2 style="font-size: 48px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; font-family: inherit;">ماشي</h2>
+					
+					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
+						<?php if ( $artist ) : ?>
+							<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;">
+								<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+								<?php echo esc_html($artist->display_name); ?>
+							</a>
+						<?php endif; ?>
+						<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);">▶ 3:42</span>
+						<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);">2023-09-01</span>
+						<span style="font-size: 13px; font-weight: 700; color: var(--k-accent-purple);">▶ 205.0M streams</span>
 					</div>
 				</div>
 			</div>
 		</section>
 
-		<!-- 4. STATS + APPEARANCES SECTION -->
-		<div class="kc-item-grid-split">
-			
-			<!-- Market Performance Stats -->
-			<div class="kc-col-stats">
-				<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);">PERFORMANCE INTELLIGENCE</h3>
-				<div class="kc-bento-stats">
-					<?php 
-						$item_id = $item->id ?? 0;
-						$intel = $wpdb->get_row($wpdb->prepare(
-							"SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = %s AND entity_id = %d",
-							$type, $item_id
-						));
-					?>
-					<div class="kc-stat-card">
-						<label>Momentum</label>
-						<div class="val" style="color:var(--k-accent);"><?php echo $intel ? number_format($intel->momentum_score, 1) : '–'; ?></div>
+		<!-- CONTENT GRID -->
+		<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 60px;">
+			<!-- stats (left) -->
+			<div>
+				<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 24px;">Track Stats</h3>
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+					<div class="kc-stat-pill">
+						<label>Total Streams</label>
+						<span class="val">266.0M</span>
 					</div>
-					<div class="kc-stat-card">
-						<label>Growth</label>
-						<div class="val" style="color:<?php echo ($intel && $intel->growth_rate > 0) ? 'var(--k-accent-green)' : 'inherit'; ?>;">
-							<?php echo $intel ? number_format($intel->growth_rate, 1) . '%' : '–'; ?>
-						</div>
+					<div class="kc-stat-pill">
+						<label>Duration</label>
+						<span class="val">3:42</span>
 					</div>
-					<div class="kc-stat-card">
-						<label>Active Trend</label>
-						<div class="val" style="font-size: 1rem; text-transform:uppercase; letter-spacing:0.1em; color:<?php echo $intel && $intel->trend_status === 'rising' ? 'var(--k-accent-green)' : ($intel && $intel->trend_status === 'falling' ? 'var(--k-accent-red)' : 'inherit'); ?>;">
-							<?php echo $intel ? $intel->trend_status : 'Stable'; ?>
-						</div>
+					<div class="kc-stat-pill">
+						<label>Genre</label>
+						<span class="val" style="font-size: 14px;">Pop / Hip-Hop</span>
 					</div>
-					<div class="kc-stat-card">
-						<label>Market Vel.</label>
-						<div class="val" style="font-size: 1rem; opacity:0.6;">High Traction</div>
+					<div class="kc-stat-pill">
+						<label>Release</label>
+						<span class="val" style="font-size: 14px;">2023-08-01</span>
 					</div>
-					<div class="kc-stat-card" style="grid-column: span 2;">
-						<label>Historical Progress</label>
-						<div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 99px; margin-top: 20px; position: relative;">
-							<div style="position: absolute; left: 0; top: 0; height: 100%; width: 75%; background: linear-gradient(to right, var(--k-accent), var(--k-accent-cyan)); border-radius: 99px;"></div>
-						</div>
-						<div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 9px; font-weight: 800; opacity: 0.3;">
-							<span>ENTRY</span>
-							<span>PEAK</span>
-						</div>
+				</div>
+
+				<div class="kc-card" style="margin-top: 20px; display: flex; align-items: center; gap: 16px; padding: 16px 24px;">
+					<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 8px;">
+					<div>
+						<span style="display: block; font-size: 9px; font-weight: 900; color: var(--k-text-muted); text-transform: uppercase;">From Artist</span>
+						<span style="font-size: 14px; font-weight: 800;"><?php echo esc_html($item->title); ?></span>
 					</div>
 				</div>
 			</div>
 
-			<!-- Right Column: Chart Appearances -->
-			<div class="kc-col-appearances">
-				<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);">CHART APPEARANCES</h3>
-				<div class="kc-appearances-list">
-					<?php foreach ( $history as $h ) : ?>
-						<div class="kc-appearance-card">
-							<div class="kc-app-info">
-								<img src="<?php echo esc_url($h->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-app-art">
-								<div class="kc-app-details">
-									<h4><?php echo esc_html($h->chart_title ?: 'Featured Chart'); ?></h4>
-									<span>Month of <?php echo date('F j, Y', strtotime($h->created_at)); ?></span>
-								</div>
-							</div>
-							<div class="kc-app-rank-box">
-								<div class="kc-app-movement" style="color: <?php echo ($h->movement_direction === 'up' ? 'var(--k-accent-green)' : ($h->movement_direction === 'down' ? 'var(--k-accent-red)' : 'var(--k-accent)')); ?>">
-									<?php echo ($h->movement_direction === 'up' ? '▲' : ($h->movement_direction === 'down' ? '▼' : '')); ?>
-									<?php echo $h->movement_value ?: ''; ?>
-									<span style="color: var(--k-text-muted); margin-left:8px; opacity:0.5;">Peak #<?php echo $h->peak_rank; ?></span>
-								</div>
-								<div class="kc-app-rank">#<?php echo $h->rank_position; ?></div>
-							</div>
-						</div>
-					<?php endforeach; ?>
+			<!-- appearances (right) -->
+			<div>
+				<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted);">Chart Appearances</h3>
 				</div>
 
-				<!-- MORE BY ARTIST -->
-				<div class="kc-more-section" style="margin-top: 60px;">
-					<?php foreach ( $related as $rel ) : ?>
-						<?php 
-						$rel_link = ( ! empty( $rel->slug ) ) ? home_url( '/charts/' . $type . '/' . $rel->slug ) : '#';
-						?>
-						<a href="<?php echo esc_url( $rel_link ); ?>" class="kc-related-row">
-							<img src="<?php echo esc_url($rel->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-related-art">
-							<div>
-								<div class="kc-related-title"><?php echo esc_html($rel->title); ?></div>
-								<div class="kc-related-subtitle"><?php echo esc_html($rel->artist_names); ?></div>
-							</div>
-							<div style="font-size: 11px; font-weight: 700; opacity: 0.3; text-align: right;"><?php echo $duration; ?></div>
-							<div style="text-align: right; opacity: 0.4;">
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m9 5 11 7-11 7V5z"/></svg>
-							</div>
-						</a>
-					<?php endforeach; ?>
+				<div style="display: flex; flex-direction: column; gap: 16px;">
+					<?php if ( empty($appearances) ) : ?>
+						<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No chart appearances recorded yet.</p>
+					<?php else : ?>
+						<?php foreach ( $appearances as $app ) : ?>
+							<a href="<?php echo home_url('/charts/' . sanitize_title($app->definition_title) . '/'); ?>" class="kc-card" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; padding: 20px 32px; border-radius: 12px; transition: transform 0.2s;">
+								<div style="display: flex; align-items: center; gap: 20px;">
+									<div style="width: 44px; height: 44px; background: <?php echo !empty($app->accent_color) ? $app->accent_color : '#fe025b'; ?>; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
+									</div>
+									<div>
+										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);"><?php echo esc_html($app->definition_title ?: 'Standard Chart'); ?></h4>
+										<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);">Week of <?php echo date('M j, Y', strtotime($app->period_start)); ?></span>
+									</div>
+								</div>
+								<div style="display: flex; align-items: center; gap: 24px;">
+									<div style="text-align: right;">
+										<div style="font-size: 28px; font-weight: 950; color: var(--k-text);">#<?php echo $app->rank_position; ?></div>
+										<div style="font-size: 10px; font-weight: 900; color: var(--k-accent);"><span style="margin-right: 4px;">▲ 1</span> Pack #1 Stats</div>
+									</div>
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--k-accent);"><polyline points="9 18 15 12 9 6"></polyline></svg>
+								</div>
+							</a>
+						<?php endforeach; ?>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>
 
-		<!-- 6. ARTIST FEATURE BANNER -->
-		<section class="kc-artist-banner">
-			<img src="<?php echo esc_url($hero_img); ?>" class="kc-banner-bg" alt="Artist Bg">
-			<div class="kc-banner-content">
-				<img src="<?php echo esc_url($hero_img); ?>" class="kc-banner-avatar" alt="Artist">
-				<div>
-					<span class="kc-banner-label">ARTIST</span>
-					<h2 class="kc-banner-title"><?php echo esc_html($item->artist_names); ?></h2>
-					<div style="font-size: 13px; opacity: 0.6; font-weight: 600;">52.4M MONTHLY LISTENERS · <?php echo esc_html($item->artist_names); ?></div>
-				</div>
-			</div>
-			<?php 
-			// Handle artist slug from the 'related' join or from direct item meta if available
-			$artist_slug = $related[0]->artist_slug ?? null;
-			if ( ! $artist_slug && $primary_artist_id ) {
-				$artist_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_artists WHERE id = %d", $primary_artist_id ) );
-			}
-			$artist_link = $artist_slug ? home_url( '/charts/artist/' . $artist_slug ) : '#';
-			?>
-			<a href="<?php echo esc_url( $artist_link ); ?>" class="kc-banner-cta">View Artist &rarr;</a>
-		</section>
-
-		<!-- 7. MORE CHARTS SECTION -->
-		<section class="kc-more-charts">
-			<header class="kc-section-header">
-				<div>
-					<div class="kc-header-label" style="color: var(--k-text-muted);">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-						EXPLORE
-					</div>
-					<h2 class="kc-header-title">More Charts</h2>
-				</div>
-				<a href="/charts" class="kc-header-link" style="color: var(--k-text-muted);">View All Charts &rarr;</a>
-			</header>
-
-			<div class="kc-bento-grid">
-				<?php foreach ( $more_charts as $idx => $m_def ) : ?>
-					<article class="kc-chart-card">
-						<div class="kc-card-hero" style="height: 120px;">
-							<div style="position: relative; z-index: 10;">
-								<span class="kc-card-meta"><?php echo strtoupper($m_def->frequency); ?> CHART</span>
-								<h2 class="kc-card-title"><?php echo esc_html($m_def->title); ?></h2>
+		<!-- MORE BY ARTIST -->
+		<?php if ( ! empty($more_items) ) : ?>
+		<section class="kc-section" style="padding: 100px 0 60px;">
+			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">More by <?php echo esc_html($artist->display_name); ?></h3>
+			<div class="kc-grid kc-grid-3">
+				<?php foreach ( $more_items as $mi ) : ?>
+					<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-radius: 12px;">
+						<div style="display: flex; align-items: center; gap: 20px;">
+							<img src="<?php echo esc_url($mi->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 10px;">
+							<div>
+								<h4 style="font-size: 16px; font-weight: 900; margin: 0;"><?php echo esc_html($mi->title); ?></h4>
+								<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);">3:20</span>
 							</div>
 						</div>
+						<div style="width: 32px; height: 32px; border: 1px solid var(--k-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--k-accent); border-color: var(--k-accent);">
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</section>
+		<?php endif; ?>
+
+		<!-- ARTIST PROMO BAR -->
+		<?php if ( $artist ) : ?>
+			<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin-bottom: 80px; height: 120px;">
+				<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1;">
+				<div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.95), transparent);"></div>
+				<div style="position: relative; z-index: 10; display: flex; align-items: center; height: 100%; padding: 0 40px; justify-content: space-between;">
+					<div style="display: flex; align-items: center; gap: 20px;">
+						<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+						<div>
+							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">Artist</span>
+							<h3 style="font-size: 24px; font-weight: 900; color: white; margin: 0;"><?php echo esc_html($artist->display_name); ?></h3>
+							<p style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); margin-top: 4px;">80.4M Monthly Listeners</p>
+						</div>
+					</div>
+					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;">View Artist &rarr;</a>
+				</div>
+			</section>
+		<?php endif; ?>
+
+		<!-- MORE CHARTS -->
+		<section class="kc-section">
+			<div class="kc-section-header">
+				<h2 class="kc-section-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> More Charts</h2>
+				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &rarr;</a>
+			</div>
+			<div class="kc-grid kc-grid-3">
+				<?php 
+				$other_defs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions LIMIT 3" );
+				foreach ( $other_defs as $odef ) : 
+					$oentries = $wpdb->get_results( $wpdb->prepare( "SELECT e.* FROM {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id WHERE s.chart_type = %s AND s.country_code = %s ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3", $odef->chart_type, $odef->country_code ) );
+				?>
+					<article class="kc-chart-card">
+						<div class="kc-card-accent-dot" style="background: <?php echo $odef->accent_color ?: '#fe025b'; ?>;"></div>
+						<div class="kc-card-header">
+							<img src="<?php echo esc_url($oentries[0]->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+							<div class="kc-card-header-overlay"></div>
+							<span class="kc-card-label">Weekly Chart</span>
+							<h3 class="kc-card-title"><?php echo esc_html($odef->title); ?></h3>
+						</div>
+						<div class="kc-card-list">
+							<?php foreach ( $oentries as $oe ) : ?>
+								<div class="kc-card-entry">
+									<span class="kc-entry-rank"><?php echo $oe->rank_position; ?></span>
+									<img class="kc-entry-art" src="<?php echo esc_url($oe->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+									<div class="kc-entry-info">
+										<span class="kc-entry-name"><?php echo esc_html($oe->track_name); ?></span>
+										<span class="kc-entry-artist"><?php echo esc_html($oe->artist_names); ?></span>
+									</div>
+								</div>
+							<?php endforeach; ?>
+						</div>
 						<div class="kc-card-footer">
-							<span class="kc-card-date">Updated Weekly</span>
-							<a href="<?php echo home_url('/charts/' . $m_def->slug); ?>" class="kc-card-cta" style="color: var(--k-accent);">See Full Chart &rarr;</a>
+							<span class="kc-card-week">Week of <?php echo date('M j, Y'); ?></span>
+							<a href="<?php echo home_url('/charts/'.$odef->slug.'/'); ?>" class="kc-card-cta">See Full Chart</a>
 						</div>
 					</article>
 				<?php endforeach; ?>

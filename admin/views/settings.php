@@ -156,19 +156,54 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 				<p>Required for manual enrichment and real-time metadata discovery.</p>
 			</div>
 			<div class="premium-form-grid">
+				<?php 
+					$spotify_id = get_option( 'charts_spotify_client_id' );
+					$spotify_secret = get_option( 'charts_spotify_client_secret' );
+					$yt_key = get_option( 'charts_youtube_api_key' );
+
+					// Masking helpers
+					$mask = function($str) {
+						if (!$str) return '';
+						if (strlen($str) <= 8) return '********';
+						return substr($str, 0, 4) . '...' . substr($str, -4);
+					};
+				?>
 				<div class="form-group">
 					<label for="spotify_client_id">Spotify Client ID</label>
-					<input type="text" name="spotify_client_id" id="spotify_client_id" value="<?php echo esc_attr( get_option( 'charts_spotify_client_id' ) ); ?>" class="form-control" style="font-family:monospace;">
+					<input type="text" name="spotify_client_id" id="spotify_client_id" value="<?php echo esc_attr( $spotify_id ); ?>" class="form-control" style="font-family:monospace;" placeholder="Enter Client ID">
 				</div>
 				<div class="form-group">
 					<label for="spotify_client_secret">Spotify Client Secret</label>
-					<input type="password" name="spotify_client_secret" id="spotify_client_secret" value="<?php echo esc_attr( get_option( 'charts_spotify_client_secret' ) ); ?>" class="form-control">
+					<input type="password" name="spotify_client_secret" id="spotify_client_secret" value="<?php echo esc_attr( $spotify_secret ); ?>" class="form-control" placeholder="Enter Client Secret">
 					<span class="input-helper">Used for OAuth2 server-to-server communication.</span>
 				</div>
 				<div class="form-group">
 					<label for="youtube_api_key">YouTube Data API (v3) Key</label>
-					<input type="password" name="youtube_api_key" id="youtube_api_key" value="<?php echo esc_attr( get_option( 'charts_youtube_api_key' ) ); ?>" class="form-control">
+					<input type="password" name="youtube_api_key" id="youtube_api_key" value="<?php echo esc_attr( $yt_key ); ?>" class="form-control" placeholder="Enter API Key">
 					<span class="input-helper">Required for automatic YouTube metadata enrichment.</span>
+				</div>
+				<div class="form-group">
+					<label>API Connectivity Diagnostics</label>
+					<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+						<div style="display:grid; gap:12px; font-size:12px;">
+							<div style="display:flex; align-items:center; justify-content:space-between;">
+								<span style="font-weight:700; color:#475569;">Spotify Client:</span>
+								<span class="charts-badge <?php echo $spotify_id ? 'charts-badge-success' : 'charts-badge-neutral'; ?>" style="font-size:10px;">
+									<?php echo $spotify_id ? 'CONFIGURED (' . $mask($spotify_id) . ')' : 'MISSING'; ?>
+								</span>
+							</div>
+							<div style="display:flex; align-items:center; justify-content:space-between;">
+								<span style="font-weight:700; color:#475569;">YouTube Key:</span>
+								<span class="charts-badge <?php echo $yt_key ? 'charts-badge-success' : 'charts-badge-neutral'; ?>" style="font-size:10px;">
+									<?php echo $yt_key ? 'CONFIGURED (' . $mask($yt_key) . ')' : 'MISSING'; ?>
+								</span>
+							</div>
+						</div>
+						<div style="display:flex; gap:10px; margin-top:20px;">
+							<button type="submit" name="charts_action" value="test_spotify_api" class="charts-btn-back" style="flex:1; font-size:11px; font-weight:700;">Test Spotify</button>
+							<button type="submit" name="charts_action" value="test_youtube_api" class="charts-btn-back" style="flex:1; font-size:11px; font-weight:700;">Test YouTube</button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

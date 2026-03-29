@@ -1,18 +1,14 @@
 <?php
 /**
- * Standalone Charts Header - Cinematic Dark Dashboard
+ * Kontentainment Charts — Premium Light Mode Header
  */
-// Force standalone for these templates
 $logo_id      = get_option( 'charts_logo_id' );
 $logo_alt     = get_option( 'charts_logo_alt' );
-$wordmark     = get_option( 'charts_wordmark', 'KCharts' ); // Use KCharts for cinematic feel per ref
+$wordmark     = get_option( 'charts_wordmark', 'KCharts' ); 
 $show_logo    = get_option( 'charts_show_logo', 1 );
 $show_nav     = get_option( 'charts_show_nav', 1 );
-$show_search  = get_option( 'charts_show_search', 1 );
 $menu_id      = get_option( 'charts_header_menu_id' );
-
-// Calculate dynamic "Week of" date
-$week_date = date('F j, Y'); 
+$week_date    = date('F j, Y'); 
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -24,36 +20,20 @@ $week_date = date('F j, Y');
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 	<?php wp_head(); ?>
 </head>
-<body <?php body_class( 'charts-standalone kc-root' ); ?>>
+<body <?php body_class( 'kc-root' ); ?>>
 <?php wp_body_open(); ?>
 
-<!-- Top Micro Bar Retired for cleaner UI pass -->
-
-<!-- 2. MAIN HEADER -->
 <header class="charts-product-header">
 	<div class="kc-container">
 		<div class="header-inner">
 			
-			<div style="display: flex; align-items: center; gap: 60px;">
+			<div style="display: flex; align-items: center; gap: 40px;">
 				<!-- Branding -->
-				<?php if ( $show_logo ) : ?>
 				<div class="charts-branding">
-					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-brand-link">
-						<?php 
-						if ( $logo_id ) {
-							$logo_html = wp_get_attachment_image( $logo_id, 'medium', false, array( 'class' => 'charts-logo-img', 'alt' => $logo_alt ?: $wordmark ) );
-							if ( $logo_html ) {
-								echo $logo_html;
-							} else {
-								echo '<span class="charts-wordmark">' . esc_html( $wordmark ?: 'KCharts' ) . '</span>';
-							}
-						} else {
-							echo '<span class="charts-wordmark">' . esc_html( $wordmark ?: 'KCharts' ) . '</span>';
-						}
-						?>
+					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-wordmark">
+						K<span>Charts</span>
 					</a>
 				</div>
-				<?php endif; ?>
 
 				<!-- Navigation -->
 				<?php if ( $show_nav && $menu_id ) : ?>
@@ -69,20 +49,30 @@ $week_date = date('F j, Y');
 					?>
 				</nav>
 				<?php else: ?>
-				<!-- Hardcoded Fallback per Reference -->
 				<nav class="charts-nav">
 					<ul class="charts-menu">
-						<li class="current-menu-item"><a href="/charts">Home</a></li>
-						<li><a href="/charts">Charts</a></li>
-						<li><a href="/charts">Tracks</a></li>
-						<li><a href="/charts">Artists</a></li>
-						<li><a href="/charts">Albums</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">Home</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">Charts</a></li>
+						<li><a href="#">Chart Lists</a></li>
+						<li><a href="#">Tracks</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">Artists</a></li>
+						<li><a href="#">Albums</a></li>
 					</ul>
 				</nav>
 				<?php endif; ?>
 			</div>
 
-			<!-- Actions Retired (Search/Dashboard) per UI cleanup request -->
+			<div class="charts-header-actions">
+				<div class="kc-icon-search">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+				</div>
+				<?php if (current_user_can('manage_options')): ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=charts' ) ); ?>" class="kc-btn-admin">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+						Admin
+					</a>
+				<?php endif; ?>
+			</div>
 
 		</div>
 	</div>

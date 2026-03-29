@@ -14,9 +14,12 @@ class StandaloneLayout {
 		// Register footer widget area
 		add_action( 'widgets_init', array( self::class, 'register_sidebars' ) );
 		
-		// Isolation pass disabled per integrated theme request
-		// add_action( 'wp_enqueue_scripts', array( self::class, 'isolation_pass' ), 999 );
-		// add_action( 'template_redirect', array( self::class, 'suppress_theme_hooks' ), 1 );
+		// Force standalone isolation for charts
+		add_action( 'wp_enqueue_scripts', array( self::class, 'isolation_pass' ), 999 );
+		add_action( 'template_redirect', array( self::class, 'suppress_theme_hooks' ), 1 );
+		
+		// Assign Canvas for real pages
+		add_filter( 'get_post_metadata', array( self::class, 'force_page_template_canvas' ), 10, 4 );
 	}
 
 	/**
@@ -130,7 +133,19 @@ class StandaloneLayout {
 		return false;
 	}
 
+	/**
+	 * Force the 'elementor_canvas' template for chart-related pages.
+	 */
+	public static function force_page_template_canvas( $value, $object_id, $meta_key, $single ) {
+		if ( $meta_key === '_wp_page_template' && self::is_charts_page() ) {
+			return 'elementor_canvas';
+		}
+		return $value;
+	}
+
 	public static function get_header() {
+		// If Elementor is active and provides a canvas-style header, we can try to hook it.
+		// However, for total reliability on custom routes, we use our own cinematic header.
 		include CHARTS_PATH . 'public/templates/parts/header.php';
 	}
 

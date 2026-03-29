@@ -37,7 +37,11 @@ class Router {
 		// 5. Video Single
 		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
 
-		// 6. Base /charts/
+		// 6. External Dashboard (Catch-all for /charts-dashboard/...)
+		add_rewrite_rule( '^charts-dashboard/([^/]+)/?$', 'index.php?charts_route=dashboard&charts_module=$matches[1]', 'top' );
+		add_rewrite_rule( '^charts-dashboard/?$', 'index.php?charts_route=dashboard&charts_module=overview', 'top' );
+
+		// 7. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
 	}
 
@@ -55,6 +59,7 @@ class Router {
 		$vars[] = 'charts_artist_slug';
 		$vars[] = 'charts_item_slug';
 		$vars[] = 'charts_item_type';
+		$vars[] = 'charts_module';
 		return $vars;
 	}
 
@@ -77,6 +82,8 @@ class Router {
 				return CHARTS_PATH . 'public/templates/artist-single.php';
 			case 'item-single':
 				return CHARTS_PATH . 'public/templates/item-single.php';
+			case 'dashboard':
+				return CHARTS_PATH . 'public/templates/dashboard.php';
 		}
 
 		return $template;

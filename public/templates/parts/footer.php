@@ -1,51 +1,49 @@
 <?php
 /**
- * Standalone Charts Footer - Cinematic Architecture
+ * Kontentainment Charts — Premium Light Mode Footer
  */
-// Force standalone for these templates
-global $wpdb;
-$definitions = $wpdb->get_results( "SELECT title, slug FROM {$wpdb->prefix}charts_definitions LIMIT 6" );
-
-$description = get_option( 'charts_footer_description', 'The definitive source for music chart runtimes, powered by real streaming intelligence data.' );
-$copyright   = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' );
 ?>
-
-</main><!-- /.charts-product-main -->
+</main> <!-- .charts-product-main -->
 
 <footer class="charts-product-footer">
 	<div class="kc-container">
-		
 		<div class="footer-inner">
 			
-			<!-- Brand Column -->
 			<div class="footer-brand">
-				<a href="<?php echo home_url('/charts'); ?>" class="charts-wordmark">KCharts</a>
-				<p><?php echo wp_kses_post($description); ?></p>
+				<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-wordmark">
+					K<span>Charts</span>
+				</a>
+				<p>The definitive source for music chart rankings, powered by real streaming data.</p>
+				<div class="footer-social">
+					<a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+					<a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>
+					<a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+					<a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></a>
+				</div>
 			</div>
 
-			<!-- Charts Column -->
 			<div class="footer-col">
 				<h5>Charts</h5>
 				<ul>
-					<?php foreach ( $definitions as $def ) : ?>
-						<li><a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>"><?php echo esc_html($def->title); ?></a></li>
-					<?php endforeach; ?>
+					<li><a href="#">Hot 100</a></li>
+					<li><a href="#">Hot 100 Artists</a></li>
+					<li><a href="#">Top Tracks</a></li>
+					<li><a href="#">Top Artists</a></li>
+					<li><a href="#">Top Albums</a></li>
 				</ul>
 			</div>
 
-			<!-- Discover Column -->
 			<div class="footer-col">
 				<h5>Discover</h5>
 				<ul>
-					<li><a href="/charts">All Charts</a></li>
-					<li><a href="/charts">Top Tracks</a></li>
-					<li><a href="/charts">Top Artists</a></li>
-					<li><a href="/charts">Top Albums</a></li>
-					<li><a href="/charts">Hot 100</a></li>
+					<li><a href="#">All Charts</a></li>
+					<li><a href="#">Top Tracks</a></li>
+					<li><a href="#">Top Artists</a></li>
+					<li><a href="#">Top Albums</a></li>
+					<li><a href="#">Hot 100</a></li>
 				</ul>
 			</div>
 
-			<!-- Data Sources Column -->
 			<div class="footer-col">
 				<h5>Data Sources</h5>
 				<ul>
@@ -58,20 +56,14 @@ $copyright   = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 			</div>
 
 		</div>
-
-		<!-- Bottom Strip -->
+		
 		<div class="footer-bottom-strip">
-			<div class="bottom-left">
-				All Rights Reserved @ Kontentainment 2026
-			</div>
-			<div class="bottom-center">
-				<span class="muted">Updated weekly &middot; Charts based on multi-platform streaming data</span>
-			</div>
-			<div class="bottom-right">
-				<!-- Dashboard Link Retired for cleaner UI pass -->
+			<div class="copyright">&copy; <?php echo date('Y'); ?> Kontentainment Charts. All rights reserved.</div>
+			<div class="secondary-links">
+				<span class="muted">Updated weekly — Charts based on multi-platform streaming data</span>
+				&nbsp; · &nbsp; <a href="<?php echo esc_url( admin_url( 'admin.php?page=charts' ) ); ?>" style="color:inherit; text-decoration:none;">Admin</a>
 			</div>
 		</div>
-
 	</div>
 </footer>
 

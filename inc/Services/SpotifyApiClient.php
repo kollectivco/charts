@@ -99,17 +99,45 @@ class SpotifyApiClient {
 			'headers' => array(
 				'Authorization' => 'Bearer ' . $token,
 			),
+			'timeout' => 15,
 		) );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
+		$code = wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-		if ( isset( $body['error'] ) ) {
-			return new \WP_Error( 'api_error', $body['error']['message'] ?? 'Unknown error' );
+
+		if ( $code !== 200 ) {
+			$msg = $body['error']['message'] ?? sprintf( __( 'Spotify API returned HTTP %d', 'charts' ), $code );
+			return new \WP_Error( "spotify_http_{$code}", $msg, $body );
 		}
 
 		return $body;
+	}
+
+	/**
+	 * Run a health check to verify current credentials.
+	 */
+	public function test_connection() {
+		$token = $this->get_access_token();
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
+		// Test lightweight metadata request (Spotify Track ID for "Blinding Lights" as a smoke test)
+		$test_track_id = '0VjIj9R9yUew4ZzYYvSOWs'; 
+		$data = $this->get_track( $test_track_id );
+
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+
+		if ( empty( $data['name'] ) ) {
+			return new \WP_Error( 'malformed_response', __( 'API responded but track metadata was incomplete.', 'charts' ) );
+		}
+
+		return true;
 	}
 }

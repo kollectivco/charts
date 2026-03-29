@@ -157,6 +157,30 @@ class Bootstrap {
 				\Charts\Core\Integrity::recalculate_entity_links();
 				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
 				break;
+
+			case 'test_spotify_api':
+				$client = new \Charts\Services\SpotifyApiClient();
+				$result = $client->test_connection();
+				
+				if ( is_wp_error( $result ) ) {
+					$msg = sprintf( __( 'Spotify API Test Failed: %s (%s)', 'charts' ), $result->get_error_message(), $result->get_error_code() );
+					add_settings_error( 'charts', 'spotify_test_error', $msg, 'error' );
+				} else {
+					add_settings_error( 'charts', 'spotify_test_success', __( 'Spotify API Connection Successful! Token generated and metadata retrieved.', 'charts' ), 'success' );
+				}
+				break;
+
+			case 'test_youtube_api':
+				$client = new \Charts\Services\YouTubeApiClient();
+				$result = $client->test_connection();
+
+				if ( is_wp_error( $result ) ) {
+					$msg = sprintf( __( 'YouTube API Test Failed: %s (%s)', 'charts' ), $result->get_error_message(), $result->get_error_code() );
+					add_settings_error( 'charts', 'youtube_test_error', $msg, 'error' );
+				} else {
+					add_settings_error( 'charts', 'youtube_test_success', __( 'YouTube API Connection Successful! Metadata retrieved from video jNQXAC9IVRw.', 'charts' ), 'success' );
+				}
+				break;
 		}
 	}
 
