@@ -121,21 +121,26 @@ class SpotifyApiClient {
 	 * Run a health check to verify current credentials.
 	 */
 	public function test_connection() {
+		// 1. Test Token Generation (Client Credentials Flow)
 		$token = $this->get_access_token();
 		if ( is_wp_error( $token ) ) {
 			return $token;
 		}
 
-		// Test lightweight metadata request (Spotify Track ID for "Blinding Lights" as a smoke test)
-		$test_track_id = '0VjIj9R9yUew4ZzYYvSOWs'; 
-		$data = $this->get_track( $test_track_id );
+		// 2. Test Metadata Access (Search for a known stable artist: The Weeknd)
+		// This avoids issues with deleted hardcoded track IDs
+		$response = $this->request( 'search?q=The+Weeknd&type=track&limit=1' );
 
-		if ( is_wp_error( $data ) ) {
-			return $data;
+		if ( is_wp_error( $response ) ) {
+			// If we got a token but failed here, it's likely a scope or endpoint issue
+			return new \WP_Error( 
+				'test_search_failed', 
+				sprintf( __( 'Authentication Succeeded, but Search Metadata Failed: %s', 'charts' ), $response->get_error_message() )
+			);
 		}
 
-		if ( empty( $data['name'] ) ) {
-			return new \WP_Error( 'malformed_response', __( 'API responded but track metadata was incomplete.', 'charts' ) );
+		if ( empty( $response['tracks']['items'] ) ) {
+			return new \WP_Error( 'malformed_response', __( 'API responded but was unable to find metadata for search query.', 'charts' ) );
 		}
 
 		return true;

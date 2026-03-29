@@ -11,7 +11,8 @@ $artists = $wpdb->get_results( "
 	       (SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries e 
 	        WHERE (e.item_id = a.id AND e.item_type = 'artist') 
 	           OR (e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = a.id))
-	       ) as appearance_count
+	       ) as appearance_count,
+	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE (e.item_id = a.id AND e.item_type = 'artist') OR (e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = a.id))) as peak_rank
 	FROM {$wpdb->prefix}charts_artists a
 	GROUP BY a.id
 	HAVING appearance_count > 0
@@ -44,16 +45,65 @@ $artists = $wpdb->get_results( "
 					<p style="font-weight: 800; color: var(--k-text-muted);">No artists found with active rankings.</p>
 				</div>
 			<?php else : ?>
-				<div class="kc-grid kc-grid-4">
+				<div class="kc-rows-list">
 					<?php foreach ( $artists as $artist ) : 
 						$url  = home_url( '/charts/artist/' . $artist->slug . '/' );
 						$img  = !empty($artist->image) ? $artist->image : CHARTS_URL . 'public/assets/img/placeholder.png';
 					?>
-					<a href="<?php echo esc_url( $url ); ?>" class="kc-card" style="text-decoration: none; text-align: center; padding: 32px 24px;">
-						<img src="<?php echo esc_url( $img ); ?>" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 20px; box-shadow: var(--k-shadow-sm);">
-						<h3 style="font-size: 18px; font-weight: 900; color: var(--k-text); margin: 0;"><?php echo esc_html( $artist->display_name ); ?></h3>
-						<span style="display: block; font-size: 11px; font-weight: 700; color: var(--k-accent); margin-top: 8px; text-transform: uppercase;"><?php echo number_format( $artist->appearance_count ); ?> Appearances</span>
-					</a>
+					<div class="kc-row-item">
+						<header class="kc-row-header">
+							<img src="<?php echo esc_url( $img ); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: var(--k-shadow-sm);">
+							<div style="flex-grow: 1;">
+								<h3 style="font-size: 18px; font-weight: 950; color: var(--k-text); margin: 0;"><?php echo esc_html( $artist->display_name ); ?></h3>
+								<span style="display: block; font-size: 11px; font-weight: 850; color: var(--k-text-dim); margin-top: 4px; text-transform: uppercase;">Indexed Entity</span>
+							</div>
+							<div class="kc-row-meta" style="display: flex; gap: 40px; margin-right: 40px; text-align: right;">
+								<div>
+									<label style="display: block; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted); margin-bottom: 4px;">Top Peak</label>
+									<span style="font-size: 14px; font-weight: 950; color: var(--k-text);">#<?php echo $artist->peak_rank ?: '—'; ?></span>
+								</div>
+								<div>
+									<label style="display: block; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted); margin-bottom: 4px;">Chart Entries</label>
+									<span style="font-size: 14px; font-weight: 950; color: var(--k-accent);"><?php echo number_format( $artist->appearance_count ); ?></span>
+								</div>
+							</div>
+							<div class="kc-chevron-toggle">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+							</div>
+						</header>
+
+						<!-- EXTANDABLE DETAILS PANEL -->
+						<div class="kc-details-inner">
+							<div class="kc-details-grid">
+								<div class="kc-details-item">
+									<label>Artist Gender / Type</label>
+									<span><?php echo esc_html($artist->gender ?: 'Unknown'); ?></span>
+								</div>
+								<div class="kc-details-item">
+									<label>Platform Discovery</label>
+									<span>Verified Artist</span>
+								</div>
+								<div class="kc-details-item">
+									<label>Intelligence Profile</label>
+									<span style="color:var(--k-accent);">Active Matching</span>
+								</div>
+								<div class="kc-details-item" style="text-align: right;">
+									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px;">View Full Profile &rarr;</a>
+								</div>
+							</div>
+							
+							<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--k-border); display: flex; gap: 40px;">
+								<div class="kc-details-item">
+									<label>Canonical Slug</label>
+									<span style="font-family: monospace; color: var(--k-text-dim);"><?php echo esc_html($artist->slug); ?></span>
+								</div>
+								<div class="kc-details-item">
+									<label>Global Statistics</label>
+									<span>Aggregate Charting Data Active</span>
+								</div>
+							</div>
+						</div>
+					</div>
 					<?php endforeach; ?>
 				</div>
 			<?php endif; ?>
@@ -63,4 +113,5 @@ $artists = $wpdb->get_results( "
 	</div>
 </div>
 
+<script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
 <?php \Charts\Core\StandaloneLayout::get_footer(); ?>

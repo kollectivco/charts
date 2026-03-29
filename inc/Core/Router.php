@@ -22,26 +22,23 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Single Chart (Catch-all for /charts/{slug})
-		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'top' );
-
-		// 2. Artist Archive
+		// 1. Static Archive Routes (Specific matches should come before generic ones)
 		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );
+		add_rewrite_rule( '^charts/tracks/?$', 'index.php?charts_route=track-archive', 'top' );
 
-		// 3. Artist Single
+		// 2. Specific Entity Routes
 		add_rewrite_rule( '^charts/artist/([^/]+)/?$', 'index.php?charts_route=artist-single&charts_artist_slug=$matches[1]', 'top' );
-
-		// 4. Track Single
 		add_rewrite_rule( '^charts/track/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
-
-		// 5. Video Single
 		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
 
-		// 6. External Dashboard (Catch-all for /charts-dashboard/...)
+		// 3. Generic Single Chart (Catch-all for /charts/{slug})
+		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'bottom' );
+
+		// 4. External Dashboard
 		add_rewrite_rule( '^charts-dashboard/([^/]+)/?$', 'index.php?charts_route=dashboard&charts_module=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts-dashboard/?$', 'index.php?charts_route=dashboard&charts_module=overview', 'top' );
 
-		// 7. Base /charts/
+		// 5. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
 	}
 
@@ -78,6 +75,8 @@ class Router {
 				return CHARTS_PATH . 'public/templates/single-chart.php';
 			case 'artist-archive':
 				return CHARTS_PATH . 'public/templates/artist-archive.php';
+			case 'track-archive':
+				return CHARTS_PATH . 'public/templates/track-archive.php';
 			case 'artist-single':
 				return CHARTS_PATH . 'public/templates/artist-single.php';
 			case 'item-single':

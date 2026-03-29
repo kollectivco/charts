@@ -530,3 +530,88 @@
 	.footer-inner { grid-template-columns: 1fr; }
 	.footer-bottom-strip { flex-direction: column; gap: 16px; text-align: center; }
 }
+
+/* --- 11. EXPANDABLE ROWS SYSTEM --- */
+.kc-rank-row {
+	cursor: pointer;
+	position: relative;
+	transition: background-color 0.2s ease;
+}
+
+.kc-rank-row:hover { background-color: rgba(0,0,0,0.01) !important; }
+.kc-rank-row.is-expanded { background-color: #fcfcfc !important; }
+
+.kc-details-row { background-color: #fcfcfc; border-bottom: 1px solid var(--k-border); }
+.kc-details-inner {
+	max-height: 0;
+	overflow: hidden;
+	opacity: 0;
+	transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, padding 0.35s ease;
+	padding: 0 48px;
+}
+
+.is-expanded + .kc-details-row .kc-details-inner,
+.kc-row-item.is-expanded .kc-details-inner {
+	max-height: 1000px; /* Allow content to breathe */
+	opacity: 1;
+	padding: 32px 48px;
+}
+
+.kc-details-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 32px;
+}
+
+.kc-details-item label {
+	display: block;
+	font-size: 10px;
+	font-weight: 850;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--k-text-dim);
+	margin-bottom: 8px;
+}
+
+.kc-details-item span {
+	display: block;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--k-text);
+	line-height: 1.4;
+}
+
+.kc-chevron-toggle {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: 1px solid var(--k-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--k-text-muted);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.is-expanded .kc-chevron-toggle {
+	background: var(--k-accent);
+	color: #fff;
+	border-color: var(--k-accent);
+	transform: rotate(180deg);
+}
+
+/* List Variant for Archives */
+.kc-rows-list { display: flex; flex-direction: column; gap: 0; }
+.kc-row-item { border-bottom: 1px solid var(--k-border); background: #fff; }
+.kc-row-header { padding: 24px 32px; display: flex; align-items: center; gap: 24px; cursor: pointer; }
+.kc-row-header:hover { background: #fafafa; }
+
+@media (max-width: 1024px) {
+	.kc-details-grid { grid-template-columns: repeat(2, 1fr); }
+	.is-expanded .kc-details-inner { padding: 24px 32px; }
+}
+
+@media (max-width: 768px) {
+	.kc-details-grid { grid-template-columns: 1fr; gap: 24px; }
+	.kc-row-header { padding: 20px; }
+}

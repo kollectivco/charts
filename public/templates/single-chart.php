@@ -114,7 +114,7 @@ if ( $definition ) {
 			<?php endif; ?>
 
 			<!-- RANKINGS TABLE -->
-			<section class="kc-section" style="padding-top: 0;">
+			<section class="kc-section" style="padding-top: 0; padding-bottom: 120px;">
 				<div class="kc-section-header" style="justify-content: flex-start; gap: 12px;">
 					<h2 class="kc-section-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted);">Full Rankings</h2>
 					<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo date('M j, Y'); ?></span>
@@ -123,12 +123,13 @@ if ( $definition ) {
 				<table class="kc-rankings-table">
 					<thead class="kc-table-head">
 						<tr>
-							<th style="width: 100px;">Rank</th>
-							<th style="width: 120px;">Move</th>
+							<th style="width: 80px;">Rank</th>
+							<th style="width: 100px;">Move</th>
 							<th>Cover Title</th>
 							<th style="text-align: right;">Last Wk</th>
 							<th style="text-align: right;">Peak</th>
 							<th style="text-align: right; width: 120px;">Wks On Chart</th>
+							<th style="width: 60px;"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -152,7 +153,7 @@ if ( $definition ) {
 									<div style="display: flex; align-items: center; gap: 16px;">
 										<img src="<?php echo esc_url($e->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
 										<div>
-											<a href="#" style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text); text-decoration: none;"><?php echo esc_html($e->track_name); ?></a>
+											<span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($e->track_name); ?></span>
 											<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);"><?php echo esc_html($e->artist_names); ?></span>
 										</div>
 									</div>
@@ -160,6 +161,44 @@ if ( $definition ) {
 								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo $e->previous_rank ?: '—'; ?></td>
 								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);">#<?php echo $e->peak_rank ?: $e->rank_position; ?></td>
 								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo $e->weeks_on_chart ?: 1; ?></td>
+								<td style="text-align: right;">
+									<div class="kc-chevron-toggle" style="width: 24px; height: 24px; margin-left: auto;">
+										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+									</div>
+								</td>
+							</tr>
+							<tr class="kc-details-row">
+								<td colspan="7" style="padding: 0;">
+									<div class="kc-details-inner">
+										<div class="kc-details-grid">
+											<div class="kc-details-item">
+												<label>Release Date</label>
+												<span><?php echo !empty($e->release_date) ? date('M j, Y', strtotime($e->release_date)) : '—'; ?></span>
+											</div>
+											<div class="kc-details-item">
+												<label>Peak Position</label>
+												<span>#<?php echo $e->peak_rank ?: $e->rank_position; ?></span>
+											</div>
+											<div class="kc-details-item">
+												<label>Source / Primary Label</label>
+												<span><?php echo esc_html($e->label_names ?: 'Distribution Network'); ?></span>
+											</div>
+											<div class="kc-details-item" style="text-align: right;">
+												<a href="<?php echo home_url('/charts/track/'.$e->item_slug.'/'); ?>" class="kc-view-all" style="font-size: 12px;">Full Breakdown &rarr;</a>
+											</div>
+										</div>
+										<div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--k-border); display: flex; gap: 40px;">
+											<div class="kc-details-item">
+												<label>Writer / Composers</label>
+												<span><?php echo esc_html($e->composer_names ?: 'Credits Protected'); ?></span>
+											</div>
+											<div class="kc-details-item">
+												<label>Total Market Reach</label>
+												<span>Regional Index Tracking Active</span>
+											</div>
+										</div>
+									</div>
+								</td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
@@ -171,4 +210,5 @@ if ( $definition ) {
 	</div>
 </div>
 
+<script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
 <?php \Charts\Core\StandaloneLayout::get_footer(); ?>
