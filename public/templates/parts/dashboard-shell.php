@@ -31,11 +31,11 @@ $current_module = get_query_var( 'charts_module', 'overview' );
 	<nav class="kc-db-nav">
 		<a href="<?php echo home_url('/charts-dashboard/overview'); ?>" class="kc-db-nav-item <?php echo $current_module === 'overview' ? 'active' : ''; ?>">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-			Overview
+			Dashboard
 		</a>
 		<a href="<?php echo home_url('/charts-dashboard/charts'); ?>" class="kc-db-nav-item <?php echo $current_module === 'charts' ? 'active' : ''; ?>">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"></path></svg>
-			Manage Charts
+			Charts
 		</a>
 		<a href="<?php echo home_url('/charts-dashboard/sources'); ?>" class="kc-db-nav-item <?php echo $current_module === 'sources' ? 'active' : ''; ?>">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>

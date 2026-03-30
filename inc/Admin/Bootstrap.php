@@ -215,10 +215,10 @@ class Bootstrap {
 			__( 'Charts', 'charts' ),
 			__( 'Charts', 'charts' ),
 			'manage_options',
-			'charts',
-			array( self::class, 'render_dashboard' ),
+			home_url( '/charts-dashboard' ),
+			'',
 			$icon,
-			30
+			3
 		);
 
 		add_submenu_page(

@@ -40,6 +40,10 @@ class StandaloneLayout {
 		remove_all_actions( 'wp_meta' );
 		remove_all_actions( 'get_header' );
 		remove_all_actions( 'get_footer' );
+
+		// NEW: Disable theme's built-in header/footer if they use standard WP hooks
+		// This forces anything calling get_header() or get_footer() to use our StandaloneLayout methods
+		add_filter( 'show_admin_bar', '__return_false' );
 	}
 
 	/**
@@ -106,6 +110,8 @@ class StandaloneLayout {
 		if ( ! is_main_query() ) return false;
 		
 		$vars = array(
+			'charts_route',
+			'charts_module',
 			'charts_page',
 			'charts_platform',
 			'charts_country',
@@ -124,9 +130,9 @@ class StandaloneLayout {
 			}
 		}
 
-		// Also check the root /charts if it's hit manually or via path
+		// Also check the root /charts or /charts-dashboard if it's hit manually or via path
 		$path = trim( $_SERVER['REQUEST_URI'], '/' );
-		if ( $path === 'charts' || strpos( $path, 'charts/' ) === 0 ) {
+		if ( $path === 'charts' || strpos( $path, 'charts/' ) === 0 || $path === 'charts-dashboard' || strpos( $path, 'charts-dashboard/' ) === 0 ) {
             return true;
         }
 
@@ -137,7 +143,9 @@ class StandaloneLayout {
 	 * Force the 'elementor_canvas' template for chart-related pages.
 	 */
 	public static function force_page_template_canvas( $value, $object_id, $meta_key, $single ) {
-		if ( $meta_key === '_wp_page_template' && self::is_charts_page() ) {
+		// Only force canvas for real WP Pages that are NOT handled by our dynamic routing
+		// Dynamic routes (charts_route) already use our standalone cinematic templates.
+		if ( $meta_key === '_wp_page_template' && self::is_charts_page() && ! get_query_var('charts_route') ) {
 			return 'elementor_canvas';
 		}
 		return $value;

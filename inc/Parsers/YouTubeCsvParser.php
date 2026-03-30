@@ -30,7 +30,7 @@ class YouTubeCsvParser {
 		'artist_names'   => array( 'artist', 'artist_name', 'artist_names', 'artists', 'channel', 'channel_name', 'performer' ),
 		'views_count'    => array( 'views', 'weekly_views', 'view_count', 'streams', 'plays', 'views_count', 'count', 'view' ),
 		'image'          => array( 'thumbnail', 'image', 'cover', 'cover_image', 'thumbnail_url', 'artwork' ),
-		'source_url'     => array( 'youtube_url', 'video_url', 'url', 'source_url', 'link', 'video_link', 'youtube_link' ),
+		'source_url'     => array( 'youtube_url', 'video_url', 'url', 'source_url', 'link', 'video_link', 'youtube_link', 'uri', 'source' ),
 		'youtube_id'     => array( 'youtube_id', 'video_id', 'id', 'yt_id' ),
 		'peak_rank'      => array( 'peak_rank', 'peak', 'best_rank', 'highest_rank' ),
 		'previous_rank'  => array( 'previous_rank', 'last_rank', 'prev_rank', 'last_position' ),
@@ -38,6 +38,11 @@ class YouTubeCsvParser {
 	);
 
 	private $warnings = array();
+	private $stats = array(
+		'with_id'      => 0,
+		'with_url'     => 0,
+		'missing_both' => 0,
+	);
 
 	/**
 	 * Parse CSV content into normalized rows.
@@ -45,6 +50,11 @@ class YouTubeCsvParser {
 	 */
 	public function parse( $csv_content ) {
 		$this->warnings = array();
+		$this->stats = array(
+			'with_id'      => 0,
+			'with_url'     => 0,
+			'missing_both' => 0,
+		);
 		
 		// Strip BOM
 		$csv_content = preg_replace( '/^\xEF\xBB\xBF/', '', $csv_content );
@@ -85,16 +95,30 @@ class YouTubeCsvParser {
 			}
 		}
 
+		// Extra mapping for common variations
+		$alias_reverse['video_id'] = 'youtube_id';
+		$alias_reverse['yt_id']    = 'youtube_id';
+		$alias_reverse['video_url'] = 'source_url';
+		$alias_reverse['youtube_url'] = 'source_url';
+
 		$col_map = array(); // column_index → canonical_key
 		$mapped_canonicals = array();
+		$unmapped_headers  = array();
 
 		foreach ( $headers as $i => $h ) {
 			if ( isset( $alias_reverse[ $h ] ) ) {
 				$col_map[ $i ] = $alias_reverse[ $h ];
 				$mapped_canonicals[] = $alias_reverse[ $h ];
 			} else {
-				$this->warnings[] = sprintf( __( 'Header "%s" is not mapped — will be stored in raw data only.', 'charts' ), $h );
+				$unmapped_headers[] = $h;
 			}
+		}
+
+		if ( ! empty( $unmapped_headers ) ) {
+			$this->warnings[] = sprintf( 
+				__( 'Ignored headers: %s (stored in raw data only).', 'charts' ), 
+				implode( ', ', $unmapped_headers ) 
+			);
 		}
 
 		// Must have at minimum item_title OR youtube_id OR source_url
@@ -119,10 +143,20 @@ class YouTubeCsvParser {
 			foreach ( $headers as $idx => $h ) {
 				$raw_val = isset( $cols[ $idx ] ) ? trim( $cols[ $idx ] ) : '';
 				if ( isset( $col_map[ $idx ] ) ) {
-					$raw[ $col_map[ $idx ] ] = $raw_val;
+					// Handle multiple columns mapping to same canonical (priority: first seen wins for raw, but we keep all in raw_payload)
+					if ( ! isset( $raw[ $col_map[ $idx ] ] ) || $raw[ $col_map[ $idx ] ] === '' ) {
+						$raw[ $col_map[ $idx ] ] = $raw_val;
+					}
 				}
 				// Original header names for reference
 				$raw['__csv_original_' . $h] = $raw_val;
+			}
+
+			// Capture values for priority extraction if they aren't already mapped
+			foreach (array('uri', 'source', 'link', 'url', 'video_id', 'youtube_id', 'id') as $key) {
+				if (isset($raw['__csv_original_' . $key]) && !isset($raw[$key])) {
+					$raw[$key] = $raw['__csv_original_' . $key];
+				}
 			}
 
 			$row = $this->normalize_row( $raw, $i - $row_start + 1 );
@@ -133,6 +167,16 @@ class YouTubeCsvParser {
 
 		if ( empty( $rows ) ) {
 			return new \WP_Error( 'no_rows', __( 'CSV parsed but contained no valid data rows.', 'charts' ) );
+		}
+
+		// Add summary warnings if needed
+		if ( $this->stats['missing_both'] > 0 ) {
+			$this->warnings[] = sprintf(
+				__( 'Extraction summary: %d rows with IDs, %d rows with URLs, %d rows missing both identification fields.', 'charts' ),
+				$this->stats['with_id'],
+				$this->stats['with_url'],
+				$this->stats['missing_both']
+			);
 		}
 
 		return $rows;
@@ -149,31 +193,66 @@ class YouTubeCsvParser {
 		$title  = $raw['item_title'] ?? '';
 		$rank   = isset( $raw['rank'] ) ? intval( preg_replace( '/[^0-9]/', '', $raw['rank'] ) ) : $line_num;
 
-		// 1. YouTube ID Extraction
-		$yt_id = $raw['youtube_id'] ?? '';
-		$url   = $raw['source_url'] ?? '';
+		// 1. YouTube ID Extraction Priority
+		// Priority order: explicit youtube_id > extract from source_url > extract from uri > extract from source
+		$yt_id = null;
+		$url   = null;
 
-		if ( empty( $yt_id ) && ! empty( $url ) ) {
-			// Extract from various formats: watch?v=, youtu.be/, shorts/, embed/
-			if ( preg_match( '/(?:v=|\/shorts\/|\/embed\/|\/v\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $url, $m ) ) {
-				$yt_id = $m[1];
+		$candidates = array(
+			'youtube_id' => $raw['youtube_id'] ?? '',
+			'source_url' => $raw['source_url'] ?? '',
+			'uri'        => $raw['uri'] ?? $raw['__csv_original_uri'] ?? '',
+			'source'     => $raw['source'] ?? $raw['__csv_original_source'] ?? '',
+		);
+
+		// Try explicit ID first
+		if ( ! empty( $candidates['youtube_id'] ) ) {
+			$yt_id = $this->extract_youtube_id( $candidates['youtube_id'] );
+		}
+
+		// If no ID yet, try extracting from URL candidates in order
+		if ( empty( $yt_id ) ) {
+			foreach ( array( 'source_url', 'uri', 'source' ) as $key ) {
+				if ( ! empty( $candidates[ $key ] ) ) {
+					$extracted = $this->extract_youtube_id( $candidates[ $key ] );
+					if ( $extracted ) {
+						$yt_id = $extracted;
+						// If we found an ID in a URL field, also use that field as our canonical URL if URL is missing
+						if ( empty( $url ) && filter_var( $candidates[ $key ], FILTER_VALIDATE_URL ) ) {
+							$url = $candidates[ $key ];
+						}
+						break;
+					}
+				}
 			}
 		}
 
-		// 2. Thumbnail Generation
+		// Ensure we have a URL if possible
+		if ( empty( $url ) ) {
+			if ( ! empty( $candidates['source_url'] ) && filter_var( $candidates['source_url'], FILTER_VALIDATE_URL ) ) {
+				$url = $candidates['source_url'];
+			} elseif ( ! empty( $candidates['uri'] ) && filter_var( $candidates['uri'], FILTER_VALIDATE_URL ) ) {
+				$url = $candidates['uri'];
+			} elseif ( ! empty( $candidates['source'] ) && filter_var( $candidates['source'], FILTER_VALIDATE_URL ) ) {
+				$url = $candidates['source'];
+			}
+		}
+
+		// 2. Stats and Warnings
+		if ( ! empty( $yt_id ) ) {
+			$this->stats['with_id']++;
+		} elseif ( ! empty( $url ) ) {
+			$this->stats['with_url']++;
+		} else {
+			$this->stats['missing_both']++;
+		}
+
+		// 3. Thumbnail Generation
 		$image = $raw['image'] ?? '';
 		if ( empty( $image ) && ! empty( $yt_id ) ) {
 			// Generate hqdefault thumbnail URL
 			$image = "https://img.youtube.com/vi/{$yt_id}/hqdefault.jpg";
 			$raw['thumbnail_generated'] = true;
-		}
-
-		// 3. Identification Warnings
-		if ( empty( $yt_id ) && empty( $url ) ) {
-			$this->warnings[] = sprintf( 
-				__( 'Line %d: No YouTube ID or URL found. Metadata may be incomplete.', 'charts' ), 
-				$line_num 
-			);
 		}
 
 		// Fallback: use youtube_id as title if blank
@@ -204,5 +283,26 @@ class YouTubeCsvParser {
 			'raw_payload'    => $raw,
 			'thumbnail_generated' => $raw['thumbnail_generated'] ?? false,
 		);
+	}
+
+	/**
+	 * Extracts YouTube ID from various string formats (URLs, short URLs, or raw IDs).
+	 */
+	private function extract_youtube_id( $string ) {
+		$string = trim( $string );
+		if ( empty( $string ) ) return null;
+
+		// 1. Check if it's already a raw ID (11 chars, alphanumeric + _ -)
+		if ( preg_match( '/^[a-zA-Z0-9_-]{11}$/', $string ) ) {
+			return $string;
+		}
+
+		// 2. Extract from various URL formats
+		// watch?v=..., youtu.be/..., shorts/..., embed/..., v/..., etc.
+		if ( preg_match( '/(?:v=|\/shorts\/|\/embed\/|\/v\/|\.be\/)([a-zA-Z0-9_-]{11})/', $string, $m ) ) {
+			return $m[1];
+		}
+
+		return null;
 	}
 }

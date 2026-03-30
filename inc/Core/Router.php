@@ -22,24 +22,24 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Static Archive Routes (Specific matches should come before generic ones)
-		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );
-		add_rewrite_rule( '^charts/tracks/?$', 'index.php?charts_route=track-archive', 'top' );
+		// 1. Generic Single Chart (lowest specificity, but still top)
+		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'top' );
 
-		// 2. Specific Entity Routes
+		// 2. Specific Entity Routes (higher specificity, added last so they stay above generic)
 		add_rewrite_rule( '^charts/artist/([^/]+)/?$', 'index.php?charts_route=artist-single&charts_artist_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts/track/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
 
-		// 3. Generic Single Chart (Catch-all for /charts/{slug})
-		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'bottom' );
+		// 3. Static Archive Routes
+		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );
+		add_rewrite_rule( '^charts/tracks/?$', 'index.php?charts_route=track-archive', 'top' );
 
-		// 4. External Dashboard
+		// 4. Base /charts/
+		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
+
+		// 5. External Dashboard
 		add_rewrite_rule( '^charts-dashboard/([^/]+)/?$', 'index.php?charts_route=dashboard&charts_module=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts-dashboard/?$', 'index.php?charts_route=dashboard&charts_module=overview', 'top' );
-
-		// 5. Base /charts/
-		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
 	}
 
 	/**
