@@ -59,6 +59,9 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 			<div class="kc-profile-info">
 				<div class="kc-eyebrow">Artist</div>
 				<h1 class="kc-page-title"><?php echo esc_html($artist->display_name); ?></h1>
+				<?php if ( ! empty($artist->display_name_franko) ) : ?>
+					<div style="font-size: 18px; font-weight: 700; color: var(--k-text-muted); margin-top: 4px; opacity: 0.5;"><?php echo esc_html($artist->display_name_franko); ?></div>
+				<?php endif; ?>
 			</div>
 		</header>
 

@@ -29,12 +29,24 @@ class Matcher {
 			return $artist_id;
 		}
 
+		// 2b. Try Franko Match
+		$franko = Normalizer::to_franko( $display_name );
+		if ( $franko !== $display_name ) {
+			$norm_franko = mb_strtolower( $franko );
+			$artist_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE display_name_franko = %s OR normalized_name = %s", $franko, $norm_franko ) );
+			if ( $artist_id ) {
+				return $artist_id;
+			}
+		}
+
 		// 3. Create fresh
+		$franko = Normalizer::to_franko( $display_name );
 		$slug = sanitize_title( $display_name );
 		$slug = $this->ensure_unique_slug( $table, $slug );
 
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
+			'display_name_franko' => $franko !== $display_name ? $franko : null,
 			'normalized_name' => $normalized_name,
 			'slug'            => $slug,
 			'created_at'      => current_time( 'mysql' ),
@@ -64,13 +76,25 @@ class Matcher {
 			return $track_id;
 		}
 
+		// 1b. Try Franko Match
+		$franko = Normalizer::to_franko( $title );
+		if ( $franko !== $title ) {
+			$track_id = $wpdb->get_var( $wpdb->prepare( 
+				"SELECT id FROM $table WHERE (title_franko = %s OR normalized_title = %s) AND primary_artist_id = %d", 
+				$franko, mb_strtolower($franko), $primary_artist_id 
+			) );
+			if ( $track_id ) return $track_id;
+		}
+
 		// 2. Create fresh
+		$franko = Normalizer::to_franko( $title );
 		$slug_base = $title . ' ' . $primary_artist_id;
 		$slug = sanitize_title( $slug_base );
 		$slug = $this->ensure_unique_slug( $table, $slug );
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized_title,
 			'slug'              => $slug,
 			'primary_artist_id' => $primary_artist_id,
@@ -101,11 +125,13 @@ class Matcher {
 			return $video_id;
 		}
 
+		$franko = Normalizer::to_franko( $title );
 		$slug = sanitize_title( $title . ' ' . $primary_artist_id );
 		$slug = $this->ensure_unique_slug( $table, $slug );
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized_title,
 			'slug'              => $slug,
 			'primary_artist_id' => $primary_artist_id,

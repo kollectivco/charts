@@ -17,6 +17,9 @@ class Bootstrap {
 		// Initialize Standalone Layout system
 		\Charts\Core\StandaloneLayout::init();
 
+		// Initialize SEO module
+		\Charts\Core\SEO::init();
+
 		// Register any core hooks
 		add_action( 'init', array( self::class, 'register_cron' ) );
 	}

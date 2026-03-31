@@ -62,4 +62,52 @@ class Normalizer {
 		$text = str_replace( array( "\xe2\x80\x8b", "\xe2\x80\x8c", "\xe2\x80\x8d" ), '', $text );
 		return $text;
 	}
+	
+	/**
+	 * Detect if a string contains Arabic characters.
+	 */
+	public static function is_arabic( $text ) {
+		return preg_match( '/[\x{0600}-\x{06FF}]/u', $text );
+	}
+	
+	/**
+	 * Convert Arabic text to Franko/Arabizi transliteration.
+	 */
+	public static function to_franko( $text ) {
+		if ( ! self::is_arabic( $text ) ) {
+			return $text;
+		}
+
+		// Transliteration Map (Standard Arabizi/Franko)
+		$map = array(
+			'أ' => 'a', 'ا' => 'a', 'إ' => 'e', 'آ' => 'aa',
+			'ب' => 'b', 'ت' => 't', 'ث' => 'th',
+			'ج' => 'g', 'ح' => '7', 'خ' => 'kh',
+			'د' => 'd', 'ذ' => 'z',
+			'ر' => 'r', 'ز' => 'z',
+			'س' => 's', 'ش' => 'sh',
+			'ص' => 's', 'ض' => 'd',
+			'ط' => 't', 'ظ' => 'z',
+			'ع' => '3', 'غ' => 'gh',
+			'ف' => 'f', 'ق' => 'k',
+			'ك' => 'k', 'ل' => 'l',
+			'م' => 'm', 'ن' => 'n',
+			'ه' => 'h', 'و' => 'w', 'ي' => 'y',
+			'ى' => 'a', 'ة' => 'a', 'ؤ' => 'o', 'ئ' => 'e',
+			'ء' => 'a'
+		);
+
+		$franko = $text;
+		foreach ( $map as $arabic => $latin ) {
+			$franko = str_replace( $arabic, $latin, $franko );
+		}
+
+		// Basic Cleanup (Normalize multiple spaces and common English-style corrections)
+		$franko = preg_replace( '/\s+/', ' ', $franko );
+		
+		// Optional: Capitalize first letter of each word
+		$franko = ucwords( mb_strtolower( trim( $franko ) ) );
+
+		return $franko;
+	}
 }

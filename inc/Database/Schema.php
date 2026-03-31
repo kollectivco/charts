@@ -65,6 +65,7 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_artists` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`display_name` VARCHAR(255) NOT NULL,
+				`display_name_franko` VARCHAR(255) DEFAULT NULL,
 				`normalized_name` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -102,6 +103,7 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_tracks` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`title` VARCHAR(255) NOT NULL,
+				`title_franko` VARCHAR(255) DEFAULT NULL,
 				`normalized_title` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -187,7 +189,9 @@ class Schema {
 				`views_count` BIGINT(20) DEFAULT 0,
 				`score` DECIMAL(10,2) DEFAULT 0,
 				`track_name` VARCHAR(500) DEFAULT NULL,
+				`track_name_franko` VARCHAR(500) DEFAULT NULL,
 				`artist_names` TEXT DEFAULT NULL,
+				`artist_names_franko` TEXT DEFAULT NULL,
 				`cover_image` TEXT DEFAULT NULL,
 				`item_slug` VARCHAR(255) DEFAULT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -430,7 +434,9 @@ class Schema {
 
 		$needed = array(
 			'track_name'    => "VARCHAR(500) DEFAULT NULL",
+			'track_name_franko' => "VARCHAR(500) DEFAULT NULL",
 			'artist_names'  => "TEXT DEFAULT NULL",
+			'artist_names_franko' => "TEXT DEFAULT NULL",
 			'cover_image'   => "TEXT DEFAULT NULL",
 			'item_slug'     => "VARCHAR(255) DEFAULT NULL",
 			'spotify_id'    => "VARCHAR(100) DEFAULT NULL",
@@ -471,12 +477,21 @@ class Schema {
 			$wpdb->query( "ALTER IGNORE TABLE `$entries` ADD UNIQUE KEY `entry_rank_unique` (`source_id`,`period_id`,`rank_position`)" );
 		}
 
-		// Also add youtube_id column to tracks and videos tables
+		// Also add youtube_id and Franko columns to relevant tables
 		foreach ( array( $wpdb->prefix . 'charts_tracks', $wpdb->prefix . 'charts_videos' ) as $tbl ) {
 			$cols = $wpdb->get_col( "DESCRIBE $tbl", 0 );
 			if ( ! in_array( 'youtube_id', $cols, true ) ) {
 				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `youtube_id` VARCHAR(100) DEFAULT NULL" );
 			}
+			if ( strpos($tbl, 'tracks') !== false && ! in_array( 'title_franko', $cols, true ) ) {
+				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franko` VARCHAR(255) DEFAULT NULL" );
+			}
+		}
+		
+		$artists_tbl = $wpdb->prefix . 'charts_artists';
+		$art_cols = $wpdb->get_col( "DESCRIBE $artists_tbl", 0 );
+		if ( ! in_array( 'display_name_franko', $art_cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_franko` VARCHAR(255) DEFAULT NULL" );
 		}
 		// Upgrade definitions table
 		$definitions_tbl = $wpdb->prefix . 'charts_definitions';

@@ -70,6 +70,9 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 						<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"><?php echo strtoupper($type); ?></span>
 					</div>
 					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;"><?php echo esc_html($item->title); ?></h1>
+					<?php if ( ! empty($item->title_franko) ) : ?>
+						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em;"><?php echo esc_html($item->title_franko); ?></div>
+					<?php endif; ?>
 					
 					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
 						<?php if ( $artist ) : ?>

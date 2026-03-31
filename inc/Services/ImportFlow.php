@@ -161,6 +161,10 @@ class ImportFlow {
 		$views_count  = intval( $flat['views_count'] ?? $row['views_count'] ?? 0 );
 		$source_url   = esc_url_raw( $flat['source_url'] ?? $row['source_url'] ?? '' );
 
+		// Franko Transliteration
+		$track_franko  = Normalizer::to_franko( $track_name );
+		$artist_franko = Normalizer::to_franko( $artist_names );
+
 		// Resolve canonical slug if missing
 		$item_slug = $flat['item_slug'] ?? null;
 		if ( ! $item_slug && $item_id ) {
@@ -187,7 +191,9 @@ class ImportFlow {
 			'views_count'      => $views_count,
 			// Flat display columns — no JOIN needed on frontend
 			'track_name'       => $track_name,
+			'track_name_franko' => $track_franko !== $track_name ? $track_franko : null,
 			'artist_names'     => $artist_names,
+			'artist_names_franko' => $artist_franko !== $artist_names ? $artist_franko : null,
 			'cover_image'      => $cover_image ?: null,
 			'item_slug'        => $item_slug,
 			'spotify_id'       => $spotify_id ?: null,
@@ -249,9 +255,11 @@ class ImportFlow {
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
 		if ( $id ) return $id;
 
+		$franko = Normalizer::to_franko( $display_name );
 		$slug = $this->unique_slug( $table, sanitize_title( $display_name ) );
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
+			'display_name_franko' => $franko !== $display_name ? $franko : null,
 			'normalized_name' => $normalized,
 			'slug'            => $slug,
 			'created_at'      => current_time( 'mysql' ),
@@ -270,9 +278,11 @@ class ImportFlow {
 		) );
 		if ( $id ) return $id;
 
+		$franko = Normalizer::to_franko( $title );
 		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
@@ -293,9 +303,11 @@ class ImportFlow {
 		) );
 		if ( $id ) return $id;
 
+		$franko = Normalizer::to_franko( $title );
 		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,

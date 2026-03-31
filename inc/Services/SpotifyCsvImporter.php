@@ -206,9 +206,11 @@ class SpotifyCsvImporter {
 		}
 
 		// Create
+		$franko = Normalizer::to_franko( $display_name );
 		$slug = $this->unique_slug( $table, sanitize_title( $display_name ) );
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
+			'display_name_franko' => $franko !== $display_name ? $franko : null,
 			'normalized_name' => $normalized,
 			'slug'            => $slug,
 			'spotify_id'      => $enrichment_data['spotify_id'] ?? null,
@@ -247,9 +249,11 @@ class SpotifyCsvImporter {
 		}
 
 		// Create
+		$franko = Normalizer::to_franko( $title );
 		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
