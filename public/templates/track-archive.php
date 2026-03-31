@@ -10,6 +10,8 @@ $tracks = $wpdb->get_results( "
 	SELECT t.*, a.display_name as artist_name, a.slug as artist_slug,
 	       (SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries e 
 	        WHERE e.item_id = t.id AND e.item_type = 'track') as appearance_count,
+	       (SELECT MAX(weeks_on_chart) FROM {$wpdb->prefix}charts_entries e 
+	        WHERE e.item_id = t.id AND e.item_type = 'track') as weeks_on_chart,
 	       (SELECT MIN(period_id) FROM {$wpdb->prefix}charts_entries e WHERE e.item_id = t.id AND e.item_type = 'track') as first_period_id,
 	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE e.item_id = t.id AND e.item_type = 'track') as peak_rank
 	FROM {$wpdb->prefix}charts_tracks t
@@ -78,32 +80,21 @@ $tracks = $wpdb->get_results( "
 
 						<!-- EXTANDABLE DETAILS PANEL -->
 						<div class="kc-details-inner">
-							<div class="kc-details-grid">
+							<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 								<div class="kc-details-item">
-									<label>First Entry Position</label>
+									<label>Peak Position</label>
 									<span>#<?php echo $track->peak_rank ?: '—'; ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>First Entry Date</label>
+									<label>First Chart Entry</label>
 									<span><?php echo $first_entry_date !== '—' ? date('M j, Y', strtotime($first_entry_date)) : '—'; ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>Metadata Source</label>
-									<span>Spotify Intelligence</span>
+									<label>Lifetime Weeks</label>
+									<span><?php echo intval($track->weeks_on_chart ?: 1); ?></span>
 								</div>
 								<div class="kc-details-item" style="text-align: right;">
-									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px;">View Full Intelligence Profile &rarr;</a>
-								</div>
-							</div>
-							
-							<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--k-border); display: flex; gap: 40px;">
-								<div class="kc-details-item">
-									<label>Internal Track ID</label>
-									<span style="font-family: monospace; color: var(--k-text-dim);"><?php echo $track->id; ?></span>
-								</div>
-								<div class="kc-details-item">
-									<label>Canonical Artist</label>
-									<span><?php echo esc_html($track->artist_name); ?></span>
+									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &rarr;</a>
 								</div>
 							</div>
 						</div>

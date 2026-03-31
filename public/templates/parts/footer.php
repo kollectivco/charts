@@ -25,33 +25,26 @@
 			<div class="footer-col">
 				<h5>Charts</h5>
 				<ul>
-					<li><a href="#">Hot 100</a></li>
-					<li><a href="#">Hot 100 Artists</a></li>
-					<li><a href="#">Top Tracks</a></li>
-					<li><a href="#">Top Artists</a></li>
-					<li><a href="#">Top Albums</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">All Charts</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/charts/tracks' ) ); ?>">Top Tracks</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">Top Artists</a></li>
 				</ul>
 			</div>
 
 			<div class="footer-col">
 				<h5>Discover</h5>
 				<ul>
-					<li><a href="#">All Charts</a></li>
-					<li><a href="#">Top Tracks</a></li>
-					<li><a href="#">Top Artists</a></li>
-					<li><a href="#">Top Albums</a></li>
-					<li><a href="#">Hot 100</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">Weekly Charts</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/charts/tracks' ) ); ?>">Track Exploration</a></li>
+					<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">Artist Profiles</a></li>
 				</ul>
 			</div>
 
-			<div class="footer-col">
+			<div class="footer-col" style="visibility: hidden;">
 				<h5>Data Sources</h5>
 				<ul>
-					<li><a href="#">Spotify Streaming</a></li>
-					<li><a href="#">YouTube Music</a></li>
-					<li><a href="#">TikTok Plays</a></li>
-					<li><a href="#">Radio Display</a></li>
-					<li><a href="#">Digital Sales</a></li>
+					<li><a href="#">Spotify</a></li>
+					<li><a href="#">YouTube</a></li>
 				</ul>
 			</div>
 

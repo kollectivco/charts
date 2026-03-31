@@ -68,10 +68,8 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 				<div style="flex-grow: 1;">
 					<div style="display: flex; gap: 8px; margin-bottom: 16px;">
 						<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"><?php echo strtoupper($type); ?></span>
-						<span style="font-size: 11px; font-weight: 700; color: var(--k-text-muted);">Pop / Hip-Hop</span>
 					</div>
 					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;"><?php echo esc_html($item->title); ?></h1>
-					<h2 style="font-size: 48px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; font-family: inherit;">ماشي</h2>
 					
 					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
 						<?php if ( $artist ) : ?>
@@ -80,9 +78,9 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 								<?php echo esc_html($artist->display_name); ?>
 							</a>
 						<?php endif; ?>
-						<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);">▶ 3:42</span>
-						<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);">2023-09-01</span>
-						<span style="font-size: 13px; font-weight: 700; color: var(--k-accent-purple);">▶ 205.0M streams</span>
+						<?php if ( ! empty($item->release_date) ) : ?>
+							<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);"><?php echo esc_html($item->release_date); ?></span>
+						<?php endif; ?>
 					</div>
 				</div>
 			</div>
@@ -94,22 +92,25 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 			<div>
 				<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 24px;">Track Stats</h3>
 				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-					<div class="kc-stat-pill">
-						<label>Total Streams</label>
-						<span class="val">266.0M</span>
-					</div>
-					<div class="kc-stat-pill">
-						<label>Duration</label>
-						<span class="val">3:42</span>
-					</div>
-					<div class="kc-stat-pill">
-						<label>Genre</label>
-						<span class="val" style="font-size: 14px;">Pop / Hip-Hop</span>
-					</div>
-					<div class="kc-stat-pill">
-						<label>Release</label>
-						<span class="val" style="font-size: 14px;">2023-08-01</span>
-					</div>
+					<?php 
+					$item_stats = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = %s AND entity_id = %d", $type, $item->id ) );
+					if ( $item_stats ) : 
+					?>
+						<?php if ( ! empty($item_stats->total_streams) ) : ?>
+						<div class="kc-stat-pill">
+							<label>Total Views</label>
+							<span class="val"><?php echo number_format($item_stats->total_streams / 1000000, 1); ?>M</span>
+						</div>
+						<?php endif; ?>
+						<?php if ( ! empty($item_stats->weeks_on_chart) ) : ?>
+						<div class="kc-stat-pill">
+							<label>Weeks on Chart</label>
+							<span class="val"><?php echo intval($item_stats->weeks_on_chart); ?></span>
+						</div>
+						<?php endif; ?>
+					<?php else : ?>
+						<p style="font-size: 11px; color: var(--k-text-muted); grid-column: span 2;">Analytics still processing for this item.</p>
+					<?php endif; ?>
 				</div>
 
 				<div class="kc-card" style="margin-top: 20px; display: flex; align-items: center; gap: 16px; padding: 16px 24px;">
@@ -145,9 +146,13 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 								<div style="display: flex; align-items: center; gap: 24px;">
 									<div style="text-align: right;">
 										<div style="font-size: 28px; font-weight: 950; color: var(--k-text);">#<?php echo $app->rank_position; ?></div>
-										<div style="font-size: 10px; font-weight: 900; color: var(--k-accent);"><span style="margin-right: 4px;">▲ 1</span> Pack #1 Stats</div>
+										<div style="font-size: 10px; font-weight: 900; color: <?php echo $app->movement_direction === 'up' ? 'var(--k-accent)' : ($app->movement_direction === 'down' ? '#ef4444' : 'var(--k-text-muted)'); ?>;">
+											<?php if ( $app->movement_direction === 'up' ) echo '▲ '; elseif ( $app->movement_direction === 'down' ) echo '▼ '; ?>
+											<?php echo $app->movement_value ? intval($app->movement_value) : ''; ?>
+											<?php echo !empty($app->peak_rank) ? ' Peak #' . intval($app->peak_rank) : ''; ?>
+										</div>
 									</div>
-									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--k-accent);"><polyline points="9 18 15 12 9 6"></polyline></svg>
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--k-accent); opacity: 0.5;"><polyline points="9 18 15 12 9 6"></polyline></svg>
 								</div>
 							</a>
 						<?php endforeach; ?>
@@ -162,18 +167,17 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">More by <?php echo esc_html($artist->display_name); ?></h3>
 			<div class="kc-grid kc-grid-3">
 				<?php foreach ( $more_items as $mi ) : ?>
-					<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-radius: 12px;">
+					<a href="<?php echo home_url('/charts/' . $type . '/' . $mi->slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-radius: 12px; text-decoration: none;">
 						<div style="display: flex; align-items: center; gap: 20px;">
 							<img src="<?php echo esc_url($mi->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 10px;">
 							<div>
-								<h4 style="font-size: 16px; font-weight: 900; margin: 0;"><?php echo esc_html($mi->title); ?></h4>
-								<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);">3:20</span>
+								<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);"><?php echo esc_html($mi->title); ?></h4>
 							</div>
 						</div>
 						<div style="width: 32px; height: 32px; border: 1px solid var(--k-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--k-accent); border-color: var(--k-accent);">
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
 						</div>
-					</div>
+					</a>
 				<?php endforeach; ?>
 			</div>
 		</section>
@@ -190,7 +194,6 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 						<div>
 							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">Artist</span>
 							<h3 style="font-size: 24px; font-weight: 900; color: white; margin: 0;"><?php echo esc_html($artist->display_name); ?></h3>
-							<p style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); margin-top: 4px;">80.4M Monthly Listeners</p>
 						</div>
 					</div>
 					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;">View Artist &rarr;</a>

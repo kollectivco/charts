@@ -52,11 +52,8 @@ $week_date    = date('F j, Y');
 				<nav class="charts-nav">
 					<ul class="charts-menu">
 						<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">Home</a></li>
-						<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">Charts</a></li>
-						<li><a href="#">Chart Lists</a></li>
-						<li><a href="#">Tracks</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/charts/tracks' ) ); ?>">Tracks</a></li>
 						<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">Artists</a></li>
-						<li><a href="#">Albums</a></li>
 					</ul>
 				</nav>
 				<?php endif; ?>

@@ -8,12 +8,14 @@ global $wpdb;
 // Fetch all artists with a count of their chart appearances
 $artists = $wpdb->get_results( "
 	SELECT a.*, 
+	       i.total_streams, i.weeks_on_chart, i.momentum_score, i.trend_status,
 	       (SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries e 
 	        WHERE (e.item_id = a.id AND e.item_type = 'artist') 
 	           OR (e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = a.id))
 	       ) as appearance_count,
 	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE (e.item_id = a.id AND e.item_type = 'artist') OR (e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = a.id))) as peak_rank
 	FROM {$wpdb->prefix}charts_artists a
+	LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = a.id AND i.entity_type = 'artist'
 	GROUP BY a.id
 	HAVING appearance_count > 0
 	ORDER BY appearance_count DESC, a.display_name ASC
@@ -74,34 +76,36 @@ $artists = $wpdb->get_results( "
 
 						<!-- EXTANDABLE DETAILS PANEL -->
 						<div class="kc-details-inner">
-							<div class="kc-details-grid">
+							<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 								<div class="kc-details-item">
-									<label>Artist Gender / Type</label>
-									<span><?php echo esc_html($artist->gender ?: 'Unknown'); ?></span>
+									<label>Lifetime Peak</label>
+									<span>#<?php echo $artist->peak_rank ?: '—'; ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>Platform Discovery</label>
-									<span>Verified Artist</span>
+									<label>Weeks on Chart</label>
+									<span><?php echo intval($artist->weeks_on_chart ?: 1); ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>Intelligence Profile</label>
-									<span style="color:var(--k-accent);">Active Matching</span>
+									<label>Momentum Score</label>
+									<span><?php echo number_format($artist->momentum_score ?: 0, 1); ?> / 100</span>
 								</div>
 								<div class="kc-details-item" style="text-align: right;">
-									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px;">View Full Profile &rarr;</a>
+									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &rarr;</a>
 								</div>
 							</div>
 							
+							<?php if ( ! empty($artist->total_streams) ) : ?>
 							<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--k-border); display: flex; gap: 40px;">
 								<div class="kc-details-item">
-									<label>Canonical Slug</label>
-									<span style="font-family: monospace; color: var(--k-text-dim);"><?php echo esc_html($artist->slug); ?></span>
+									<label>Total Market Coverage</label>
+									<span><?php echo number_format($artist->total_streams); ?> Calculated Views</span>
 								</div>
 								<div class="kc-details-item">
-									<label>Global Statistics</label>
-									<span>Aggregate Charting Data Active</span>
+									<label>Trend Status</label>
+									<span style="text-transform: capitalize; color: var(--k-accent); font-weight: 800;"><?php echo esc_html($artist->trend_status ?: 'Stable'); ?></span>
 								</div>
 							</div>
+							<?php endif; ?>
 						</div>
 					</div>
 					<?php endforeach; ?>

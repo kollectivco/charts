@@ -44,7 +44,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 	<!-- 1. HERO HEADER -->
 	<section class="kc-page-hero" style="text-align: center; padding: 120px 0;">
 		<div class="kc-container">
-			<h1 class="kc-page-title" style="font-size: 110px; margin-bottom: 0;">Hero Header</h1>
+			<h1 class="kc-page-title" style="font-size: 110px; margin-bottom: 0;">Kontentrainment Charts</h1>
 		</div>
 	</section>
 
@@ -58,20 +58,20 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
 					Top Artists
 				</h2>
-				<a href="#" class="kc-view-all">Full Chart &rarr;</a>
+				<a href="<?php echo $top_artists_chart ? home_url('/charts/' . $top_artists_chart->slug . '/') : '#'; ?>" class="kc-view-all">Full Chart &rarr;</a>
 			</div>
 
 			<div class="kc-grid kc-grid-4" style="grid-template-columns: repeat(5, 1fr); gap: 20px;">
 				<?php foreach ( $featured_artists as $idx => $art ) : ?>
-					<div class="kc-card" style="padding: 0; overflow: hidden; position: relative; height: 320px;">
+					<a href="<?php echo home_url('/charts/artist/' . $art->item_slug); ?>" class="kc-card" style="padding: 0; overflow: hidden; position: relative; height: 320px; text-decoration: none; display: block;">
 						<img src="<?php echo esc_url($art->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 100%; object-fit: cover;">
 						<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);"></div>
 						<div style="position: absolute; top: 16px; left: 16px; width: 32px; height: 32px; background: var(--k-accent-purple); color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 4px;">#<?php echo $art->rank_position; ?></div>
 						<div style="position: absolute; bottom: 24px; left: 24px; right: 24px;">
 							<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900;"><?php echo esc_html($art->track_name); ?></h3>
-							<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700;"><?php echo esc_html($art->artist_names ?: 'Top Artist'); ?></p>
+							<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700;">Trending Artist</p>
 						</div>
-					</div>
+					</a>
 				<?php endforeach; ?>
 			</div>
 		</section>
@@ -84,7 +84,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
 					All Charts
 				</h2>
-				<a href="#" class="kc-view-all">Browse All &rarr;</a>
+				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">Browse All &rarr;</a>
 			</div>
 
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">

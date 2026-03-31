@@ -66,7 +66,9 @@ if ( $definition ) {
 					Weekly : <?php echo ucwords($definition->item_type ?: 'Tracks'); ?>
 				</div>
 				<h1 class="kc-page-title"><?php echo esc_html($definition->title); ?></h1>
-				<p class="kc-page-subtitle" style="font-family: inherit;">افضل ١٠٠ اغنية</p>
+				<?php if ( ! empty($definition->title_ar) ) : ?>
+					<p class="kc-page-subtitle" style="font-family: inherit;"><?php echo esc_html($definition->title_ar); ?></p>
+				<?php endif; ?>
 				
 				<div class="kc-page-meta">
 					<span class="kc-meta-item">
@@ -82,7 +84,9 @@ if ( $definition ) {
 						<?php echo count($entries); ?> entries
 					</span>
 				</div>
-				<p style="font-size: 13px; color: var(--k-text-dim); margin-top: 24px; max-width: 600px; font-weight: 500;">The week's most popular songs across all platforms, tallied by streaming, display, and sales data.</p>
+				<?php if ( ! empty($definition->chart_summary) ) : ?>
+					<p style="font-size: 13px; color: var(--k-text-dim); margin-top: 24px; max-width: 600px; font-weight: 500; font-family: inherit;"><?php echo esc_html($definition->chart_summary); ?></p>
+				<?php endif; ?>
 			</header>
 
 			<!-- #1 FEATURED TRACK -->
@@ -94,16 +98,21 @@ if ( $definition ) {
 						<div style="flex-grow: 1;">
 							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
 								<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;">#1 This Week</span>
-								<span style="font-size: 12px; font-weight: 800; color: #2ecc71;">+2</span>
+								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
+									<span style="font-size: 12px; font-weight: 800; color: #2ecc71;">+<?php echo intval($top->movement_value); ?></span>
+								<?php endif; ?>
 							</div>
 							<h2 style="font-size: 48px; font-weight: 950; margin: 0; line-height: 1;"><?php echo esc_html($top->track_name); ?></h2>
 							<h3 style="font-size: 24px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px;"><?php echo esc_html($top->artist_names); ?></h3>
 							
 							<div style="display: flex; align-items: center; gap: 32px; margin-top: 32px; font-size: 11px; font-weight: 800; color: var(--k-text-dim);">
-								<span>▶ 220,0M Total Streams</span>
-								<span>Peak #1</span>
-								<span>8 wks on chart</span>
-								<span>3:42</span>
+								<?php if ( ! empty($top->views_count) ) : ?>
+									<span>▶ <?php echo number_format($top->views_count / 1000000, 1); ?>M Views</span>
+								<?php elseif ( ! empty($top->streams_count) ) : ?>
+									<span>▶ <?php echo number_format($top->streams_count / 1000000, 1); ?>M Streams</span>
+								<?php endif; ?>
+								<span>Peak #<?php echo intval($top->peak_rank ?: 1); ?></span>
+								<span><?php echo intval($top->weeks_on_chart ?: 1); ?> wks on chart</span>
 							</div>
 						</div>
 						<div style="width: 80px; height: 80px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
@@ -117,7 +126,7 @@ if ( $definition ) {
 			<section class="kc-section" style="padding-top: 0; padding-bottom: 120px;">
 				<div class="kc-section-header" style="justify-content: flex-start; gap: 12px;">
 					<h2 class="kc-section-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted);">Full Rankings</h2>
-					<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo date('M j, Y'); ?></span>
+					<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo $period ? date('M j, Y', strtotime($period->period_start)) : date('M j, Y'); ?></span>
 				</div>
 
 				<table class="kc-rankings-table">
@@ -170,31 +179,46 @@ if ( $definition ) {
 							<tr class="kc-details-row">
 								<td colspan="7" style="padding: 0;">
 									<div class="kc-details-inner">
-										<div class="kc-details-grid">
+										<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 											<div class="kc-details-item">
-												<label>Release Date</label>
-												<span><?php echo !empty($e->release_date) ? date('M j, Y', strtotime($e->release_date)) : '—'; ?></span>
+												<label>Current Rank</label>
+												<span>#<?php echo $e->rank_position; ?></span>
 											</div>
+											<?php if ( ! empty($e->peak_rank) ) : ?>
 											<div class="kc-details-item">
 												<label>Peak Position</label>
-												<span>#<?php echo $e->peak_rank ?: $e->rank_position; ?></span>
+												<span>#<?php echo intval($e->peak_rank); ?></span>
 											</div>
+											<?php endif; ?>
+											<?php if ( ! empty($e->previous_rank) ) : ?>
 											<div class="kc-details-item">
-												<label>Source / Primary Label</label>
-												<span><?php echo esc_html($e->label_names ?: 'Distribution Network'); ?></span>
+												<label>Previous Week</label>
+												<span>#<?php echo intval($e->previous_rank); ?></span>
 											</div>
-											<div class="kc-details-item" style="text-align: right;">
-												<a href="<?php echo home_url('/charts/track/'.$e->item_slug.'/'); ?>" class="kc-view-all" style="font-size: 12px;">Full Breakdown &rarr;</a>
-											</div>
-										</div>
-										<div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--k-border); display: flex; gap: 40px;">
+											<?php endif; ?>
 											<div class="kc-details-item">
-												<label>Writer / Composers</label>
-												<span><?php echo esc_html($e->composer_names ?: 'Credits Protected'); ?></span>
+												<label>Weeks on Chart</label>
+												<span><?php echo intval($e->weeks_on_chart ?: 1); ?></span>
 											</div>
+											<?php if ( ! empty($e->views_count) ) : ?>
 											<div class="kc-details-item">
-												<label>Total Market Reach</label>
-												<span>Regional Index Tracking Active</span>
+												<label>Total Views</label>
+												<span><?php echo number_format($e->views_count); ?></span>
+											</div>
+											<?php elseif ( ! empty($e->streams_count) ) : ?>
+											<div class="kc-details-item">
+												<label>Total Streams</label>
+												<span><?php echo number_format($e->streams_count); ?></span>
+											</div>
+											<?php endif; ?>
+											<?php if ( ! empty($e->release_date) ) : ?>
+											<div class="kc-details-item">
+												<label>Release Date</label>
+												<span><?php echo date('M j, Y', strtotime($e->release_date)); ?></span>
+											</div>
+											<?php endif; ?>
+											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 2 : 3; ?>;">
+												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;">Full Breakdown &rarr;</a>
 											</div>
 										</div>
 									</div>
