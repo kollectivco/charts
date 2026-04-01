@@ -20,9 +20,8 @@ $show_nav = get_option( 'charts_show_nav', 1 );
     <div class="bento-card span-2 row-2">
         <h3 style="margin:0 0 32px; font-size:18px; font-weight:900;">Intelligence Connectors</h3>
         
-        <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+        <form method="post" action="">
             <?php wp_nonce_field( 'charts_admin_action' ); ?>
-            <input type="hidden" name="action" value="charts_action">
             <input type="hidden" name="charts_action" value="save_settings">
 
             <div style="margin-bottom:32px;">

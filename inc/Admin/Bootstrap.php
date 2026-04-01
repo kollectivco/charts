@@ -13,7 +13,7 @@ class Bootstrap {
 	public static function init() {
 		add_action( 'admin_menu', array( self::class, 'register_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue_assets' ) );
-		add_action( 'admin_init', array( self::class, 'process_admin_actions' ) );
+		add_action( 'init', array( self::class, 'process_admin_actions' ) );
 		
 		// One-Time Migrations & Cleanup
 		self::run_one_time_migrations();
@@ -40,19 +40,27 @@ class Bootstrap {
 
 	/**
 	 * Process POST actions for settings and imports.
+	 * Works for both wp-admin and the external dashboard.
 	 */
 	public static function process_admin_actions() {
-		if ( ! is_admin() || ! isset( $_POST['charts_action'] ) ) {
+		if ( ! isset( $_POST['charts_action'] ) ) {
 			return;
 		}
 
+		// Ensure user has capability
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		check_admin_referer( 'charts_admin_action' );
+		// Nonce check
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'charts_admin_action' ) ) {
+			return;
+		}
 
-		switch ( $_POST['charts_action'] ) {
+		$action = $_POST['charts_action'];
+		$processed = false;
+
+		switch ( $action ) {
 			case 'save_settings':
 				update_option( 'charts_spotify_client_id', sanitize_text_field( $_POST['spotify_client_id'] ) );
 				update_option( 'charts_spotify_client_secret', sanitize_text_field( $_POST['spotify_client_secret'] ) );
@@ -74,10 +82,7 @@ class Bootstrap {
 				update_option( 'charts_footer_copyright', sanitize_text_field( $_POST['footer_copyright'] ?? '' ) );
 
 				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
-				
-				// Redirect to prevent form resubmission and ensure clean state
-				wp_redirect( add_query_arg( array( 'settings-updated' => 'true' ), admin_url( 'admin.php?page=charts-settings' ) ) );
-				exit;
+				$processed = true;
 				break;
 
 			case 'save_source':
@@ -88,6 +93,7 @@ class Bootstrap {
 				} else {
 					add_settings_error( 'charts', 'source_error', __( 'Failed to save source.', 'charts' ), 'error' );
 				}
+				$processed = true;
 				break;
 
 			case 'delete_source':
@@ -95,18 +101,22 @@ class Bootstrap {
 				$id = intval( $_POST['id'] );
 				$manager->delete_source( $id );
 				add_settings_error( 'charts', 'source_deleted', __( 'Source deleted.', 'charts' ), 'success' );
+				$processed = true;
 				break;
 
 			case 'import_spotify_csv':
 				self::process_spotify_csv_upload();
+				$processed = true;
 				break;
 
 			case 'import_youtube_csv':
 				self::process_youtube_csv_upload();
+				$processed = true;
 				break;
 			
 			case 'unified_import':
 				self::process_unified_import();
+				$processed = true;
 				break;
 			
 			case 'save_definition':
@@ -117,6 +127,7 @@ class Bootstrap {
 				} else {
 					add_settings_error( 'charts', 'def_error', __( 'Failed to save chart definition.', 'charts' ), 'error' );
 				}
+				$processed = true;
 				break;
 			
 			case 'delete_definition':
@@ -124,6 +135,7 @@ class Bootstrap {
 				$id = intval( $_POST['id'] );
 				$manager->delete_definition( $id );
 				add_settings_error( 'charts', 'def_deleted', __( 'Chart definition deleted.', 'charts' ), 'success' );
+				$processed = true;
 				break;
 
 			case 'delete_entity':
@@ -132,30 +144,30 @@ class Bootstrap {
 				$type  = sanitize_text_field( $_POST['type'] );
 				self::delete_single_entity( $id, $type );
 				add_settings_error( 'charts', 'entity_deleted', __( 'Entity deleted and relationships unlinked.', 'charts' ), 'success' );
+				$processed = true;
 				break;
 
 			case 'bulk_action':
 				global $wpdb;
-				$action = sanitize_text_field( $_POST['bulk_action_type'] );
+				$action_type = sanitize_text_field( $_POST['bulk_action_type'] );
 				$ids    = isset( $_POST['item_ids'] ) ? array_map( 'intval', $_POST['item_ids'] ) : array();
 				$type   = sanitize_text_field( $_POST['entity_type'] );
 
 				if ( empty( $ids ) ) {
 					add_settings_error( 'charts', 'no_ids', __( 'No items selected.', 'charts' ), 'error' );
-					break;
-				}
-
-				if ( $action === 'delete' ) {
+				} else if ( $action_type === 'delete' ) {
 					foreach ( $ids as $id ) {
 						self::delete_single_entity( $id, $type );
 					}
 					add_settings_error( 'charts', 'bulk_deleted', sprintf( __( '%d entities deleted successfully.', 'charts' ), count( $ids ) ), 'success' );
 				}
+				$processed = true;
 				break;
 
 			case 'run_integrity_check':
 				\Charts\Core\Integrity::recalculate_entity_links();
 				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
+				$processed = true;
 				break;
 
 			case 'test_spotify_api':
@@ -168,6 +180,7 @@ class Bootstrap {
 				} else {
 					add_settings_error( 'charts', 'spotify_test_success', __( 'Spotify API Connection Successful! Token generated and metadata retrieved.', 'charts' ), 'success' );
 				}
+				$processed = true;
 				break;
 
 			case 'test_youtube_api':
@@ -180,8 +193,32 @@ class Bootstrap {
 				} else {
 					add_settings_error( 'charts', 'youtube_test_success', __( 'YouTube API Connection Successful! Metadata retrieved from video jNQXAC9IVRw.', 'charts' ), 'success' );
 				}
+				$processed = true;
 				break;
 		}
+
+		if ( $processed ) {
+			// Get current referer to avoid hardcoded admin redirects
+			$referer = wp_get_referer();
+			if ( ! $referer ) {
+				$referer = self::get_charts_admin_url(); // Fallback if no referer
+			}
+			
+			// If we just saved settings, add a query arg for feedback
+			if ( $action === 'save_settings' ) {
+				$referer = add_query_arg( 'settings-updated', '1', $referer );
+			}
+
+			wp_safe_redirect( $referer );
+			exit;
+		}
+	}
+
+	/**
+	 * Helper to get the base charts admin URL.
+	 */
+	private static function get_charts_admin_url() {
+		return admin_url( 'admin.php?page=charts-dashboard' );
 	}
 
 	/**
@@ -207,6 +244,7 @@ class Bootstrap {
 
 	/**
 	 * Register the main admin menu and submenus.
+	 * Ensures the admin menu remains internal to wp-admin.
 	 */
 	public static function register_menu() {
 		$icon = 'dashicons-chart-bar';
@@ -215,14 +253,23 @@ class Bootstrap {
 			__( 'Charts', 'charts' ),
 			__( 'Charts', 'charts' ),
 			'manage_options',
-			home_url( '/charts-dashboard' ),
-			'',
+			'charts-dashboard',
+			array( self::class, 'render_dashboard' ),
 			$icon,
 			3
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
+			__( 'Overview', 'charts' ),
+			__( 'Overview', 'charts' ),
+			'manage_options',
+			'charts-dashboard',
+			array( self::class, 'render_dashboard' )
+		);
+
+		add_submenu_page(
+			'charts-dashboard',
 			__( 'Manage Charts', 'charts' ),
 			__( 'Manage Charts', 'charts' ),
 			'manage_options',
@@ -231,16 +278,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
-			__( 'Overview', 'charts' ),
-			__( 'Overview', 'charts' ),
-			'manage_options',
-			'charts',
-			array( self::class, 'render_dashboard' )
-		);
-
-		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Sources', 'charts' ),
 			__( 'Sources', 'charts' ),
 			'manage_options',
@@ -249,7 +287,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Import Center', 'charts' ),
 			__( 'Import Center', 'charts' ),
 			'manage_options',
@@ -258,7 +296,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Import Runs', 'charts' ),
 			__( 'Import Runs', 'charts' ),
 			'manage_options',
@@ -267,7 +305,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Matching Center', 'charts' ),
 			__( 'Matching Center', 'charts' ),
 			'manage_options',
@@ -276,7 +314,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Artists', 'charts' ),
 			__( 'Artists', 'charts' ),
 			'manage_options',
@@ -285,7 +323,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Tracks', 'charts' ),
 			__( 'Tracks', 'charts' ),
 			'manage_options',
@@ -294,7 +332,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Clips', 'charts' ),
 			__( 'Clips', 'charts' ),
 			'manage_options',
@@ -303,7 +341,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Metadata Center', 'charts' ),
 			__( 'Advanced Entities', 'charts' ),
 			'manage_options',
@@ -312,7 +350,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Intelligence', 'charts' ),
 			__( 'Intelligence', 'charts' ),
 			'manage_options',
@@ -321,7 +359,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Insights', 'charts' ),
 			__( 'Insights', 'charts' ),
 			'manage_options',
@@ -330,7 +368,7 @@ class Bootstrap {
 		);
 
 		add_submenu_page(
-			'charts',
+			'charts-dashboard',
 			__( 'Settings', 'charts' ),
 			__( 'Settings', 'charts' ),
 			'manage_options',
@@ -584,7 +622,7 @@ class Bootstrap {
 	 * AJAX logic to run an import.
 	 */
 	public static function handle_run_import() {
-		check_ajax_referer( 'charts_admin', 'nonce' );
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'charts' ) ) );
@@ -617,7 +655,7 @@ class Bootstrap {
 	}
 
 	public static function handle_recalculate_intel() {
-		check_ajax_referer( 'charts_intel', 'nonce' );
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'charts' ) ) );

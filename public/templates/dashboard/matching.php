@@ -31,7 +31,11 @@ $stats = array(
         <label class="kpi-title">Intelligence Worker</label>
         <div style="margin-top:20px;">
             <p style="font-size:12px; color:var(--db-text-dim); margin-bottom:16px;">The worker automatically reconciles entities based on canonical metadata.</p>
-            <button class="db-btn db-btn-primary" style="width:100%;" onclick="alert('Running Auto-Match Intelligence...'); location.reload();">Run Auto-Matcher</button>
+            <form method="post" action="">
+                <?php wp_nonce_field( 'charts_admin_action' ); ?>
+                <input type="hidden" name="charts_action" value="run_integrity_check">
+                <button type="submit" class="db-btn db-btn-primary" style="width:100%;">Run Auto-Matcher</button>
+            </form>
         </div>
     </div>
 
@@ -76,7 +80,11 @@ $stats = array(
                                 <td style="font-weight:900; color:var(--db-secondary);">#<?php echo $e->rank_position; ?></td>
                                 <td><span class="status-pill status-pending" style="background:rgba(231, 76, 60, 0.1); color:#e74c3c;">Low Match</span></td>
                                 <td style="text-align:right;">
-                                    <a href="<?php echo admin_url('admin.php?page=charts-matching&id=' . $e->id); ?>" class="db-btn" style="padding:6px 12px; font-size:11px;">Manual Resolve</a>
+                                    <?php 
+                                    $search_label = $e->track_name ?: $e->artist_names;
+                                    $search_type = $e->item_type === 'artist' ? 'artist' : 'track';
+                                    ?>
+                                    <a href="<?php echo esc_url(\Charts\Core\Router::get_dashboard_url('entities', array('s' => urlencode($search_label), 'charts_type' => $search_type))); ?>" class="db-btn" style="padding:6px 12px; font-size:11px;">Manual Resolve</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

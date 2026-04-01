@@ -21,6 +21,17 @@ $current_module = get_query_var( 'charts_module', 'overview' );
 	<link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/dashboard.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
 	<link rel="stylesheet" href="<?php echo CHARTS_URL . 'admin/assets/css/admin.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
 	<link rel="stylesheet" href="<?php echo includes_url( 'css/dashicons.min.css' ); ?>">
+	
+	<!-- Systems -->
+	<script src="<?php echo includes_url( 'js/jquery/jquery.min.js' ); ?>"></script>
+	<script src="<?php echo CHARTS_URL . 'admin/assets/js/admin.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
+	<script>
+		window.ajaxurl = "<?php echo admin_url( 'admin-ajax.php' ); ?>";
+		window.charts_admin = {
+			ajax_url: "<?php echo admin_url( 'admin-ajax.php' ); ?>",
+			nonce: "<?php echo wp_create_nonce( 'charts_admin_action' ); ?>"
+		};
+	</script>
 	<?php wp_head(); ?>
 </head>
 <body <?php body_class( 'kc-db-root' ); ?>>

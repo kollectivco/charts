@@ -72,7 +72,7 @@ $stats = array(
                             <tr>
                                 <td style="font-weight:700;"><?php echo esc_html($run->source_name); ?></td>
                                 <td><span class="status-pill <?php echo $run->status === 'completed' ? 'status-active' : 'status-pending'; ?>"><?php echo esc_html($run->status); ?></span></td>
-                                <td style="font-weight:700;"><?php echo number_format($run->processed); ?></td>
+                                <td style="font-weight:700;"><?php echo (int)($run->parsed_rows ?: $run->created_items); ?></td>
                                 <td style="color:var(--db-text-muted);"><?php echo date('M j, Y H:i', strtotime($run->started_at)); ?></td>
                             </tr>
                         <?php endforeach; ?>

@@ -49,46 +49,45 @@ switch ( $module ) {
 	</div>
 </div>
 
+<div class="kc-db-notifications">
+	<?php settings_errors( 'charts' ); ?>
+</div>
+
 <div class="kc-db-content">
 	<?php
-	// Map some admin view filenames to modules if they differ
-	$view_map = array(
-		'import'       => 'import-center.php',
-		'overview'     => 'dashboard.php',
-		'charts'       => 'definitions.php',
-		'intelligence' => 'intelligence.php',
-		'insights'     => 'insights.php',
-	);
-
-	$target_view = $view_map[$module] ?? "{$module}.php";
-	$external_view = CHARTS_PATH . "public/templates/dashboard/{$target_view}";
-	$admin_view    = CHARTS_PATH . "admin/views/{$target_view}";
+	// Load the specific module view from public/templates/dashboard/
+	// We no longer fall back to admin views to maintain strict UI separation.
+	$external_view = CHARTS_PATH . "public/templates/dashboard/{$module}.php";
 
 	if ( file_exists( $external_view ) ) {
 		// Module data prep
 		global $wpdb;
-		include $external_view;
-	} elseif ( file_exists( $admin_view ) ) {
-		// Prepare data for admin views that expect specific variables
-		global $wpdb;
+		
+		// Map specific data for known modules if not already handled in the view
 		if ( $module === 'overview' ) {
 			$stats = array(
 				'charts_total'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions" ),
 				'charts_published' => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1" ),
-				'charts_draft'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions WHERE is_public = 0" ),
 				'tracks'           => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_tracks" ),
 				'artists'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_artists" ),
-				'albums'           => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_albums" ),
-				'sources_active'   => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_sources WHERE is_active = 1" ),
 				'pending'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries WHERE item_id = 0" ),
-				'imports'          => $wpdb->get_results( "SELECT i.*, s.source_name FROM {$wpdb->prefix}charts_import_runs i JOIN {$wpdb->prefix}charts_sources s ON s.id = i.source_id ORDER BY i.started_at DESC LIMIT 5" ),
+				'imports'          => $wpdb->get_results( "SELECT i.*, s.source_name FROM {$wpdb->prefix}charts_import_runs i JOIN {$wpdb->prefix}charts_sources s ON s.id = i.source_id ORDER BY i.started_at DESC LIMIT 6" ),
 			);
 			extract( $stats );
 		}
 		
-		include $admin_view;
+		include $external_view;
 	} else {
-		echo '<div class="bento-card"><h3>Module Not Found</h3><p>The requested module "' . esc_html($module) . '" (' . esc_html($target_view) . ') is under development or does not exist.</p></div>';
+		echo '<div class="bento-card">
+				<div style="text-align:center; padding:60px;">
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.2; margin-bottom:20px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+					<h3 style="font-size:20px; font-weight:900; margin-bottom:12px;">Module Under Development</h3>
+					<p style="color:var(--db-text-muted);">The requested module "'.esc_html($module).'" is not yet available in the external dashboard.</p>
+					<div style="margin-top:32px;">
+						<a href="' . admin_url('admin.php?page=charts-' . $module) . '" class="db-btn db-btn-primary">View in WP-Admin</a>
+					</div>
+				</div>
+			  </div>';
 	}
 	?>
 </div>
