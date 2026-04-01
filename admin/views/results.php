@@ -73,7 +73,10 @@ $runs = $wpdb->get_results( "
 								</td>
 								<td>
 									<div style="font-weight: 700; color: var(--charts-primary);"><?php echo number_format( $run->parsed_rows ?? 0 ); ?> <?php _e( 'rows', 'charts' ); ?></div>
-									<div style="font-size:10px; color:var(--charts-text-dim);"><?php echo number_format( $run->matched_items ?? 0 ); ?> <?php _e( 'entities matched', 'charts' ); ?></div>
+									<div style="font-size:10px; color:var(--charts-text-dim);">
+										<?php echo number_format( $run->matched_items ?? 0 ); ?> <?php _e( 'matched', 'charts' ); ?> · 
+										<?php echo number_format( $run->created_items ?? 0 ); ?> <?php _e( 'created', 'charts' ); ?>
+									</div>
 								</td>
 								<td>
 									<div style="color: var(--charts-text-dim); font-size:12px; font-weight:600;">

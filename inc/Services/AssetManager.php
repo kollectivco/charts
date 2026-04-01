@@ -25,6 +25,9 @@ class AssetManager {
 			'videos'  => $this->backfill_videos(),
 		);
 
+		// Clear caches so latest artwork appears immediately
+		\Charts\Admin\Bootstrap::clear_frontend_caches();
+
 		return $results;
 	}
 
@@ -70,23 +73,24 @@ class AssetManager {
 	}
 
 	/**
-	 * Repair missing artist images using Spotify API.
+	 * Repair missing artist images and metadata using Spotify API.
 	 */
 	public function backfill_artists() {
 		global $wpdb;
 		$table = $wpdb->prefix . 'charts_artists';
 
-		// Find artists missing images that have a Spotify ID
-		$artists = $wpdb->get_results( "SELECT id, spotify_id FROM $table WHERE (image IS NULL OR image = '') AND spotify_id IS NOT NULL AND spotify_id != '' LIMIT 500" );
+		// Find artists missing images OR missing genres/followers that have a Spotify ID
+		// We use a loose check on metadata_json to allow refreshing old records
+		$artists = $wpdb->get_results( "SELECT id, spotify_id, metadata_json FROM $table WHERE spotify_id IS NOT NULL AND spotify_id != '' LIMIT 100" );
 
 		if ( empty( $artists ) ) {
 			return array( 'processed' => 0, 'updated' => 0 );
 		}
 
 		$ids = array_map( function($a) { return $a->spotify_id; }, $artists );
-		$id_to_record_id = array();
+		$id_to_record = array();
 		foreach ( $artists as $a ) {
-			$id_to_record_id[$a->spotify_id] = $a->id;
+			$id_to_record[$a->spotify_id] = $a;
 		}
 
 		$batches = array_chunk( $ids, 50 );
@@ -98,12 +102,30 @@ class AssetManager {
 
 			foreach ( $metadata as $item ) {
 				$sp_id = $item['id'] ?? null;
-				$image = $item['images'][0]['url'] ?? null;
+				if ( ! $sp_id || ! isset( $id_to_record[$sp_id] ) ) continue;
 
-				if ( $sp_id && $image && isset( $id_to_record_id[$sp_id] ) ) {
-					$wpdb->update( $table, array( 'image' => $image ), array( 'id' => $id_to_record_id[$sp_id] ) );
-					$updated++;
+				$record = $id_to_record[$sp_id];
+				$image  = $item['images'][0]['url'] ?? null;
+				
+				// Prepare enriched metadata
+				$meta = ! empty( $record->metadata_json ) ? json_decode( $record->metadata_json, true ) : array();
+				$meta['genres']       = $item['genres'] ?? array();
+				$meta['followers']    = $item['followers']['total'] ?? 0;
+				$meta['popularity']   = $item['popularity'] ?? 0;
+				$meta['external_url'] = $item['external_urls']['spotify'] ?? null;
+				$meta['last_sync']    = current_time( 'mysql' );
+
+				$update_data = array(
+					'metadata_json' => json_encode( $meta ),
+					'updated_at'    => current_time( 'mysql' )
+				);
+
+				if ( $image ) {
+					$update_data['image'] = $image;
 				}
+
+				$wpdb->update( $table, $update_data, array( 'id' => $record->id ) );
+				$updated++;
 			}
 		}
 

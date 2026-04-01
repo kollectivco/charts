@@ -16,14 +16,30 @@ if ( ! $artist ) {
 	return;
 }
 
-// Data fetching
-$entries_table = $wpdb->prefix . 'charts_entries';
-$sources_table = $wpdb->prefix . 'charts_sources';
+// Metadata decoding
+$metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+
+// Trigger background sync if data is missing or stale (once per hour max)
+if ( ! empty( $artist->spotify_id ) ) {
+	$last_sync = $metadata['last_sync'] ?? '1970-01-01 00:00:00';
+	if ( empty( $metadata['followers'] ) && ( time() - strtotime( $last_sync ) > HOUR_IN_SECONDS ) ) {
+		// Attempt sync in current request (low overhead for single artist)
+		( new \Charts\Services\SpotifyEnrichmentService() )->enrich_artist( $artist->id );
+		// Refresh object
+		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist->id ) );
+		$metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+	}
+}
+
+$genres     = $metadata['genres'] ?? array();
+$followers  = $metadata['followers'] ?? 0;
+$popularity = $metadata['popularity'] ?? 0;
+$sp_url     = $metadata['external_url'] ?? '';
 
 // Charting tracks
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, MAX(p.period_start) as latest_period
-	FROM $entries_table e
+	FROM {$wpdb->prefix}charts_entries e
 	JOIN {$wpdb->prefix}charts_periods p ON p.id = e.period_id
 	WHERE e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
 	GROUP BY e.item_id
@@ -32,7 +48,7 @@ $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 
 // Popular tracks (Simulation based on highest rank)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.* FROM $entries_table e
+	SELECT e.* FROM {$wpdb->prefix}charts_entries e
 	WHERE e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
 	ORDER BY e.rank_position ASC LIMIT 2
 ", $artist->id ) );
@@ -40,8 +56,8 @@ $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 // Chart Rankings
 $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, d.title as definition_title 
-	FROM $entries_table e
-	JOIN $sources_table s ON s.id = e.source_id
+	FROM {$wpdb->prefix}charts_entries e
+	JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
 	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
 	WHERE (e.item_id = %d AND e.item_type = 'artist')
 	ORDER BY e.rank_position ASC LIMIT 2
@@ -54,49 +70,82 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 	<div class="kc-container">
 		
 		<!-- ARTIST HEADER -->
-		<header class="kc-profile-header" style="margin-top: 60px;">
-			<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-profile-avatar">
+		<header class="kc-profile-header" style="margin-top: 60px; display: flex; align-items: center; gap: 40px;">
+			<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-profile-avatar" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; box-shadow: var(--k-shadow-lg);">
 			<div class="kc-profile-info">
-				<div class="kc-eyebrow">Artist</div>
-				<h1 class="kc-page-title"><?php echo esc_html($artist->display_name); ?></h1>
+				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">Artist</span>
+					<?php if ( $popularity > 0 ) : ?>
+						<span style="font-size: 10px; font-weight: 800; color: #1DB954; display: flex; align-items: center; gap: 4px;">
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.491 17.293a.75.75 0 01-1.03.249c-2.859-1.747-6.458-2.141-10.701-1.17a.75.75 0 11-.336-1.462c4.639-1.06 8.604-.614 11.819 1.353a.75.75 0 01.248 1.03zm1.465-3.264a.938.938 0 01-1.287.308c-3.27-2.009-8.254-2.593-12.122-1.418a.937.937 0 11-.548-1.792c4.417-1.34 9.907-.69 13.649 1.61a.938.938 0 01.308 1.292zm.125-3.41c-3.921-2.328-10.377-2.541-14.127-1.402a1.125 1.125 0 01-.655-2.155c4.298-1.305 11.428-1.05 15.891 1.603a1.125 1.125 0 11-1.109 1.954z"/></svg>
+							<?php echo $popularity; ?> Popularity
+						</span>
+					<?php endif; ?>
+				</div>
+				<h1 class="kc-page-title" style="margin: 0; line-height: 1;"><?php echo esc_html($artist->display_name); ?></h1>
 				<?php if ( ! empty($artist->display_name_franko) ) : ?>
-					<div style="font-size: 18px; font-weight: 700; color: var(--k-text-muted); margin-top: 4px; opacity: 0.5;"><?php echo esc_html($artist->display_name_franko); ?></div>
+					<div style="font-size: 20px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; opacity: 0.4;"><?php echo esc_html($artist->display_name_franko); ?></div>
+				<?php endif; ?>
+
+				<?php if ( ! empty($genres) ) : ?>
+					<div style="display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;">
+						<?php foreach ( array_slice($genres, 0, 3) as $genre ) : ?>
+							<span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: capitalize;"><?php echo esc_html($genre); ?></span>
+						<?php endforeach; ?>
+					</div>
 				<?php endif; ?>
 			</div>
 		</header>
 
-		<div class="kc-breadcrumb" style="margin-top: -20px;">
+		<div class="kc-breadcrumb" style="margin-top: 20px;">
 			<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="<?php echo home_url('/charts'); ?>">Top Artists</a> <span>/</span> <?php echo esc_html($artist->display_name); ?>
 		</div>
 
-		<!-- STATS STRIP (Only if available in DB) -->
-		<?php 
-		$stats_obj = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'artist' AND entity_id = %d", $artist->id ) );
-		if ( $stats_obj && ( ! empty($stats_obj->weeks_on_chart) || ! empty($stats_obj->total_streams) ) ) : 
-		?>
-		<div class="kc-stats-grid" style="margin-top: 40px;">
-			<?php if ( ! empty($stats_obj->weeks_on_chart) ) : ?>
+		<!-- ENRICHED STATS -->
+		<div class="kc-stats-grid" style="margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 40px;">
+			<?php if ( $followers > 0 ) : ?>
 			<div class="kc-stat-pill">
-				<label>Weeks on Chart</label>
+				<label>Global Followers</label>
 				<div style="display: flex; align-items: baseline; gap: 4px;">
-					<span class="val"><?php echo intval($stats_obj->weeks_on_chart); ?></span>
+					<span class="val"><?php echo number_format($followers / 1000, 1); ?>K</span>
 				</div>
 			</div>
 			<?php endif; ?>
-			<?php if ( ! empty($stats_obj->total_streams) ) : ?>
-			<div class="kc-stat-pill">
-				<label>Total Views</label>
-				<div style="display: flex; align-items: baseline; gap: 4px;">
-					<span class="val"><?php echo number_format($stats_obj->total_streams / 1000000, 1); ?>M</span>
+			
+			<?php 
+			$intel = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'artist' AND entity_id = %d", $artist->id ) );
+			if ( $intel ) : 
+			?>
+				<?php if ( ! empty($intel->weeks_on_chart) ) : ?>
+				<div class="kc-stat-pill">
+					<label>Weeks Local Chart</label>
+					<div style="display: flex; align-items: baseline; gap: 4px;">
+						<span class="val"><?php echo intval($intel->weeks_on_chart); ?></span>
+					</div>
 				</div>
-			</div>
+				<?php endif; ?>
+				<?php if ( ! empty($intel->total_streams) ) : ?>
+				<div class="kc-stat-pill">
+					<label>Local Reach</label>
+					<div style="display: flex; align-items: baseline; gap: 4px;">
+						<span class="val"><?php echo number_format($intel->total_streams / 1000000, 1); ?>M</span>
+					</div>
+				</div>
+				<?php endif; ?>
+			<?php endif; ?>
+
+			<?php if ( $sp_url ) : ?>
+			<a href="<?php echo esc_url($sp_url); ?>" target="_blank" class="kc-stat-pill" style="text-decoration: none; border-color: #1DB954; background: rgba(29, 185, 84, 0.05);">
+				<label style="color: #169c46;">Spotify Profile</label>
+				<div style="display: flex; align-items: center; gap: 8px; color: #169c46; font-weight: 800; font-size: 14px; margin-top: 4px;">
+					Open on App ↗
+				</div>
+			</a>
 			<?php endif; ?>
 		</div>
-		<?php endif; ?>
 
 		<!-- ABOUT (Conditional) -->
 		<?php 
-		$metadata = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : array();
 		$bio = $metadata['bio'] ?? $metadata['description'] ?? '';
 		if ( ! empty($bio) ) : 
 		?>
@@ -235,12 +284,21 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 				<?php 
 				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions LIMIT 3" );
 				foreach ( $mdefs as $mdef ) : 
-					$mentries = $wpdb->get_results( $wpdb->prepare( "SELECT e.* FROM {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id WHERE s.chart_type = %s AND s.country_code = %s ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3", $mdef->chart_type, $mdef->country_code ) );
+					$mentries = $wpdb->get_results( $wpdb->prepare( "
+						SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
+						FROM {$wpdb->prefix}charts_entries e 
+						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id 
+						LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+						LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+						LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
+						WHERE s.chart_type = %s AND s.country_code = %s 
+						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3"
+					, $mdef->chart_type, $mdef->country_code ) );
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $mdef->accent_color ?: '#fe025b'; ?>;"></div>
 						<div class="kc-card-header">
-							<img src="<?php echo esc_url($mentries[0]->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+							<img src="<?php echo esc_url($mentries[0]->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">Weekly Chart</span>
 							<h3 class="kc-card-title"><?php echo esc_html($mdef->title); ?></h3>
@@ -249,7 +307,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 							<?php foreach ( $mentries as $me ) : ?>
 								<div class="kc-card-entry">
 									<span class="kc-entry-rank"><?php echo $me->rank_position; ?></span>
-									<img class="kc-entry-art" src="<?php echo esc_url($me->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+									<img class="kc-entry-art" src="<?php echo esc_url($me->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 									<div class="kc-entry-info">
 										<span class="kc-entry-name"><?php echo esc_html($me->track_name); ?></span>
 										<span class="kc-entry-artist"><?php echo esc_html($me->artist_names); ?></span>

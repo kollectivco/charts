@@ -289,18 +289,29 @@ class YouTubeCsvParser {
 	 * Extracts YouTube ID from various string formats (URLs, short URLs, or raw IDs).
 	 */
 	private function extract_youtube_id( $string ) {
-		$string = trim( $string );
+		$string = trim( (string) $string );
 		if ( empty( $string ) ) return null;
 
 		// 1. Check if it's already a raw ID (11 chars, alphanumeric + _ -)
+		// We allow some flexibility but must be exactly 11 characters
 		if ( preg_match( '/^[a-zA-Z0-9_-]{11}$/', $string ) ) {
 			return $string;
 		}
 
 		// 2. Extract from various URL formats
 		// watch?v=..., youtu.be/..., shorts/..., embed/..., v/..., etc.
-		if ( preg_match( '/(?:v=|\/shorts\/|\/embed\/|\/v\/|\.be\/)([a-zA-Z0-9_-]{11})/', $string, $m ) ) {
-			return $m[1];
+		// Added support for mobile, screen-reader, and parameter-heavy URLs
+		$patterns = array(
+			'/(?:v=|\/shorts\/|\/embed\/|\/v\/|\.be\/|vi\/|user\/\S+\/u\/\d+\/)([a-zA-Z0-9_-]{11})/',
+			'/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/',
+			'/youtube\.com\/v\/([a-zA-Z0-9_-]{11})/',
+			'/youtube-nocookie\.com\/embed\/([a-zA-Z0-9_-]{11})/'
+		);
+
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $string, $m ) ) {
+				return $m[1];
+			}
 		}
 
 		return null;

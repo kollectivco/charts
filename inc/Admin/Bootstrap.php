@@ -450,7 +450,7 @@ class Bootstrap {
 
 		wp_localize_script( 'charts-admin', 'charts_admin', array(
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
-			'nonce'    => wp_create_nonce( 'charts_admin' ),
+			'nonce'    => wp_create_nonce( 'charts_admin_action' ),
 		) );
 	}
 
@@ -607,9 +607,11 @@ class Bootstrap {
 				$chart_url = home_url( '/charts/' );
 				
 				$msg = sprintf(
-					__( 'YouTube import complete: <strong>%d entries saved</strong> from %d rows.', 'charts' ),
+					__( 'YouTube import complete: <strong>%d entries saved</strong> from %d rows. (%d matched, %d created).', 'charts' ),
 					$result['saved'],
-					$result['parsed']
+					$result['parsed'],
+					$result['matched'],
+					$result['created']
 				);
 
 				if ( ! empty( $result['extracted'] ) ) {
@@ -678,7 +680,9 @@ class Bootstrap {
 	 * AJAX logic to run an import.
 	 */
 	public static function handle_run_import() {
-		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed. Please refresh the page and try again.', 'charts' ) ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'charts' ) ) );
@@ -708,12 +712,15 @@ class Bootstrap {
 			) );
 
 		} catch ( \Exception $e ) {
+			error_log( 'Charts Import Error: ' . $e->getMessage() );
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
 
 	public static function handle_recalculate_intel() {
-		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed. Please refresh the page and try again.', 'charts' ) ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'charts' ) ) );
@@ -724,6 +731,7 @@ class Bootstrap {
 			self::clear_frontend_caches();
 			wp_send_json_success( array( 'message' => __( 'Intelligence recalculation successful.', 'charts' ) ) );
 		} catch ( \Exception $e ) {
+			error_log( 'Charts Recalculate Error: ' . $e->getMessage() );
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}

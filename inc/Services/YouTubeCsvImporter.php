@@ -80,6 +80,8 @@ class YouTubeCsvImporter {
 		}
 
 		$saved             = 0;
+		$created_entities  = 0;
+		$matched_entities  = 0;
 		$parse_errors      = 0;
 		$missing_titles    = 0;
 		$generated_thumbs  = 0;
@@ -108,11 +110,14 @@ class YouTubeCsvImporter {
 				$title = 'Unknown YouTube Item';
 			}
 
-			// Resolve item based on item_type override or chart_type mapping
+			// Resolve item based on chart_type mapping (Ignore item_type override if it's generic 'track' to avoid breaking artist/video charts)
 			$item_type = $meta['item_type'] ?? null;
-			if ( ! $item_type ) {
+			if ( ! $item_type || $item_type === 'track' ) {
 				$item_type = ( $chart_type === 'top-artists' ) ? 'artist' : ( ( $chart_type === 'top-videos' ) ? 'video' : 'track' );
 			}
+
+			$item_id = null;
+			$is_new  = false;
 
 			if ( $item_type === 'artist' ) {
 				// For top-artists, the item_title IS the artist name in many YouTube exports
@@ -120,6 +125,17 @@ class YouTubeCsvImporter {
 				$item_id     = $this->ensure_artist( $this->import_flow->normalize_title( $artist_name ), $row['image'] ?? null );
 			} elseif ( $item_type === 'video' ) {
 				$primary_artist_id = $this->ensure_artist( $primary_name );
+				
+				// Check for existing before calling ensure_video to track match vs create
+				$existing_id = null;
+				if ( ! empty( $row['youtube_id'] ) ) {
+					$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_videos WHERE youtube_id = %s", $row['youtube_id'] ) );
+				}
+				if ( ! $existing_id ) {
+					$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_videos WHERE normalized_title = %s AND primary_artist_id = %d", mb_strtolower($this->import_flow->normalize_title($title)), $primary_artist_id ) );
+					if ( ! $existing_id ) $is_new = true;
+				}
+
 				$item_id   = $this->ensure_video( 
 					$this->import_flow->normalize_title( $title ), 
 					$primary_artist_id, 
@@ -138,6 +154,16 @@ class YouTubeCsvImporter {
 				// default: tracks
 				$item_type = 'track';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
+
+				$existing_id = null;
+				if ( ! empty( $row['youtube_id'] ) ) {
+					$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_tracks WHERE youtube_id = %s", $row['youtube_id'] ) );
+				}
+				if ( ! $existing_id ) {
+					$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_tracks WHERE normalized_title = %s AND primary_artist_id = %d", mb_strtolower($this->import_flow->normalize_title($title)), $primary_artist_id ) );
+					if ( ! $existing_id ) $is_new = true;
+				}
+
 				$item_id   = $this->ensure_track( $this->import_flow->normalize_title( $title ), $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
 
 				// Link ALL artists
@@ -151,6 +177,12 @@ class YouTubeCsvImporter {
 			if ( ! $item_id ) {
 				$parse_errors++;
 				continue;
+			}
+
+			if ( $is_new ) {
+				$created_entities++;
+			} else {
+				$matched_entities++;
 			}
 
 			// Flat columns for direct frontend queries
@@ -192,7 +224,8 @@ class YouTubeCsvImporter {
 			'status'        => 'completed',
 			'parsed_rows'   => count( $rows ),
 			'enrichment_attempts' => count( $rows ),
-			'matched_items' => $saved,
+			'matched_items' => $matched_entities,
+			'created_items' => $created_entities,
 			'error_message' => $parse_errors > 0 ? sprintf( __( '%d errors, %d missing titles.', 'charts' ), $parse_errors, $missing_titles ) : ( $missing_titles > 0 ? sprintf( __( '%d missing titles.', 'charts' ), $missing_titles ) : null ),
 			'finished_at'   => current_time( 'mysql' ),
 		), array( 'id' => $run_id ) );
@@ -206,6 +239,8 @@ class YouTubeCsvImporter {
 		if ( $saved > 0 ) {
 			try {
 				( new \Charts\Services\Analyzer() )->analyze_period( $period_id, $source_id );
+				// Clear caches so latest artwork appears immediately
+				\Charts\Admin\Bootstrap::clear_frontend_caches();
 			} catch ( \Exception $e ) {
 				// non-fatal
 			}
@@ -213,6 +248,8 @@ class YouTubeCsvImporter {
 
 		return array(
 			'saved'          => $saved,
+			'matched'        => $matched_entities,
+			'created'        => $created_entities,
 			'parsed'         => count( $rows ),
 			'source_id'      => $source_id,
 			'period_id'      => $period_id,

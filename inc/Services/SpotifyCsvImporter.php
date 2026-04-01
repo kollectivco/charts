@@ -170,6 +170,8 @@ class SpotifyCsvImporter {
 		if ( $saved > 0 ) {
 			try {
 				( new Analyzer() )->analyze_period( $period_id, $source_id );
+				// Clear caches so latest artwork appears immediately
+				\Charts\Admin\Bootstrap::clear_frontend_caches();
 			} catch ( \Exception $e ) {
 				// non-fatal
 			}

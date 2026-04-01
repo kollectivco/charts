@@ -86,4 +86,36 @@ class SpotifyEnrichmentService {
 
 		return $track_info;
 	}
+
+	/**
+	 * Enrich a specific artist record with full profile data.
+	 */
+	public function enrich_artist( $artist_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_artists';
+		
+		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $artist_id ) );
+		if ( ! $artist || empty( $artist->spotify_id ) ) return false;
+
+		$data = $this->api->get_artist( $artist->spotify_id );
+		if ( is_wp_error( $data ) ) return $data;
+
+		$meta = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+		$meta['genres']       = $data['genres'] ?? array();
+		$meta['followers']    = $data['followers']['total'] ?? 0;
+		$meta['popularity']   = $data['popularity'] ?? 0;
+		$meta['external_url'] = $data['external_urls']['spotify'] ?? null;
+		$meta['last_sync']    = current_time( 'mysql' );
+
+		$update = array(
+			'metadata_json' => json_encode( $meta ),
+			'updated_at'    => current_time( 'mysql' )
+		);
+
+		if ( ! empty( $data['images'][0]['url'] ) ) {
+			$update['image'] = $data['images'][0]['url'];
+		}
+
+		return $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
+	}
 }

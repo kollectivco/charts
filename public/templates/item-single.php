@@ -214,12 +214,21 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 				<?php 
 				$other_defs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions LIMIT 3" );
 				foreach ( $other_defs as $odef ) : 
-					$oentries = $wpdb->get_results( $wpdb->prepare( "SELECT e.* FROM {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id WHERE s.chart_type = %s AND s.country_code = %s ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3", $odef->chart_type, $odef->country_code ) );
+					$oentries = $wpdb->get_results( $wpdb->prepare( "
+						SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
+						FROM {$wpdb->prefix}charts_entries e 
+						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id 
+						LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+						LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+						LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
+						WHERE s.chart_type = %s AND s.country_code = %s 
+						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3"
+					, $odef->chart_type, $odef->country_code ) );
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $odef->accent_color ?: '#fe025b'; ?>;"></div>
 						<div class="kc-card-header">
-							<img src="<?php echo esc_url($oentries[0]->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+							<img src="<?php echo esc_url($oentries[0]->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">Weekly Chart</span>
 							<h3 class="kc-card-title"><?php echo esc_html($odef->title); ?></h3>
@@ -228,7 +237,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 							<?php foreach ( $oentries as $oe ) : ?>
 								<div class="kc-card-entry">
 									<span class="kc-entry-rank"><?php echo $oe->rank_position; ?></span>
-									<img class="kc-entry-art" src="<?php echo esc_url($oe->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+									<img class="kc-entry-art" src="<?php echo esc_url($oe->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 									<div class="kc-entry-info">
 										<span class="kc-entry-name"><?php echo esc_html($oe->track_name); ?></span>
 										<span class="kc-entry-artist"><?php echo esc_html($oe->artist_names); ?></span>
