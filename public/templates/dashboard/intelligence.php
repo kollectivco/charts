@@ -15,37 +15,42 @@ $fastest_risers  = [];
 $hot_artists      = [];
 
 if ($has_data) {
-    $trending_tracks = $wpdb->get_results("
-        SELECT i.*, e.track_name, e.artist_names, e.cover_image, e.rank_position
-        FROM $intel_table i
-        JOIN $entries_table e ON e.id = (
-            SELECT MAX(id) FROM $entries_table 
-            WHERE item_id = i.entity_id AND item_type = i.entity_type
-        )
-        WHERE i.entity_type = 'track'
-        ORDER BY i.momentum_score DESC LIMIT 5
-    ");
+    try {
+        $trending_tracks = $wpdb->get_results($wpdb->prepare("
+            SELECT i.*, e.track_name, e.artist_names, e.cover_image, e.rank_position
+            FROM $intel_table i
+            JOIN $entries_table e ON e.id = (
+                SELECT MAX(id) FROM $entries_table 
+                WHERE item_id = i.entity_id AND item_type = i.entity_type
+            )
+            WHERE i.entity_type = %s
+            ORDER BY i.momentum_score DESC LIMIT 5
+        ", 'track'));
 
-    $fastest_risers = $wpdb->get_results("
-        SELECT i.*, e.track_name, e.artist_names, e.cover_image
-        FROM $intel_table i
-        JOIN $entries_table e ON e.id = (
-            SELECT MAX(id) FROM $entries_table 
-            WHERE item_id = i.entity_id AND item_type = i.entity_type
-        )
-        WHERE i.entity_type = 'track'
-        ORDER BY i.growth_rate DESC LIMIT 5
-    ");
+        $fastest_risers = $wpdb->get_results($wpdb->prepare("
+            SELECT i.*, e.track_name, e.artist_names, e.cover_image
+            FROM $intel_table i
+            JOIN $entries_table e ON e.id = (
+                SELECT MAX(id) FROM $entries_table 
+                WHERE item_id = i.entity_id AND item_type = i.entity_type
+            )
+            WHERE i.entity_type = %s
+            ORDER BY i.growth_rate DESC LIMIT 5
+        ", 'track'));
 
-    $hot_artists = $wpdb->get_results("
-        SELECT i.*, a.display_name, a.image, (
-            SELECT COUNT(DISTINCT track_name) FROM $entries_table WHERE artist_names LIKE CONCAT('%', a.display_name, '%')
-        ) as unique_entries
-        FROM $intel_table i
-        JOIN {$wpdb->prefix}charts_artists a ON a.id = i.entity_id
-        WHERE i.entity_type = 'artist'
-        ORDER BY i.momentum_score DESC LIMIT 5
-    ");
+        $hot_artists = $wpdb->get_results($wpdb->prepare("
+            SELECT i.*, a.display_name, a.image, (
+                SELECT COUNT(DISTINCT track_name) FROM $entries_table WHERE artist_names LIKE CONCAT('%%', a.display_name, '%%')
+            ) as unique_entries
+            FROM $intel_table i
+            JOIN {$wpdb->prefix}charts_artists a ON a.id = i.entity_id
+            WHERE i.entity_type = %s
+            ORDER BY i.momentum_score DESC LIMIT 5
+        ", 'artist'));
+    } catch (\Exception $e) {
+        $has_data = false;
+        error_log('Charts Intelligence Error: ' . $e->getMessage());
+    }
 }
 ?>
 

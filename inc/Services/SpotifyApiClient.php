@@ -86,6 +86,18 @@ class SpotifyApiClient {
 	}
 
 	/**
+	 * Fetch multiple artists in one request.
+	 */
+	public function get_artists( array $artist_ids ) {
+		if ( empty( $artist_ids ) ) {
+			return array();
+		}
+		$ids = implode( ',', $artist_ids );
+		$data = $this->request( "artists?ids={$ids}" );
+		return $data['artists'] ?? array();
+	}
+
+	/**
 	 * Private helper for API requests.
 	 */
 	private function request( $endpoint ) {

@@ -195,6 +195,21 @@ class Bootstrap {
 				}
 				$processed = true;
 				break;
+
+			case 'backfill_media':
+				$manager = new \Charts\Services\AssetManager();
+				$results = $manager->backfill_all();
+				
+				$summary = sprintf( 
+					__( 'Media backfill complete. Tracks: %d/%d updated. Artists: %d/%d updated. Videos: %d/%d updated.', 'charts' ),
+					$results['tracks']['updated'], $results['tracks']['processed'],
+					$results['artists']['updated'], $results['artists']['processed'],
+					$results['videos']['updated'], $results['videos']['processed']
+				);
+				
+				add_settings_error( 'charts', 'backfill_success', $summary, 'success' );
+				$processed = true;
+				break;
 		}
 
 		if ( $processed ) {

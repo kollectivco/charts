@@ -76,4 +76,20 @@ $show_nav = get_option( 'charts_show_nav', 1 );
         </div>
     </div>
 
+    <!-- 4. MAINTENANCE TOOLS (SPAN 2) -->
+    <div class="bento-card span-2" style="background:#0f172a; color:white; border:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 style="margin:0 0 8px; font-size:16px; font-weight:900;">Intelligence Recovery</h3>
+                <p style="margin:0; font-size:12px; opacity:0.7;">Repair records with missing media or empty cover metadata.</p>
+            </div>
+            <form method="post" action="">
+                <?php wp_nonce_field( 'charts_admin_action' ); ?>
+                <button type="submit" name="charts_action" value="backfill_media" class="db-btn" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white;">
+                    Sync Missing Media
+                </button>
+            </form>
+        </div>
+    </div>
+
 </div>

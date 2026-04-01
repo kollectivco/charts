@@ -205,6 +205,19 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 						</div>
 					</div>
 				</div>
+				<div class="form-group">
+					<label>Asset Diagnostics & Repair</label>
+					<div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:20px;">
+						<p style="font-size:12px; color:#a16207; margin:0 0 15px; font-weight:500;">
+							If Spotify or YouTube APIs were unavailable during import, some records may be missing cover art or thumbnails. 
+							Run this tool to re-enrich incomplete records with missing media assets.
+						</p>
+						<button type="submit" name="charts_action" value="backfill_media" class="charts-btn-back" style="width:100%; border-color:#fde047; background:#fff; color:#854d0e;">
+							<span class="dashicons dashicons-image-rotate" style="font-size:16px; margin-right:8px; vertical-align:middle;"></span>
+							Backfill Missing Assets
+						</button>
+					</div>
+				</div>
 			</div>
 		</div>
 

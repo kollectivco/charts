@@ -15,6 +15,15 @@ class Intelligence {
 	public static function recalculate_all() {
 		global $wpdb;
 
+		// Lift limits for batch processing
+		if ( ! ini_get( 'safe_mode' ) ) {
+			@set_time_limit( 0 );
+		}
+		@ini_set( 'memory_limit', '512M' );
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+
 		// 1. Process Tracks & Videos
 		self::calculate_item_intelligence('track');
 		self::calculate_item_intelligence('video');
@@ -53,6 +62,10 @@ class Intelligence {
 				WHERE track_name = %s AND item_type = %s
 			", $item->track_name, $type));
 
+			if (!$stats) {
+				$stats = (object) [ 'peak' => 101, 'weeks' => 0, 'total_vol' => 0 ];
+			}
+
 			// 2. Get Last 2 entries for growth calculation (Movement)
 			$recent = $wpdb->get_results($wpdb->prepare("
 				SELECT rank_position, created_at
@@ -66,8 +79,8 @@ class Intelligence {
 			$momentum = 0;
 
 			if (count($recent) >= 1) {
-				$curr = $recent[0]->rank_position;
-				$prev = count($recent) > 1 ? $recent[1]->rank_position : 101; // Assume outside top 100 if new
+				$curr = (int)$recent[0]->rank_position;
+				$prev = count($recent) > 1 ? (int)$recent[1]->rank_position : 101; // Assume outside top 100 if new
 
 				// Growth: positive if rank improved (decreased)
 				$diff = $prev - $curr;
@@ -80,7 +93,6 @@ class Intelligence {
 				if (count($recent) == 1) $trend = 'new';
 
 				// Momentum Score: weighted logic
-				// (101 - rank) gives higher score to lower ranks
 				$rank_power = (101 - $curr);
 				$momentum = ($rank_power * 0.7) + ($diff * 2);
 			}
@@ -97,7 +109,7 @@ class Intelligence {
 					peaks_count = VALUES(peaks_count),
 					weeks_on_chart = VALUES(weeks_on_chart),
 					last_calculated_at = NOW()
-			", $type, $item->item_id, $momentum, $growth, $trend, (string)$stats->total_vol, (int)$stats->peak, (int)$stats->weeks));
+			", $type, $item->item_id, $momentum, $growth, $trend, (string)($stats->total_vol ?? 0), (int)($stats->peak ?? 101), (int)($stats->weeks ?? 0)));
 		}
 	}
 
@@ -122,7 +134,11 @@ class Intelligence {
 				WHERE artist_names = %s
 			", $artist->artist_names));
 
-			$hotness = ($stats->unique_entries * 10) + ( (101 - $stats->avg_rank) * 2 );
+			if (!$stats) {
+				$stats = (object) [ 'unique_entries' => 0, 'total_vol' => 0, 'avg_rank' => 101, 'peak' => 101 ];
+			}
+
+			$hotness = ($stats->unique_entries * 10) + ( (101 - (float)($stats->avg_rank ?? 101)) * 2 );
 
 			// Try to find actual artist ID from artists table
 			$artist_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_artists WHERE display_name = %s", $artist->artist_names));
@@ -139,7 +155,7 @@ class Intelligence {
 					peaks_count = VALUES(peaks_count),
 					weeks_on_chart = VALUES(weeks_on_chart),
 					last_calculated_at = NOW()
-			", $artist_id, $hotness, (string)$stats->total_vol, (float)$stats->avg_rank, (int)$stats->peak, (int)$stats->unique_entries));
+			", $artist_id, $hotness, (string)($stats->total_vol ?? 0), (float)($stats->avg_rank ?? 101), (int)($stats->peak ?? 101), (int)($stats->unique_entries ?? 0)));
 		}
 	}
 

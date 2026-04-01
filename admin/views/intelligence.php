@@ -232,7 +232,7 @@ if ($has_data) {
             
             jQuery.post(ajaxurl, {
                 action: 'charts_recalculate_intel',
-                nonce: '<?php echo wp_create_nonce("charts_intel"); ?>'
+                nonce: '<?php echo wp_create_nonce("charts_admin_action"); ?>'
             }, function(res) {
                 if (res.success) {
                     location.reload();

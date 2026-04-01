@@ -50,7 +50,11 @@ switch ( $module ) {
 </div>
 
 <div class="kc-db-notifications">
-	<?php settings_errors( 'charts' ); ?>
+	<?php 
+    if ( function_exists( 'settings_errors' ) ) {
+        settings_errors( 'charts' ); 
+    }
+    ?>
 </div>
 
 <div class="kc-db-content">

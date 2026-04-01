@@ -61,29 +61,11 @@ if ( $definition ) {
 			</div>
 
 			<header class="kc-page-hero" style="padding: 20px 0 60px;">
-				<div class="kc-eyebrow">
-					<svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor" style="color: var(--k-accent);"><circle cx="3" cy="3" r="3"></circle></svg>
-					Weekly : <?php echo ucwords($definition->item_type ?: 'Tracks'); ?>
-				</div>
 				<h1 class="kc-page-title"><?php echo esc_html($definition->title); ?></h1>
 				<?php if ( ! empty($definition->title_ar) ) : ?>
 					<p class="kc-page-subtitle" style="font-family: inherit;"><?php echo esc_html($definition->title_ar); ?></p>
 				<?php endif; ?>
 				
-				<div class="kc-page-meta">
-					<span class="kc-meta-item">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-						Week of <?php echo $period ? date('M j, Y', strtotime($period->period_start)) : date('M j, Y'); ?>
-					</span>
-					<span class="kc-meta-item">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-						Updated Weekly
-					</span>
-					<span class="kc-meta-item">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-						<?php echo count($entries); ?> entries
-					</span>
-				</div>
 				<?php if ( ! empty($definition->chart_summary) ) : ?>
 					<p style="font-size: 13px; color: var(--k-text-dim); margin-top: 24px; max-width: 600px; font-weight: 500; font-family: inherit;"><?php echo esc_html($definition->chart_summary); ?></p>
 				<?php endif; ?>
@@ -126,7 +108,9 @@ if ( $definition ) {
 			<section class="kc-section" style="padding-top: 0; padding-bottom: 120px;">
 				<div class="kc-section-header" style="justify-content: flex-start; gap: 12px;">
 					<h2 class="kc-section-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted);">Full Rankings</h2>
-					<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo $period ? date('M j, Y', strtotime($period->period_start)) : date('M j, Y'); ?></span>
+					<?php if ( $period ) : ?>
+						<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo date('M j, Y', strtotime($period->period_start)); ?></span>
+					<?php endif; ?>
 				</div>
 
 				<table class="kc-rankings-table">
