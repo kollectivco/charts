@@ -51,12 +51,22 @@ switch ( $module ) {
 
 <div class="kc-db-content">
 	<?php
-	// Load the specific module view
-	// We check if we have a specialized external view, otherwise we fall back to admin views (wrapped)
-	$external_view = CHARTS_PATH . "public/templates/dashboard/{$module}.php";
-	$admin_view    = CHARTS_PATH . "admin/views/{$module}.php";
+	// Map some admin view filenames to modules if they differ
+	$view_map = array(
+		'import'       => 'import-center.php',
+		'overview'     => 'dashboard.php',
+		'charts'       => 'definitions.php',
+		'intelligence' => 'intelligence.php',
+		'insights'     => 'insights.php',
+	);
+
+	$target_view = $view_map[$module] ?? "{$module}.php";
+	$external_view = CHARTS_PATH . "public/templates/dashboard/{$target_view}";
+	$admin_view    = CHARTS_PATH . "admin/views/{$target_view}";
 
 	if ( file_exists( $external_view ) ) {
+		// Module data prep
+		global $wpdb;
 		include $external_view;
 	} elseif ( file_exists( $admin_view ) ) {
 		// Prepare data for admin views that expect specific variables
@@ -76,14 +86,9 @@ switch ( $module ) {
 			extract( $stats );
 		}
 		
-		// Map some admin view filenames to modules if they differ
-		if ($module === 'entities') {
-			include CHARTS_PATH . "admin/views/entities.php";
-		} else {
-			include $admin_view;
-		}
+		include $admin_view;
 	} else {
-		echo '<div class="bento-card"><h3>Module Not Found</h3><p>The requested module "' . esc_html($module) . '" is under development or does not exist.</p></div>';
+		echo '<div class="bento-card"><h3>Module Not Found</h3><p>The requested module "' . esc_html($module) . '" (' . esc_html($target_view) . ') is under development or does not exist.</p></div>';
 	}
 	?>
 </div>

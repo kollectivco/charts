@@ -19,6 +19,8 @@ $current_module = get_query_var( 'charts_module', 'overview' );
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/dashboard.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
+	<link rel="stylesheet" href="<?php echo CHARTS_URL . 'admin/assets/css/admin.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
+	<link rel="stylesheet" href="<?php echo includes_url( 'css/dashicons.min.css' ); ?>">
 	<?php wp_head(); ?>
 </head>
 <body <?php body_class( 'kc-db-root' ); ?>>
@@ -60,6 +62,10 @@ $current_module = get_query_var( 'charts_module', 'overview' );
 		<a href="<?php echo home_url('/charts-dashboard/settings'); ?>" class="kc-db-nav-item <?php echo $current_module === 'settings' ? 'active' : ''; ?>">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
 			Settings
+		</a>
+		<a href="<?php echo wp_logout_url( home_url( '/charts' ) ); ?>" class="kc-db-nav-item">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+			Logout
 		</a>
 	</nav>
 

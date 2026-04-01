@@ -23,12 +23,11 @@ $tracks = $wpdb->get_results( "
 \Charts\Core\StandaloneLayout::get_header();
 ?>
 
-<div class="kc-root">
-	<div class="kc-container">
-		
-		<div class="kc-breadcrumb">
-			<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> Tracks
-		</div>
+<div class="kc-container">
+	
+	<div class="kc-breadcrumb" style="margin-top: 40px;">
+		<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> Tracks
+	</div>
 
 		<header class="kc-page-hero" style="padding-bottom: 20px;">
 			<div class="kc-eyebrow">Intelligence</div>
@@ -106,7 +105,6 @@ $tracks = $wpdb->get_results( "
 		</main>
 
 	</div>
-</div>
 
 <script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
 <?php \Charts\Core\StandaloneLayout::get_footer(); ?>

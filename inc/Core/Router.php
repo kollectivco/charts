@@ -22,10 +22,10 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Generic Single Chart (lowest specificity, but still top)
-		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'top' );
+		// 1. Base /charts/
+		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
 
-		// 2. Specific Entity Routes (higher specificity, added last so they stay above generic)
+		// 2. Specific Entity Routes (highest specificity)
 		add_rewrite_rule( '^charts/artist/([^/]+)/?$', 'index.php?charts_route=artist-single&charts_artist_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts/track/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
@@ -34,8 +34,8 @@ class Router {
 		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );
 		add_rewrite_rule( '^charts/tracks/?$', 'index.php?charts_route=track-archive', 'top' );
 
-		// 4. Base /charts/
-		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
+		// 4. Generic Single Chart (lowest specificity, added LAST with 'top' so it's at the bottom of our custom set)
+		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'top' );
 
 		// 5. External Dashboard
 		add_rewrite_rule( '^charts-dashboard/([^/]+)/?$', 'index.php?charts_route=dashboard&charts_module=$matches[1]', 'top' );
@@ -84,7 +84,32 @@ class Router {
 			case 'dashboard':
 				return CHARTS_PATH . 'public/templates/dashboard.php';
 		}
-
 		return $template;
+	}
+
+	/**
+	 * Get the platform-appropriate dashboard URL.
+	 * Returns external URL if on external dashboard, otherwise admin URL.
+	 */
+	public static function get_dashboard_url( $module = 'overview', $args = array() ) {
+		$is_external = ( get_query_var( 'charts_route' ) === 'dashboard' );
+		
+		if ( $is_external ) {
+			$url = home_url( '/charts-dashboard/' . $module . '/' );
+			if ( ! empty( $args ) ) {
+				$url = add_query_arg( $args, $url );
+			}
+			return $url;
+		}
+
+		// Fallback to admin URL
+		$admin_page = 'charts-' . $module;
+		if ( $module === 'overview' ) $admin_page = 'charts-dashboard';
+		
+		$url = admin_url( 'admin.php?page=' . $admin_page );
+		if ( ! empty( $args ) ) {
+			$url = add_query_arg( $args, $url );
+		}
+		return $url;
 	}
 }

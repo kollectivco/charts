@@ -13,7 +13,7 @@ $definitions = $manager->get_definitions();
 			<p class="charts-admin-subtitle"><?php _e( 'Manage your dynamic chart products and definitions.', 'charts' ); ?></p>
 		</div>
 		<div class="charts-admin-actions">
-			<a href="<?php echo admin_url( 'admin.php?page=charts-definitions&action=edit' ); ?>" class="charts-btn-create">
+			<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'definitions', array( 'action' => 'edit' ) ); ?>" class="charts-btn-create">
 				<span class="dashicons dashicons-plus" style="margin-right:8px;"></span>
 				<?php _e( 'Create New Chart', 'charts' ); ?>
 			</a>
@@ -28,7 +28,7 @@ $definitions = $manager->get_definitions();
 				<div class="empty-icon"><span class="dashicons dashicons-chart-bar"></span></div>
 				<h3><?php _e( 'No Charts Defined', 'charts' ); ?></h3>
 				<p><?php _e( 'Start by creating your first music or video chart definition.', 'charts' ); ?></p>
-				<a href="<?php echo admin_url( 'admin.php?page=charts-definitions&action=edit' ); ?>" class="charts-btn charts-btn-outline">
+				<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'definitions', array( 'action' => 'edit' ) ); ?>" class="charts-btn charts-btn-outline">
 					<?php _e( 'Create My First Chart', 'charts' ); ?>
 				</a>
 			</div>
@@ -69,7 +69,7 @@ $definitions = $manager->get_definitions();
 					<div class="card-footer">
 						<div class="card-slug">/charts/<?php echo esc_html($def->slug); ?></div>
 						<div class="card-actions">
-							<a href="<?php echo admin_url( 'admin.php?page=charts-definitions&action=edit&id=' . $def->id ); ?>" class="action-icon" title="<?php _e('Edit', 'charts'); ?>">
+							<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'definitions', array( 'action' => 'edit', 'id' => $def->id ) ); ?>" class="action-icon" title="<?php _e('Edit', 'charts'); ?>">
 								<span class="dashicons dashicons-edit"></span>
 							</a>
 							<form method="post" style="display:inline;" onsubmit="return confirm('<?php _e('Are you sure you want to delete this chart?', 'charts'); ?>');">

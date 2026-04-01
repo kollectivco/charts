@@ -100,7 +100,7 @@ $total_unmatched = count($unmatched_candidates);
 									</div>
 								</td>
 								<td style="text-align: right; padding-right: 24px;">
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=charts-entities&s=' . urlencode( $label ) ) ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none; font-weight:700;"><?php _e( 'Run Intelligent Match', 'charts' ); ?></a>
+									<a href="<?php echo esc_url( \Charts\Core\Router::get_dashboard_url( 'entities', array( 's' => urlencode( $label ) ) ) ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none; font-weight:700;"><?php _e( 'Run Intelligent Match', 'charts' ); ?></a>
 								</td>
 							</tr>
 						<?php endforeach; ?>

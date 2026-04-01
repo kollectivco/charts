@@ -25,6 +25,12 @@ class SEO {
 		add_filter( 'rank_math/frontend/title', array( self::class, 'generate_title' ) );
 		add_filter( 'rank_math/frontend/description', array( self::class, 'generate_description' ) );
 		add_filter( 'rank_math/frontend/canonical', array( self::class, 'generate_canonical' ) );
+		
+		// Rank Math OpenGraph Filters
+		add_filter( 'rank_math/opengraph/facebook/title', array( self::class, 'generate_title' ) );
+		add_filter( 'rank_math/opengraph/facebook/description', array( self::class, 'generate_description' ) );
+		add_filter( 'rank_math/opengraph/twitter/title', array( self::class, 'generate_title' ) );
+		add_filter( 'rank_math/opengraph/twitter/description', array( self::class, 'generate_description' ) );
 	}
 
 	/**
@@ -70,35 +76,49 @@ class SEO {
 		return $title;
 	}
 
-	/**
-	 * Generate dynamic meta descriptions.
-	 */
 	public static function generate_description( $desc ) {
 		$route = get_query_var( 'charts_route' );
 		if ( ! $route ) return $desc;
 
+		global $wpdb;
+
 		switch ( $route ) {
 			case 'index':
-				return "Discover the latest music charts, artist intelligence, and global track rankings. Explore verified data-driven insights across all major platforms.";
+				return "Experience the definitive music intelligence platform. Discover trending tracks, rising artists, and verified historical chart performance across global and regional markets.";
 			
 			case 'single-chart':
 				$slug = get_query_var( 'charts_definition_slug' );
 				$chart = self::get_chart_definition( $slug );
-				return $chart ? "Explore the latest weekly {$chart->title} rankings. See trending tracks, peak positions, and performance data for this week." : $desc;
+				if ( $chart ) {
+					// Get the top track for a more dynamic description
+					$top_track = $wpdb->get_var( $wpdb->prepare( "
+						SELECT track_name FROM {$wpdb->prefix}charts_entries e
+						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+						WHERE s.chart_type = %s AND s.country_code = %s AND e.rank_position = 1
+						ORDER BY e.created_at DESC LIMIT 1
+					", $chart->chart_type, $chart->country_code ) );
+					
+					$extra = $top_track ? " featuring #1 track \"$top_track\"" : "";
+					return "Weekly intelligence report for the {$chart->title}{$extra}. View the full list of trending tracks, peaks, movements, and audience insights.";
+				}
+				break;
 			
 			case 'artist-archive':
-				return "Browse the intelligence index of top-performing musical artists. View global chart presence, audience growth, and movement historical data.";
+				return "Browse the global intelligence directory of musical artists. Analyze market performance, chart history, and audience growth across all integrated platforms.";
 			
 			case 'track-archive':
-				return "Deep dive into the most successful tracks. Explore a searchable archive of songs making waves across regional and global music charts.";
+				return "Explore the master index of trending musical works. Search and filter through thousands of tracks making impact across regional and global music charts.";
 			
 			case 'artist-single':
 				$slug = get_query_var( 'charts_artist_slug' );
 				$artist = self::get_artist_by_slug( $slug );
 				if ( $artist ) {
-					$bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true)['bio'] ?? '' : '';
-					$excerpt = !empty($bio) ? wp_trim_words($bio, 25) : "View complete chart history, top peaks, and global performance metrics for {$artist->display_name}.";
-					return $excerpt;
+					$meta = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : array();
+					$bio  = $meta['bio'] ?? '';
+					if ( ! empty( $bio ) ) {
+						return wp_trim_words( $bio, 25 );
+					}
+					return "Complete chart history and intelligence profile for {$artist->display_name}. View peak positions, total chart stay, and global platform performance data.";
 				}
 				break;
 			
@@ -106,7 +126,12 @@ class SEO {
 				$type = get_query_var( 'charts_item_type' );
 				$slug = get_query_var( 'charts_item_slug' );
 				$item = self::get_item_by_slug( $type, $slug );
-				return $item ? "Detailed insights for \"{$item->title}\". View historical chart positions, peak rank, total market coverage, and real-time intelligence data." : $desc;
+				if ( $item ) {
+					$artist_name = $item->artist_names ?? '';
+					$extra = $artist_name ? " by $artist_name" : "";
+					return "Detailed insight report for \"{$item->title}\"{$extra}. Analyze historical rankings, market penetration, and long-term chart trends.";
+				}
+				break;
 		}
 
 		return $desc;

@@ -20,9 +20,9 @@ $sources = $source_manager->get_sources();
 		</div>
 		<div class="charts-actions">
 			<?php if ( $action === 'list' ) : ?>
-				<a href="<?php echo admin_url( 'admin.php?page=charts-sources&action=add' ); ?>" class="charts-btn charts-btn-primary"><?php _e( 'Add New Source', 'charts' ); ?></a>
+				<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'sources', array( 'action' => 'add' ) ); ?>" class="charts-btn charts-btn-primary"><?php _e( 'Add New Source', 'charts' ); ?></a>
 			<?php else : ?>
-				<a href="<?php echo admin_url( 'admin.php?page=charts-sources' ); ?>" class="charts-btn charts-btn-secondary"><?php _e( 'Back to List', 'charts' ); ?></a>
+				<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'sources' ); ?>" class="charts-btn charts-btn-secondary"><?php _e( 'Back to List', 'charts' ); ?></a>
 			<?php endif; ?>
 		</div>
 	</header>
@@ -86,7 +86,7 @@ $sources = $source_manager->get_sources();
 									</td>
 									<td style="text-align: right; padding-right: 24px;">
 										<div style="display: flex; gap: 8px; justify-content: flex-end;">
-											<a href="<?php echo admin_url( 'admin.php?page=charts-sources&action=edit&id=' . $source->id ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'Configure', 'charts' ); ?></a>
+											<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'sources', array( 'action' => 'edit', 'id' => $source->id ) ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'Configure', 'charts' ); ?></a>
 											<form method="post" action="" onsubmit="return confirm('Delete this source?');" style="display:inline;">
 												<?php wp_nonce_field('charts_admin_action'); ?>
 												<input type="hidden" name="charts_action" value="delete_source">
@@ -103,7 +103,7 @@ $sources = $source_manager->get_sources();
 			</div>
 		<?php else : ?>
 			<div class="charts-card" style="grid-column: span 12;">
-				<form method="post" action="<?php echo admin_url('admin.php?page=charts-sources'); ?>">
+				<form method="post" action="<?php echo \Charts\Core\Router::get_dashboard_url('sources'); ?>">
 					<?php wp_nonce_field( 'charts_admin_action' ); ?>
 					<input type="hidden" name="charts_action" value="save_source">
 					<?php if ( $edit_source ) : ?>
@@ -177,7 +177,7 @@ $sources = $source_manager->get_sources();
 
 					<p class="submit">
 						<button type="submit" class="button button-primary button-large"><?php _e( 'Save Source', 'charts' ); ?></button>
-						<a href="<?php echo admin_url( 'admin.php?page=charts-sources' ); ?>" class="button button-secondary button-large"><?php _e( 'Cancel', 'charts' ); ?></a>
+						<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'sources' ); ?>" class="button button-secondary button-large"><?php _e( 'Cancel', 'charts' ); ?></a>
 					</p>
 				</form>
 			</div>

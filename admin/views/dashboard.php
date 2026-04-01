@@ -12,7 +12,7 @@
 			<p class="charts-admin-subtitle"><?php _e( 'Real-time performance metrics and system health monitoring.', 'charts' ); ?></p>
 		</div>
 		<div class="charts-admin-actions" style="display:flex; gap:12px;">
-			<a href="<?php echo admin_url( 'admin.php?page=charts-import' ); ?>" class="charts-btn-create">
+			<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'import' ); ?>" class="charts-btn-create">
 				<span class="dashicons dashicons-upload" style="margin-right:8px;"></span>
 				<?php _e( 'New Data Import', 'charts' ); ?>
 			</a>
@@ -70,7 +70,7 @@
 				<div style="font-size:11px; color:var(--charts-text-dim); font-weight:700;">
 					<?php _e( 'Last 5 synchronization runs', 'charts' ); ?>
 				</div>
-				<a href="<?php echo admin_url( 'admin.php?page=charts-imports' ); ?>" style="font-size:12px; font-weight:700; color:var(--charts-accent); text-decoration:none;">
+				<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'imports' ); ?>" style="font-size:12px; font-weight:700; color:var(--charts-accent); text-decoration:none;">
 					<?php _e( 'Logs', 'charts' ); ?> &rarr;
 				</a>
 			</div>
@@ -131,7 +131,7 @@
 
 	<!-- 4. OPERATIONAL WORKFLOWS -->
 	<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-top:40px;">
-		<a href="<?php echo admin_url('admin.php?page=charts-matching'); ?>" class="charts-bento-card" style="text-decoration:none;">
+		<a href="<?php echo \Charts\Core\Router::get_dashboard_url('matching'); ?>" class="charts-bento-card" style="text-decoration:none;">
 			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
 				<div style="width:40px; height:40px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--charts-accent);">
 					<span class="dashicons dashicons-admin-users"></span>
@@ -142,7 +142,7 @@
 			<div style="font-size:12px; color:var(--charts-text-dim); line-height:1.6;">Automate or manually resolve data ingestions to canonical artist and track records.</div>
 		</a>
 		
-		<a href="<?php echo admin_url('admin.php?page=charts-intelligence'); ?>" class="charts-bento-card" style="text-decoration:none;">
+		<a href="<?php echo \Charts\Core\Router::get_dashboard_url('intelligence'); ?>" class="charts-bento-card" style="text-decoration:none;">
 			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
 				<div style="width:40px; height:40px; background:#f5f3ff; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--charts-accent-purple);">
 					<span class="dashicons dashicons-chart-line"></span>
@@ -153,7 +153,7 @@
 			<div style="font-size:12px; color:var(--charts-text-dim); line-height:1.6;">View AI-driven momentum scores, trend vectors, and cross-platform performance.</div>
 		</a>
 
-		<a href="<?php echo admin_url('admin.php?page=charts-settings'); ?>" class="charts-bento-card" style="text-decoration:none;">
+		<a href="<?php echo \Charts\Core\Router::get_dashboard_url('settings'); ?>" class="charts-bento-card" style="text-decoration:none;">
 			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
 				<div style="width:40px; height:40px; background:#fefce8; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#854d0e;">
 					<span class="dashicons dashicons-admin-generic"></span>
