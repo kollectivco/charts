@@ -92,4 +92,46 @@ $show_nav = get_option( 'charts_show_nav', 1 );
         </div>
     </div>
 
+    <!-- 5. DANGER ZONE -->
+    <div class="bento-card span-2" style="border: 1px solid #ef4444; background: rgba(239, 68, 68, 0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 style="margin:0 0 8px; font-size:16px; font-weight:900; color:#ef4444;">Danger Zone</h3>
+                <p style="margin:0; font-size:12px; color:#ef4444; font-weight:600; opacity:0.8;">Purge all local data and return the system to absolute zero.</p>
+            </div>
+            
+            <form method="post" action="" style="display:flex; align-items:center; gap:24px;">
+                <?php wp_nonce_field( 'charts_admin_action' ); ?>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <label class="switch"><input type="checkbox" name="wipe_settings" value="1"><span class="slider" style="background-color:#fca5a5;"></span></label>
+                    <span style="font-size:11px; font-weight:800; color:#ef4444;">Wipe API Keys</span>
+                </div>
+                <div style="position:relative;">
+                    <input type="text" id="db_reset_confirm" placeholder="Type RESET CHARTS" style="border-radius:8px; border:1px solid #fca5a5; padding:8px 12px; background:white; color:#ef4444; font-weight:800; font-size:11px; text-align:center; min-width:180px;">
+                </div>
+                <button type="submit" name="charts_action" value="reset_plugin" id="db_reset_btn" class="db-btn" style="background:#ef4444; color:white; border:none; opacity:0.3; cursor:not-allowed;" disabled>
+                    Destructive Reset
+                </button>
+            </form>
+        </div>
+    </div>
+
 </div>
+
+<script>
+jQuery(document).ready(function($){
+    $('#db_reset_confirm').on('input', function(){
+        if ($(this).val().trim() === 'RESET CHARTS') {
+            $('#db_reset_btn').prop('disabled', false).css({'opacity':'1', 'cursor':'pointer'});
+        } else {
+            $('#db_reset_btn').prop('disabled', true).css({'opacity':'0.3', 'cursor':'not-allowed'});
+        }
+    });
+
+    $('#db_reset_btn').on('click', function(e){
+        if (!confirm('EXTREME WARNING: This will permanently delete all charts data. Are you absolutely sure?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>

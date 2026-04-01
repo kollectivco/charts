@@ -210,6 +210,14 @@ class Bootstrap {
 				add_settings_error( 'charts', 'backfill_success', $summary, 'success' );
 				$processed = true;
 				break;
+
+			case 'reset_plugin':
+				$wipe_settings = isset( $_POST['wipe_settings'] ) ? (bool)$_POST['wipe_settings'] : false;
+				self::wipe_all_data( $wipe_settings );
+
+				add_settings_error( 'charts', 'reset_success', __( 'Plugin has been successfully reset to zero. All data has been purged.', 'charts' ), 'success' );
+				$processed = true;
+				break;
 		}
 
 		if ( $processed ) {
@@ -719,6 +727,65 @@ class Bootstrap {
 	public static function clear_frontend_caches() {
 		global $wpdb;
 		$wpdb->query( "DELETE FROM {$wpdb->prefix}options WHERE option_name LIKE '_transient_kc_preview_%' OR option_name LIKE '_transient_timeout_kc_preview_%'" );
+	}
+
+	/**
+	 * DESTRUCTIVE: Wipes all plugin data from the database.
+	 */
+	private static function wipe_all_data( $wipe_settings = false ) {
+		global $wpdb;
+
+		// 1. Tables to truncate
+		$tables = array(
+			'charts_sources',
+			'charts_periods',
+			'charts_artists',
+			'charts_albums',
+			'charts_tracks',
+			'charts_videos',
+			'charts_track_artists',
+			'charts_video_artists',
+			'charts_entries',
+			'charts_aliases',
+			'charts_import_runs',
+			'charts_insights',
+			'charts_definitions',
+			'charts_intelligence',
+		);
+
+		foreach ( $tables as $table ) {
+			$fullname = $wpdb->prefix . $table;
+			$wpdb->query( "TRUNCATE TABLE `$fullname`" );
+		}
+
+		// 2. Clear Transients
+		self::clear_frontend_caches();
+		$wpdb->query( "DELETE FROM {$wpdb->prefix}options WHERE option_name LIKE '_transient_kc_%' OR option_name LIKE '_transient_timeout_kc_%'" );
+
+		// 3. Clear Settings (Optional)
+		if ( $wipe_settings ) {
+			$options = array(
+				'charts_spotify_client_id',
+				'charts_spotify_client_secret',
+				'charts_youtube_api_key',
+				'charts_logo_id',
+				'charts_logo_alt',
+				'charts_wordmark',
+				'charts_show_logo',
+				'charts_show_nav',
+				'charts_show_search',
+				'charts_header_menu_id',
+				'charts_footer_description',
+				'charts_footer_copyright',
+				'kcharts_db_version',
+			);
+			foreach ( $options as $opt ) {
+				delete_option( $opt );
+			}
+		}
+
+		// Ensure we trigger a re-setup if needed
+		delete_option( 'charts_setup_complete' );
 	}
 
 	/**

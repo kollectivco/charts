@@ -221,6 +221,44 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 			</div>
 		</div>
 
+		<!-- 5. Danger Zone -->
+		<div class="premium-form-card" style="margin-top:60px; border: 1px solid #fee2e2; background: #fffcfc; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05);">
+			<div class="card-header" style="border-bottom-color: #fee2e2;">
+				<h3 style="color: #ef4444; display: flex; align-items: center; gap: 10px;">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+					Danger Zone
+				</h3>
+				<p style="color: #991b1b; font-weight: 500;">Reset plugin data and return to a fresh state.</p>
+			</div>
+			
+			<div class="premium-form-grid" style="grid-template-columns: 1.5fr 1fr;">
+				<div style="font-size: 13px; color: #7f1d1d; line-height: 1.6;">
+					<p style="margin: 0 0 15px;">
+						This action is <strong>irreversible</strong>. It will permanently delete all:
+					</p>
+					<ul style="margin: 0 0 20px; padding-left: 20px;">
+						<li>Chart definitions and data sources</li>
+						<li>Imported tracks, artists, and videos</li>
+						<li>All chart entries and historical periods</li>
+						<li>Intelligence scores and insights</li>
+						<li>Import logs and system transients</li>
+					</ul>
+					<div class="toggle-item" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #fee2e2;">
+						<label class="switch"><input type="checkbox" name="wipe_settings" value="1"><span class="slider" style="background-color: #fecaca;"></span></label>
+						<label style="color: #ef4444; font-weight: 700;">Also wipe API keys and branding settings</label>
+					</div>
+				</div>
+				
+				<div style="background: white; padding: 25px; border-radius: 12px; border: 1px solid #fee2e2; display: flex; flex-direction: column; gap: 15px;">
+					<label style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #ef4444; letter-spacing: 0.05em;">Type "RESET CHARTS" to confirm</label>
+					<input type="text" id="reset_confirm_input" class="form-control" placeholder="RESET CHARTS" style="border-color: #fca5a5; text-align: center; font-weight: 800; letter-spacing: 0.05em;">
+					<button type="submit" name="charts_action" value="reset_plugin" id="reset_plugin_btn" class="charts-btn-create" style="width: 100%; background: #ef4444; opacity: 0.3; cursor: not-allowed;" disabled>
+						Reset Plugin to Zero
+					</button>
+				</div>
+			</div>
+		</div>
+
 		<div class="charts-admin-footer-bar" style="margin-top:60px; padding-top:30px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
 			<button type="submit" class="charts-btn-create">
 				Save System Configuration
@@ -254,6 +292,28 @@ jQuery(document).ready(function($){
 		$('#logo_id').val('');
 		$('#logo-preview').hide();
 		$('.logo-preview-wrapper span').show();
+	});
+
+	// Danger Zone: Confirmation Phrasing
+	$('#reset_confirm_input').on('input', function() {
+		var val = $(this).val().trim();
+		if (val === 'RESET CHARTS') {
+			$('#reset_plugin_btn').prop('disabled', false).css({
+				'opacity': '1',
+				'cursor': 'pointer'
+			});
+		} else {
+			$('#reset_plugin_btn').prop('disabled', true).css({
+				'opacity': '0.3',
+				'cursor': 'not-allowed'
+			});
+		}
+	});
+
+	$('#reset_plugin_btn').on('click', function(e) {
+		if (!confirm('EXTREME WARNING: You are about to permanently delete all charts data. This cannot be undone. Are you absolutely sure?')) {
+			e.preventDefault();
+		}
 	});
 });
 </script>
