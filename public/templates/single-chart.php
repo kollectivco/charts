@@ -36,9 +36,13 @@ if ( $definition ) {
 			$query_params = array_values( $source_ids );
 			$query_params[] = $period->id;
 			$entries = $wpdb->get_results( $wpdb->prepare( "
-				SELECT * FROM {$wpdb->prefix}charts_entries 
-				WHERE source_id IN ($placeholders) AND period_id = %d
-				ORDER BY rank_position ASC
+				SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
+				FROM {$wpdb->prefix}charts_entries e
+				LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+				LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+				LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
+				WHERE e.source_id IN ($placeholders) AND e.period_id = %d
+				ORDER BY e.rank_position ASC
 			", ...$query_params ) );
 		} else {
 			$page_state = 'empty';
@@ -74,9 +78,9 @@ if ( $definition ) {
 			<!-- #1 FEATURED TRACK -->
 			<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; ?>
 				<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative; margin-bottom: 60px;">
-					<img src="<?php echo esc_url($top->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
+					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
 					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
-						<img src="<?php echo esc_url($top->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
+						<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
 						<div style="flex-grow: 1;">
 							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
 								<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;">#1 This Week</span>
@@ -144,7 +148,7 @@ if ( $definition ) {
 								</td>
 								<td>
 									<div style="display: flex; align-items: center; gap: 16px;">
-										<img src="<?php echo esc_url($e->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
+										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($e->track_name); ?></span>
 											<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);"><?php echo esc_html($e->artist_names); ?></span>

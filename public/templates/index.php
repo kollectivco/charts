@@ -18,9 +18,12 @@ function kc_get_preview_entries($def) {
 	
 	if ( false === $entries ) {
 		$entries = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
+			SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image FROM {$wpdb->prefix}charts_entries e
 			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
 			JOIN {$wpdb->prefix}charts_periods p ON p.id = e.period_id
+			LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+			LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+			LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
 			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
 			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 3
 		", $def->chart_type, $def->country_code ), ARRAY_A );
@@ -52,8 +55,9 @@ foreach ($definitions as $def) {
     }
 }
 $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
-    SELECT e.* FROM {$wpdb->prefix}charts_entries e
+    SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), a.image) AS resolved_image FROM {$wpdb->prefix}charts_entries e
     JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+    LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
     WHERE s.chart_type = 'top-artists' AND s.country_code = %s AND s.is_active = 1
     ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 5
 ", $top_artists_chart->country_code ) ) : array();
@@ -86,7 +90,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 			<div class="kc-grid kc-grid-4" style="grid-template-columns: repeat(5, 1fr); gap: 20px;">
 				<?php foreach ( $featured_artists as $idx => $art ) : ?>
 					<a href="<?php echo home_url('/charts/artist/' . $art->item_slug); ?>" class="kc-card" style="padding: 0; overflow: hidden; position: relative; height: 320px; text-decoration: none; display: block;">
-						<img src="<?php echo esc_url($art->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+						<img src="<?php echo esc_url($art->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 100%; object-fit: cover;">
 						<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);"></div>
 						<div style="position: absolute; top: 16px; left: 16px; width: 32px; height: 32px; background: var(--k-accent-purple); color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 4px;">#<?php echo $art->rank_position; ?></div>
 						<div style="position: absolute; bottom: 24px; left: 24px; right: 24px;">
@@ -122,7 +126,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 						<article class="kc-chart-card">
 							<div class="kc-card-accent-dot" style="background: <?php echo $accent; ?>;"></div>
 							<div class="kc-card-header">
-								<img src="<?php echo esc_url(!empty($def->cover_image_url) ? $def->cover_image_url : (!empty($entries[0]->cover_image) ? $entries[0]->cover_image : CHARTS_URL . 'public/assets/img/placeholder.png')); ?>">
+								<img src="<?php echo esc_url(!empty($def->cover_image_url) ? $def->cover_image_url : (!empty($entries[0]->resolved_image) ? $entries[0]->resolved_image : CHARTS_URL . 'public/assets/img/placeholder.png')); ?>">
 								<div class="kc-card-header-overlay"></div>
 								<span class="kc-card-label">Weekly Chart</span>
 								<h3 class="kc-card-title"><?php echo esc_html($def->title); ?></h3>
@@ -142,7 +146,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 									<?php foreach ( $entries as $e ) : ?>
 										<div class="kc-card-entry">
 											<span class="kc-entry-rank"><?php echo $e->rank_position; ?></span>
-											<img class="kc-entry-art" src="<?php echo esc_url($e->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+											<img class="kc-entry-art" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 											<div class="kc-entry-info">
 												<span class="kc-entry-name"><?php echo esc_html($e->track_name); ?></span>
 												<span class="kc-entry-artist"><?php echo esc_html($e->artist_names); ?></span>

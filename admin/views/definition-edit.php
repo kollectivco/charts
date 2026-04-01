@@ -76,16 +76,23 @@ $menu_order      = $def ? (int)$def->menu_order : 0;
 						<option value="artist" <?php selected($item_type, 'artist'); ?>>Artists</option>
 						<option value="video" <?php selected($item_type, 'video'); ?>>Clips & Videos</option>
 					</select>
-					<span class="input-helper">This controls the data model and single page type.</span>
+					<span class="input-helper">Core data model (e.g. Song vs Artist).</span>
 				</div>
 				<div class="form-group">
-					<label for="chart_type">Chart Logic / Category <span class="required">*</span></label>
+					<label for="chart_type">Ranking Logic <span class="required">*</span></label>
 					<select name="chart_type" id="chart_type" class="form-control">
-						<option value="top-songs" <?php selected($chart_type, 'top-songs'); ?>>Top Songs (General)</option>
-						<option value="top-videos" <?php selected($chart_type, 'top-videos'); ?>>Top Videos / Clips</option>
-						<option value="top-artists" <?php selected($chart_type, 'top-artists'); ?>>Top Artists</option>
-						<option value="viral" <?php selected($chart_type, 'viral'); ?>>Viral Trends</option>
+						<optgroup label="Audio Logics" data-entity="track">
+							<option value="top-songs" <?php selected($chart_type, 'top-songs'); ?>>Top Songs (Official)</option>
+							<option value="viral" <?php selected($chart_type, 'viral'); ?>>Viral Trends & TikTok</option>
+						</optgroup>
+						<optgroup label="Visual Logics" data-entity="video">
+							<option value="top-videos" <?php selected($chart_type, 'top-videos'); ?>>Top Videos / Clips</option>
+						</optgroup>
+						<optgroup label="Professional Logics" data-entity="artist">
+							<option value="top-artists" <?php selected($chart_type, 'top-artists'); ?>>Top Artists</option>
+						</optgroup>
 					</select>
+					<span class="input-helper">The specific ranking channel to filter from sources.</span>
 				</div>
 
 				<!-- Row 3: Meta Configuration -->
@@ -189,6 +196,34 @@ $menu_order      = $def ? (int)$def->menu_order : 0;
 			const slug = $(this).val() || 'your-slug';
 			$('.input-helper').text('URL: /charts/' + slug);
 		});
+
+		// Intelligent Field Sync: Entity Type -> Ranking Logic
+		function syncRankingLogic() {
+			const entity = $('#item_type').val();
+			const $logicSelect = $('#chart_type');
+			
+			// 1. Filter optgroups
+			$logicSelect.find('optgroup').each(function() {
+				const groupEntity = $(this).data('entity');
+				if (groupEntity === entity) {
+					$(this).show().prop('disabled', false);
+				} else {
+					$(this).hide().prop('disabled', true);
+				}
+			});
+
+			// 2. Auto-select first visible option if current is hidden
+			const $currentOption = $logicSelect.find('option:selected');
+			if ($currentOption.parent().is(':disabled')) {
+				const $firstVisible = $logicSelect.find('optgroup:not(:disabled) option').first();
+				if ($firstVisible.length) {
+					$logicSelect.val($firstVisible.val());
+				}
+			}
+		}
+
+		$('#item_type').on('change', syncRankingLogic);
+		syncRankingLogic(); // Init on load
 	});
 	</script>
 </div>

@@ -223,35 +223,49 @@ class Bootstrap {
 		if ( $processed ) {
 			self::clear_frontend_caches();
 			
-			// 1. Detect origin context (admin vs external)
-			$is_external_dashboard = ( get_query_var( 'charts_route' ) === 'dashboard' );
-			$is_wp_admin           = is_admin();
-			
-			// 2. Resolve target dashboard URL based on current context and action
+			// 1. Detect origin surface (admin vs external)
+			// At 'init' hook, get_query_var isn't ready, so we check the URI or referer
 			$referer = wp_get_referer();
+			$is_external_surface = ( stripos( $_SERVER['REQUEST_URI'], '/charts-dashboard' ) !== false || ( $referer && stripos( $referer, '/charts-dashboard' ) !== false ) );
 			
-			// If referer is missing or pointing to a public page unexpectedly (common with empty form actions)
-			// we force a redirect to our context-aware dashboard helper.
-			if ( ! $referer || ( ! $is_wp_admin && ! $is_external_dashboard ) || stripos( $referer, '/charts/' ) !== false ) {
-				$module = 'overview';
-				// Map known actions to their respective modules for high-fidelity fallback
-				if ( strpos( $action, 'settings' ) !== false )  $module = 'settings';
-				if ( strpos( $action, 'source' ) !== false )    $module = 'sources';
-				if ( strpos( $action, 'definition' ) !== false ) $module = 'definitions';
-				if ( strpos( $action, 'import' ) !== false )     $module = 'import';
-				if ( strpos( $action, 'intel' ) !== false )      $module = 'intelligence';
-				if ( strpos( $action, 'match' ) !== false || strpos( $action, 'integrity' ) !== false ) $module = 'matching';
+			// 2. Resolve target module based on action
+			$module = 'overview';
+			if ( strpos( $action, 'settings' ) !== false || strpos( $action, 'api' ) !== false || strpos( $action, 'media' ) !== false || strpos( $action, 'reset' ) !== false ) {
+				$module = 'settings';
+			} elseif ( strpos( $action, 'source' ) !== false ) {
+				$module = 'sources';
+			} elseif ( strpos( $action, 'definition' ) !== false || strpos( $action, 'entity' ) !== false ) {
+				$module = 'definitions';
+			} elseif ( strpos( $action, 'import' ) !== false || strpos( $action, 'run' ) !== false ) {
+				$module = 'import';
+			} elseif ( strpos( $action, 'intel' ) !== false ) {
+				$module = 'intelligence';
+			} elseif ( strpos( $action, 'match' ) !== false || strpos( $action, 'integrity' ) !== false ) {
+				$module = 'matching';
+			}
+
+			// 3. Construct target URL
+			// We prioritize the referer IF it matches our surface, otherwise we use the clean module URL
+			$target_url = '';
+			if ( $referer && ! ( stripos( $referer, '/charts/' ) !== false && stripos( $referer, '/charts-dashboard' ) === false ) ) {
+				// Referer is safe (it's either admin or dashboard)
+				$target_url = $referer;
+			} else {
+				// Fallback to clean module URL
+				$target_url = \Charts\Core\Router::get_dashboard_url( $module );
 				
-				$referer = \Charts\Core\Router::get_dashboard_url( $module );
+				// Ensure surface consistency in fallback
+				if ( $is_external_surface && stripos( $target_url, '/wp-admin/' ) !== false ) {
+					$target_url = home_url( '/charts-dashboard/' . $module . '/' );
+				}
 			}
 
-			// 3. Append persistent notices if necessary
+			// 4. Append persistent notices if necessary
 			if ( $action === 'save_settings' ) {
-				$referer = add_query_arg( 'settings-updated', '1', $referer );
+				$target_url = add_query_arg( 'settings-updated', '1', $target_url );
 			}
 
-			// 4. Final safety pass to ensure we remain within the dashboard shell
-			wp_safe_redirect( $referer );
+			wp_safe_redirect( $target_url );
 			exit;
 		}
 	}
