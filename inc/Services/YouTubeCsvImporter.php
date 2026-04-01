@@ -70,7 +70,13 @@ class YouTubeCsvImporter {
 			$meta['period_date'] ?? null
 		);
 		if ( ! $period_id ) {
-			return new \WP_Error( 'period_failed', __( 'Could not create or find a matching period.', 'charts' ) );
+			$error_msg = __( 'Could not create or find a matching period.', 'charts' );
+			$wpdb->update( $wpdb->prefix . 'charts_import_runs', array(
+				'status'        => 'failed',
+				'error_message' => $error_msg,
+				'finished_at'   => current_time( 'mysql' ),
+			), array( 'id' => $run_id ) );
+			return new \WP_Error( 'period_failed', $error_msg );
 		}
 
 		$saved             = 0;

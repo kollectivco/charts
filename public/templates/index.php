@@ -10,14 +10,36 @@ global $wpdb;
 $manager     = new \Charts\Admin\SourceManager();
 $definitions = $manager->get_definitions( true ); // Only active/public charts
 
-// Helper to fetch top 3 preview for a definition
+// Helper to fetch top 3 preview for a definition from the most recent period
 function kc_get_preview_entries($def) {
 	global $wpdb;
-	return $wpdb->get_results( $wpdb->prepare( "
-		SELECT e.* FROM {$wpdb->prefix}charts_entries e
-		JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-		WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-		ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
+	$cache_key = 'kc_preview_' . $def->id;
+	$entries = get_transient( $cache_key );
+	
+	if ( false === $entries ) {
+		$entries = $wpdb->get_results( $wpdb->prepare( "
+			SELECT e.* FROM {$wpdb->prefix}charts_entries e
+			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+			JOIN {$wpdb->prefix}charts_periods p ON p.id = e.period_id
+			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 3
+		", $def->chart_type, $def->country_code ), ARRAY_A );
+		
+		set_transient( $cache_key, $entries, HOUR_IN_SECONDS );
+	}
+	
+	return array_map(function($e){ return (object)$e; }, (array)$entries);
+}
+
+// Helper to check if a chart is REALLY syncing (has an active/started run in the last 15 min)
+function kc_is_syncing_active($def) {
+	global $wpdb;
+	return (bool) $wpdb->get_var( $wpdb->prepare( "
+		SELECT COUNT(*) FROM {$wpdb->prefix}charts_import_runs r
+		JOIN {$wpdb->prefix}charts_sources s ON s.id = r.source_id
+		WHERE s.chart_type = %s AND s.country_code = %s 
+		AND r.status IN ('started', 'processing')
+		AND r.started_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
 	", $def->chart_type, $def->country_code ) );
 }
 
@@ -108,7 +130,14 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 
 							<div class="kc-card-list">
 								<?php if ( empty($entries) ) : ?>
-									<div style="padding: 24px; font-size: 12px; font-weight: 600; color: var(--k-text-muted);">Synchronizing...</div>
+									<?php if ( kc_is_syncing_active($def) ) : ?>
+										<div style="padding: 24px; font-size: 12px; font-weight: 600; color: var(--k-text-muted);">
+											<svg class="kc-spinner" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 8px; vertical-align: middle; animation: kc-spin 1s linear infinite;"><path d="M21 12a9 9 0 11-6.219-8.56"></path></svg>
+											Synchronizing...
+										</div>
+									<?php else : ?>
+										<div style="padding: 24px; font-size: 12px; font-weight: 600; color: var(--k-text-muted); opacity: 0.5;">No entry data available yet.</div>
+									<?php endif; ?>
 								<?php else : ?>
 									<?php foreach ( $entries as $e ) : ?>
 										<div class="kc-card-entry">

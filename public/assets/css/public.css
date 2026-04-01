@@ -615,3 +615,9 @@
 	.kc-details-grid { grid-template-columns: 1fr; gap: 24px; }
 	.kc-row-header { padding: 20px; }
 }
+
+/* Animations */
+@keyframes kc-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}

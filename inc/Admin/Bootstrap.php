@@ -213,17 +213,36 @@ class Bootstrap {
 		}
 
 		if ( $processed ) {
-			// Get current referer to avoid hardcoded admin redirects
-			$referer = wp_get_referer();
-			if ( ! $referer ) {
-				$referer = self::get_charts_admin_url(); // Fallback if no referer
-			}
+			self::clear_frontend_caches();
 			
-			// If we just saved settings, add a query arg for feedback
+			// 1. Detect origin context (admin vs external)
+			$is_external_dashboard = ( get_query_var( 'charts_route' ) === 'dashboard' );
+			$is_wp_admin           = is_admin();
+			
+			// 2. Resolve target dashboard URL based on current context and action
+			$referer = wp_get_referer();
+			
+			// If referer is missing or pointing to a public page unexpectedly (common with empty form actions)
+			// we force a redirect to our context-aware dashboard helper.
+			if ( ! $referer || ( ! $is_wp_admin && ! $is_external_dashboard ) || stripos( $referer, '/charts/' ) !== false ) {
+				$module = 'overview';
+				// Map known actions to their respective modules for high-fidelity fallback
+				if ( strpos( $action, 'settings' ) !== false )  $module = 'settings';
+				if ( strpos( $action, 'source' ) !== false )    $module = 'sources';
+				if ( strpos( $action, 'definition' ) !== false ) $module = 'definitions';
+				if ( strpos( $action, 'import' ) !== false )     $module = 'import';
+				if ( strpos( $action, 'intel' ) !== false )      $module = 'intelligence';
+				if ( strpos( $action, 'match' ) !== false || strpos( $action, 'integrity' ) !== false ) $module = 'matching';
+				
+				$referer = \Charts\Core\Router::get_dashboard_url( $module );
+			}
+
+			// 3. Append persistent notices if necessary
 			if ( $action === 'save_settings' ) {
 				$referer = add_query_arg( 'settings-updated', '1', $referer );
 			}
 
+			// 4. Final safety pass to ensure we remain within the dashboard shell
 			wp_safe_redirect( $referer );
 			exit;
 		}
@@ -659,6 +678,8 @@ class Bootstrap {
 			// Recalculate Intelligence
 			\Charts\Core\Intelligence::recalculate_all();
 
+			self::clear_frontend_caches();
+
 			wp_send_json_success( array( 
 				'message' => sprintf( __( 'Successfully imported %d entries.', 'charts' ), $result ),
 				'count'   => $result
@@ -678,6 +699,7 @@ class Bootstrap {
 
 		try {
 			\Charts\Core\Intelligence::recalculate_all();
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'message' => __( 'Intelligence recalculation successful.', 'charts' ) ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
@@ -689,6 +711,14 @@ class Bootstrap {
 	 */
 	public static function render_settings() {
 		self::render_view( 'settings' );
+	}
+
+	/**
+	 * Force clear all frontend-related transients to ensure data parity.
+	 */
+	public static function clear_frontend_caches() {
+		global $wpdb;
+		$wpdb->query( "DELETE FROM {$wpdb->prefix}options WHERE option_name LIKE '_transient_kc_preview_%' OR option_name LIKE '_transient_timeout_kc_preview_%'" );
 	}
 
 	/**
