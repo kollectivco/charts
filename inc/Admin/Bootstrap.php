@@ -81,6 +81,9 @@ class Bootstrap {
 				update_option( 'charts_footer_description', sanitize_textarea_field( $_POST['footer_description'] ?? '' ) );
 				update_option( 'charts_footer_copyright', sanitize_text_field( $_POST['footer_copyright'] ?? '' ) );
 
+				// Homepage Slider Style
+				update_option( 'charts_homepage_slider_style', sanitize_text_field( $_POST['homepage_slider_style'] ?? 'style-1' ) );
+
 				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
 				$processed = true;
 				break;
@@ -115,7 +118,11 @@ class Bootstrap {
 				break;
 			
 			case 'unified_import':
-				self::process_unified_import();
+				$run_id = self::process_unified_import();
+				if ( is_numeric($run_id) ) {
+					wp_redirect( admin_url( 'admin.php?page=charts-import&sync_complete=1&run_id=' . $run_id ) );
+					exit;
+				}
 				$processed = true;
 				break;
 			
@@ -510,16 +517,16 @@ class Bootstrap {
 		
 		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {
 			add_settings_error( 'charts', 'no_file', __( 'Please select a data file to upload.', 'charts' ), 'error' );
-			return;
+			return false;
 		}
 
 		// Inject the correct file name into the expected $_FILES location for compatibility
 		if ( $platform === 'spotify' ) {
 			$_FILES['spotify_csv'] = $_FILES['import_file'];
-			self::process_spotify_csv_upload();
+			return self::process_spotify_csv_upload();
 		} else {
 			$_FILES['youtube_csv'] = $_FILES['import_file'];
-			self::process_youtube_csv_upload();
+			return self::process_youtube_csv_upload();
 		}
 	}
 
@@ -552,6 +559,7 @@ class Bootstrap {
 			$result   = $importer->run( $csv_content, $meta );
 			if ( is_wp_error( $result ) ) {
 				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+				return false;
 			} elseif ( is_array( $result ) ) {
 				// Recalculate Intelligence
 				\Charts\Core\Intelligence::recalculate_all();
@@ -559,11 +567,14 @@ class Bootstrap {
 				$chart_url = home_url( '/charts/spotify/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
 				$msg = sprintf( __( 'Import complete: %1$d entries saved from %2$d rows. Source ID: %3$d, Period ID: %4$d. %5$d skipped. <a href="%6$s" target="_blank">View Chart</a>', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
 				add_settings_error( 'charts', 'import_success', $msg, 'success' );
+				return $result['run_id'] ?? true;
 			} else {
 				add_settings_error( 'charts', 'import_success', sprintf( __( 'Import complete: %d entries.', 'charts' ), intval( $result ) ), 'success' );
+				return true;
 			}
 		} catch ( \Exception $e ) {
 			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
+			return false;
 		}
 	}
 
@@ -643,9 +654,12 @@ class Bootstrap {
 						add_settings_error( 'charts', 'import_warning', $warn, 'warning' );
 					}
 				}
+				return $result['run_id'] ?? true;
 			}
+			return false;
 		} catch ( \Exception $e ) {
 			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
+			return false;
 		}
 	}
 

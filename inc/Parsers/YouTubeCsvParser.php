@@ -35,6 +35,7 @@ class YouTubeCsvParser {
 		'peak_rank'      => array( 'peak_rank', 'peak', 'best_rank', 'highest_rank' ),
 		'previous_rank'  => array( 'previous_rank', 'last_rank', 'prev_rank', 'last_position' ),
 		'weeks_on_chart' => array( 'weeks_on_chart', 'weeks', 'chart_weeks', 'run', 'periods_on_chart', 'periods' ),
+		'growth'         => array( 'growth', 'delta', 'change', 'rank_change', 'trend' ),
 	);
 
 	private $warnings = array();
@@ -121,12 +122,13 @@ class YouTubeCsvParser {
 			);
 		}
 
-		// Must have at minimum item_title OR youtube_id OR source_url
+		// Must have at minimum one of these to identify the entity
 		if ( ! in_array( 'item_title', $mapped_canonicals, true ) && 
+		     ! in_array( 'artist_names', $mapped_canonicals, true ) &&
 		     ! in_array( 'youtube_id', $mapped_canonicals, true ) && 
 		     ! in_array( 'source_url', $mapped_canonicals, true ) ) {
 			return new \WP_Error( 'bad_headers',
-				sprintf( __( 'Could not map required columns (title, ID, or URL). Found headers: %s', 'charts' ), implode( ', ', $headers ) )
+				sprintf( __( 'Could not map required columns (Title, Artist, ID, or URL). Found headers: %s', 'charts' ), implode( ', ', $headers ) )
 			);
 		}
 
@@ -169,6 +171,9 @@ class YouTubeCsvParser {
 			return new \WP_Error( 'no_rows', __( 'CSV parsed but contained no valid data rows.', 'charts' ) );
 		}
 
+		// Detect chart logic/mode from headers
+		$detected_mode = $this->detect_mode( $headers );
+
 		// Add summary warnings if needed
 		if ( $this->stats['missing_both'] > 0 ) {
 			$this->warnings[] = sprintf(
@@ -179,7 +184,42 @@ class YouTubeCsvParser {
 			);
 		}
 
-		return $rows;
+		return array(
+			'rows' => $rows,
+			'detected_mode' => $detected_mode,
+			'headers' => $headers
+		);
+	}
+
+	/**
+	 * Detect if the CSV looks like a Songs, Videos, or Artists chart.
+	 */
+	private function detect_mode( $headers ) {
+		$song_count = 0;
+		$video_count = 0;
+		$artist_count = 0;
+
+		$song_keys = array('song', 'track', 'track_name', 'audio');
+		$video_keys = array('video', 'video_title', 'clip', 'mv', 'music_video');
+		$artist_keys = array('channel', 'channel_name', 'performer');
+
+		foreach ( $headers as $h ) {
+			if ( in_array( $h, $song_keys ) ) $song_count++;
+			if ( in_array( $h, $video_keys ) ) $video_count++;
+			if ( in_array( $h, $artist_keys ) ) $artist_count++;
+		}
+
+		if ( $song_count > $video_count && $song_count > $artist_count ) return 'top-songs';
+		if ( $video_count > $song_count && $video_count > $artist_count ) return 'top-videos';
+		if ( $artist_count > 0 && $song_count === 0 && $video_count === 0 ) return 'top-artists';
+		
+		// Growth and Periods on Chart are very specific to YouTube Artist CSVs
+		if ( in_array('growth', $headers) || in_array('periods_on_chart', $headers) ) return 'top-artists';
+
+		// Fallback detection for "Artist Name" column alone
+		if ( in_array('artist_name', $headers) || in_array('artist', $headers) ) return 'top-artists';
+
+		return 'unknown';
 	}
 
 	public function get_warnings() {
@@ -277,6 +317,7 @@ class YouTubeCsvParser {
 			'image'          => $image ?: null,
 			'source_url'     => $url ?: null,
 			'youtube_id'     => $yt_id ?: null,
+			'growth'         => $raw['growth'] ?? null,
 			'peak_rank'      => isset( $raw['peak_rank'] ) && $raw['peak_rank'] !== '' ? intval( $raw['peak_rank'] ) : $rank,
 			'previous_rank'  => isset( $raw['previous_rank'] ) && $raw['previous_rank'] !== '' ? intval( $raw['previous_rank'] ) : null,
 			'weeks_on_chart' => isset( $raw['weeks_on_chart'] ) && $raw['weeks_on_chart'] !== '' ? intval( $raw['weeks_on_chart'] ) : 1,

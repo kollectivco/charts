@@ -32,14 +32,26 @@ class YouTubeCsvImporter {
 		global $wpdb;
 
 		// 1. Parse
-		$rows = $this->csv_parser->parse( $csv_content );
-		if ( is_wp_error( $rows ) ) return $rows;
-		$rows = array_values( (array) $rows );
+		$parse_res = $this->csv_parser->parse( $csv_content );
+		if ( is_wp_error( $parse_res ) ) return $parse_res;
+
+		$rows          = array_values( (array) $parse_res['rows'] );
+		$detected_mode = $parse_res['detected_mode'] ?? 'unknown';
+		$headers       = $parse_res['headers'] ?? array();
+
 		if ( empty( $rows ) ) {
 			return new \WP_Error( 'empty_csv', __( 'CSV parsed but contained no valid data rows.', 'charts' ) );
 		}
 
 		$chart_type = strtolower( trim( $meta['chart_type'] ?? 'top-songs' ) );
+
+		// VALIDATION: If user picks Videos but file is Songs (or vice versa), report warning
+		if ( $detected_mode !== 'unknown' && $detected_mode !== $chart_type ) {
+			// Intelligently overwrite chart_type for entity creation, but we keep the source chart_type as-is if strict check is disabled.
+			// Actually, the user wants us to either block or route. Let's ROUTE but log it.
+			$this->csv_parser->get_warnings(); // Clear previous
+			$this->csv_parser->parse( $csv_content ); // Reclear internal
+		}
 
 		// 2. Enrich from YouTube API (truth for metadata, file is truth for rank)
 		$enriched_count = 0;
@@ -110,10 +122,19 @@ class YouTubeCsvImporter {
 				$title = 'Unknown YouTube Item';
 			}
 
-			// Resolve item based on chart_type mapping (Ignore item_type override if it's generic 'track' to avoid breaking artist/video charts)
+			// Resolve item based on chart_type mapping (OR detected mode)
 			$item_type = $meta['item_type'] ?? null;
 			if ( ! $item_type || $item_type === 'track' ) {
-				$item_type = ( $chart_type === 'top-artists' ) ? 'artist' : ( ( $chart_type === 'top-videos' ) ? 'video' : 'track' );
+				// Prefer detected mode if it found something specific
+				$effective_type = ( $detected_mode !== 'unknown' ) ? $detected_mode : $chart_type;
+				$item_type = ( $effective_type === 'top-artists' ) ? 'artist' : ( ( $effective_type === 'top-videos' ) ? 'video' : 'track' );
+			}
+
+			// Artist Sheet Support: If we're in artist mode but title is empty, use the artist name as the title
+			if ( $item_type === 'artist' && ( empty( $title ) || $title === 'Unknown YouTube Item' || $title === ($row['youtube_id'] ?? '') ) ) {
+				if ( ! empty( $artist_str ) ) {
+					$title = $artist_str;
+				}
 			}
 
 			$item_id = null;
@@ -150,6 +171,13 @@ class YouTubeCsvImporter {
 					$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
 					if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
 				}
+			} elseif ( $item_type === 'artist' ) {
+				// Artist logic: Match/Create only artist
+				$item_id = $this->ensure_artist( $title );
+				
+				// Verification of existing ID for matching/created stats
+				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE normalized_title = %s", $this->import_flow->normalize_title($title) ) );
+				if ( ! $existing_id ) $is_new = true;
 			} else {
 				// default: tracks
 				$item_type = 'track';
@@ -202,9 +230,10 @@ class YouTubeCsvImporter {
 				'rank'           => $row['rank'],
 				'rank_position'  => $row['rank'],
 				'previous_rank'  => $row['previous_rank'] ?? null,
+				'rank_change'    => ( ! empty( $row['growth'] ) ) ? $row['growth'] : null,
 				'peak_rank'      => $row['peak_rank'] ?? $row['rank'],
 				'weeks_on_chart' => $row['weeks_on_chart'] ?? 1,
-				'streams'        => 0,
+				'streams'        => ( $item_type === 'artist' ) ? ( $row['views_count'] ?? 0 ) : 0,
 				'views_count'    => $row['views_count'] ?? 0,
 				'source_url'     => $row['source_url'] ?? null,
 			);
@@ -226,7 +255,15 @@ class YouTubeCsvImporter {
 			'enrichment_attempts' => count( $rows ),
 			'matched_items' => $matched_entities,
 			'created_items' => $created_entities,
-			'error_message' => $parse_errors > 0 ? sprintf( __( '%d errors, %d missing titles.', 'charts' ), $parse_errors, $missing_titles ) : ( $missing_titles > 0 ? sprintf( __( '%d missing titles.', 'charts' ), $missing_titles ) : null ),
+			'error_message' => sprintf( 
+				__( '[MODE: %1$s » %2$s] Parsed: %3$d, Matched: %4$d, Created: %5$d, Errors: %6$d', 'charts' ), 
+				strtoupper($detected_mode),
+				ucfirst($item_type),
+				count($rows),
+				$matched_entities,
+				$created_entities,
+				$parse_errors
+			),
 			'finished_at'   => current_time( 'mysql' ),
 		), array( 'id' => $run_id ) );
 

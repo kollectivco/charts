@@ -67,12 +67,88 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 
 <div class="kc-root">
 	
-	<!-- 1. HERO HEADER -->
-	<section class="kc-page-hero" style="text-align: center; padding: 120px 0;">
+	<!-- 1. DYNAMIC HERO SLIDER -->
+	<?php
+	$slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
+	$hero_slides = [];
+	$hero_chart_ids = array_map(function($d){ return $d->id; }, array_slice($definitions, 0, 3));
+	foreach ( $hero_chart_ids as $id ) {
+		$def = $manager->get_definition( $id );
+		if ( ! $def ) continue;
+		$leader = $wpdb->get_row( $wpdb->prepare( "
+			SELECT e.* FROM {$wpdb->prefix}charts_entries e
+			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 1
+		", $def->chart_type, $def->country_code ) );
+		$hero_slides[] = [
+			'title' => $def->title,
+			'subtitle' => $def->chart_summary,
+			'leader_name' => $leader->track_name ?? 'Trending Now',
+			'leader_artist' => $leader->artist_names ?? 'Global Charts',
+			'image' => $leader->cover_image ?? (!empty($def->cover_image_url) ? $def->cover_image_url : CHARTS_URL . 'public/assets/img/placeholder.png'),
+			'url' => home_url('/charts/' . $def->slug . '/'),
+			'accent' => $def->accent_color ?: '#fe025b'
+		];
+	}
+	?>
+
+	<?php if ( ! empty( $hero_slides ) ) : ?>
+	<section class="kc-hero-slider-section" style="padding-top: 40px; margin-bottom: 40px;">
 		<div class="kc-container">
-			<h1 class="kc-page-title" style="font-size: 110px; margin-bottom: 0;">Kontentrainment Charts</h1>
+			<div class="kc-hero-slider-wrap kc-slider-<?php echo esc_attr($slider_style); ?>" data-style="<?php echo esc_attr($slider_style); ?>">
+				<div class="kc-hero-slider">
+					<?php foreach ( $hero_slides as $index => $slide ) : ?>
+						<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
+							<?php if ( $slider_style === 'style-1' ) : ?>
+								<div class="kc-card-floating">
+									<div class="kc-card-art">
+										<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+										<div class="kc-floating-object"><img src="<?php echo esc_url($slide['image']); ?>" alt=""></div>
+									</div>
+									<div class="kc-card-body">
+										<span class="kc-eyebrow"><?php echo esc_html($slide['title']); ?></span>
+										<h2><?php echo esc_html($slide['leader_name']); ?></h2>
+										<p><?php echo esc_html($slide['leader_artist']); ?></p>
+										<div style="margin-top: 40px;"><a href="<?php echo esc_url($slide['url']); ?>" class="kc-btn small">Explore Intelligence &rarr;</a></div>
+									</div>
+								</div>
+							<?php elseif ( $slider_style === 'style-2' ) : ?>
+								<div class="kc-gallery-item">
+									<img src="<?php echo esc_url($slide['image']); ?>" class="kc-gallery-bg"><div class="kc-gallery-overlay"></div>
+									<div class="kc-gallery-content">
+										<h3 class="kc-gallery-title"><?php echo esc_html($slide['title']); ?></h3>
+										<span class="kc-gallery-leader"><?php echo esc_html($slide['leader_name']); ?></span>
+										<span class="kc-gallery-artist"><?php echo esc_html($slide['leader_artist']); ?></span>
+										<a href="<?php echo esc_url($slide['url']); ?>" class="kc-gallery-link"></a>
+									</div>
+								</div>
+							<?php elseif ( $slider_style === 'style-3' ) : ?>
+								<div class="kc-stack-card">
+									<div class="kc-stack-visual"><img src="<?php echo esc_url($slide['image']); ?>" alt=""></div>
+									<div class="kc-stack-info">
+										<span class="kc-eyebrow"><?php echo esc_html($slide['title']); ?></span>
+										<h2><?php echo esc_html($slide['leader_name']); ?></h2>
+										<p class="kc-stack-desc"><?php echo esc_html($slide['subtitle']); ?></p>
+										<div class="kc-stack-meta"><span class="kc-stack-leader">#1 SPOT • <?php echo esc_html($slide['leader_artist']); ?></span></div>
+										<div style="margin-top: 48px;"><a href="<?php echo esc_url($slide['url']); ?>" class="kc-btn">FULL BREAKDOWN &rarr;</a></div>
+									</div>
+								</div>
+							<?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<?php if ( count($hero_slides) > 1 ) : ?>
+					<div class="kc-slider-nav">
+						<button class="kc-prev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+						<div class="kc-slider-dots"><?php foreach($hero_slides as $i => $s): ?><span class="kc-dot <?php echo $i===0?'active':''; ?>"></span><?php endforeach; ?></div>
+						<button class="kc-next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+					</div>
+				<?php endif; ?>
+			</div>
 		</div>
 	</section>
+	<?php endif; ?>
 
 	<div class="kc-container">
 		

@@ -14,6 +14,7 @@ if ( $logo_id ) {
 $wordmark = get_option( 'charts_wordmark', 'KCharts' );
 $footer_desc = get_option( 'charts_footer_description' );
 $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' );
+$slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
 ?>
 <div class="charts-admin-wrap premium-light">
 	<header class="charts-admin-header">
@@ -145,6 +146,31 @@ $footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' )
 					<label for="footer_description">Platform Description</label>
 					<textarea name="footer_description" id="footer_description" class="form-control" rows="3"><?php echo esc_textarea($footer_desc); ?></textarea>
 					<span class="input-helper">Brief editorial summary displayed in the brand column.</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- 3.5 Homepage Configuration -->
+		<div class="premium-form-card" style="margin-top:40px;">
+			<div class="card-header">
+				<h3>Homepage Configuration</h3>
+				<p>Manage the visual presentation of the primary hero slider.</p>
+			</div>
+			<div class="premium-form-grid">
+				<div class="form-group">
+					<label for="homepage_slider_style">Default Slider Style</label>
+					<select name="homepage_slider_style" id="homepage_slider_style" class="form-control">
+						<option value="style-1" <?php selected( $slider_style, 'style-1' ); ?>>Style 1: Floating Cards</option>
+						<option value="style-2" <?php selected( $slider_style, 'style-2' ); ?>>Style 2: Gallery Strip</option>
+						<option value="style-3" <?php selected( $slider_style, 'style-3' ); ?>>Style 3: Layered Stack</option>
+					</select>
+					<span class="input-helper">Global default for the cinematic hero module.</span>
+				</div>
+				<div class="form-group">
+					<label>Presentation Preview</label>
+					<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; font-size:12px; color:#64748b;">
+						Individual Elementor widgets can override this setting via their own "Display Style" control.
+					</div>
 				</div>
 			</div>
 		</div>

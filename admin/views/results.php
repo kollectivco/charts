@@ -77,6 +77,11 @@ $runs = $wpdb->get_results( "
 										<?php echo number_format( $run->matched_items ?? 0 ); ?> <?php _e( 'matched', 'charts' ); ?> · 
 										<?php echo number_format( $run->created_items ?? 0 ); ?> <?php _e( 'created', 'charts' ); ?>
 									</div>
+									<?php if ( ! empty( $run->error_message ) ) : ?>
+										<div style="font-size: 9px; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.03); border-left: 2px solid var(--charts-primary); color: var(--charts-text-dim); display: inline-block;">
+											<?php echo esc_html( $run->error_message ); ?>
+										</div>
+									<?php endif; ?>
 								</td>
 								<td>
 									<div style="color: var(--charts-text-dim); font-size:12px; font-weight:600;">

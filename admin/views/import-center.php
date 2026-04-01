@@ -23,6 +23,68 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 
 	<?php settings_errors( 'charts' ); ?>
 
+	<!-- 0. Sync Result Summary -->
+	<?php if ( isset( $_GET['sync_complete'] ) && isset( $_GET['run_id'] ) ) : 
+		global $wpdb;
+		$run_id = intval( $_GET['run_id'] );
+		$run = $wpdb->get_row( $wpdb->prepare( "
+			SELECT r.*, s.source_name, s.platform
+			FROM {$wpdb->prefix}charts_import_runs r
+			JOIN {$wpdb->prefix}charts_sources s ON s.id = r.source_id
+			WHERE r.id = %d
+		", $run_id ) );
+		
+		if ( $run ) :
+			$chart_url = ( $run->platform === 'youtube' ) ? home_url('/charts/') : home_url('/charts/spotify/');
+	?>
+		<div class="result-summary-card <?php echo $run->status === 'completed' ? 'is-success' : 'is-error'; ?>">
+			<div class="result-header">
+				<div class="result-badge">
+					<span class="dashicons dashicons-<?php echo $run->status === 'completed' ? 'saved' : 'warning'; ?>"></span>
+				</div>
+				<div class="result-meta">
+					<h2><?php echo $run->status === 'completed' ? __( 'Sync Successful', 'charts' ) : __( 'Sync Failed', 'charts' ); ?></h2>
+					<p><?php echo esc_html( $run->source_name ); ?> • <?php echo date('M j, H:i', strtotime($run->started_at)); ?></p>
+				</div>
+				<div class="result-actions">
+					<a href="<?php echo esc_url($chart_url); ?>" target="_blank" class="charts-btn-create small">View Charts</a>
+					<a href="<?php echo admin_url('admin.php?page=charts-imports'); ?>" class="charts-btn-back">History</a>
+				</div>
+			</div>
+			
+			<div class="result-stats-grid">
+				<div class="res-stat">
+					<span class="stat-val"><?php echo number_format($run->parsed_rows); ?></span>
+					<span class="stat-lab">Total Rows</span>
+				</div>
+				<div class="res-stat">
+					<span class="stat-val"><?php echo number_format($run->matched_items); ?></span>
+					<span class="stat-lab">Matched</span>
+				</div>
+				<div class="res-stat">
+					<span class="stat-val" style="color:var(--charts-primary);"><?php echo number_format($run->created_items); ?></span>
+					<span class="stat-lab">New Created</span>
+				</div>
+				<div class="res-stat">
+					<span class="stat-val" style="color:<?php echo $run->status === 'completed' ? '#10b981' : '#ef4444'; ?>;">
+						<?php 
+						$efficiency = ($run->parsed_rows > 0) ? round(($run->matched_items / $run->parsed_rows) * 100) : 0;
+						echo $efficiency . '%';
+						?>
+					</span>
+					<span class="stat-lab">Intelligence Match</span>
+				</div>
+			</div>
+
+			<?php if ( ! empty($run->error_message) ) : ?>
+				<div class="result-diagnosis">
+					<strong>Result Diagnosis:</strong>
+					<code><?php echo esc_html($run->error_message); ?></code>
+				</div>
+			<?php endif; ?>
+		</div>
+	<?php endif; endif; ?>
+
 	<div class="premium-form-card">
 		<form method="post" action="" enctype="multipart/form-data" id="unified-import-form">
 			<?php wp_nonce_field( 'charts_admin_action' ); ?>
@@ -270,6 +332,46 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 	margin-left: 10px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Result Card Styling */
+.result-summary-card {
+	background: #fff;
+	border-radius: 16px;
+	border: 1px solid var(--charts-border);
+	padding: 30px;
+	margin-bottom: 40px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+	animation: slideIn 0.5s ease;
+}
+@keyframes slideIn { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
+
+.result-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+.result-badge {
+	width: 48px; height: 48px; border-radius: 12px;
+	display: flex; align-items: center; justify-content: center;
+	background: #ecfdf5; color: #10b981;
+}
+.is-error .result-badge { background: #fef2f2; color: #ef4444; }
+.result-badge .dashicons { font-size: 24px; width: 24px; height: 24px; }
+.result-meta h2 { margin: 0; font-size: 20px; font-weight: 950; letter-spacing: -0.02em; }
+.result-meta p { margin: 2px 0 0; color: var(--charts-text-dim); font-size: 13px; font-weight:600; }
+.result-actions { margin-left: auto; display: flex; gap: 10px; }
+
+.result-stats-grid {
+	display: grid; grid-template-columns: repeat(4, 1fr);
+	gap: 1px; background: var(--charts-border);
+	border-radius: 12px; overflow: hidden; border: 1px solid var(--charts-border);
+}
+.res-stat { background: #fff; padding: 20px; text-align: center; }
+.stat-val { display: block; font-size: 24px; font-weight: 900; letter-spacing: -0.04em; }
+.stat-lab { font-size: 11px; font-weight: 700; color: var(--charts-text-dim); text-transform: uppercase; margin-top: 4px; }
+
+.result-diagnosis {
+	margin-top: 24px; padding: 15px 20px;
+	background: var(--charts-bg); border-radius: 8px;
+	font-size: 12px; color: var(--charts-text-dim);
+}
+.result-diagnosis code { background: none; color: var(--charts-primary); font-weight: 800; margin-left: 8px; }
 </style>
 
 <script>

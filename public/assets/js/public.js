@@ -33,5 +33,48 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    // 2. HERO SLIDER SYSTEM
+    const initSliders = () => {
+        const wrappers = document.querySelectorAll('.kc-hero-slider-wrap');
+        
+        wrappers.forEach(wrap => {
+            const container = wrap.querySelector('.kc-hero-slider');
+            if (!container) return;
+            
+            const slides = wrap.querySelectorAll('.kc-slide');
+            const dots = wrap.querySelectorAll('.kc-dot');
+            const nextBtn = wrap.querySelector('.kc-next');
+            const prevBtn = wrap.querySelector('.kc-prev');
+            if (!slides.length) return;
+
+            let currentIdx = 0;
+
+            const update = (idx) => {
+                slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+                dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+                currentIdx = idx;
+            };
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    let next = (currentIdx + 1) % slides.length;
+                    update(next);
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    let prev = (currentIdx - 1 + slides.length) % slides.length;
+                    update(prev);
+                });
+            }
+
+            dots.forEach((dot, i) => {
+                dot.addEventListener('click', () => update(i));
+            });
+        });
+    };
+
     initExpandables();
+    initSliders();
 });
