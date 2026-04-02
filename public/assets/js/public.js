@@ -42,18 +42,27 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!container) return;
             
             const slides = wrap.querySelectorAll('.kc-slide');
-            const dots = wrap.querySelectorAll('.kc-dot');
             const nextBtn = wrap.querySelector('.kc-next');
             const prevBtn = wrap.querySelector('.kc-prev');
+            const progressBar = wrap.querySelector('.kc-progress-bar');
             if (!slides.length) return;
 
             let currentIdx = 0;
 
             const update = (idx) => {
                 slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
-                dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+                
+                // Update progress bar
+                if (progressBar) {
+                    const progress = ((idx + 1) / slides.length) * 100;
+                    progressBar.style.width = `${progress}%`;
+                }
+
                 currentIdx = idx;
             };
+
+            // Initialize progress
+            update(0);
 
             if (nextBtn) {
                 nextBtn.addEventListener('click', () => {
@@ -68,10 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     update(prev);
                 });
             }
-
-            dots.forEach((dot, i) => {
-                dot.addEventListener('click', () => update(i));
-            });
         });
     };
 

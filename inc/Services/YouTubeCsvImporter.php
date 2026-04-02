@@ -15,11 +15,13 @@ class YouTubeCsvImporter {
 	private $import_flow;
 	private $csv_parser;
 	private $enrichment;
+	private $debug_log = array();
 
 	public function __construct() {
 		$this->import_flow = new ImportFlow();
 		$this->csv_parser  = new \Charts\Parsers\YouTubeCsvParser();
 		$this->enrichment  = new YouTubeEnrichmentService();
+		$this->debug_log   = array();
 	}
 
 	/**
@@ -122,17 +124,44 @@ class YouTubeCsvImporter {
 				$title = 'Unknown YouTube Item';
 			}
 
-			// Resolve item based on chart_type mapping (OR detected mode)
-			$item_type = $meta['item_type'] ?? null;
-			$final_logic = ($detected_mode !== 'unknown') ? $detected_mode : $chart_type;
+			// ─────────────────────────────────────────────
+			//  Entity Type Resolution (Precedence: Detection > Source Meta)
+			// ─────────────────────────────────────────────
 			
-			if ( ! $item_type || $item_type === 'track' ) {
-				$item_type = ( $final_logic === 'top-artists' ) ? 'artist' : ( ( $final_logic === 'top-videos' ) ? 'video' : 'track' );
+			// Detect entity based on structural column analysis
+			$detected_item = 'unknown';
+			if ( $detected_mode === 'top-songs' ) {
+				$detected_item = 'track';
+			} elseif ( $detected_mode === 'top-artists' ) {
+				$detected_item = 'artist';
+			} elseif ( $detected_mode === 'top-videos' ) {
+				$detected_item = 'video';
 			}
 
-			// Artist Sheet Support: If we're in artist mode but title is empty, use the artist name as the title
-			if ( $item_type === 'artist' && ( empty( $title ) || $title === 'Unknown YouTube Item' || $title === ($row['youtube_id'] ?? '') ) ) {
-				if ( ! empty( $artist_str ) ) {
+			// Final Resolution logic
+			if ( $detected_item !== 'unknown' ) {
+				$item_type   = $detected_item;
+				$final_logic = $detected_mode;
+			} else {
+				$item_type   = $meta['item_type'] ?? 'track';
+				$final_logic = $chart_type; // the source default
+			}
+
+			// Log this specific decision trail for debugging
+			if ( $current_row === 1 ) {
+				$this->debug_log[] = sprintf(
+					"[DEBUG: Row 1 Decision] Detected=%s (%s), MetaItem=%s, Assigned=%s (Logic: %s)",
+					$detected_mode, 
+					$detected_item,
+					$meta['item_type'] ?? 'none',
+					$item_type,
+					$final_logic
+				);
+			}
+
+			// Special case for artist sheets: ensure title is artist name if title is empty
+			if ( $item_type === 'artist' && ( empty( $title ) || $title === 'Unknown YouTube Item' ) ) {
+				if ( ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ) {
 					$title = $artist_str;
 				}
 			}
@@ -140,14 +169,10 @@ class YouTubeCsvImporter {
 			$item_id = null;
 			$is_new  = false;
 
-			if ( $item_type === 'artist' ) {
-				// For top-artists, the item_title IS the artist name in many YouTube exports
-				$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
-				$item_id     = $this->ensure_artist( $this->import_flow->normalize_title( $artist_name ), $row['image'] ?? null );
-			} elseif ( $item_type === 'video' ) {
+			if ( $item_type === 'video' ) {
 				$primary_artist_id = $this->ensure_artist( $primary_name );
 				
-				// Check for existing before calling ensure_video to track match vs create
+				// Match existing to determine if it's a new entity
 				$existing_id = null;
 				if ( ! empty( $row['youtube_id'] ) ) {
 					$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_videos WHERE youtube_id = %s", $row['youtube_id'] ) );
@@ -165,24 +190,26 @@ class YouTubeCsvImporter {
 					$row['source_url'] ?? null 
 				);
 				
-				// Link ALL artists
+				// Multi-artist mapping
 				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
 				foreach ( $all_artists as $a_name ) {
 					$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
 					if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
 				}
 			} elseif ( $item_type === 'artist' ) {
-				// Artist logic: Match/Create only artist
-				$item_id = $this->ensure_artist( $title );
+				// Artist Logic: Match and ensure only the artist entity
+				$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
+				$item_id     = $this->ensure_artist( $this->import_flow->normalize_title( $artist_name ), $row['image'] ?? null );
 				
-				// Verification of existing ID for matching/created stats
-				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE normalized_title = %s", $this->import_flow->normalize_title($title) ) );
+				// Tracking stats
+				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE normalized_title = %s", $this->import_flow->normalize_title($artist_name) ) );
 				if ( ! $existing_id ) $is_new = true;
 			} else {
-				// default: tracks
+				// Default / Track Logic
 				$item_type = 'track';
 				$primary_artist_id = $this->ensure_artist( $primary_name );
 
+				// Check existing before creation for stats tracking
 				$existing_id = null;
 				if ( ! empty( $row['youtube_id'] ) ) {
 					$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_tracks WHERE youtube_id = %s", $row['youtube_id'] ) );
@@ -194,7 +221,7 @@ class YouTubeCsvImporter {
 
 				$item_id   = $this->ensure_track( $this->import_flow->normalize_title( $title ), $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
 
-				// Link ALL artists
+				// Multi-artist track mapping
 				$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
 				foreach ( $all_artists as $a_name ) {
 					$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
@@ -249,22 +276,20 @@ class YouTubeCsvImporter {
 		}
 
 		// 7. Complete run
+		$final_msg = sprintf( "[LOGIC: %s » %s]", strtoupper($final_logic), ucfirst($item_type) );
+		if ( ! empty( $this->debug_log ) ) {
+			$final_msg .= " • " . implode( " • ", $this->debug_log );
+		}
+		$final_msg .= sprintf( " (Parsed: %d, Matched: %d, Created: %d, Errors: %d)", count($rows), $matched_entities, $created_entities, $parse_errors );
+		
 		$wpdb->update( $wpdb->prefix . 'charts_import_runs', array(
-			'status'        => 'completed',
-			'parsed_rows'   => count( $rows ),
-			'enrichment_attempts' => count( $rows ),
-			'matched_items' => $matched_entities,
-			'created_items' => $created_entities,
-			'error_message' => sprintf( 
-				__( '[LOGIC: %1$s » %2$s] Parsed: %3$d, Matched: %4$d, Created: %5$d, Errors: %6$d', 'charts' ), 
-				strtoupper($final_logic),
-				ucfirst($item_type),
-				count($rows),
-				$matched_entities,
-				$created_entities,
-				$parse_errors
-			),
-			'finished_at'   => current_time( 'mysql' ),
+			'status'           => 'completed',
+			'parsed_rows'      => count($rows),
+			'saved_entries'    => $saved,
+			'matched_items'    => $matched_entities,
+			'created_items'    => $created_entities,
+			'error_message'    => $final_msg,
+			'completed_at'     => current_time( 'mysql' ),
 		), array( 'id' => $run_id ) );
 
 		$wpdb->update( $wpdb->prefix . 'charts_sources', array(

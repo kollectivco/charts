@@ -37,13 +37,17 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 		if ( $run ) :
 			$chart_url = ( $run->platform === 'youtube' ) ? home_url('/charts/') : home_url('/charts/spotify/');
 	?>
-		<div class="result-summary-card <?php echo $run->status === 'completed' ? 'is-success' : 'is-error'; ?>">
+		<?php 
+			$is_success = ($run->status === 'completed' && ($run->matched_items > 0 || $run->created_items > 0));
+			$result_class = $is_success ? 'is-success' : 'is-error';
+		?>
+		<div class="result-summary-card <?php echo $result_class; ?>">
 			<div class="result-header">
 				<div class="result-badge">
-					<span class="dashicons dashicons-<?php echo $run->status === 'completed' ? 'saved' : 'warning'; ?>"></span>
+					<span class="dashicons dashicons-<?php echo $is_success ? 'saved' : 'warning'; ?>"></span>
 				</div>
 				<div class="result-meta">
-					<h2><?php echo $run->status === 'completed' ? __( 'Sync Successful', 'charts' ) : __( 'Sync Failed', 'charts' ); ?></h2>
+					<h2><?php echo $is_success ? __( 'Sync Successful', 'charts' ) : __( 'Sync Attention Required', 'charts' ); ?></h2>
 					<p><?php echo esc_html( $run->source_name ); ?> • <?php echo date('M j, H:i', strtotime($run->started_at)); ?></p>
 				</div>
 				<div class="result-actions">

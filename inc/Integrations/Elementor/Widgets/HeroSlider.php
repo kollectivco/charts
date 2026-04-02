@@ -24,12 +24,11 @@ class HeroSlider extends Widget_Base {
 			'label' => __( 'Visual Style', 'charts' ),
 			'type' => Controls_Manager::SELECT,
 			'options' => [
-				'default' => __( 'Use System Default', 'charts' ),
-				'style-1' => __( 'Style 1: Floating Cards', 'charts' ),
-				'style-2' => __( 'Style 2: Gallery Strip', 'charts' ),
-				'style-3' => __( 'Style 3: Layered Stack', 'charts' ),
+				'style-1' => __( 'Style 1: Editorial Hero', 'charts' ),
+				'style-2' => __( 'Style 2: Bento Rail', 'charts' ),
+				'style-3' => __( 'Style 3: Minimal Coverflow', 'charts' ),
 			],
-			'default' => 'default',
+			'default' => 'style-1',
 		] );
 
 		// Data Source
@@ -87,13 +86,15 @@ class HeroSlider extends Widget_Base {
 			", $def->chart_type, $def->country_code ) );
 
 			$slides[] = [
-				'title' => $def->title,
-				'subtitle' => $def->chart_summary,
-				'leader_name' => $row->track_name ?? '',
-				'leader_artist' => $row->artist_names ?? '',
-				'image' => $row->cover_image ?? $def->cover_image_url ?? CHARTS_URL . 'public/assets/img/placeholder.png',
-				'url' => home_url('/charts/' . $def->slug . '/'),
-				'accent' => $def->accent_color ?: '#fe025b'
+				'title'         => $def->title,
+				'subtitle'      => $def->chart_summary,
+				'leader_name'   => $row->track_name ?? 'Trending Now',
+				'leader_artist' => $row->artist_names ?? 'Global Charts',
+				'image'         => $row->cover_image ?? $def->cover_image_url ?? CHARTS_URL . 'public/assets/img/placeholder.png',
+				'url'           => home_url('/charts/' . $def->slug . '/'),
+				'accent'        => $def->accent_color ?: '#fe025b',
+				'platform'      => $def->platform ?? 'Global',
+				'region'        => $def->country_name ?? 'Global'
 			];
 		}
 
@@ -108,52 +109,33 @@ class HeroSlider extends Widget_Base {
 
 	private function render_slider_html( $slides, $style ) {
 		?>
-		<div class="kc-hero-slider-wrap kc-slider-<?php echo esc_attr($style); ?>" data-style="<?php echo esc_attr($style); ?>">
+		<div class="kc-hero-slider-wrap kc-slider-<?php echo esc_attr($style); ?>">
 			<div class="kc-hero-slider">
 				<?php foreach ( $slides as $index => $slide ) : ?>
 					<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
 						
-						<?php if ( $style === 'style-1' ) : /* Floating Card */ ?>
-							<div class="kc-card-floating">
-								<div class="kc-card-art">
-									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
-									<div class="kc-floating-object">
-										<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+						<?php if ( $style === 'style-1' || true ) : ?>
+							<div class="kc-slide-layout">
+								<div class="kc-slide-content">
+									<div class="kc-chart-badge">
+										<span></span>
+										<?php echo esc_html(strtoupper($slide['platform'])); ?> <?php echo esc_html(strtoupper($slide['region'])); ?>
+									</div>
+									<h1 class="kc-hero-leader"><?php echo esc_html($slide['leader_name']); ?></h1>
+									<div class="kc-hero-meta">
+										<span>by <b><?php echo esc_html($slide['leader_artist']); ?></b></span>
+										<span class="kc-meta-divider">•</span>
+										<span><?php echo esc_html($slide['title']); ?></span>
+									</div>
+									<div class="kc-hero-actions">
+										<a href="<?php echo esc_url($slide['url']); ?>" class="kc-hero-cta">
+											VIEW FULL CHART
+											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+										</a>
 									</div>
 								</div>
-								<div class="kc-card-body">
-									<span class="kc-eyebrow"><?php echo esc_html($slide['title']); ?></span>
-									<h2><?php echo esc_html($slide['leader_name']); ?></h2>
-									<p><?php echo esc_html($slide['leader_artist']); ?></p>
-									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-btn small">View Chart &rarr;</a>
-								</div>
-							</div>
-
-						<?php elseif ( $style === 'style-2' ) : /* Gallery Strip */ ?>
-							<div class="kc-gallery-item">
-								<img src="<?php echo esc_url($slide['image']); ?>" class="kc-gallery-bg">
-								<div class="kc-gallery-overlay"></div>
-								<div class="kc-gallery-content">
-									<h3 class="kc-gallery-title"><?php echo esc_html($slide['title']); ?></h3>
-									<span class="kc-gallery-leader"><?php echo esc_html($slide['leader_name']); ?></span>
-									<span class="kc-gallery-artist"><?php echo esc_html($slide['leader_artist']); ?></span>
-									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-gallery-link"></a>
-								</div>
-							</div>
-
-						<?php elseif ( $style === 'style-3' ) : /* Layered Stack */ ?>
-							<div class="kc-stack-card">
-								<div class="kc-stack-visual">
+								<div class="kc-slide-visual">
 									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
-								</div>
-								<div class="kc-stack-info">
-									<span class="kc-eyebrow"><?php echo esc_html($slide['title']); ?></span>
-									<h2><?php echo esc_html($slide['leader_name']); ?></h2>
-									<p class="kc-stack-desc"><?php echo esc_html($slide['subtitle']); ?></p>
-									<div class="kc-stack-meta">
-										<span class="kc-stack-leader">#1 <?php echo esc_html($slide['leader_artist']); ?></span>
-									</div>
-									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-btn">ENTER DATA &rarr;</a>
 								</div>
 							</div>
 						<?php endif; ?>
@@ -164,11 +146,13 @@ class HeroSlider extends Widget_Base {
 
 			<?php if ( count($slides) > 1 ) : ?>
 				<div class="kc-slider-nav">
-					<button class="kc-prev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-					<div class="kc-slider-dots">
-						<?php foreach($slides as $i => $s): ?><span class="kc-dot <?php echo $i===0?'active':''; ?>"></span><?php endforeach; ?>
+					<div class="kc-nav-arrows">
+						<button class="kc-nav-btn kc-prev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+						<button class="kc-nav-btn kc-next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
 					</div>
-					<button class="kc-next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+					<div class="kc-slider-progress">
+						<div class="kc-progress-bar"></div>
+					</div>
 				</div>
 			<?php endif; ?>
 		</div>
