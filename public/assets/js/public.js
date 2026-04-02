@@ -80,6 +80,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    // 3. MOBILE MENU TOGGLE
+    const initMobileMenu = () => {
+        const trigger = document.querySelector('.kc-mobile-trigger');
+        const root = document.querySelector('.kc-root');
+        
+        if (trigger && root) {
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                root.classList.toggle('is-nav-open');
+            });
+            
+            // Close when clicking outside or on a link
+            document.addEventListener('click', function(e) {
+                if (root.classList.contains('is-nav-open') && !e.target.closest('.charts-nav')) {
+                    root.classList.remove('is-nav-open');
+                }
+            });
+        }
+    };
+
     initExpandables();
     initSliders();
+    initMobileMenu();
 });

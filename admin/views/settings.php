@@ -332,14 +332,34 @@ $slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
 </div>
 
 <script>
-	// Tab Switching
-	$('.tab-link').on('click', function(){
-		var tab = $(this).data('tab');
+jQuery(document).ready(function($) {
+	// Tab Switching Logic
+	const switchTab = (tabId) => {
 		$('.tab-link').removeClass('active');
-		$(this).addClass('active');
 		$('.tab-content').removeClass('active');
-		$('#tab-' + tab).addClass('active');
+		
+		$('[data-tab="' + tabId + '"]').addClass('active');
+		$('#tab-' + tabId).addClass('active');
+		
+		// Update URL hash without jumping
+		if (history.pushState) {
+			history.pushState(null, null, '#' + tabId);
+		} else {
+			location.hash = '#' + tabId;
+		}
+	};
+
+	// Click Handler
+	$('.tab-link').on('click', function() {
+		const tab = $(this).data('tab');
+		switchTab(tab);
 	});
+
+	// Handle initial tab from URL hash
+	const hash = window.location.hash.substring(1);
+	if (hash && $('#tab-' + hash).length) {
+		switchTab(hash);
+	}
 
 	// Logo Media Uploader
 	var frame;
