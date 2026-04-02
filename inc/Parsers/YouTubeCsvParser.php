@@ -195,28 +195,30 @@ class YouTubeCsvParser {
 	 * Detect if the CSV looks like a Songs, Videos, or Artists chart.
 	 */
 	private function detect_mode( $headers ) {
-		$song_count = 0;
-		$video_count = 0;
-		$artist_count = 0;
+		$has_track_keys = array_intersect($headers, array('track_name', 'song', 'title', 'item_title', 'track'));
+		$has_artist_names = array_intersect($headers, array('artist_names', 'artist_name', 'artist', 'performer'));
+		$has_video_keys = array_intersect($headers, array('video_title', 'video_id', 'clip', 'mv', 'music_video', 'video_name'));
 
-		$song_keys = array('song', 'track', 'track_name', 'audio');
-		$video_keys = array('video', 'video_title', 'clip', 'mv', 'music_video');
-		$artist_keys = array('channel', 'channel_name', 'performer');
-
-		foreach ( $headers as $h ) {
-			if ( in_array( $h, $song_keys ) ) $song_count++;
-			if ( in_array( $h, $video_keys ) ) $video_count++;
-			if ( in_array( $h, $artist_keys ) ) $artist_count++;
+		// 1. YouTube Track Chart (Song Chart)
+		// Usually contains Track Name AND Artist Names (plural)
+		if ( ! empty($has_track_keys) && in_array('artist_names', $headers) ) {
+			return 'top-songs';
 		}
 
-		if ( $song_count > $video_count && $song_count > $artist_count ) return 'top-songs';
-		if ( $video_count > $song_count && $video_count > $artist_count ) return 'top-videos';
-		if ( $artist_count > 0 && $song_count === 0 && $video_count === 0 ) return 'top-artists';
-		
-		// Growth and Periods on Chart are very specific to YouTube Artist CSVs
-		if ( in_array('growth', $headers) || in_array('periods_on_chart', $headers) ) return 'top-artists';
+		// 2. YouTube Artist Chart
+		// Usually contains Artist Name (singular) and NO track/video specific titles
+		if ( in_array('artist_name', $headers) && empty($has_track_keys) && empty($has_video_keys) ) {
+			return 'top-artists';
+		}
 
-		// Fallback detection for "Artist Name" column alone
+		// 3. YouTube Music Video Chart
+		// Contains Video Title or specific video keys
+		if ( ! empty($has_video_keys) ) {
+			return 'top-videos';
+		}
+
+		// 4. Broad fallbacks based on dominant column counts
+		if ( ! empty($has_track_keys) ) return 'top-songs';
 		if ( in_array('artist_name', $headers) || in_array('artist', $headers) ) return 'top-artists';
 
 		return 'unknown';

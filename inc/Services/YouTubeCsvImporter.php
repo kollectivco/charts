@@ -124,10 +124,10 @@ class YouTubeCsvImporter {
 
 			// Resolve item based on chart_type mapping (OR detected mode)
 			$item_type = $meta['item_type'] ?? null;
+			$final_logic = ($detected_mode !== 'unknown') ? $detected_mode : $chart_type;
+			
 			if ( ! $item_type || $item_type === 'track' ) {
-				// Prefer detected mode if it found something specific
-				$effective_type = ( $detected_mode !== 'unknown' ) ? $detected_mode : $chart_type;
-				$item_type = ( $effective_type === 'top-artists' ) ? 'artist' : ( ( $effective_type === 'top-videos' ) ? 'video' : 'track' );
+				$item_type = ( $final_logic === 'top-artists' ) ? 'artist' : ( ( $final_logic === 'top-videos' ) ? 'video' : 'track' );
 			}
 
 			// Artist Sheet Support: If we're in artist mode but title is empty, use the artist name as the title
@@ -256,8 +256,8 @@ class YouTubeCsvImporter {
 			'matched_items' => $matched_entities,
 			'created_items' => $created_entities,
 			'error_message' => sprintf( 
-				__( '[MODE: %1$s » %2$s] Parsed: %3$d, Matched: %4$d, Created: %5$d, Errors: %6$d', 'charts' ), 
-				strtoupper($detected_mode),
+				__( '[LOGIC: %1$s » %2$s] Parsed: %3$d, Matched: %4$d, Created: %5$d, Errors: %6$d', 'charts' ), 
+				strtoupper($final_logic),
 				ucfirst($item_type),
 				count($rows),
 				$matched_entities,
