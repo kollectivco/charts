@@ -100,35 +100,80 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 		<div class="kc-container">
 			<div class="kc-hero-slider-wrap kc-slider-<?php echo esc_attr($slider_style); ?>">
 				<div class="kc-hero-slider">
-					<?php foreach ( $hero_slides as $index => $slide ) : ?>
-						<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
-							<?php if ( $slider_style === 'style-1' || true ) : // Default to Style 1 for now ?>
-								<div class="kc-slide-layout">
+					
+					<?php if ( $slider_style === 'style-1' ) : ?>
+						<!-- STYLE 1: EDITORIAL HERO -->
+						<?php foreach ( $hero_slides as $index => $slide ) : ?>
+							<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
+								<div class="kc-slide-layout style-1-layout">
 									<div class="kc-slide-content">
-										<div class="kc-chart-badge">
-											<span></span>
-											<?php echo esc_html(strtoupper($slide['platform'])); ?> <?php echo esc_html(strtoupper($slide['region'])); ?>
-										</div>
+										<div class="kc-chart-badge"><span></span> <?php echo esc_html(strtoupper($slide['platform'])); ?> <?php echo esc_html(strtoupper($slide['region'])); ?></div>
 										<h1 class="kc-hero-leader"><?php echo esc_html($slide['leader_name']); ?></h1>
 										<div class="kc-hero-meta">
 											<span>by <b><?php echo esc_html($slide['leader_artist']); ?></b></span>
 											<span class="kc-meta-divider">•</span>
-											<span><?php echo esc_html($slide['title']); ?></span>
+											<span class="kc-chart-origin"><?php echo esc_html($slide['title']); ?></span>
 										</div>
 										<div class="kc-hero-actions">
-											<a href="<?php echo esc_url($slide['url']); ?>" class="kc-hero-cta">
-												VIEW FULL CHART
-												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-											</a>
+											<a href="<?php echo esc_url($slide['url']); ?>" class="kc-hero-cta">VIEW FULL CHART</a>
 										</div>
 									</div>
 									<div class="kc-slide-visual">
 										<img src="<?php echo esc_url($slide['image']); ?>" alt="">
 									</div>
 								</div>
-							<?php endif; ?>
-						</div>
-					<?php endforeach; ?>
+							</div>
+						<?php endforeach; ?>
+
+					<?php elseif ( $slider_style === 'style-2' ) : ?>
+						<!-- STYLE 2: BENTO RAIL -->
+						<?php foreach ( $hero_slides as $index => $slide ) : ?>
+							<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
+								<div class="kc-slide-layout style-2-layout">
+									<div class="bento-main-art">
+										<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+										<div class="bento-overlay">
+											<div class="kc-chart-badge"><span></span> HOT NOW</div>
+										</div>
+									</div>
+									<div class="bento-info-box">
+										<div class="bento-label"><?php echo esc_html($slide['title']); ?></div>
+										<h2 class="bento-title"><?php echo esc_html($slide['leader_name']); ?></h2>
+										<p class="bento-artist"><?php echo esc_html($slide['leader_artist']); ?></p>
+										<div class="bento-footer">
+											<a href="<?php echo esc_url($slide['url']); ?>" class="bento-link">Open Chart &rarr;</a>
+										</div>
+									</div>
+									<div class="bento-stats-box">
+										<div class="bento-stat-item"><span class="stat-label">Position</span><span class="stat-value">#1</span></div>
+										<div class="bento-stat-item"><span class="stat-label">Region</span><span class="stat-value"><?php echo esc_html($slide['region']); ?></span></div>
+									</div>
+								</div>
+							</div>
+						<?php endforeach; ?>
+
+					<?php elseif ( $slider_style === 'style-3' ) : ?>
+						<!-- STYLE 3: MINIMAL COVERFLOW -->
+						<?php foreach ( $hero_slides as $index => $slide ) : ?>
+							<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
+								<div class="kc-slide-layout style-3-layout">
+									<div class="minimal-art-card">
+										<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+										<div class="minimal-hover-info">
+											<div class="kc-chart-badge"><span></span> #1 HIT</div>
+											<h1 class="minimal-title"><?php echo esc_html($slide['leader_name']); ?></h1>
+											<p class="minimal-artist"><?php echo esc_html($slide['leader_artist']); ?></p>
+											<a href="<?php echo esc_url($slide['url']); ?>" class="minimal-cta">Details</a>
+										</div>
+									</div>
+									<div class="minimal-label-track">
+										<span><?php echo esc_html($slide['title']); ?> — <?php echo esc_html($slide['region']); ?></span>
+									</div>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+
 				</div>
 				
 				<?php if ( count($hero_slides) > 1 ) : ?>

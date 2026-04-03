@@ -84,6 +84,20 @@ class Bootstrap {
 				// Homepage Slider Style
 				update_option( 'charts_homepage_slider_style', sanitize_text_field( $_POST['homepage_slider_style'] ?? 'style-1' ) );
 
+				// Markets Management
+				if ( isset( $_POST['markets'] ) && is_array( $_POST['markets'] ) ) {
+					$markets = [];
+					foreach ( $_POST['markets'] as $m ) {
+						if ( empty($m['name']) || empty($m['code']) ) continue;
+						$markets[] = [
+							'name' => sanitize_text_field($m['name']),
+							'code' => strtoupper(sanitize_text_field($m['code'])),
+							'slug' => sanitize_title($m['slug'] ?: $m['name']),
+						];
+					}
+					update_option( 'charts_markets', $markets );
+				}
+
 				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
 				$processed = true;
 				break;

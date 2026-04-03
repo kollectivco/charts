@@ -100,9 +100,12 @@ class YouTubeCsvImporter {
 		$missing_titles    = 0;
 		$generated_thumbs  = 0;
 		$extracted_ids     = 0;
+		$row_errors        = array();
+		$current_row       = 0;
 
 		// 6. Process rows
 		foreach ( $rows as $row ) {
+			$current_row++;
 			$title       = $row['item_title'] ?? '';
 			$artist_str  = $row['artist_names'] ?? '';
 			$artist_arr  = $row['artist_arr'] ?? array();
@@ -125,35 +128,43 @@ class YouTubeCsvImporter {
 			}
 
 			// ─────────────────────────────────────────────
-			//  Entity Type Resolution (Precedence: Detection > Source Meta)
+			//  Entity Type Resolution (Precedence: User Selection > Detection)
 			// ─────────────────────────────────────────────
 			
-			// Detect entity based on structural column analysis
-			$detected_item = 'unknown';
-			if ( $detected_mode === 'top-songs' ) {
-				$detected_item = 'track';
-			} elseif ( $detected_mode === 'top-artists' ) {
-				$detected_item = 'artist';
-			} elseif ( $detected_mode === 'top-videos' ) {
-				$detected_item = 'video';
+			// A. User-defined Preference (from the source's intended logic)
+			$manual_mode = $chart_type; // the source's fixed mode (top-songs, top-artists, top-videos)
+			
+			// B. Structural Detection (what the CSV looks like)
+			$detected_type = 'unknown';
+			if ( $detected_mode === 'top-songs' )   $detected_type = 'track';
+			if ( $detected_mode === 'top-artists' ) $detected_type = 'artist';
+			if ( $detected_mode === 'top-videos' )  $detected_type = 'video';
+
+			// C. Final Decision
+			// We prioritize the manual_mode because a YouTube "Top Videos" chart might still use "Track Name" header, 
+			// leading structural detection to think it's a song chart.
+			if ( $manual_mode === 'top-videos' ) {
+				$item_type   = 'video';
+				$final_logic = 'top-videos';
+			} elseif ( $manual_mode === 'top-artists' ) {
+				$item_type   = 'artist';
+				$final_logic = 'top-artists';
+			} elseif ( $manual_mode === 'top-songs' ) {
+				$item_type   = 'track';
+				$final_logic = 'top-songs';
+			} else {
+				// Fallback to detection if manual mode is generic or unknown
+				$item_type   = ( $detected_type !== 'unknown' ) ? $detected_type : 'track';
+				$final_logic = ( $detected_mode !== 'unknown' ) ? $detected_mode : $chart_type;
 			}
 
-			// Final Resolution logic
-			if ( $detected_item !== 'unknown' ) {
-				$item_type   = $detected_item;
-				$final_logic = $detected_mode;
-			} else {
-				$item_type   = $meta['item_type'] ?? 'track';
-				$final_logic = $chart_type; // the source default
-			}
 
 			// Log this specific decision trail for debugging
 			if ( $current_row === 1 ) {
 				$this->debug_log[] = sprintf(
-					"[DEBUG: Row 1 Decision] Detected=%s (%s), MetaItem=%s, Assigned=%s (Logic: %s)",
+					"[DEBUG: Row 1 Decision] Manual=%s, Detected=%s, FinalItem=%s, FinalLogic=%s",
+					$manual_mode,
 					$detected_mode, 
-					$detected_item,
-					$meta['item_type'] ?? 'none',
 					$item_type,
 					$final_logic
 				);
@@ -231,6 +242,7 @@ class YouTubeCsvImporter {
 
 			if ( ! $item_id ) {
 				$parse_errors++;
+				$row_errors[] = "#{$current_row}: Entity Resolution Failed (" . ( ! empty($title) ? $title : "No Name" ) . ")";
 				continue;
 			}
 
@@ -272,6 +284,7 @@ class YouTubeCsvImporter {
 				$saved++;
 			} else {
 				$parse_errors++;
+				$row_errors[] = "#{$current_row}: Entry Save Failed";
 			}
 		}
 
@@ -279,6 +292,10 @@ class YouTubeCsvImporter {
 		$final_msg = sprintf( "[LOGIC: %s » %s]", strtoupper($final_logic), ucfirst($item_type) );
 		if ( ! empty( $this->debug_log ) ) {
 			$final_msg .= " • " . implode( " • ", $this->debug_log );
+		}
+		if ( ! empty($row_errors) ) {
+			$final_msg .= " • ERRORS: " . implode( " | ", array_slice($row_errors, 0, 3) );
+			if ( count($row_errors) > 3 ) $final_msg .= " (+".(count($row_errors)-3)." more)";
 		}
 		$final_msg .= sprintf( " (Parsed: %d, Matched: %d, Created: %d, Errors: %d)", count($rows), $matched_entities, $created_entities, $parse_errors );
 		

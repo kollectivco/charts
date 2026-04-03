@@ -100,8 +100,38 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 				<div class="import-step" data-step="1">
 					<div class="step-header">
 						<span class="step-number">01</span>
-						<h3><?php esc_html_e( 'Choose Data Source', 'charts' ); ?></h3>
+						<h3><?php esc_html_e( 'Territory & Source', 'charts' ); ?></h3>
 					</div>
+
+					<!-- Market Selection -->
+					<?php 
+					$markets = get_option('charts_markets', []);
+					if (empty($markets)) : ?>
+						<div class="market-warning" style="padding: 20px; background: #fffcf0; border: 1px solid #ffecb3; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+							<span class="dashicons dashicons-warning" style="color:#d97706;"></span>
+							<span style="font-size:13px; font-weight:600; color:#92400e;">No Markets defined. <a href="<?php echo admin_url('admin.php?page=charts-settings#markets'); ?>">Configure Territories &rarr;</a></span>
+						</div>
+					<?php else : ?>
+						<div class="market-selector-wrap" style="margin-bottom: 32px;">
+							<label style="display:block; font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">Target Market / Region</label>
+							<div class="market-dropdown-custom" style="position:relative;">
+								<select name="country" class="premium-select" required style="width:100%; height:56px; padding:0 50px 0 20px; appearance:none; border-radius:12px; border:1px solid #e2e8f0; background:#fff; font-size:15px; font-weight:700; cursor:pointer;">
+									<?php foreach ($markets as $m) : ?>
+										<option value="<?php echo esc_attr(strtolower($m['code'])); ?>">
+											🌍 <?php echo esc_html($m['name']); ?> (<?php echo esc_html(strtoupper($m['code'])); ?>)
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<div class="select-affordance" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); pointer-events:none; color:#94a3b8;">
+									<span class="dashicons dashicons-arrow-down-alt2"></span>
+								</div>
+								<div class="select-icon" style="position:absolute; left:20px; top:50%; transform:translateY(-50%); pointer-events:none; display:none;">
+									<span class="dashicons dashicons-location" style="color:var(--charts-primary);"></span>
+								</div>
+							</div>
+						</div>
+					<?php endif; ?>
+
 					<div class="platform-selector">
 						<label class="platform-card">
 							<input type="radio" name="platform" value="spotify" <?php checked($pre_source, 'spotify'); ?>>

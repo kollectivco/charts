@@ -199,16 +199,16 @@ class YouTubeCsvParser {
 		$has_artist_names = array_intersect($headers, array('artist_names', 'artist_name', 'artist', 'performer'));
 		$has_video_keys = array_intersect($headers, array('video_title', 'video_id', 'clip', 'mv', 'music_video', 'video_name'));
 
-		// 1. YouTube Track Chart (Song Chart)
-		// Usually contains Track Name AND Artist Names (plural)
-		if ( ! empty($has_track_keys) && in_array('artist_names', $headers) ) {
-			return 'top-songs';
+		// 1. YouTube Artist Chart
+		// Usually contains Artist Name (singular) and NO track/video specific titles
+		if ( (in_array('artist_name', $headers) || in_array('artist', $headers)) && empty($has_track_keys) && empty($has_video_keys) ) {
+			return 'top-artists';
 		}
 
-		// 2. YouTube Artist Chart
-		// Usually contains Artist Name (singular) and NO track/video specific titles
-		if ( in_array('artist_name', $headers) && empty($has_track_keys) && empty($has_video_keys) ) {
-			return 'top-artists';
+		// 2. YouTube Track Chart (Song Chart)
+		// Usually contains Track Name AND Artist Names (plural)
+		if ( ! empty($has_track_keys) && (in_array('artist_names', $headers) || in_array('artist', $headers)) ) {
+			return 'top-songs';
 		}
 
 		// 3. YouTube Music Video Chart
@@ -219,7 +219,7 @@ class YouTubeCsvParser {
 
 		// 4. Broad fallbacks based on dominant column counts
 		if ( ! empty($has_track_keys) ) return 'top-songs';
-		if ( in_array('artist_name', $headers) || in_array('artist', $headers) ) return 'top-artists';
+		if ( in_array('artist_name', $headers) || in_array('artist', $headers) || in_array('artist_names', $headers) ) return 'top-artists';
 
 		return 'unknown';
 	}

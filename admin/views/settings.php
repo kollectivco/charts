@@ -38,6 +38,7 @@ $slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
 		<button type="button" class="tab-link" data-tab="header">Header</button>
 		<button type="button" class="tab-link" data-tab="footer">Footer</button>
 		<button type="button" class="tab-link" data-tab="homepage">Homepage</button>
+		<button type="button" class="tab-link" data-tab="markets">Markets</button>
 		<button type="button" class="tab-link" data-tab="apis">APIs</button>
 		<button type="button" class="tab-link" data-tab="maintenance">Maintenance</button>
 	</div>
@@ -193,6 +194,42 @@ $slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
 							Individual Elementor widgets can override this setting via their own "Display Style" control.
 						</div>
 					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- TAB: MARKETS -->
+		<div id="tab-markets" class="tab-content">
+			<div class="premium-form-card">
+				<div class="card-header">
+					<h3>Managed Markets & Territories</h3>
+					<p>Define the regions where your charts are active. These will appear in the Import Center.</p>
+				</div>
+				
+				<div class="kb-repeater-wrap" id="markets-repeater">
+					<div class="repeater-header" style="display:grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 15px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">
+						<span>Market Name (e.g. Egypt)</span>
+						<span>Code (e.g. EG)</span>
+						<span>Slug (lower-case)</span>
+						<span></span>
+					</div>
+					<div class="repeater-items" id="markets-container">
+						<?php 
+						$markets = get_option('charts_markets', []);
+						if (!empty($markets)) :
+							foreach ($markets as $idx => $market) : ?>
+								<div class="repeater-item" style="display:grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 15px; margin-bottom: 10px;">
+									<input type="text" name="markets[<?php echo $idx; ?>][name]" value="<?php echo esc_attr($market['name'] ?? ''); ?>" class="form-control" placeholder="Saudi Arabia">
+									<input type="text" name="markets[<?php echo $idx; ?>][code]" value="<?php echo esc_attr($market['code'] ?? ''); ?>" class="form-control" placeholder="SA">
+									<input type="text" name="markets[<?php echo $idx; ?>][slug]" value="<?php echo esc_attr($market['slug'] ?? ''); ?>" class="form-control" placeholder="saudi-arabia">
+									<button type="button" class="remove-row" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>
+								</div>
+							<?php endforeach;
+						endif; ?>
+					</div>
+					<button type="button" id="add-market-btn" class="charts-btn-back" style="margin-top:20px; width:100%; border-style:dashed;">
+						<span class="dashicons dashicons-plus" style="margin-right:8px;"></span> Add New Territory
+					</button>
 				</div>
 			</div>
 		</div>
@@ -407,6 +444,23 @@ jQuery(document).ready(function($) {
 		if (!confirm('EXTREME WARNING: You are about to permanently delete all charts data. This cannot be undone. Are you absolutely sure?')) {
 			e.preventDefault();
 		}
+	});
+	// Markets Repeater Logic
+	$('#add-market-btn').on('click', function(){
+		const idx = $('#markets-container .repeater-item').length;
+		const html = `
+			<div class="repeater-item" style="display:grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 15px; margin-bottom: 10px;">
+				<input type="text" name="markets[${idx}][name]" class="form-control" placeholder="Country Name">
+				<input type="text" name="markets[${idx}][code]" class="form-control" placeholder="Code (e.g. EG)">
+				<input type="text" name="markets[${idx}][slug]" class="form-control" placeholder="slug">
+				<button type="button" class="remove-row" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>
+			</div>
+		`;
+		$('#markets-container').append(html);
+	});
+
+	$(document).on('click', '.remove-row', function(){
+		$(this).closest('.repeater-item').remove();
 	});
 });
 </script>

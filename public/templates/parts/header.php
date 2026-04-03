@@ -33,8 +33,12 @@ $week_date    = date('F j, Y');
 					<div class="kc-mobile-trigger">
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
 					</div>
-					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-wordmark">
-						K<span>Charts</span>
+					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-branding-link">
+						<?php if ( $logo_id ) : ?>
+							<?php echo wp_get_attachment_image( $logo_id, 'full', false, array( 'class' => 'charts-logo', 'alt' => $logo_alt ?: $wordmark ) ); ?>
+						<?php else : ?>
+							<span class="charts-wordmark"><?php echo esc_html( $wordmark ); ?></span>
+						<?php endif; ?>
 					</a>
 				</div>
 
