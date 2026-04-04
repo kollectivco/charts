@@ -33,49 +33,180 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    // 2. HERO SLIDER SYSTEM
-    const initSliders = () => {
-        const wrappers = document.querySelectorAll('.kc-hero-slider-wrap');
+    // 2. MOTION CAROUSEL ENGINE
+    const initMotionCarousel = () => {
+        const wraps = document.querySelectorAll('.kc-motion-carousel-wrap');
         
-        wrappers.forEach(wrap => {
-            const container = wrap.querySelector('.kc-hero-slider');
-            if (!container) return;
-            
-            const slides = wrap.querySelectorAll('.kc-slide');
-            const nextBtn = wrap.querySelector('.kc-next');
-            const prevBtn = wrap.querySelector('.kc-prev');
-            const progressBar = wrap.querySelector('.kc-progress-bar');
+        wraps.forEach(wrap => {
+            const container = wrap.querySelector('.kc-motion-carousel');
+            const slides = wrap.querySelectorAll('.kc-motion-slide');
+            const nextBtn = wrap.querySelector('.kc-motion-next');
+            const prevBtn = wrap.querySelector('.kc-motion-prev');
+            const dots = wrap.querySelectorAll('.kc-motion-dot');
             if (!slides.length) return;
 
-            let currentIdx = 0;
+            const style = wrap.getAttribute('data-carousel-style') || 'coverflow';
+            const opts = JSON.parse(wrap.getAttribute('data-carousel-options') || '{}');
 
-            const update = (idx) => {
-                slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
-                
-                // Update progress bar
-                if (progressBar) {
-                    const progress = ((idx + 1) / slides.length) * 100;
-                    progressBar.style.width = `${progress}%`;
-                }
-
-                currentIdx = idx;
+            // Configure
+            const config = {
+                speed: parseInt(opts.speed) || 600,
+                easing: opts.easing || 'cubic-bezier(0.25, 1, 0.5, 1)',
+                rotation: parseFloat(opts.rotation) || 45,
+                depth: parseFloat(opts.depth) || 150,
+                spacing: parseFloat(opts.spacing) || 20, // using % makes it responsive
+                autoplay: opts.autoplay || false,
+                loop: opts.loop || false,
+                opacity: parseFloat(opts.opacity) || 0.6,
+                scale: parseFloat(opts.scale) || 0.8,
             };
 
-            // Initialize progress
+            let currentIdx = 0;
+            let total = slides.length;
+            let isDragging = false;
+            let startX = 0;
+            let currentX = 0;
+            let containerWidth = container.offsetWidth || window.innerWidth;
+
+            const update = (idx, offsetPx = 0, instantaneous = false) => {
+                if (idx !== null) {
+                    // bounds check
+                    if (!config.loop) {
+                        if (idx < 0) idx = 0;
+                        if (idx >= total) idx = total - 1;
+                    } else {
+                        if (idx < 0) idx = total - 1;
+                        if (idx >= total) idx = 0;
+                    }
+                    currentIdx = idx;
+                }
+
+                slides.forEach((slide, i) => {
+                    let offset = i - currentIdx;
+                    
+                    if (config.loop) {
+                        if (offset < -Math.floor(total/2)) offset += total;
+                        if (offset > Math.floor(total/2)) offset -= total;
+                    }
+
+                    // Drag progression logic
+                    let dragPercent = (offsetPx / containerWidth) * 100;
+                    // adjust ratio so dragging feels 1:1
+                    let simulatedOffset = offset - (dragPercent / (config.spacing || 50)); 
+                    
+                    const absOffset = Math.abs(simulatedOffset);
+                    const isCenter = Math.abs(simulatedOffset) < 0.1;
+
+                    let transform = '';
+                    let opacity = config.opacity;
+                    
+                    if (instantaneous) {
+                        slide.style.transition = 'none';
+                    } else {
+                        slide.style.transition = `transform ${config.speed}ms ${config.easing}, opacity ${config.speed}ms ${config.easing}`;
+                    }
+
+                    if (style === 'coverflow') {
+                        let rotate = Math.max(-config.rotation, Math.min(config.rotation, simulatedOffset * config.rotation));
+                        let translateZ = -Math.abs(simulatedOffset) * config.depth;
+                        let translateX = simulatedOffset * config.spacing;
+                        transform = `translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${-rotate}deg)`;
+                        opacity = 1 - (absOffset * (1 - config.opacity));
+                    } else if (style === 'stacked') {
+                        let translateX = simulatedOffset * config.spacing;
+                        let rotate = simulatedOffset * (config.rotation / Math.max(1, total));
+                        let translateZ = -Math.abs(simulatedOffset) * config.depth;
+                        let scale = Math.pow(config.scale, absOffset);
+                        transform = `translateX(${translateX}%) translateZ(${translateZ}px) scale(${scale}) rotateZ(${rotate}deg)`;
+                        opacity = 1 - (absOffset * (1 - config.opacity));
+                    } else if (style === 'minimal') {
+                        let translateX = simulatedOffset * config.spacing;
+                        let scale = 1 - (absOffset * (1 - config.scale));
+                        transform = `translateX(${translateX}%) scale(${scale})`;
+                        opacity = 1 - (absOffset * (1 - config.opacity));
+                    }
+
+                    if (absOffset > 2 && !config.loop) opacity = 0;
+
+                    slide.style.transform = transform;
+                    slide.style.opacity = Math.max(0, Math.min(1, opacity));
+                    slide.style.zIndex = Math.round(100 - absOffset * 10);
+                    
+                    if(!instantaneous && offsetPx === 0) {
+                        slide.classList.toggle('is-center', i === currentIdx);
+                    }
+                });
+
+                if (dots.length && offsetPx === 0 && idx !== null && !instantaneous) {
+                    dots.forEach((dot, i) => dot.classList.toggle('is-active', i === currentIdx));
+                }
+            };
+
             update(0);
 
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    let next = (currentIdx + 1) % slides.length;
-                    update(next);
-                });
-            }
+            const goNext = () => update(currentIdx + 1);
+            const goPrev = () => update(currentIdx - 1);
 
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    let prev = (currentIdx - 1 + slides.length) % slides.length;
-                    update(prev);
-                });
+            if (nextBtn) nextBtn.addEventListener('click', goNext);
+            if (prevBtn) prevBtn.addEventListener('click', goPrev);
+            dots.forEach((dot, i) => dot.addEventListener('click', () => update(i)));
+
+            // Interaction handlers (Drag & Touch)
+            const dragStart = (e) => {
+                if (e.target.closest('a') && e.type !== 'touchstart') return; // let links work
+                isDragging = true;
+                startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                currentX = startX;
+                containerWidth = container.offsetWidth || window.innerWidth;
+                container.style.cursor = 'grabbing';
+            };
+
+            const dragMove = (e) => {
+                if (!isDragging) return;
+                currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const diff = currentX - startX;
+                update(null, diff, true);
+            };
+
+            const dragEnd = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                container.style.cursor = '';
+                
+                const diff = currentX - startX;
+                
+                // If dragged more than 10% of container width, swipe
+                if (Math.abs(diff) > containerWidth * 0.10) {
+                    if (diff > 0) goPrev();
+                    else goNext();
+                } else {
+                    update(currentIdx); // Snap back to center
+                }
+                startX = 0;
+                currentX = 0;
+            };
+
+            container.addEventListener('mousedown', dragStart);
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('mouseup', dragEnd);
+            // Prevent image ghost dragging
+            container.addEventListener('dragstart', e => e.preventDefault());
+
+            container.addEventListener('touchstart', dragStart, {passive:true});
+            window.addEventListener('touchmove', dragMove, {passive:false}); // passive false to allow preventDefault if needed later, but not strictly required
+            window.addEventListener('touchend', dragEnd);
+
+            // Optional keyboard access
+            container.setAttribute('tabindex', '0');
+            container.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') goPrev();
+                if (e.key === 'ArrowRight') goNext();
+            });
+
+            if (config.autoplay) {
+                let interval = setInterval(goNext, 4000);
+                wrap.addEventListener('mouseenter', () => clearInterval(interval));
+                wrap.addEventListener('mouseleave', () => interval = setInterval(goNext, 4000));
             }
         });
     };
@@ -101,6 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     initExpandables();
-    initSliders();
+    initMotionCarousel();
     initMobileMenu();
 });

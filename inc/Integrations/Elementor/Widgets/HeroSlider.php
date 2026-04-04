@@ -21,14 +21,14 @@ class HeroSlider extends Widget_Base {
 
 		// Style Selector
 		$this->add_control( 'slider_style', [
-			'label' => __( 'Visual Style', 'charts' ),
+			'label' => __( 'Carousel Style', 'charts' ),
 			'type' => Controls_Manager::SELECT,
 			'options' => [
-				'style-1' => __( 'Style 1: Editorial Hero', 'charts' ),
-				'style-2' => __( 'Style 2: Bento Rail', 'charts' ),
-				'style-3' => __( 'Style 3: Minimal Coverflow', 'charts' ),
+				'coverflow' => __( 'Coverflow', 'charts' ),
+				'stacked' => __( 'Stacked Cards', 'charts' ),
+				'minimal' => __( 'Minimal Motion', 'charts' ),
 			],
-			'default' => 'style-1',
+			'default' => 'coverflow',
 		] );
 
 		// Data Source
@@ -44,10 +44,95 @@ class HeroSlider extends Widget_Base {
 			'options' => $options,
 		] );
 
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'section_carousel_settings', [ 'label' => __( 'Motion Settings', 'charts' ) ] );
+
 		$this->add_control( 'slides_count', [
 			'label' => __( 'Max Slides', 'charts' ),
 			'type' => Controls_Manager::NUMBER,
 			'default' => 5,
+		] );
+
+		$this->add_control( 'visible_slides', [
+			'label' => __( 'Visible Slides', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 3,
+		] );
+
+		$this->add_control( 'animation_speed', [
+			'label' => __( 'Animation Speed (ms)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 600,
+		] );
+
+		$this->add_control( 'easing', [
+			'label' => __( 'Easing', 'charts' ),
+			'type' => Controls_Manager::TEXT,
+			'default' => 'cubic-bezier(0.25, 1, 0.5, 1)',
+		] );
+
+		$this->add_control( 'rotation_angle', [
+			'label' => __( 'Rotation Angle (deg)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 45,
+		] );
+
+		$this->add_control( 'depth', [
+			'label' => __( 'Depth (translateZ)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 150,
+		] );
+
+		$this->add_control( 'spacing', [
+			'label' => __( 'Card Spacing (px)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 50,
+		] );
+
+		$this->add_control( 'autoplay', [
+			'label' => __( 'Autoplay', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
+
+		$this->add_control( 'loop', [
+			'label' => __( 'Loop', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
+
+		$this->add_control( 'center_mode', [
+			'label' => __( 'Center Mode', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
+
+		$this->add_control( 'side_opacity', [
+			'label' => __( 'Side Card Opacity', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'min' => 0, 'max' => 1, 'step' => 0.1,
+			'default' => 0.6,
+		] );
+
+		$this->add_control( 'side_scale', [
+			'label' => __( 'Side Card Scale', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'min' => 0, 'max' => 1, 'step' => 0.1,
+			'default' => 0.8,
+		] );
+
+		$this->add_control( 'shadow_intensity', [
+			'label' => __( 'Shadow Intensity', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'min' => 0, 'max' => 1, 'step' => 0.1,
+			'default' => 0.3,
+		] );
+
+		$this->add_control( 'active_glow', [
+			'label' => __( 'Active Card Glow', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
 		] );
 
 		$this->end_controls_section();
@@ -104,57 +189,93 @@ class HeroSlider extends Widget_Base {
 		}
 
 		// Pass to the frontend renderer
-		$this->render_slider_html( $slides, $style );
+		$this->render_slider_html( $slides, $settings );
 	}
 
-	private function render_slider_html( $slides, $style ) {
+	private function render_slider_html( $slides, $settings ) {
+		$style = $settings['slider_style'];
+		$opts = json_encode([
+			'speed' => $settings['animation_speed'],
+			'easing' => $settings['easing'],
+			'rotation' => $settings['rotation_angle'],
+			'depth' => $settings['depth'],
+			'spacing' => $settings['spacing'],
+			'visible' => $settings['visible_slides'],
+			'autoplay' => $settings['autoplay'] === 'yes',
+			'loop' => $settings['loop'] === 'yes',
+			'center' => $settings['center_mode'] === 'yes',
+			'opacity' => $settings['side_opacity'],
+			'scale' => $settings['side_scale'],
+			'shadow' => $settings['shadow_intensity'],
+			'glow' => $settings['active_glow'] === 'yes'
+		]);
 		?>
-		<div class="kc-hero-slider-wrap kc-slider-<?php echo esc_attr($style); ?>">
-			<div class="kc-hero-slider">
-				<?php foreach ( $slides as $index => $slide ) : ?>
-					<div class="kc-slide <?php echo $index === 0 ? 'is-active' : ''; ?>" style="--slide-accent: <?php echo $slide['accent']; ?>;">
-						
-						<?php if ( $style === 'style-1' || true ) : ?>
-							<div class="kc-slide-layout">
-								<div class="kc-slide-content">
-									<div class="kc-chart-badge">
-										<span></span>
-										<?php echo esc_html(strtoupper($slide['platform'])); ?> <?php echo esc_html(strtoupper($slide['region'])); ?>
-									</div>
-									<h1 class="kc-hero-leader"><?php echo esc_html($slide['leader_name']); ?></h1>
-									<div class="kc-hero-meta">
-										<span>by <b><?php echo esc_html($slide['leader_artist']); ?></b></span>
-										<span class="kc-meta-divider">•</span>
-										<span><?php echo esc_html($slide['title']); ?></span>
-									</div>
-									<div class="kc-hero-actions">
-										<a href="<?php echo esc_url($slide['url']); ?>" class="kc-hero-cta">
-											VIEW FULL CHART
-											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-										</a>
-									</div>
-								</div>
-								<div class="kc-slide-visual">
-									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+		<div class="kc-motion-carousel-wrap kc-style-<?php echo esc_attr($style); ?>" data-carousel-style="<?php echo esc_attr($style); ?>" data-carousel-options='<?php echo esc_attr($opts); ?>'>
+			<div class="kc-motion-carousel">
+				<?php 
+				if ( $style === 'coverflow' ) {
+					// COVERFLOW STRUCTURE: Glassmorphism text over an image
+					foreach ( $slides as $index => $slide ) : ?>
+						<div class="kc-motion-slide" style="--slide-accent: <?php echo esc_attr($slide['accent']); ?>;">
+							<div class="kc-cf-card">
+								<img class="kc-cf-bg" src="<?php echo esc_url($slide['image']); ?>" alt="">
+								<div class="kc-cf-overlay"></div>
+								<div class="kc-cf-content">
+									<span class="kc-badge"><?php echo esc_html($slide['platform']); ?></span>
+									<h2 class="kc-cf-leader"><?php echo esc_html($slide['leader_name']); ?></h2>
+									<div class="kc-cf-artist">by <?php echo esc_html($slide['leader_artist']); ?></div>
+									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-cf-btn">VIEW</a>
 								</div>
 							</div>
-						<?php endif; ?>
-
-					</div>
-				<?php endforeach; ?>
+						</div>
+					<?php endforeach;
+				} elseif ( $style === 'stacked' ) {
+					// STACKED STRUCTURE: Image on left, text on right in a unified card
+					foreach ( $slides as $index => $slide ) : ?>
+						<div class="kc-motion-slide" style="--slide-accent: <?php echo esc_attr($slide['accent']); ?>;">
+							<div class="kc-st-card">
+								<div class="kc-st-visual">
+									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+								</div>
+								<div class="kc-st-info">
+									<h3 class="kc-st-title"><?php echo esc_html($slide['title']); ?></h3>
+									<h2 class="kc-st-leader"><?php echo esc_html($slide['leader_name']); ?></h2>
+									<div class="kc-st-artist">by <?php echo esc_html($slide['leader_artist']); ?></div>
+									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-st-link">Explore Chart</a>
+								</div>
+							</div>
+						</div>
+					<?php endforeach;
+				} else {
+					// MINIMAL STRUCTURE: Clean centered art frame with minimal text
+					foreach ( $slides as $index => $slide ) : ?>
+						<div class="kc-motion-slide" style="--slide-accent: <?php echo esc_attr($slide['accent']); ?>;">
+							<div class="kc-min-wrapper">
+								<div class="kc-min-card">
+									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
+									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-min-overlay"></a>
+								</div>
+								<div class="kc-min-text">
+									<h2 class="kc-min-leader"><?php echo esc_html($slide['leader_name']); ?></h2>
+									<div class="kc-min-artist"><?php echo esc_html($slide['leader_artist']); ?></div>
+								</div>
+							</div>
+						</div>
+					<?php endforeach;
+				}
+				?>
 			</div>
 
-			<?php if ( count($slides) > 1 ) : ?>
-				<div class="kc-slider-nav">
-					<div class="kc-nav-arrows">
-						<button class="kc-nav-btn kc-prev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-						<button class="kc-nav-btn kc-next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-					</div>
-					<div class="kc-slider-progress">
-						<div class="kc-progress-bar"></div>
-					</div>
-				</div>
-			<?php endif; ?>
+			<div class="kc-motion-controls">
+				<button class="kc-motion-prev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+				<button class="kc-motion-next"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+			</div>
+			
+			<div class="kc-motion-pagination">
+				<?php foreach ( $slides as $index => $slide ) : ?>
+					<span class="kc-motion-dot <?php echo $index === 0 ? 'is-active' : ''; ?>"></span>
+				<?php endforeach; ?>
+			</div>
 		</div>
 		<?php
 	}
