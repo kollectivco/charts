@@ -1,561 +1,561 @@
 <?php
 /**
- * Settings View - High-Fidelity Refactor
+ * Settings View - Kontentainment Charts Premium Modular Control Panel
  */
+
+// --- 1. Fetch Dependencies & Helpers ---
 $menus = wp_get_nav_menus();
-$selected_menu = get_option( 'charts_header_menu_id' );
-$logo_id = get_option( 'charts_logo_id' );
-$logo_url = '';
-if ( $logo_id ) {
-	$logo_url = wp_get_attachment_image_url( $logo_id, 'medium' );
+$menu_options = [ '0' => '— Select WordPress Menu —' ];
+if ( ! empty( $menus ) ) {
+	foreach ( $menus as $menu ) {
+		$menu_options[ $menu->term_id ] = $menu->name;
+	}
 }
 
-// Defaults
-$wordmark = get_option( 'charts_wordmark', 'KCharts' );
-$footer_desc = get_option( 'charts_footer_description' );
-$footer_copy = get_option( 'charts_footer_copyright', 'Kontentainment Charts.' );
-$slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
+// Ensure option fallback securely
+if ( ! function_exists( 'kc_get_setting' ) ) {
+	function kc_get_setting( $id, $default = '' ) {
+		return get_option( 'charts_' . $id, $default );
+	}
+}
+
+// --- 2. Registration Engine Array ---
+$charts_panel = [
+	'general' => [
+		'title' => 'General',
+		'icon'  => 'dashicons-admin-generic',
+		'sections' => [
+			'core' => [
+				'title' => 'Core Settings',
+				'desc'  => 'Global configurations for the charts system.',
+				'fields' => [
+					[ 'id' => 'theme_mode', 'type' => 'select', 'label' => 'Chart Theme Mode', 'options' => ['light' => 'Light Mode', 'dark' => 'Dark Mode'], 'default' => 'light', 'desc' => 'Determine the base color palette for all public chart interfaces.' ],
+				]
+			]
+		]
+	],
+	'branding' => [
+		'title' => 'Branding & Shell',
+		'icon'  => 'dashicons-art',
+		'sections' => [
+			'logos' => [
+				'title' => 'Logo Identity',
+				'fields' => [
+					[ 'id' => 'logo_id_light', 'type' => 'media', 'label' => 'Light Mode Logo' ],
+					[ 'id' => 'logo_id_dark', 'type' => 'media', 'label' => 'Dark Mode Logo' ],
+					[ 'id' => 'wordmark', 'type' => 'text', 'label' => 'Product Wordmark / Fallback', 'default' => 'KCharts' ],
+					[ 'id' => 'logo_alt', 'type' => 'text', 'label' => 'Logo Alt Text', 'desc' => 'Accessibility screen-reader text for the active logo.' ],
+				]
+			],
+			'visibility' => [
+				'title' => 'Shell Visibility',
+				'fields' => [
+					[ 'id' => 'show_logo', 'type' => 'switch', 'label' => 'Logotype Visibility', 'default' => 1 ],
+				]
+			]
+		]
+	],
+	'header' => [
+		'title' => 'Header',
+		'icon'  => 'dashicons-heading',
+		'sections' => [
+			'nav' => [
+				'title' => 'Navigation Options',
+				'fields' => [
+					[ 'id' => 'header_menu_id', 'type' => 'select', 'label' => 'Assigned Navigation Menu', 'options' => $menu_options, 'default' => '0' ],
+					[ 'id' => 'show_nav', 'type' => 'switch', 'label' => 'Navigation Shell Visibility', 'default' => 1 ],
+					[ 'id' => 'show_search', 'type' => 'switch', 'label' => 'Global Search Visibility', 'default' => 1 ],
+				]
+			]
+		]
+	],
+	'footer' => [
+		'title' => 'Footer',
+		'icon'  => 'dashicons-arrow-down-alt2',
+		'sections' => [
+			'content' => [
+				'title' => 'Footer Content',
+				'desc'  => 'Manage the editorial imprint and metadata.',
+				'fields' => [
+					[ 'id' => 'footer_copyright', 'type' => 'text', 'label' => 'Copyright Label', 'default' => 'Kontentainment Charts.' ],
+					[ 'id' => 'footer_description', 'type' => 'textarea', 'label' => 'Platform Description', 'desc' => 'Brief editorial summary displayed in the brand column.' ],
+				]
+			]
+		]
+	],
+	'homepage' => [
+		'title' => 'Homepage',
+		'icon'  => 'dashicons-admin-home',
+		'sections' => [
+			'hero' => [
+				'title' => 'Hero Slider Base',
+				'fields' => [
+					[ 'id' => 'slider_enable', 'type' => 'switch', 'label' => 'Enable Hero Slider', 'default' => 1 ],
+					[ 'id' => 'slider_style', 'type' => 'select', 'label' => 'Slider Style', 'options' => ['coverflow'=>'Coverflow 3D','carousel'=>'Standard Carousel','stack'=>'Stacked Cards'], 'default' => 'coverflow' ],
+				]
+			]
+		]
+	],
+	'slider' => [
+		'title' => 'Slider Options',
+		'icon'  => 'dashicons-images-alt2',
+		'sections' => [
+			'playback' => [
+				'title' => 'Playback',
+				'fields' => [
+					[ 'id' => 'slider_count', 'type' => 'number', 'label' => 'Charts Count', 'default' => 5 ],
+					[ 'id' => 'slider_autoplay', 'type' => 'switch', 'label' => 'Autoplay', 'default' => 1 ],
+					[ 'id' => 'slider_delay', 'type' => 'number', 'label' => 'Autoplay Delay (ms)', 'default' => 3000 ],
+					[ 'id' => 'slider_speed', 'type' => 'number', 'label' => 'Transition Speed (ms)', 'default' => 600 ],
+					[ 'id' => 'slider_easing', 'type' => 'text', 'label' => 'CSS Easing Curve', 'default' => 'cubic-bezier(0.25, 1, 0.5, 1)' ],
+				]
+			],
+			'motion' => [
+				'title' => '3D Motion',
+				'fields' => [
+					[ 'id' => 'slider_depth', 'type' => 'number', 'label' => 'Z-Depth Offset', 'default' => 150 ],
+					[ 'id' => 'slider_rotation', 'type' => 'number', 'label' => 'Rotation Angle (deg)', 'default' => 45 ],
+					[ 'id' => 'slider_opacity', 'type' => 'range', 'label' => 'Side Slice Opacity', 'default' => 0.6, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+					[ 'id' => 'slider_scale', 'type' => 'range', 'label' => 'Side Slice Scale', 'default' => 0.8, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+					[ 'id' => 'slider_shadow', 'type' => 'range', 'label' => 'Box Margin Shadow', 'default' => 0.3, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+					[ 'id' => 'slider_glow', 'type' => 'switch', 'label' => 'Enable Glow Filter', 'default' => 1 ],
+				]
+			],
+			'layout' => [
+				'title' => 'Layout Specs',
+				'fields' => [
+					[ 'id' => 'slider_max_width', 'type' => 'text', 'label' => 'Max Width', 'default' => '1440px' ],
+					[ 'id' => 'slider_min_height', 'type' => 'text', 'label' => 'Min Height', 'default' => '500px' ],
+					[ 'id' => 'slider_aspect_ratio', 'type' => 'text', 'label' => 'Slide Aspect Ratio', 'default' => '16/9' ],
+					[ 'id' => 'slider_align', 'type' => 'select', 'label' => 'Vertical Align', 'options' => ['center'=>'Center','flex-start'=>'Top'], 'default' => 'center' ],
+					[ 'id' => 'slider_overlay', 'type' => 'range', 'label' => 'Black Overlay Opacity', 'default' => 0.5, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+					[ 'id' => 'slider_radius', 'type' => 'text', 'label' => 'Border Radius', 'default' => '16px' ],
+					[ 'id' => 'slider_mobile_mode', 'type' => 'select', 'label' => 'Mobile Fallback Mode', 'options' => ['stack'=>'Stack Below','hidden'=>'Force Hidden'], 'default' => 'stack' ],
+				]
+			],
+			'content' => [
+				'title' => 'Slide Content',
+				'fields' => [
+					[ 'id' => 'slider_show_label', 'type' => 'switch', 'label' => 'Show Chart Label/Number', 'default' => 1 ],
+					[ 'id' => 'slider_show_meta', 'type' => 'switch', 'label' => 'Show Tracks Count Meta', 'default' => 1 ],
+					[ 'id' => 'slider_show_cta', 'type' => 'switch', 'label' => 'Show Call to Action Button', 'default' => 1 ],
+					[ 'id' => 'slider_cta_text', 'type' => 'text', 'label' => 'CTA Text', 'default' => 'VIEW CHART' ],
+				]
+			]
+		]
+	],
+	'charts' => [
+		'title' => 'Charts',
+		'icon'  => 'dashicons-chart-bar',
+		'sections' => [
+			'display' => [
+				'title' => 'Charts Archive Display',
+				'fields' => [
+					[ 'id' => 'charts_per_page', 'type' => 'number', 'label' => 'Charts Per Page', 'default' => 12 ],
+				]
+			]
+		]
+	],
+	'artists' => [
+		'title' => 'Artists',
+		'icon'  => 'dashicons-groups',
+		'sections' => [
+			'display' => [
+				'title' => 'Artist Page Layout',
+				'fields' => [
+					[ 'id' => 'artist_show_images', 'type' => 'switch', 'label' => 'Show Artist Images globally', 'default' => 1 ],
+				]
+			]
+		]
+	],
+	'tracks' => [
+		'title' => 'Tracks',
+		'icon'  => 'dashicons-album',
+		'sections' => [
+			'display' => [
+				'title' => 'Track List Styling',
+				'fields' => [
+					[ 'id' => 'track_show_artwork', 'type' => 'switch', 'label' => 'Show Track Artworks', 'default' => 1 ],
+				]
+			]
+		]
+	],
+	'design' => [
+		'title' => 'Design System',
+		'icon'  => 'dashicons-palmtree',
+		'sections' => [
+			'colors' => [
+				'title' => 'Global Brand Colors',
+				'desc'  => 'Configure dynamic color tokens injected into the CSS variables.',
+				'fields' => [
+					[ 'id' => 'color_primary', 'type' => 'color', 'label' => 'Primary Brand Color', 'default' => '#3b82f6' ],
+					[ 'id' => 'color_bg_light', 'type' => 'color', 'label' => 'Background Color (Light)', 'default' => '#ffffff' ],
+					[ 'id' => 'color_bg_dark', 'type' => 'color', 'label' => 'Background Color (Dark)', 'default' => '#0f172a' ],
+				]
+			],
+			'typography' => [
+				'title' => 'Typography',
+				'fields' => [
+					[ 'id' => 'font_heading', 'type' => 'text', 'label' => 'Heading Font Family', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_body', 'type' => 'text', 'label' => 'Body Font Family', 'default' => 'Inter, sans-serif' ],
+				]
+			]
+		]
+	],
+	'apis' => [
+		'title' => 'APIs',
+		'icon'  => 'dashicons-rest-api',
+		'sections' => [
+			'keys' => [
+				'title' => 'Service Credentials',
+				'fields' => [
+					[ 'id' => 'spotify_client_id', 'type' => 'text', 'label' => 'Spotify Client ID' ],
+					[ 'id' => 'spotify_client_secret', 'type' => 'password', 'label' => 'Spotify Client Secret' ],
+					[ 'id' => 'youtube_api_key', 'type' => 'password', 'label' => 'YouTube Data API v3 Key' ],
+				]
+			]
+		]
+	],
+	'performance' => [
+		'title' => 'Performance',
+		'icon'  => 'dashicons-performance',
+		'sections' => [
+			'caching' => [
+				'title' => 'Data Caching',
+				'fields' => [
+					[ 'id' => 'cache_duration', 'type' => 'select', 'label' => 'Transients TTL', 'options' => ['3600'=>'1 Hour','14400'=>'4 Hours','86400'=>'24 Hours'], 'default' => '86400' ],
+				]
+			]
+		]
+	],
+	'seo' => [
+		'title' => 'SEO',
+		'icon'  => 'dashicons-search',
+		'sections' => [
+			'meta' => [
+				'title' => 'Global SEO Defaults',
+				'fields' => [
+					[ 'id' => 'seo_title_suffix', 'type' => 'text', 'label' => 'Title Suffix', 'default' => ' | Kontentainment Charts' ],
+				]
+			]
+		]
+	],
+	'maintenance' => [
+		'title' => 'Maintenance',
+		'icon'  => 'dashicons-shield',
+		'sections' => [
+			'danger' => [
+				'title' => 'Danger Zone',
+				'desc'  => 'Extreme caution. These actions cannot be undone.',
+				'fields' => [
+					[ 'id' => 'danger_zone_custom', 'type' => 'custom', 'html' => '<div style="background:#fee2e2; border:1px solid #fca5a5; padding:20px; border-radius:12px;"><h4 style="color:#b91c1c; margin-top:0;">Wipe Plugin Data</h4><p style="color:#7f1d1d; margin-bottom:15px; font-size:13px;">Permanently delete all custom tables, transients, mocked data, and optionally reset settings.</p><input type="text" id="reset_confirm_input" placeholder="Type RESET CHARTS" style="padding:10px; border:1px solid #fca5a5; border-radius:6px; background:#fff; width:200px; margin-right:10px; font-weight:600;"><label style="font-size:13px;display:inline-flex;align-items:center;color:#b91c1c;font-weight:600"><input type="checkbox" name="wipe_settings" value="1" style="margin-right:8px;"> Also wipe settings entirely</label><br><button type="button" class="charts-btn-create" id="reset_plugin_btn" style="background:#ef4444; color:#fff; border:none; margin-top:20px; opacity:0.3; cursor:not-allowed;" disabled>RESET PLUGIN NOW</button></div>' ]
+				]
+			]
+		]
+	],
+];
+
+$registered_keys = [];
+
+// --- 3. Render Field Engine Helper ---
+if ( ! function_exists( 'kc_render_field' ) ) {
+	function kc_render_field( $field ) {
+		global $registered_keys;
+		$id = $field['id'];
+		$val = kc_get_setting( $id, $field['default'] ?? '' );
+		
+		// Map prefix
+		$prefix = '';
+		if ( $field['type'] === 'switch' ) $prefix = 'chk:';
+		elseif ( $field['type'] === 'number' ) $prefix = 'int:';
+		elseif ( $field['type'] === 'range' || $field['type'] === 'float' ) $prefix = 'flt:';
+		elseif ( $field['type'] === 'textarea' ) $prefix = 'raw:';
+		
+		if ( $field['type'] !== 'custom' ) {
+			$registered_keys[] = $prefix . $id;
+		}
+		
+		echo '<div class="kc-form-group kc-field-' . esc_attr($field['type']) . '" data-search="'.esc_attr(strtolower($field['label'])).'">';
+		
+		if ( isset($field['label']) && $field['type'] !== 'switch' && $field['type'] !== 'custom' ) {
+			echo '<label for="' . esc_attr($id) . '">' . esc_html($field['label']) . '</label>';
+		}
+		
+		switch ( $field['type'] ) {
+			case 'text':
+			case 'password':
+			case 'number':
+				echo '<input type="' . esc_attr($field['type']) . '" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" class="form-control">';
+				break;
+			case 'range':
+				echo '<div class="kc-range-wrapper" style="display:flex; align-items:center; gap:15px; max-width:400px;">';
+				echo '<input type="range" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" step="' . esc_attr($field['step'] ?? 1) . '" min="' . esc_attr($field['min'] ?? 0) . '" max="' . esc_attr($field['max'] ?? 100) . '" oninput="this.nextElementSibling.innerText=this.value" style="flex:1;">';
+				echo '<span class="kc-range-val" style="font-family:monospace; font-weight:600; font-size:14px; color:#3b82f6; background:#eff6ff; padding:4px 8px; border-radius:6px; min-width:48px; text-align:center;">' . esc_html($val) . '</span>';
+				echo '</div>';
+				break;
+			case 'color':
+				echo '<div style="display:flex; align-items:center; gap:10px;">';
+				echo '<input type="color" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" style="padding:0; border:none; width:45px; height:45px; border-radius:8px; cursor:pointer;">';
+				echo '<input type="text" value="' . esc_attr($val) . '" class="form-control" style="width:120px; font-family:monospace;" onchange="this.previousElementSibling.value=this.value">';
+				echo '</div>';
+				break;
+			case 'textarea':
+				echo '<textarea name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" class="form-control" rows="'.esc_attr($field['rows']??4).'">' . esc_textarea($val) . '</textarea>';
+				break;
+			case 'select':
+				echo '<select name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" class="form-control" style="max-width:400px;">';
+				foreach ( $field['options'] as $v => $l ) {
+					echo '<option value="' . esc_attr($v) . '" ' . selected( $val, $v, false ) . '>' . esc_html($l) . '</option>';
+				}
+				echo '</select>';
+				break;
+			case 'switch':
+				echo '<div style="display:flex; align-items:center; gap:15px;">';
+				echo '<label class="switch" style="margin:0;">';
+				echo '<input type="checkbox" name="' . esc_attr($id) . '" value="1" ' . checked( 1, $val, false ) . '>';
+				echo '<span class="slider"></span>';
+				echo '</label>';
+				if(isset($field['label'])) echo '<strong style="font-size:14px; color:#1e293b;">' . esc_html($field['label']) . '</strong>';
+				echo '</div>';
+				break;
+			case 'media':
+				$img_url = $val ? wp_get_attachment_image_url( $val, 'medium' ) : '';
+				echo '<div class="kc-media-uploader" style="max-width:400px; margin-bottom:10px;">';
+				echo '<div class="logo-preview-wrapper" style="margin-bottom: 15px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:20px; display:flex; align-items:center; justify-content:center; min-height:100px;">';
+				echo '<img id="logo-preview-' . esc_attr($id) . '" src="' . esc_url( $img_url ) . '" style="max-height: 60px; display: ' . ($img_url ? 'block' : 'none') . ';">';
+				if(!$img_url) echo '<span style="color:#94a3b8; font-size:12px; font-weight:600;">No Image Selected.</span>';
+				echo '</div>';
+				echo '<input type="hidden" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr( $val ) . '">';
+				echo '<div style="display:flex; gap:10px;">';
+				echo '<button type="button" class="charts-btn-back upload-logo-btn" data-target="' . esc_attr($id) . '" style="flex:1; font-size:13px; font-weight:600; padding:10px;">Select Media</button>';
+				echo '<button type="button" class="charts-btn-back remove-logo-btn" data-target="' . esc_attr($id) . '" style="color:#ef4444; border-color:#fee2e2; background:#fee2e2; font-size:13px; font-weight:600; padding:10px;">Remove</button>';
+				echo '</div>';
+				echo '</div>';
+				break;
+			case 'custom':
+				echo $field['html'];
+				break;
+		}
+		
+		if ( !empty($field['desc']) ) {
+			echo '<span class="input-helper">' . wp_kses_post($field['desc']) . '</span>';
+		}
+		echo '</div>';
+	}
+}
 ?>
-<div class="charts-admin-wrap premium-light">
-	<header class="charts-admin-header">
-		<div>
-			<h1 class="charts-admin-title"><?php esc_html_e( 'System Configuration', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle"><?php _e( 'Global architecture, branding identity, and third-party API connectivity.', 'charts' ); ?></p>
-		</div>
-		<div class="charts-admin-actions">
-			<button type="submit" class="charts-btn-create" form="charts-settings-form">
-				<span class="dashicons dashicons-saved" style="margin-right:8px;"></span>
-				<?php _e( 'Save System Configuration', 'charts' ); ?>
-			</button>
-		</div>
-	</header>
 
-	<?php settings_errors( 'charts' ); ?>
+<style>
+/* Kontentainment Premium Option Panel CSS */
+.kc-settings-wrapper { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; margin:20px 20px 0 0; }
+.kc-settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.kc-settings-title { margin:0; font-size: 24px; font-weight: 700; color: #1e293b; display:flex; align-items:center; gap:12px; }
+.kc-btn-save-sticky { background: #2563eb; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; display:flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(37,99,235,0.2); font-size:14px; }
+.kc-btn-save-sticky:hover { background: #1d4ed8; transform:translateY(-1px); box-shadow:0 6px 16px rgba(37,99,235,0.3); }
 
-	<!-- Tab Navigation -->
-	<div class="charts-tabs-nav">
-		<button type="button" class="tab-link active" data-tab="general">General</button>
-		<button type="button" class="tab-link" data-tab="header">Header</button>
-		<button type="button" class="tab-link" data-tab="footer">Footer</button>
-		<button type="button" class="tab-link" data-tab="homepage">Homepage</button>
-		<button type="button" class="tab-link" data-tab="markets">Markets</button>
-		<button type="button" class="tab-link" data-tab="apis">APIs</button>
-		<button type="button" class="tab-link" data-tab="maintenance">Maintenance</button>
-	</div>
+.kc-panel-layout { display: flex; background: #fff; border-radius: 16px; box-shadow: 0 10px 40px rgba(15,23,42,0.04); border: 1px solid #e2e8f0; min-height: 75vh; overflow:hidden; }
+.kc-panel-sidebar { width: 280px; background: #f8fafc; border-right: 1px solid #e2e8f0; flex-shrink: 0; display:flex; flex-direction:column; }
+.kc-panel-search { padding: 25px 20px 15px; }
+.kc-panel-search input { width: 100%; padding: 12px 18px 12px 42px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 14px center; background-size: 16px; }
+.kc-panel-search input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
 
+.kc-nav-list { list-style: none; padding: 0 15px 20px; margin: 0; overflow-y:auto; flex:1; }
+.kc-nav-btn { display: flex; align-items: center; width: 100%; padding: 14px 20px; border: none; background: transparent; text-align: left; font-size: 14px; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.2s; border-radius: 10px; margin-bottom: 4px; }
+.kc-nav-btn:hover { background: #e2e8f0; color: #0f172a; }
+.kc-nav-btn.active { background: #2563eb; color: #ffffff; box-shadow: 0 4px 12px rgba(37,99,235,0.25); }
+.kc-nav-btn .dashicons { margin-right: 14px; font-size: 20px; width: 20px; height: 20px; color:inherit; }
+
+.kc-panel-content { flex: 1; padding: 40px 50px; background: #fff; overflow-y:auto; max-height:85vh; }
+.kc-tab-view { display: none; animation: kcFadeIn 0.3s ease; }
+.kc-tab-view.active { display: block; }
+@keyframes kcFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.kc-section-card { margin-bottom: 40px; }
+.kc-section-card:last-child { margin-bottom: 0; }
+.kc-section-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+.kc-section-header h3 { margin: 0 0 6px 0; font-size: 18px; color: #0f172a; font-weight:700; }
+.kc-section-header p { margin: 0; font-size: 14px; color: #64748b; line-height:1.5; }
+
+.kc-form-group { margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid #f8fafc; }
+.kc-form-group:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+.kc-form-group label { display:block; font-weight: 600; font-size: 14px; color: #1e293b; margin-bottom: 10px; }
+.kc-form-group .form-control { width: 100%; max-width: 400px; padding: 12px 16px; border-radius: 8px; border: 1px solid #cbd5e1; font-size:14px; color:#1e293b; background:#fff; transition:0.2s; box-shadow:0 1px 2px rgba(0,0,0,0.02); }
+.kc-form-group .form-control:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+.kc-form-group textarea.form-control { max-width: 100%; min-height:80px; resize:vertical; }
+.input-helper { display:block; font-size: 13px; color: #64748b; margin-top: 8px; line-height:1.4; max-width:600px; }
+
+/* Switch Toggle (Foxiz style) */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink:0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+input:checked + .slider { background-color: #10b981; }
+input:checked + .slider:before { transform: translateX(20px); }
+</style>
+
+<div class="kc-settings-wrapper wrap">
+	
 	<form method="post" action="" id="charts-settings-form">
 		<?php wp_nonce_field( 'charts_admin_action' ); ?>
 		<input type="hidden" name="charts_action" value="save_settings">
-
-		<!-- TAB: GENERAL -->
-		<div id="tab-general" class="tab-content active">
-			<!-- 1. Branding & Shell -->
-			<div class="premium-form-card">
-				<div class="card-header">
-					<h3>Branding & Shell</h3>
-					<p>Core identity and standalone rendering behavior.</p>
-				</div>
-				<div class="premium-form-grid">
-					<div class="form-group">
-						<label for="wordmark">Product Wordmark</label>
-						<input type="text" name="wordmark" id="wordmark" value="<?php echo esc_attr($wordmark); ?>" class="form-control" placeholder="KCharts">
-						<span class="input-helper">Used when no logo is selected or as high-fidelity fallback.</span>
-					</div>
-					<div class="form-group">
-						<label for="theme_mode">Chart Theme Mode</label>
-						<select name="theme_mode" id="theme_mode" class="form-control">
-							<option value="light" <?php selected( get_option('charts_theme_mode', 'light'), 'light' ); ?>>Light Mode</option>
-							<option value="dark" <?php selected( get_option('charts_theme_mode', 'light'), 'dark' ); ?>>Dark Mode</option>
-						</select>
-						<span class="input-helper">Determine the base color palette for all public chart interfaces.</span>
-					</div>
-					<div class="form-group">
-						<label>Shell Configuration</label>
-						<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; font-size:12px; color:#64748b; line-height:1.5;">
-							<div style="display:flex; align-items:center; gap:10px; color:#0f172a; font-weight:700; margin-bottom:5px;">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-								Standalone Architecture Enabled
-							</div>
-							Charts routes automatically use a plugin-controlled cinematic shell for maximum performance and design fidelity. The main site remains unaffected.
-						</div>
-					</div>
-					
-					<div class="form-group">
-						<label>Logo Identity</label>
-						<div class="logo-preview-wrapper" style="margin-bottom: 15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; align-items:center; justify-content:center; min-height:120px;">
-							<img id="logo-preview" src="<?php echo esc_url( $logo_url ); ?>" style="max-height: 80px; display: <?php echo $logo_url ? 'block' : 'none'; ?>;">
-							<?php if(!$logo_url): ?><span style="color:#94a3b8; font-size:12px; font-weight:600;">No Logo Selected</span><?php endif; ?>
-						</div>
-						<input type="hidden" name="logo_id" id="logo_id" value="<?php echo esc_attr( $logo_id ); ?>">
-						<div style="display:flex; gap:10px;">
-							<button type="button" class="charts-btn-back" id="upload_logo_btn" style="flex:1;">Select Logo</button>
-							<button type="button" class="charts-btn-back" id="remove_logo_btn" style="color:#ef4444; border-color:#fee2e2;">Remove</button>
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="logo_alt">Logo Alt Text</label>
-						<input type="text" name="logo_alt" id="logo_alt" value="<?php echo esc_attr( get_option( 'charts_logo_alt' ) ); ?>" class="form-control">
-						<span class="input-helper">Accessibility label for the branding image.</span>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- TAB: HEADER -->
-		<div id="tab-header" class="tab-content">
-			<!-- 2. Header Configuration -->
-			<div class="premium-form-card">
-				<div class="card-header">
-					<h3>Header Configuration</h3>
-					<p>Controls visibility and navigation for the standalone header.</p>
-				</div>
-				<div class="premium-form-grid">
-					<div class="form-group">
-						<label>Header Context</label>
-						<div style="font-size:13px; font-weight:600; color:#64748b;">
-							The cinematic navigation bar is forced on all Charts-owned routes to ensure data-driven navigation remains functional.
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="header_menu_id"><?php esc_html_e( 'Assigned Navigation Menu', 'charts' ); ?></label>
-						<select name="header_menu_id" id="header_menu_id" class="form-control">
-							<option value="0"><?php esc_html_e( '— Select WordPress Menu —', 'charts' ); ?></option>
-							<?php if ( ! empty( $menus ) ) : foreach ( $menus as $menu ) : ?>
-								<option value="<?php echo esc_attr( $menu->term_id ); ?>" <?php selected( $selected_menu, $menu->term_id ); ?>>
-									<?php echo esc_html( $menu->name ); ?>
-								</option>
-							<?php endforeach; endif; ?>
-						</select>
-						<span class="input-helper">Primary navigation links for chart pages.</span>
-					</div>
-					<div class="form-group form-group-full">
-						<label>Visible Elements</label>
-						<div class="toggle-row" style="margin-top:15px; grid-template-columns: repeat(3, 1fr);">
-							<div class="toggle-item">
-								<label class="switch"><input type="checkbox" name="show_logo" value="1" <?php checked( 1, get_option( 'charts_show_logo', 1 ) ); ?>><span class="slider"></span></label>
-								<label>Logotype</label>
-							</div>
-							<div class="toggle-item">
-								<label class="switch"><input type="checkbox" name="show_nav" value="1" <?php checked( 1, get_option( 'charts_show_nav', 1 ) ); ?>><span class="slider"></span></label>
-								<label>Navigation</label>
-							</div>
-							<div class="toggle-item">
-								<label class="switch"><input type="checkbox" name="show_search" value="1" <?php checked( 1, get_option( 'charts_show_search', 1 ) ); ?>><span class="slider"></span></label>
-								<label>Search Trigger</label>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- TAB: FOOTER -->
-		<div id="tab-footer" class="tab-content">
-			<!-- 3. Footer Configuration -->
-			<div class="premium-form-card">
-				<div class="card-header">
-					<h3>Footer Configuration</h3>
-					<p>Manage the editorial imprint and copyright metadata.</p>
-				</div>
-				<div class="premium-form-grid">
-					<div class="form-group">
-						<label>Footer Context</label>
-						<div style="font-size:13px; font-weight:600; color:#64748b;">
-							The cinematic 4-column footer is forced on all Charts-owned routes to provide platform consistency and data attribution.
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="footer_copyright">Copyright Label</label>
-						<input type="text" name="footer_copyright" id="footer_copyright" value="<?php echo esc_attr($footer_copy); ?>" class="form-control" placeholder="Kontentainment Charts.">
-						<span class="input-helper">Displayed in the bottom strip of the footer.</span>
-					</div>
-					<div class="form-group form-group-full">
-						<label for="footer_description">Platform Description</label>
-						<textarea name="footer_description" id="footer_description" class="form-control" rows="3"><?php echo esc_textarea($footer_desc); ?></textarea>
-						<span class="input-helper">Brief editorial summary displayed in the brand column.</span>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- TAB: HOMEPAGE -->
-		<div id="tab-homepage" class="tab-content">
-			<!-- 3.5 Homepage Configuration -->
-			<div class="premium-form-card">
-				<div class="card-header">
-					<h3>Homepage Slider Engine</h3>
-					<p>Configure the motion, layout, and content of the cinematic hero slider on the charts homepage.</p>
-				</div>
-				
-				<?php 
-				$s_style = get_option('charts_slider_style', 'coverflow');
-				$s_enable = get_option('charts_slider_enable', 1);
-				$s_count = get_option('charts_slider_count', 5);
-				$s_loop = get_option('charts_slider_loop', 1);
-				$s_auto = get_option('charts_slider_autoplay', 1);
-				$s_delay = get_option('charts_slider_delay', 3000);
-				$s_arrows = get_option('charts_slider_arrows', 1);
-				$s_dots = get_option('charts_slider_pagination', 1);
-				$s_swipe = get_option('charts_slider_swipe', 1);
-				$s_kb = get_option('charts_slider_keyboard', 1);
-
-				$s_speed = get_option('charts_slider_speed', 600);
-				$s_ease = get_option('charts_slider_easing', 'cubic-bezier(0.25, 1, 0.5, 1)');
-				$s_center = get_option('charts_slider_center', 1);
-				$s_depth = get_option('charts_slider_depth', 150);
-				$s_rot = get_option('charts_slider_rotation', 45);
-				$s_opac = get_option('charts_slider_opacity', 0.6);
-				$s_scale = get_option('charts_slider_scale', 0.8);
-				$s_space = get_option('charts_slider_spacing', 50);
-				$s_shadow = get_option('charts_slider_shadow', 0.3);
-				$s_glow = get_option('charts_slider_glow', 1);
-
-				$s_max = get_option('charts_slider_max_width', '1440px');
-				$s_min = get_option('charts_slider_min_height', '500px');
-				$s_ratio = get_option('charts_slider_aspect_ratio', '16/9');
-				$s_align = get_option('charts_slider_align', 'center');
-				$s_over = get_option('charts_slider_overlay', 0.5);
-				$s_rad = get_option('charts_slider_radius', '16px');
-				$s_mob = get_option('charts_slider_mobile_mode', 'stack');
-
-				$s_slabel = get_option('charts_slider_show_label', 1);
-				$s_smeta = get_option('charts_slider_show_meta', 1);
-				$s_scta = get_option('charts_slider_show_cta', 1);
-				$s_cta = get_option('charts_slider_cta_text', 'VIEW CHART');
-				?>
-
-				<div class="premium-form-grid" style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px;">
-					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">General Settings</h4>
-					
-					<div class="form-group form-group-full">
-						<div class="toggle-item" style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px;">
-							<label class="switch"><input type="checkbox" name="slider_enable" value="1" <?php checked(1, $s_enable); ?>><span class="slider"></span></label>
-							<label style="font-weight: 700;">Enable Homepage Slider</label>
-						</div>
-					</div>
-
-					<div class="form-group">
-						<label for="slider_style">Default Slider Style</label>
-						<select name="slider_style" id="slider_style" class="form-control">
-							<option value="coverflow" <?php selected('coverflow', $s_style); ?>>Coverflow 3D</option>
-							<option value="stacked" <?php selected('stacked', $s_style); ?>>Stacked Cards</option>
-							<option value="minimal" <?php selected('minimal', $s_style); ?>>Minimal Motion</option>
-						</select>
-						<span class="input-helper">Master architecture applied to the root shell homepage.</span>
-					</div>
-					
-					<div class="form-group">
-						<label for="slider_count">Number of Slides</label>
-						<input type="number" name="slider_count" id="slider_count" class="form-control" value="<?php echo esc_attr($s_count); ?>">
-					</div>
-
-					<div class="form-group">
-						<label for="slider_delay">Autoplay Delay (ms)</label>
-						<input type="number" name="slider_delay" id="slider_delay" class="form-control" value="<?php echo esc_attr($s_delay); ?>">
-					</div>
-
-					<div class="form-group form-group-full">
-						<div class="toggle-row" style="grid-template-columns: repeat(3, 1fr);">
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_loop" value="1" <?php checked(1, $s_loop); ?>><span class="slider"></span></label><label>Infinite Loop</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_autoplay" value="1" <?php checked(1, $s_auto); ?>><span class="slider"></span></label><label>Autoplay</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_arrows" value="1" <?php checked(1, $s_arrows); ?>><span class="slider"></span></label><label>Navigation Arrows</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_pagination" value="1" <?php checked(1, $s_dots); ?>><span class="slider"></span></label><label>Pagination Dots</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_swipe" value="1" <?php checked(1, $s_swipe); ?>><span class="slider"></span></label><label>Touch Swipe</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_keyboard" value="1" <?php checked(1, $s_kb); ?>><span class="slider"></span></label><label>Keyboard Nav</label></div>
-						</div>
-					</div>
-				</div>
-
-				<div class="premium-form-grid" style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px;">
-					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">Motion & Physics</h4>
-					
-					<div class="form-group"><label>Animation Speed (ms)</label><input type="number" name="slider_speed" class="form-control" value="<?php echo esc_attr($s_speed); ?>"></div>
-					<div class="form-group"><label>Easing</label><input type="text" name="slider_easing" class="form-control" value="<?php echo esc_attr($s_ease); ?>"></div>
-					
-					<div class="form-group"><label>Side Card Depth (Z)</label><input type="number" name="slider_depth" class="form-control" value="<?php echo esc_attr($s_depth); ?>"></div>
-					<div class="form-group"><label>Rotation Angle</label><input type="number" name="slider_rotation" class="form-control" value="<?php echo esc_attr($s_rot); ?>"></div>
-					
-					<div class="form-group"><label>Side Opacity (0-1)</label><input type="number" step="0.1" name="slider_opacity" class="form-control" value="<?php echo esc_attr($s_opac); ?>"></div>
-					<div class="form-group"><label>Side Scale (0-1)</label><input type="number" step="0.1" name="slider_scale" class="form-control" value="<?php echo esc_attr($s_scale); ?>"></div>
-					
-					<div class="form-group"><label>Card Spacing (px)</label><input type="number" name="slider_spacing" class="form-control" value="<?php echo esc_attr($s_space); ?>"></div>
-					<div class="form-group"><label>Shadow Intensity (0-1)</label><input type="number" step="0.1" name="slider_shadow" class="form-control" value="<?php echo esc_attr($s_shadow); ?>"></div>
-
-					<div class="form-group form-group-full">
-						<div class="toggle-row" style="grid-template-columns: repeat(2, 1fr);">
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_center" value="1" <?php checked(1, $s_center); ?>><span class="slider"></span></label><label>Center Mode</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_glow" value="1" <?php checked(1, $s_glow); ?>><span class="slider"></span></label><label>Active Card Glow</label></div>
-						</div>
-					</div>
-				</div>
-
-				<div class="premium-form-grid" style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px;">
-					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">Layout Constraints</h4>
-					
-					<div class="form-group"><label>Hero Max Width</label><input type="text" name="slider_max_width" class="form-control" value="<?php echo esc_attr($s_max); ?>"></div>
-					<div class="form-group"><label>Hero Min Height</label><input type="text" name="slider_min_height" class="form-control" value="<?php echo esc_attr($s_min); ?>"></div>
-
-					<div class="form-group"><label>Image Aspect Ratio</label><input type="text" name="slider_aspect_ratio" class="form-control" value="<?php echo esc_attr($s_ratio); ?>"></div>
-					<div class="form-group"><label>Text Alignment</label>
-						<select name="slider_align" class="form-control">
-							<option value="left" <?php selected('left', $s_align); ?>>Left</option>
-							<option value="center" <?php selected('center', $s_align); ?>>Center</option>
-						</select>
-					</div>
-
-					<div class="form-group"><label>Border Radius</label><input type="text" name="slider_radius" class="form-control" value="<?php echo esc_attr($s_rad); ?>"></div>
-					<div class="form-group"><label>Overlay Strength (0-1)</label><input type="number" step="0.1" name="slider_overlay" class="form-control" value="<?php echo esc_attr($s_over); ?>"></div>
-					
-					<div class="form-group form-group-full"><label>Mobile Layout Mode</label>
-						<select name="slider_mobile_mode" class="form-control">
-							<option value="stack" <?php selected('stack', $s_mob); ?>>Standard Flow</option>
-							<option value="swipe" <?php selected('swipe', $s_mob); ?>>Horizontal Swipe / Snapping</option>
-						</select>
-					</div>
-				</div>
-
-				<div class="premium-form-grid">
-					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">Content Injection</h4>
-					
-					<div class="form-group"><label>CTA Label Text</label><input type="text" name="slider_cta_text" class="form-control" value="<?php echo esc_attr($s_cta); ?>"></div>
-					<div class="form-group"><label>Element Toggles</label>
-						<div style="display:flex; flex-direction:column; gap:10px;">
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_show_label" value="1" <?php checked(1, $s_slabel); ?>><span class="slider"></span></label><label>Show Chart Label / Badge</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_show_meta" value="1" <?php checked(1, $s_smeta); ?>><span class="slider"></span></label><label>Show Meta / Artist Data</label></div>
-							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_show_cta" value="1" <?php checked(1, $s_scta); ?>><span class="slider"></span></label><label>Show CTA Button</label></div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- TAB: MARKETS -->
-		<div id="tab-markets" class="tab-content">
-			<div class="premium-form-card">
-				<div class="card-header">
-					<h3>Managed Markets & Territories</h3>
-					<p>Define the regions where your charts are active. These will appear in the Import Center.</p>
-				</div>
-				
-				<div class="kb-repeater-wrap" id="markets-repeater">
-					<div class="repeater-header" style="display:grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 15px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">
-						<span>Market Name (e.g. Egypt)</span>
-						<span>Code (e.g. EG)</span>
-						<span>Slug (lower-case)</span>
-						<span></span>
-					</div>
-					<div class="repeater-items" id="markets-container">
-						<?php 
-						$markets = get_option('charts_markets', []);
-						if (!empty($markets)) :
-							foreach ($markets as $idx => $market) : ?>
-								<div class="repeater-item" style="display:grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 15px; margin-bottom: 10px;">
-									<input type="text" name="markets[<?php echo $idx; ?>][name]" value="<?php echo esc_attr($market['name'] ?? ''); ?>" class="form-control" placeholder="Saudi Arabia">
-									<input type="text" name="markets[<?php echo $idx; ?>][code]" value="<?php echo esc_attr($market['code'] ?? ''); ?>" class="form-control" placeholder="SA">
-									<input type="text" name="markets[<?php echo $idx; ?>][slug]" value="<?php echo esc_attr($market['slug'] ?? ''); ?>" class="form-control" placeholder="saudi-arabia">
-									<button type="button" class="remove-row" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>
-								</div>
-							<?php endforeach;
-						endif; ?>
-					</div>
-					<button type="button" id="add-market-btn" class="charts-btn-back" style="margin-top:20px; width:100%; border-style:dashed;">
-						<span class="dashicons dashicons-plus" style="margin-right:8px;"></span> Add New Territory
-					</button>
-				</div>
-			</div>
-		</div>
-
-		<!-- TAB: APIs -->
-		<div id="tab-apis" class="tab-content">
-			<!-- 4. Intelligence API Credentials -->
-			<div class="premium-form-card" style="border-left: 4px solid var(--charts-primary);">
-				<div class="card-header">
-					<h3>Intelligence API Credentials</h3>
-					<p>Required for manual enrichment and real-time metadata discovery.</p>
-				</div>
-				<div class="premium-form-grid">
-					<?php 
-						$spotify_id = get_option( 'charts_spotify_client_id' );
-						$spotify_secret = get_option( 'charts_spotify_client_secret' );
-						$yt_key = get_option( 'charts_youtube_api_key' );
-
-						// Masking helpers
-						$mask = function($str) {
-							if (!$str) return '';
-							if (strlen($str) <= 8) return '********';
-							return substr($str, 0, 4) . '...' . substr($str, -4);
-						};
-					?>
-					<div class="form-group">
-						<label for="spotify_client_id">Spotify Client ID</label>
-						<input type="text" name="spotify_client_id" id="spotify_client_id" value="<?php echo esc_attr( $spotify_id ); ?>" class="form-control" style="font-family:monospace;" placeholder="Enter Client ID">
-					</div>
-					<div class="form-group">
-						<label for="spotify_client_secret">Spotify Client Secret</label>
-						<input type="password" name="spotify_client_secret" id="spotify_client_secret" value="<?php echo esc_attr( $spotify_secret ); ?>" class="form-control" placeholder="Enter Client Secret">
-						<span class="input-helper">Used for OAuth2 server-to-server communication.</span>
-					</div>
-					<div class="form-group">
-						<label for="youtube_api_key">YouTube Data API (v3) Key</label>
-						<input type="password" name="youtube_api_key" id="youtube_api_key" value="<?php echo esc_attr( $yt_key ); ?>" class="form-control" placeholder="Enter API Key">
-						<span class="input-helper">Required for automatic YouTube metadata enrichment.</span>
-					</div>
-					<div class="form-group">
-						<label>API Connectivity Diagnostics</label>
-						<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
-							<div style="display:grid; gap:12px; font-size:12px;">
-								<div style="display:flex; align-items:center; justify-content:space-between;">
-									<span style="font-weight:700; color:#475569;">Spotify Client:</span>
-									<span class="charts-badge <?php echo $spotify_id ? 'charts-badge-success' : 'charts-badge-neutral'; ?>" style="font-size:10px;">
-										<?php echo $spotify_id ? 'CONFIGURED (' . $mask($spotify_id) . ')' : 'MISSING'; ?>
-									</span>
-								</div>
-								<div style="display:flex; align-items:center; justify-content:space-between;">
-									<span style="font-weight:700; color:#475569;">YouTube Key:</span>
-									<span class="charts-badge <?php echo $yt_key ? 'charts-badge-success' : 'charts-badge-neutral'; ?>" style="font-size:10px;">
-										<?php echo $yt_key ? 'CONFIGURED (' . $mask($yt_key) . ')' : 'MISSING'; ?>
-									</span>
-								</div>
-							</div>
-							<div style="display:flex; gap:10px; margin-top:20px;">
-								<button type="submit" name="charts_action" value="test_spotify_api" class="charts-btn-back" style="flex:1; font-size:11px; font-weight:700;">Test Spotify</button>
-								<button type="submit" name="charts_action" value="test_youtube_api" class="charts-btn-back" style="flex:1; font-size:11px; font-weight:700;">Test YouTube</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- TAB: MAINTENANCE -->
-		<div id="tab-maintenance" class="tab-content">
-			<!-- 4. Asset Diagnostics -->
-			<div class="premium-form-card">
-				<div class="card-header">
-					<h3>Asset Diagnostics & Repair</h3>
-					<p>Technical auditing and binary data recovery.</p>
-				</div>
-				<div class="premium-form-grid">
-					<div class="form-group form-group-full">
-						<label>Incomplete Record Analysis</label>
-						<div style="background:#fefce8; border:1px solid #fef08a; border-radius:12px; padding:20px;">
-							<p style="font-size:12px; color:#a16207; margin:0 0 15px; font-weight:500;">
-								If Spotify or YouTube APIs were unavailable during import, some records may be missing cover art or thumbnails. 
-								Run this tool to re-enrich incomplete records with missing media assets.
-							</p>
-							<button type="submit" name="charts_action" value="backfill_media" class="charts-btn-back" style="width:100%; border-color:#fde047; background:#fff; color:#854d0e;">
-								<span class="dashicons dashicons-image-rotate" style="font-size:16px; margin-right:8px; vertical-align:middle;"></span>
-								Backfill Missing Assets
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- 5. Danger Zone -->
-			<div class="premium-form-card" style="margin-top:40px; border: 1px solid #fee2e2; background: #fffcfc; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05);">
-				<div class="card-header" style="border-bottom-color: #fee2e2;">
-					<h3 style="color: #ef4444; display: flex; align-items: center; gap: 10px;">
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-						Danger Zone
-					</h3>
-					<p style="color: #991b1b; font-weight: 500;">Reset plugin data and return to a fresh state.</p>
-				</div>
-				
-				<div class="premium-form-grid" style="grid-template-columns: 1.5fr 1fr;">
-					<div style="font-size: 13px; color: #7f1d1d; line-height: 1.6;">
-						<p style="margin: 0 0 15px;">
-							This action is <strong>irreversible</strong>. It will permanently delete all:
-						</p>
-						<ul style="margin: 0 0 20px; padding-left: 20px;">
-							<li>Chart definitions and data sources</li>
-							<li>Imported tracks, artists, and videos</li>
-							<li>All chart entries and historical periods</li>
-							<li>Intelligence scores and insights</li>
-							<li>Import logs and system transients</li>
-						</ul>
-						<div class="toggle-item" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #fee2e2;">
-							<label class="switch"><input type="checkbox" name="wipe_settings" value="1"><span class="slider" style="background-color: #fecaca;"></span></label>
-							<label style="color: #ef4444; font-weight: 700;">Also wipe API keys and branding settings</label>
-						</div>
-					</div>
-					
-					<div style="background: white; padding: 25px; border-radius: 12px; border: 1px solid #fee2e2; display: flex; flex-direction: column; gap: 15px;">
-						<label style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #ef4444; letter-spacing: 0.05em;">Type "RESET CHARTS" to confirm</label>
-						<input type="text" id="reset_confirm_input" class="form-control" placeholder="RESET CHARTS" style="border-color: #fca5a5; text-align: center; font-weight: 800; letter-spacing: 0.05em;">
-						<button type="submit" name="charts_action" value="reset_plugin" id="reset_plugin_btn" class="charts-btn-create" style="width: 100%; background: #ef4444; opacity: 0.3; cursor: not-allowed;" disabled>
-							Reset Plugin to Zero
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="charts-admin-footer-bar" style="margin-top:60px; padding-top:30px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
-			<button type="submit" class="charts-btn-create">
-				Save System Configuration
+		
+		<div class="kc-settings-header">
+			<h1 class="kc-settings-title">
+				<span class="dashicons dashicons-admin-generic" style="font-size:32px; width:32px; height:32px; color:#2563eb;"></span>
+				Kontentainment Charts Theme Options
+			</h1>
+			<button type="submit" class="kc-btn-save-sticky">
+				<span class="dashicons dashicons-saved"></span> Save Changes
 			</button>
+		</div>
+
+		<?php settings_errors( 'charts' ); ?>
+
+		<div class="kc-panel-layout">
+			
+			<!-- Sidebar -->
+			<div class="kc-panel-sidebar">
+				<div class="kc-panel-search">
+					<input type="text" id="kc-search-input" placeholder="Search settings...">
+				</div>
+				<ul class="kc-nav-list">
+					<?php 
+					$first = true;
+					foreach ( $charts_panel as $tab_id => $tab ) : 
+					?>
+					<li>
+						<button type="button" class="kc-nav-btn <?php echo $first ? 'active' : ''; ?>" data-target="<?php echo esc_attr($tab_id); ?>">
+							<span class="dashicons <?php echo esc_attr($tab['icon']); ?>"></span>
+							<?php echo esc_html($tab['title']); ?>
+						</button>
+					</li>
+					<?php $first = false; endforeach; ?>
+				</ul>
+			</div>
+
+			<!-- Content Tabs -->
+			<div class="kc-panel-content">
+				<?php 
+				$first = true;
+				foreach ( $charts_panel as $tab_id => $tab ) : 
+				?>
+				<div id="tab-<?php echo esc_attr($tab_id); ?>" class="kc-tab-view <?php echo $first ? 'active' : ''; ?>">
+					
+					<?php foreach ( $tab['sections'] as $sec_id => $sec ) : ?>
+					<div class="kc-section-card" data-section="<?php echo esc_attr($sec_id); ?>">
+						<div class="kc-section-header">
+							<h3><?php echo esc_html($sec['title']); ?></h3>
+							<?php if ( !empty($sec['desc']) ) : ?>
+								<p><?php echo wp_kses_post($sec['desc']); ?></p>
+							<?php endif; ?>
+						</div>
+						
+						<?php foreach ( $sec['fields'] as $field ) : ?>
+							<?php kc_render_field( $field ); ?>
+						<?php endforeach; ?>
+					</div>
+					<?php endforeach; ?>
+
+				</div>
+				<?php $first = false; endforeach; ?>
+				
+				<!-- Render Field Map JSON for backend processor -->
+				<input type="hidden" name="charts_registered_fields" value="<?php echo esc_attr( implode( ',', $registered_keys ) ); ?>">
+			</div>
+
 		</div>
 	</form>
 </div>
 
 <script>
 jQuery(document).ready(function($) {
-	// Tab Switching Logic
-	const switchTab = (tabId) => {
-		$('.tab-link').removeClass('active');
-		$('.tab-content').removeClass('active');
+	// Sidebar Navigation
+	$('.kc-nav-btn').on('click', function() {
+		var target = $(this).data('target');
 		
-		$('[data-tab="' + tabId + '"]').addClass('active');
-		$('#tab-' + tabId).addClass('active');
+		// Unset search block visibility overrides
+		$('.kc-section-card, .kc-form-group').show();
+		$('#kc-search-input').val('');
 		
-		// Update URL hash without jumping
-		if (history.pushState) {
-			history.pushState(null, null, '#' + tabId);
-		} else {
-			location.hash = '#' + tabId;
-		}
-	};
+		$('.kc-nav-btn').removeClass('active');
+		$(this).addClass('active');
+		
+		$('.kc-tab-view').removeClass('active');
+		$('#tab-' + target).addClass('active');
 
-	// Click Handler
-	$('.tab-link').on('click', function() {
-		const tab = $(this).data('tab');
-		switchTab(tab);
+		if(history.pushState) {
+			history.pushState(null, null, '#' + target);
+		} else {
+			window.location.hash = '#' + target;
+		}
 	});
 
-	// Handle initial tab from URL hash
-	const hash = window.location.hash.substring(1);
+	// Hash Navigation on Load
+	var hash = window.location.hash.substring(1);
 	if (hash && $('#tab-' + hash).length) {
-		switchTab(hash);
+		$('.kc-nav-btn[data-target="' + hash + '"]').click();
 	}
 
-	// Logo Media Uploader
-	var frame;
-	$('#upload_logo_btn').on('click', function(e){
+	// Dynamic Search
+	$('#kc-search-input').on('input', function() {
+		var term = $(this).val().toLowerCase();
+		if ( term.length > 1 ) {
+			$('.kc-tab-view').addClass('active'); // Expand all tabs
+			$('.kc-section-card').hide();
+			$('.kc-form-group').hide();
+			
+			$('.kc-form-group').each(function() {
+				var searchData = $(this).data('search') || '';
+				var textData = $(this).text().toLowerCase();
+				if ( searchData.includes(term) || textData.includes(term) ) {
+					$(this).show();
+					$(this).closest('.kc-section-card').show();
+				}
+			});
+			// Disable active state in sidebar during search
+			$('.kc-nav-btn').removeClass('active');
+		} else {
+			// Revert to active tab
+			$('.kc-tab-view').removeClass('active');
+			$('.kc-form-group').show();
+			$('.kc-section-card').show();
+			var firstHash = $('.kc-nav-btn').first().data('target');
+			var currentHash = window.location.hash.substring(1) || firstHash;
+			$('.kc-nav-btn[data-target="' + currentHash + '"]').click();
+		}
+	});
+
+	// Media Uploader
+	var activeFrame;
+	$('.upload-logo-btn').on('click', function(e){
 		e.preventDefault();
-		if (frame) { frame.open(); return; }
-		frame = wp.media({
-			title: 'Select or Upload Logo',
-			button: { text: 'Use this logo' },
+		var targetType = $(this).data('target');
+		
+		var frame = wp.media({
+			title: 'Select Media',
+			button: { text: 'Use this media' },
 			multiple: false
 		});
+		
 		frame.on('select', function(){
 			var attachment = frame.state().get('selection').first().toJSON();
-			$('#logo_id').val(attachment.id);
-			$('#logo-preview').attr('src', attachment.url).show();
-			$('.logo-preview-wrapper span').hide();
+			$('#' + targetType).val(attachment.id);
+			$('#logo-preview-' + targetType).attr('src', attachment.url).show();
+			$('#logo-preview-' + targetType).siblings('span').hide();
 		});
+		
 		frame.open();
 	});
 
-	$('#remove_logo_btn').on('click', function(e){
+	$('.remove-logo-btn').on('click', function(e){
 		e.preventDefault();
-		$('#logo_id').val('');
-		$('#logo-preview').hide();
-		$('.logo-preview-wrapper span').show();
+		var targetType = $(this).data('target');
+		$('#' + targetType).val('');
+		$('#logo-preview-' + targetType).hide();
+		$('#logo-preview-' + targetType).siblings('span').show();
 	});
 
-	// Danger Zone Visibility & Logic
+	// Danger Zone Visibility Logic
 	$('#reset_confirm_input').on('input', function() {
 		var val = $(this).val().trim();
 		if (val === 'RESET CHARTS') {
@@ -572,55 +572,11 @@ jQuery(document).ready(function($) {
 	});
 
 	$('#reset_plugin_btn').on('click', function(e) {
-		if (!confirm('EXTREME WARNING: You are about to permanently delete all charts data. This cannot be undone. Are you absolutely sure?')) {
-			e.preventDefault();
+		if (confirm('EXTREME WARNING: You are about to permanently delete all charts data. This cannot be undone. Are you absolutely sure?')) {
+			// Add a hidden field to execute danger cleanup
+			$('<input>').attr({type: 'hidden', name: 'charts_action', value: 'reset_plugin'}).appendTo('#charts-settings-form');
+			$('#charts-settings-form').submit();
 		}
-	});
-	// Markets Repeater Logic
-	$('#add-market-btn').on('click', function(){
-		const idx = $('#markets-container .repeater-item').length;
-		const html = `
-			<div class="repeater-item" style="display:grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 15px; margin-bottom: 10px;">
-				<input type="text" name="markets[${idx}][name]" class="form-control" placeholder="Country Name">
-				<input type="text" name="markets[${idx}][code]" class="form-control" placeholder="Code (e.g. EG)">
-				<input type="text" name="markets[${idx}][slug]" class="form-control" placeholder="slug">
-				<button type="button" class="remove-row" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>
-			</div>
-		`;
-		$('#markets-container').append(html);
-	});
-
-	$(document).on('click', '.remove-row', function(){
-		$(this).closest('.repeater-item').remove();
 	});
 });
 </script>
-
-<style>
-.premium-form-card { background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
-.card-header { margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }
-.card-header h3 { margin: 0 0 8px; font-size: 20px; font-weight: 800; color: #0f172a; }
-.card-header p { margin: 0; font-size: 14px; color: #64748b; }
-
-.charts-admin-header { margin-bottom: 40px; }
-.charts-admin-wrap { padding: 40px; background: #f8fafc; min-height: 100vh; }
-
-/* Tabs Styling */
-.charts-tabs-nav { display: flex; gap: 5px; margin-bottom: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 1px; }
-.tab-link { padding: 12px 24px; background: transparent; border: none; font-size: 13px; font-weight: 700; color: #64748b; cursor: pointer; border-radius: 8px 8px 0 0; position: relative; transition: all 0.2s; }
-.tab-link:hover { color: #0f172a; background: #f1f5f9; }
-.tab-link.active { color: #0f172a; background: #fff; }
-.tab-link.active:after { content: ""; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: #0f172a; }
-
-.tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
-@keyframes fadeInTab { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-.premium-form-card { background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
-.card-header { margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }
-.card-header h3 { margin: 0 0 8px; font-size: 20px; font-weight: 800; color: #0f172a; }
-.card-header p { margin: 0; font-size: 14px; color: #64748b; }
-
-.charts-admin-header { margin-bottom: 40px; }
-.charts-admin-wrap { padding: 40px; background: #f8fafc; min-height: 100vh; }
-</style>
