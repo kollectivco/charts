@@ -65,7 +65,8 @@ class HomepageSlider {
             ", $def->chart_type, $def->country_code ) );
 
             $slides[] = [
-                'title'         => $def->title,
+                'id'            => $def->id,
+                'title'         => $def->title_ar ?: $def->title,
                 'subtitle'      => $def->chart_summary,
                 'leader_name'   => $row->track_name ?? 'Trending Now',
                 'leader_artist' => $row->artist_names ?? 'Global Charts',
@@ -75,6 +76,30 @@ class HomepageSlider {
                 'platform'      => $def->platform ?? 'Global',
                 'region'        => $def->country_name ?? 'Global'
             ];
+        }
+
+        // --- MANUAL SLIDES OVERLAY ---
+        $source_mode = get_option('charts_slider_source_mode', 'dynamic');
+        if ( $source_mode === 'manual' ) {
+            $manual_json = get_option('charts_slider_manual_slides', '[]');
+            $manual_data = json_decode($manual_json, true);
+            if ( !empty($manual_data) && is_array($manual_data) ) {
+                $manual_slides = [];
+                foreach ( $manual_data as $m ) {
+                    $manual_slides[] = [
+                        'title'         => $m['title'] ?? 'Featured',
+                        'subtitle'      => $m['subtitle'] ?? '',
+                        'leader_name'   => $m['title'] ?? 'Featured',
+                        'leader_artist' => $m['subtitle'] ?? '',
+                        'image'         => $m['image'] ?? CHARTS_URL . 'public/assets/img/placeholder.png',
+                        'url'           => $m['url'] ?? '#',
+                        'accent'        => $m['accent'] ?? '#fe025b',
+                        'platform'      => 'Selection',
+                        'region'        => 'Global'
+                    ];
+                }
+                return $manual_slides;
+            }
         }
 
         return $slides;

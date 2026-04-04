@@ -1,6 +1,7 @@
 <?php
 /**
  * Settings View - Kontentainment Charts Premium Modular Control Panel
+ * Expanded with Homepage & Slider Manager
  */
 
 // --- 1. Fetch Dependencies & Helpers ---
@@ -18,6 +19,11 @@ if ( ! function_exists( 'kc_get_setting' ) ) {
 		return get_option( 'charts_' . $id, $default );
 	}
 }
+
+// Data Source for Charts
+$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
+$chart_options = [];
+foreach ( $definitions as $def ) { $chart_options[$def->id] = $def->title; }
 
 // --- 2. Registration Engine Array ---
 $charts_panel = [
@@ -84,98 +90,84 @@ $charts_panel = [
 		]
 	],
 	'homepage' => [
-		'title' => 'Homepage',
+		'title' => 'Homepage Layout',
 		'icon'  => 'dashicons-admin-home',
 		'sections' => [
-			'hero' => [
-				'title' => 'Hero Slider Base',
+			'structure' => [
+				'title' => 'Homepage Structure',
 				'fields' => [
-					[ 'id' => 'slider_enable', 'type' => 'switch', 'label' => 'Enable Hero Slider', 'default' => 1 ],
-					[ 'id' => 'slider_style', 'type' => 'select', 'label' => 'Slider Style', 'options' => ['coverflow'=>'Coverflow 3D','carousel'=>'Standard Carousel','stack'=>'Stacked Cards'], 'default' => 'coverflow' ],
+					[ 'id' => 'homepage_layout', 'type' => 'select', 'label' => 'Homepage Style', 'options' => ['standard' => 'Standard Billboard', 'minimal' => 'Minimal Focus'], 'default' => 'standard' ],
+					[ 'id' => 'homepage_show_featured', 'type' => 'switch', 'label' => 'Show Featured Section', 'default' => 1 ],
+					[ 'id' => 'homepage_show_artists', 'type' => 'switch', 'label' => 'Show Artists Row', 'default' => 1 ],
+					[ 'id' => 'homepage_show_more', 'type' => 'switch', 'label' => 'Show "More Charts" Grid', 'default' => 1 ],
+					[ 'id' => 'homepage_section_order', 'type' => 'text', 'label' => 'Section Sorting', 'default' => 'slider,artists,charts', 'desc' => 'Comma separated keys: slider, artists, charts' ],
 				]
 			]
 		]
 	],
 	'slider' => [
-		'title' => 'Slider Options',
+		'title' => 'Slider System',
 		'icon'  => 'dashicons-images-alt2',
 		'sections' => [
-			'playback' => [
-				'title' => 'Playback',
+			'source' => [
+				'title' => 'Content Source',
 				'fields' => [
-					[ 'id' => 'slider_count', 'type' => 'number', 'label' => 'Charts Count', 'default' => 5 ],
-					[ 'id' => 'slider_autoplay', 'type' => 'switch', 'label' => 'Autoplay', 'default' => 1 ],
+					[ 'id' => 'slider_enable', 'type' => 'switch', 'label' => 'Enable Hero Slider', 'default' => 1 ],
+					[ 'id' => 'slider_source_mode', 'type' => 'select', 'label' => 'Slide Selection Mode', 'options' => ['dynamic' => 'Dynamic (Latest Entries)', 'manual' => 'Manual (Curated Slides)'], 'default' => 'dynamic' ],
+                ]
+            ],
+            'manual_manager' => [
+                'title' => 'Manual Slide Manager',
+                'desc' => 'Define custom slides when Manual Source Mode is active.',
+                'fields' => [
+                    [ 'id' => 'slider_manual_slides', 'type' => 'slides_manager', 'label' => 'Slides' ],
+                ]
+            ],
+            'style' => [
+                'title' => 'Visual Style',
+                'fields' => [
+					[ 'id' => 'slider_style', 'type' => 'select', 'label' => 'Slider Style', 'options' => ['coverflow'=>'Coverflow 3D','stacked'=>'Stacked Cards','minimal'=>'Minimal Motion'], 'default' => 'coverflow' ],
+					[ 'id' => 'slider_radius', 'type' => 'text', 'label' => 'Card Border Radius', 'default' => '16px' ],
+					[ 'id' => 'slider_overlay', 'type' => 'range', 'label' => 'Slide Overlay Darken', 'default' => 0.5, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+                ]
+            ],
+			'playback' => [
+				'title' => 'Playback Controls',
+				'fields' => [
+					[ 'id' => 'slider_count', 'type' => 'number', 'label' => 'Max Slides Count', 'default' => 5 ],
+					[ 'id' => 'slider_autoplay', 'type' => 'switch', 'label' => 'Enable Autoplay', 'default' => 1 ],
 					[ 'id' => 'slider_delay', 'type' => 'number', 'label' => 'Autoplay Delay (ms)', 'default' => 3000 ],
 					[ 'id' => 'slider_speed', 'type' => 'number', 'label' => 'Transition Speed (ms)', 'default' => 600 ],
-					[ 'id' => 'slider_easing', 'type' => 'text', 'label' => 'CSS Easing Curve', 'default' => 'cubic-bezier(0.25, 1, 0.5, 1)' ],
 				]
 			],
 			'motion' => [
-				'title' => '3D Motion',
+				'title' => 'Motion Engine',
 				'fields' => [
-					[ 'id' => 'slider_depth', 'type' => 'number', 'label' => 'Z-Depth Offset', 'default' => 150 ],
-					[ 'id' => 'slider_rotation', 'type' => 'number', 'label' => 'Rotation Angle (deg)', 'default' => 45 ],
-					[ 'id' => 'slider_opacity', 'type' => 'range', 'label' => 'Side Slice Opacity', 'default' => 0.6, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
-					[ 'id' => 'slider_scale', 'type' => 'range', 'label' => 'Side Slice Scale', 'default' => 0.8, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+					[ 'id' => 'slider_depth', 'type' => 'number', 'label' => '3D Depth Strength', 'default' => 150 ],
+					[ 'id' => 'slider_rotation', 'type' => 'number', 'label' => '3D Rotation Angle', 'default' => 45 ],
+					[ 'id' => 'slider_opacity', 'type' => 'range', 'label' => 'Inactive Slide Opacity', 'default' => 0.6, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
+					[ 'id' => 'slider_scale', 'type' => 'range', 'label' => 'Inactive Slide Scale', 'default' => 0.8, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
 					[ 'id' => 'slider_shadow', 'type' => 'range', 'label' => 'Box Margin Shadow', 'default' => 0.3, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
-					[ 'id' => 'slider_glow', 'type' => 'switch', 'label' => 'Enable Glow Filter', 'default' => 1 ],
+					[ 'id' => 'slider_glow', 'type' => 'switch', 'label' => 'Enable Glow Effect', 'default' => 1 ],
 				]
 			],
-			'layout' => [
-				'title' => 'Layout Specs',
+			'layout_specs' => [
+				'title' => 'Layout & Framing',
 				'fields' => [
-					[ 'id' => 'slider_max_width', 'type' => 'text', 'label' => 'Max Width', 'default' => '1440px' ],
-					[ 'id' => 'slider_min_height', 'type' => 'text', 'label' => 'Min Height', 'default' => '500px' ],
+					[ 'id' => 'slider_max_width', 'type' => 'text', 'label' => 'Hero Max Width', 'default' => '1440px' ],
+					[ 'id' => 'slider_min_height', 'type' => 'text', 'label' => 'Hero Min Height', 'default' => '500px' ],
 					[ 'id' => 'slider_aspect_ratio', 'type' => 'text', 'label' => 'Slide Aspect Ratio', 'default' => '16/9' ],
-					[ 'id' => 'slider_align', 'type' => 'select', 'label' => 'Vertical Align', 'options' => ['center'=>'Center','flex-start'=>'Top'], 'default' => 'center' ],
-					[ 'id' => 'slider_overlay', 'type' => 'range', 'label' => 'Black Overlay Opacity', 'default' => 0.5, 'min' => 0, 'max' => 1, 'step' => 0.1 ],
-					[ 'id' => 'slider_radius', 'type' => 'text', 'label' => 'Border Radius', 'default' => '16px' ],
-					[ 'id' => 'slider_mobile_mode', 'type' => 'select', 'label' => 'Mobile Fallback Mode', 'options' => ['stack'=>'Stack Below','hidden'=>'Force Hidden'], 'default' => 'stack' ],
+					[ 'id' => 'slider_align', 'type' => 'select', 'label' => 'Vertical Alignment', 'options' => ['center'=>'Center','flex-start'=>'Top Alignment'], 'default' => 'center' ],
+					[ 'id' => 'slider_mobile_mode', 'type' => 'select', 'label' => 'Mobile Transition', 'options' => ['stack'=>'Stack View','hidden'=>'Hide Hero on Mobile'], 'default' => 'stack' ],
 				]
 			],
-			'content' => [
-				'title' => 'Slide Content',
+			'content_viz' => [
+				'title' => 'Content Visibility',
 				'fields' => [
-					[ 'id' => 'slider_show_label', 'type' => 'switch', 'label' => 'Show Chart Label/Number', 'default' => 1 ],
-					[ 'id' => 'slider_show_meta', 'type' => 'switch', 'label' => 'Show Tracks Count Meta', 'default' => 1 ],
-					[ 'id' => 'slider_show_cta', 'type' => 'switch', 'label' => 'Show Call to Action Button', 'default' => 1 ],
-					[ 'id' => 'slider_cta_text', 'type' => 'text', 'label' => 'CTA Text', 'default' => 'VIEW CHART' ],
-				]
-			]
-		]
-	],
-	'charts' => [
-		'title' => 'Charts',
-		'icon'  => 'dashicons-chart-bar',
-		'sections' => [
-			'display' => [
-				'title' => 'Charts Archive Display',
-				'fields' => [
-					[ 'id' => 'charts_per_page', 'type' => 'number', 'label' => 'Charts Per Page', 'default' => 12 ],
-				]
-			]
-		]
-	],
-	'artists' => [
-		'title' => 'Artists',
-		'icon'  => 'dashicons-groups',
-		'sections' => [
-			'display' => [
-				'title' => 'Artist Page Layout',
-				'fields' => [
-					[ 'id' => 'artist_show_images', 'type' => 'switch', 'label' => 'Show Artist Images globally', 'default' => 1 ],
-				]
-			]
-		]
-	],
-	'tracks' => [
-		'title' => 'Tracks',
-		'icon'  => 'dashicons-album',
-		'sections' => [
-			'display' => [
-				'title' => 'Track List Styling',
-				'fields' => [
-					[ 'id' => 'track_show_artwork', 'type' => 'switch', 'label' => 'Show Track Artworks', 'default' => 1 ],
+					[ 'id' => 'slider_show_label', 'type' => 'switch', 'label' => 'Show Platform Label', 'default' => 1 ],
+					[ 'id' => 'slider_show_meta', 'type' => 'switch', 'label' => 'Show Artist/Meta Info', 'default' => 1 ],
+					[ 'id' => 'slider_show_cta', 'type' => 'switch', 'label' => 'Show CTA Button', 'default' => 1 ],
+					[ 'id' => 'slider_cta_text', 'type' => 'text', 'label' => 'Button Text', 'default' => 'VIEW CHART' ],
 				]
 			]
 		]
@@ -216,30 +208,6 @@ $charts_panel = [
 			]
 		]
 	],
-	'performance' => [
-		'title' => 'Performance',
-		'icon'  => 'dashicons-performance',
-		'sections' => [
-			'caching' => [
-				'title' => 'Data Caching',
-				'fields' => [
-					[ 'id' => 'cache_duration', 'type' => 'select', 'label' => 'Transients TTL', 'options' => ['3600'=>'1 Hour','14400'=>'4 Hours','86400'=>'24 Hours'], 'default' => '86400' ],
-				]
-			]
-		]
-	],
-	'seo' => [
-		'title' => 'SEO',
-		'icon'  => 'dashicons-search',
-		'sections' => [
-			'meta' => [
-				'title' => 'Global SEO Defaults',
-				'fields' => [
-					[ 'id' => 'seo_title_suffix', 'type' => 'text', 'label' => 'Title Suffix', 'default' => ' | Kontentainment Charts' ],
-				]
-			]
-		]
-	],
 	'maintenance' => [
 		'title' => 'Maintenance',
 		'icon'  => 'dashicons-shield',
@@ -269,7 +237,7 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 		if ( $field['type'] === 'switch' ) $prefix = 'chk:';
 		elseif ( $field['type'] === 'number' ) $prefix = 'int:';
 		elseif ( $field['type'] === 'range' || $field['type'] === 'float' ) $prefix = 'flt:';
-		elseif ( $field['type'] === 'textarea' ) $prefix = 'raw:';
+		elseif ( $field['type'] === 'textarea' || $field['type'] === 'slides_manager' ) $prefix = 'raw:';
 		
 		if ( $field['type'] !== 'custom' ) {
 			$registered_keys[] = $prefix . $id;
@@ -277,7 +245,7 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 		
 		echo '<div class="kc-form-group kc-field-' . esc_attr($field['type']) . '" data-search="'.esc_attr(strtolower($field['label'])).'">';
 		
-		if ( isset($field['label']) && $field['type'] !== 'switch' && $field['type'] !== 'custom' ) {
+		if ( isset($field['label']) && !in_array($field['type'], ['switch','custom','slides_manager']) ) {
 			echo '<label for="' . esc_attr($id) . '">' . esc_html($field['label']) . '</label>';
 		}
 		
@@ -319,7 +287,7 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 				echo '</div>';
 				break;
 			case 'media':
-				$img_url = $val ? wp_get_attachment_image_url( $val, 'medium' ) : '';
+				$img_url = $val ? (is_numeric($val) ? wp_get_attachment_image_url( $val, 'medium' ) : $val) : '';
 				echo '<div class="kc-media-uploader" style="max-width:400px; margin-bottom:10px;">';
 				echo '<div class="logo-preview-wrapper" style="margin-bottom: 15px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:20px; display:flex; align-items:center; justify-content:center; min-height:100px;">';
 				echo '<img id="logo-preview-' . esc_attr($id) . '" src="' . esc_url( $img_url ) . '" style="max-height: 60px; display: ' . ($img_url ? 'block' : 'none') . ';">';
@@ -332,6 +300,25 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 				echo '</div>';
 				echo '</div>';
 				break;
+            case 'slides_manager':
+                $slides = json_decode($val, true) ?: [];
+                echo '<div class="kc-slides-manager" id="kc-slides-manager-'.esc_attr($id).'">';
+                echo '<input type="hidden" name="'.esc_attr($id).'" value="'.esc_attr($val).'" class="kc-slides-json">';
+                echo '<div class="kc-slides-list">';
+                foreach($slides as $slide) {
+                    echo '<div class="kc-slide-item">';
+                    echo '<div class="kc-slide-handle"><span class="dashicons dashicons-move"></span></div>';
+                    echo '<div class="kc-slide-main">';
+                    echo '<input type="text" placeholder="Slide Title" class="kc-slide-title" value="'.esc_attr($slide['title']??'').'">';
+                    echo '<input type="text" placeholder="Subtitle/Artist" class="kc-slide-subtitle" value="'.esc_attr($slide['subtitle']??'').'">';
+                    echo '</div>';
+                    echo '<div class="kc-slide-actions"><button type="button" class="kc-slide-remove">&times;</button></div>';
+                    echo '</div>';
+                }
+                echo '</div>';
+                echo '<button type="button" class="kc-add-slide-btn"><span class="dashicons dashicons-plus-alt2"></span> Add Custom Slide</button>';
+                echo '</div>';
+                break;
 			case 'custom':
 				echo $field['html'];
 				break;
@@ -372,7 +359,7 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 
 .kc-section-card { margin-bottom: 40px; }
 .kc-section-card:last-child { margin-bottom: 0; }
-.kc-section-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+.kc-section-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:flex-end; }
 .kc-section-header h3 { margin: 0 0 6px 0; font-size: 18px; color: #0f172a; font-weight:700; }
 .kc-section-header p { margin: 0; font-size: 14px; color: #64748b; line-height:1.5; }
 
@@ -383,6 +370,25 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 .kc-form-group .form-control:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
 .kc-form-group textarea.form-control { max-width: 100%; min-height:80px; resize:vertical; }
 .input-helper { display:block; font-size: 13px; color: #64748b; margin-top: 8px; line-height:1.4; max-width:600px; }
+
+/* Slides Manager */
+.kc-slides-list { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 12px; overflow:hidden; }
+.kc-slide-item { display: flex; align-items: center; background: #fff; border-bottom: 1px solid #f1f5f9; padding: 12px; gap: 15px; }
+.kc-slide-item:last-child { border-bottom: none; }
+.kc-slide-handle { cursor: move; color: #cbd5e1; }
+.kc-slide-main { flex: 1; display: flex; gap: 10px; }
+.kc-slide-main input { flex: 1; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+.kc-slide-remove { background: #fee2e2; border: none; color: #ef4444; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.kc-add-slide-btn { background: #f1f5f9; border: 1px dashed #cbd5e1; color: #475569; width: 100%; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+.kc-add-slide-btn:hover { background: #e2e8f0; color: #1e293b; }
+
+/* Preview Panel */
+.kc-preview-trigger { color: #2563eb; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: underline; }
+.kc-slider-preview-area { background: #000; border-radius: 16px; margin: 20px 0; aspect-ratio: 21 / 9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.kc-preview-label { position: absolute; top: 15px; right: 20px; background: rgba(37,99,235,0.8); color: #fff; padding: 4px 10px; border-radius: 100px; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; }
+.kc-preview-content { text-align: center; color: #fff; transform: scale(0.9); }
+.kc-preview-title { font-size: 32px; font-weight: 900; margin: 0; letter-spacing: -0.04em; }
+.kc-preview-meta { font-size: 14px; opacity: 0.6; margin-top: 5px; }
 
 /* Switch Toggle (Foxiz style) */
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink:0; }
@@ -404,9 +410,11 @@ input:checked + .slider:before { transform: translateX(20px); }
 				<span class="dashicons dashicons-admin-generic" style="font-size:32px; width:32px; height:32px; color:#2563eb;"></span>
 				Kontentainment Charts Theme Options
 			</h1>
-			<button type="submit" class="kc-btn-save-sticky">
-				<span class="dashicons dashicons-saved"></span> Save Changes
-			</button>
+			<div style="display:flex; gap:12px;">
+				<button type="submit" class="kc-btn-save-sticky">
+					<span class="dashicons dashicons-saved"></span> Save Changes
+				</button>
+			</div>
 		</div>
 
 		<?php settings_errors( 'charts' ); ?>
@@ -444,12 +452,27 @@ input:checked + .slider:before { transform: translateX(20px); }
 					<?php foreach ( $tab['sections'] as $sec_id => $sec ) : ?>
 					<div class="kc-section-card" data-section="<?php echo esc_attr($sec_id); ?>">
 						<div class="kc-section-header">
-							<h3><?php echo esc_html($sec['title']); ?></h3>
-							<?php if ( !empty($sec['desc']) ) : ?>
-								<p><?php echo wp_kses_post($sec['desc']); ?></p>
+							<div>
+								<h3><?php echo esc_html($sec['title']); ?></h3>
+								<?php if ( !empty($sec['desc']) ) : ?>
+									<p><?php echo wp_kses_post($sec['desc']); ?></p>
+								<?php endif; ?>
+							</div>
+							<?php if ($sec_id === 'style') : ?>
+							<a class="kc-preview-trigger" onclick="jQuery('.kc-slider-preview-area').slideToggle()">Toggle Layout Preview</a>
 							<?php endif; ?>
 						</div>
 						
+                        <?php if ($sec_id === 'style') : ?>
+                        <div class="kc-slider-preview-area" style="display:none;">
+                            <span class="kc-preview-label">LIVE PREVIEW</span>
+                            <div class="kc-preview-content">
+                                <h4 class="kc-preview-title">Preview Billboard</h4>
+                                <p class="kc-preview-meta">Dynamic Style Logic Rendering</p>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
 						<?php foreach ( $sec['fields'] as $field ) : ?>
 							<?php kc_render_field( $field ); ?>
 						<?php endforeach; ?>
@@ -512,10 +535,8 @@ jQuery(document).ready(function($) {
 					$(this).closest('.kc-section-card').show();
 				}
 			});
-			// Disable active state in sidebar during search
 			$('.kc-nav-btn').removeClass('active');
 		} else {
-			// Revert to active tab
 			$('.kc-tab-view').removeClass('active');
 			$('.kc-form-group').show();
 			$('.kc-section-card').show();
@@ -526,24 +547,20 @@ jQuery(document).ready(function($) {
 	});
 
 	// Media Uploader
-	var activeFrame;
 	$('.upload-logo-btn').on('click', function(e){
 		e.preventDefault();
 		var targetType = $(this).data('target');
-		
 		var frame = wp.media({
 			title: 'Select Media',
 			button: { text: 'Use this media' },
 			multiple: false
 		});
-		
 		frame.on('select', function(){
 			var attachment = frame.state().get('selection').first().toJSON();
-			$('#' + targetType).val(attachment.id);
+			$('#' + targetType).val(attachment.id || attachment.url);
 			$('#logo-preview-' + targetType).attr('src', attachment.url).show();
 			$('#logo-preview-' + targetType).siblings('span').hide();
 		});
-		
 		frame.open();
 	});
 
@@ -555,25 +572,68 @@ jQuery(document).ready(function($) {
 		$('#logo-preview-' + targetType).siblings('span').show();
 	});
 
+    // Slides Manager Logic
+    $('.kc-add-slide-btn').on('click', function() {
+        var $list = $(this).siblings('.kc-slides-list');
+        var html = `
+            <div class="kc-slide-item">
+                <div class="kc-slide-handle"><span class="dashicons dashicons-move"></span></div>
+                <div class="kc-slide-main">
+                    <input type="text" placeholder="Slide Title" class="kc-slide-title">
+                    <input type="text" placeholder="Subtitle/Artist" class="kc-slide-subtitle">
+                </div>
+                <div class="kc-slide-actions"><button type="button" class="kc-slide-remove">&times;</button></div>
+            </div>
+        `;
+        $list.append(html);
+        updateSlidesJson($(this).closest('.kc-slides-manager'));
+    });
+
+    $(document).on('click', '.kc-slide-remove', function() {
+        var $manager = $(this).closest('.kc-slides-manager');
+        $(this).closest('.kc-slide-item').remove();
+        updateSlidesJson($manager);
+    });
+
+    $(document).on('input', '.kc-slide-main input', function() {
+        updateSlidesJson($(this).closest('.kc-slides-manager'));
+    });
+
+    function updateSlidesJson($manager) {
+        var slides = [];
+        $manager.find('.kc-slide-item').each(function() {
+            slides.push({
+                title: $(this).find('.kc-slide-title').val(),
+                subtitle: $(this).find('.kc-slide-subtitle').val()
+            });
+        });
+        $manager.find('.kc-slides-json').val(JSON.stringify(slides));
+    }
+
+    // Live Preview Sync mock
+    $('#slider_style, #slider_radius, #slider_overlay').on('change input', function() {
+        var style = $('#slider_style').val();
+        var rad = $('#slider_radius').val();
+        var over = $('#slider_overlay').val();
+        $('.kc-preview-title').text(style.charAt(0).toUpperCase() + style.slice(1) + ' Style');
+        $('.kc-slider-preview-area').css({
+            'border-radius': rad,
+            'background': 'rgba(0,0,0,' + over + ')'
+        });
+    });
+
 	// Danger Zone Visibility Logic
 	$('#reset_confirm_input').on('input', function() {
 		var val = $(this).val().trim();
 		if (val === 'RESET CHARTS') {
-			$('#reset_plugin_btn').prop('disabled', false).css({
-				'opacity': '1',
-				'cursor': 'pointer'
-			});
+			$('#reset_plugin_btn').prop('disabled', false).css({ 'opacity': '1', 'cursor': 'pointer' });
 		} else {
-			$('#reset_plugin_btn').prop('disabled', true).css({
-				'opacity': '0.3',
-				'cursor': 'not-allowed'
-			});
+			$('#reset_plugin_btn').prop('disabled', true).css({ 'opacity': '0.3', 'cursor': 'not-allowed' });
 		}
 	});
 
 	$('#reset_plugin_btn').on('click', function(e) {
 		if (confirm('EXTREME WARNING: You are about to permanently delete all charts data. This cannot be undone. Are you absolutely sure?')) {
-			// Add a hidden field to execute danger cleanup
 			$('<input>').attr({type: 'hidden', name: 'charts_action', value: 'reset_plugin'}).appendTo('#charts-settings-form');
 			$('#charts-settings-form').submit();
 		}

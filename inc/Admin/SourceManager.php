@@ -131,6 +131,7 @@ class SourceManager {
 
 		$fields = array(
 			'title'           => sanitize_text_field( $data['title'] ),
+			'title_ar'        => sanitize_text_field( $data['title_ar'] ?? '' ),
 			'slug'            => sanitize_title( $data['slug'] ),
 			'chart_summary'   => sanitize_textarea_field( $data['chart_summary'] ),
 			'chart_type'      => sanitize_text_field( $data['chart_type'] ),

@@ -81,9 +81,9 @@ class Bootstrap {
 						if ( $type === 'chk' ) {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? 1 : 0 );
 						} elseif ( $type === 'int' ) {
-							update_option( 'charts_' . $key, intval( $_POST[ $key ] ?? 0 ) );
+							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? intval( $_POST[ $key ] ) : 0 );
 						} elseif ( $type === 'flt' ) {
-							update_option( 'charts_' . $key, floatval( $_POST[ $key ] ?? 0 ) );
+							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? floatval( $_POST[ $key ] ) : 0 );
 						} elseif ( $type === 'raw' || $type === 'textarea' ) {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? wp_kses_post( wp_unslash( $_POST[ $key ] ) ) : '' );
 						} else {
@@ -842,6 +842,52 @@ class Bootstrap {
 				'charts_header_menu_id',
 				'charts_footer_description',
 				'charts_footer_copyright',
+				'charts_theme_mode',
+				'charts_slider_enable',
+				'charts_slider_style',
+				'charts_slider_count',
+				'charts_slider_loop',
+				'charts_slider_autoplay',
+				'charts_slider_delay',
+				'charts_slider_arrows',
+				'charts_slider_pagination',
+				'charts_slider_swipe',
+				'charts_slider_keyboard',
+				'charts_slider_speed',
+				'charts_slider_easing',
+				'charts_slider_center',
+				'charts_slider_depth',
+				'charts_slider_rotation',
+				'charts_slider_opacity',
+				'charts_slider_scale',
+				'charts_slider_spacing',
+				'charts_slider_shadow',
+				'charts_slider_glow',
+				'charts_slider_max_width',
+				'charts_slider_min_height',
+				'charts_slider_aspect_ratio',
+				'charts_slider_align',
+				'charts_slider_overlay',
+				'charts_slider_radius',
+				'charts_slider_mobile_mode',
+				'charts_slider_show_label',
+				'charts_slider_show_meta',
+				'charts_slider_show_cta',
+				'charts_slider_cta_text',
+				'charts_homepage_layout',
+				'charts_homepage_section_order',
+				'charts_homepage_show_more',
+				'charts_homepage_show_featured',
+				'charts_homepage_show_artists',
+				'charts_homepage_show_tracks',
+				'charts_slider_source_mode',
+				'charts_slider_manual_slides',
+				'charts_color_primary',
+				'charts_color_bg_light',
+				'charts_color_bg_dark',
+				'charts_font_heading',
+				'charts_font_body',
+				'charts_seo_title_suffix',
 				'kcharts_db_version',
 			);
 			foreach ( $options as $opt ) {

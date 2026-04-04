@@ -9,6 +9,7 @@ $def = $def_id ? $manager->get_definition( $def_id ) : null;
 
 // Field Mapping
 $title           = $def ? $def->title : '';
+$title_ar        = $def ? $def->title_ar : '';
 $slug            = $def ? $def->slug : '';
 $summary         = $def ? $def->chart_summary : '';
 $chart_type      = $def ? $def->chart_type : 'top-songs';
@@ -59,8 +60,12 @@ $menu_order      = $def ? (int)$def->menu_order : 0;
 				
 				<!-- Row 1: Name & Slug -->
 				<div class="form-group">
-					<label for="title">Chart Name <span class="required">*</span></label>
+					<label for="title">Chart Name (EN) <span class="required">*</span></label>
 					<input type="text" id="title" name="title" value="<?php echo esc_attr($title); ?>" class="form-control" placeholder="Hot 100" required>
+				</div>
+                <div class="form-group">
+					<label for="title_ar">Chart Name (AR)</label>
+					<input type="text" id="title_ar" name="title_ar" value="<?php echo esc_attr($title_ar); ?>" class="form-control" placeholder="أفضل ١٠٠ أغنية" dir="rtl">
 				</div>
 				<div class="form-group">
 					<label for="slug">URL Slug <span class="required">*</span></label>
