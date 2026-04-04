@@ -5,40 +5,39 @@ class HomepageSlider {
 
     public static function get_global_settings() {
         return [
-            'slider_enable' => get_option('charts_slider_enable', 1),
-            'slider_style' => get_option('charts_slider_style', 'coverflow'),
-            'slider_count' => get_option('charts_slider_count', 5),
-            'slider_loop' => get_option('charts_slider_loop', 1),
-            'slider_autoplay' => get_option('charts_slider_autoplay', 1),
-            'slider_delay' => get_option('charts_slider_delay', 3000),
-            'slider_arrows' => get_option('charts_slider_arrows', 1),
-            'slider_pagination' => get_option('charts_slider_pagination', 1),
-            'slider_swipe' => get_option('charts_slider_swipe', 1),
-            'slider_keyboard' => get_option('charts_slider_keyboard', 1),
+            'slider_enable'      => Settings::get('slider_enable'),
+            'slider_style'       => Settings::get('slider_style'),
+            'slider_count'       => Settings::get('slider_count'),
+            'slider_autoplay'    => Settings::get('slider_autoplay'),
+            'slider_delay'       => Settings::get('slider_delay'),
+            'slider_speed'       => Settings::get('slider_speed'),
+            'slider_depth'       => Settings::get('slider_depth'),
+            'slider_rotation'    => Settings::get('slider_rotation'),
+            'slider_opacity'     => Settings::get('slider_opacity'),
+            'slider_scale'       => Settings::get('slider_scale'),
+            'slider_shadow'      => Settings::get('slider_shadow'),
+            'slider_glow'        => Settings::get('slider_glow'),
+            'slider_max_width'   => Settings::get('slider_max_width'),
+            'slider_min_height'  => Settings::get('slider_min_height'),
+            'slider_aspect_ratio'=> Settings::get('slider_aspect_ratio'),
+            'slider_align'       => Settings::get('slider_align'),
+            'slider_overlay'     => Settings::get('slider_overlay'),
+            'slider_radius'      => Settings::get('slider_radius'),
+            'slider_mobile_mode' => Settings::get('slider_mobile_mode'),
+            'slider_show_label'  => Settings::get('slider_show_label'),
+            'slider_show_meta'   => Settings::get('slider_show_meta'),
+            'slider_show_cta'    => Settings::get('slider_show_cta'),
+            'slider_cta_text'    => Settings::get('slider_cta_text'),
             
-            'slider_speed' => get_option('charts_slider_speed', 600),
-            'slider_easing' => get_option('charts_slider_easing', 'cubic-bezier(0.25, 1, 0.5, 1)'),
-            'slider_center' => get_option('charts_slider_center', 1),
-            'slider_depth' => get_option('charts_slider_depth', 150),
-            'slider_rotation' => get_option('charts_slider_rotation', 45),
-            'slider_opacity' => get_option('charts_slider_opacity', 0.6),
-            'slider_scale' => get_option('charts_slider_scale', 0.8),
-            'slider_spacing' => get_option('charts_slider_spacing', 50),
-            'slider_shadow' => get_option('charts_slider_shadow', 0.3),
-            'slider_glow' => get_option('charts_slider_glow', 1),
-
-            'slider_max_width' => get_option('charts_slider_max_width', '1440px'),
-            'slider_min_height' => get_option('charts_slider_min_height', '500px'),
-            'slider_aspect_ratio' => get_option('charts_slider_aspect_ratio', '16/9'),
-            'slider_align' => get_option('charts_slider_align', 'center'),
-            'slider_overlay' => get_option('charts_slider_overlay', 0.5),
-            'slider_radius' => get_option('charts_slider_radius', '16px'),
-            'slider_mobile_mode' => get_option('charts_slider_mobile_mode', 'stack'),
-
-            'slider_show_label' => get_option('charts_slider_show_label', 1),
-            'slider_show_meta' => get_option('charts_slider_show_meta', 1),
-            'slider_show_cta' => get_option('charts_slider_show_cta', 1),
-            'slider_cta_text' => get_option('charts_slider_cta_text', 'VIEW CHART'),
+            // Fixed mappings for logic flags
+            'slider_loop'        => Settings::get('slider_autoplay'), // Tied to autoplay for simplicity in UI
+            'slider_arrows'      => 1,
+            'slider_pagination'  => 1,
+            'slider_swipe'       => 1,
+            'slider_keyboard'    => 1,
+            'slider_center'      => 1,
+            'slider_spacing'     => 50,
+            'slider_easing'      => 'cubic-bezier(0.25, 1, 0.5, 1)',
         ];
     }
 
@@ -79,9 +78,9 @@ class HomepageSlider {
         }
 
         // --- MANUAL SLIDES OVERLAY ---
-        $source_mode = get_option('charts_slider_source_mode', 'dynamic');
+        $source_mode = Settings::get('slider_source_mode');
         if ( $source_mode === 'manual' ) {
-            $manual_json = get_option('charts_slider_manual_slides', '[]');
+            $manual_json = Settings::get('slider_manual_slides');
             $manual_data = json_decode($manual_json, true);
             if ( !empty($manual_data) && is_array($manual_data) ) {
                 $manual_slides = [];

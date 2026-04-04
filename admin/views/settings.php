@@ -81,10 +81,10 @@ $charts_panel = [
 		'sections' => [
 			'content' => [
 				'title' => 'Footer Content',
-				'desc'  => 'Manage the editorial imprint and metadata.',
+				'desc'  => 'Manage the global footer content. Supports HTML.',
 				'fields' => [
-					[ 'id' => 'footer_copyright', 'type' => 'text', 'label' => 'Copyright Label', 'default' => 'Kontentainment Charts.' ],
-					[ 'id' => 'footer_description', 'type' => 'textarea', 'label' => 'Platform Description', 'desc' => 'Brief editorial summary displayed in the brand column.' ],
+					[ 'id' => 'footer_left', 'type' => 'textarea', 'label' => 'Footer Left Content', 'desc' => 'Content for the bottom-left area.', 'rows' => 3 ],
+					[ 'id' => 'footer_right', 'type' => 'textarea', 'label' => 'Footer Right Content', 'desc' => 'Content for the bottom-right area.', 'rows' => 3 ],
 				]
 			]
 		]
@@ -237,7 +237,9 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 		if ( $field['type'] === 'switch' ) $prefix = 'chk:';
 		elseif ( $field['type'] === 'number' ) $prefix = 'int:';
 		elseif ( $field['type'] === 'range' || $field['type'] === 'float' ) $prefix = 'flt:';
-		elseif ( $field['type'] === 'textarea' || $field['type'] === 'slides_manager' ) $prefix = 'raw:';
+		elseif ( $field['type'] === 'textarea' ) $prefix = 'raw:';
+		elseif ( $field['type'] === 'media' ) $prefix = 'med:';
+		elseif ( $field['type'] === 'slides_manager' ) $prefix = 'slides:';
 		
 		if ( $field['type'] !== 'custom' ) {
 			$registered_keys[] = $prefix . $id;

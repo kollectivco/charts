@@ -133,6 +133,28 @@ class SpotifyEnrichmentService {
 			$update['metadata_json'] = json_encode( $meta );
 		}
 
-		return $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
+	}
+
+	/**
+	 * Enrich a specific track record.
+	 */
+	public function enrich_track( $track_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_tracks';
+		
+		$track = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $track_id ) );
+		if ( ! $track || empty( $track->spotify_id ) ) return false;
+
+		$data = $this->api->get_track( $track->spotify_id );
+		if ( is_wp_error( $data ) ) return $data;
+
+		$transformed = $this->transform_metadata( $data );
+		
+		$update = array(
+			'cover_image' => $transformed['album']['cover_image'] ?? $track->cover_image,
+			'updated_at'  => current_time( 'mysql' )
+		);
+
+		return $wpdb->update( $table, $update, array( 'id' => $track_id ) );
 	}
 }

@@ -125,9 +125,15 @@ if ( $type === 'artist' ) {
 			<h1 class="charts-admin-title"><?php echo esc_html( $page_title ); ?></h1>
 			<p class="charts-admin-subtitle"><?php printf( __( 'Canonical library containing %d indexed %s entities.', 'charts' ), $total_items, strtolower($page_title) ); ?></p>
 		</div>
-		<div class="charts-admin-actions">
+		<div class="charts-admin-actions" style="display: flex; gap: 10px;">
+			<?php if ($type === 'artist' || $type === 'track'): ?>
+				<button type="button" class="charts-btn-secondary" id="sync-entities-trigger">
+					<span class="dashicons dashicons-update" style="margin-right:8px; vertical-align: middle;"></span>
+					<?php printf( __( 'Sync Missing %s', 'charts' ), $type === 'artist' ? 'Profiles' : 'Metadata' ); ?>
+				</button>
+			<?php endif; ?>
 			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
-				<span class="dashicons dashicons-plus" style="margin-right:8px;"></span>
+				<span class="dashicons dashicons-plus" style="margin-right:8px; vertical-align: middle;"></span>
 				<?php printf( __( 'Add New %s', 'charts' ), rtrim($page_title, 's') ); ?>
 			</a>
 		</div>
@@ -266,6 +272,28 @@ if ( $type === 'artist' ) {
 			</form>
 		</div>
 	</div>
+
+	<!-- Sync Modal -->
+	<div id="sync-progress-modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;">
+		<div class="charts-card" style="width: 500px; padding: 40px; text-align: center;">
+			<h2 id="sync-status-title"><?php printf( __( 'Syncing %s...', 'charts' ), $type === 'artist' ? 'Artist Profiles' : 'Track Metadata' ); ?></h2>
+			<div style="margin: 30px 0;">
+				<div style="height: 10px; background: #eee; border-radius: 5px; overflow: hidden;">
+					<div id="sync-progress-bar" style="width: 0%; height: 100%; background: #6366f1; transition: width 0.3s;"></div>
+				</div>
+				<p id="sync-status-text" style="font-size: 13px; color: #666; margin-top: 15px;"><?php _e( 'Initializing batch processing...', 'charts' ); ?></p>
+			</div>
+			<div id="sync-results" style="display:none; text-align: left; background: #f9f9f9; padding: 20px; border-radius: 8px; font-size: 12px; margin-bottom: 20px;">
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+					<div>Processed: <b id="res-processed">0</b></div>
+					<div>Updated: <b id="res-updated">0</b></div>
+					<div>Spotify Linked: <b id="res-spotify">0</b></div>
+					<div id="res-platform-label"><?php echo $type === 'artist' ? 'YouTube Linked' : 'Covers Updated'; ?>: <b id="res-platform">0</b></div>
+				</div>
+			</div>
+			<button id="close-sync-modal" class="charts-btn-primary" style="display:none;"><?php _e( 'Close & Reload', 'charts' ); ?></button>
+		</div>
+	</div>
 </div>
 
 <!-- Hidden form for individual deletes -->
@@ -285,6 +313,89 @@ document.addEventListener('DOMContentLoaded', function() {
 		selectAll.addEventListener('change', function() {
 			checkboxes.forEach(cb => cb.checked = selectAll.checked);
 		});
+	}
+
+	const syncTrigger = document.getElementById('sync-entities-trigger');
+	const syncModal = document.getElementById('sync-progress-modal');
+	const syncBar = document.getElementById('sync-progress-bar');
+	const syncStatus = document.getElementById('sync-status-text');
+	const syncResults = document.getElementById('sync-results');
+	const closeBtn = document.getElementById('close-sync-modal');
+
+	let totalProcessed = 0;
+	let totalUpdated = 0;
+	let totalSpotify = 0;
+	let totalPlatform = 0;
+
+	if (syncTrigger) {
+		syncTrigger.addEventListener('click', function() {
+			const type = '<?php echo $type; ?>';
+			const msg = type === 'artist' 
+				? 'This will scan all artists and enrich missing Spotify/YouTube data. Continue?' 
+				: 'This will scan all tracks and enrich missing Spotify/Artwork data. Continue?';
+			
+			if (!confirm(msg)) return;
+			
+			syncModal.style.display = 'flex';
+			runBatch(0);
+		});
+	}
+
+	function runBatch(offset) {
+		const type = '<?php echo $type; ?>';
+		const formData = new FormData();
+		formData.append('action', type === 'artist' ? 'charts_sync_artists' : 'charts_sync_tracks');
+		formData.append('nonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
+		formData.append('offset', offset);
+		formData.append('mode', 'missing');
+
+		fetch(ajaxurl, {
+			method: 'POST',
+			body: formData
+		})
+		.then(res => res.json())
+		.then(res => {
+			if (res.success) {
+				if (res.data.complete) {
+					finishSync();
+				} else {
+					totalProcessed += res.data.processed;
+					totalUpdated += res.data.updated;
+					totalSpotify += res.data.spotify_linked;
+					totalPlatform += (type === 'artist') ? res.data.youtube_linked : res.data.covers_updated;
+
+					updateStats();
+					runBatch(res.data.next_offset);
+				}
+			} else {
+				alert('Error: ' + res.data.message);
+				syncModal.style.display = 'none';
+			}
+		});
+	}
+
+	function updateStats() {
+		syncStatus.innerText = 'Processed ' + totalProcessed + ' items...';
+		syncResults.style.display = 'block';
+		document.getElementById('res-processed').innerText = totalProcessed;
+		document.getElementById('res-updated').innerText = totalUpdated;
+		document.getElementById('res-spotify').innerText = totalSpotify;
+		document.getElementById('res-platform').innerText = totalPlatform;
+		
+		let progress = Math.min(95, (totalProcessed / 500) * 100); 
+		syncBar.style.width = progress + '%';
+	}
+
+	function finishSync() {
+		syncBar.style.width = '100%';
+		syncBar.style.background = '#22c55e';
+		document.getElementById('sync-status-title').innerText = 'Sync Complete!';
+		syncStatus.innerText = 'Finished processing all matching artists.';
+		closeBtn.style.display = 'inline-block';
+	}
+
+	if (closeBtn) {
+		closeBtn.addEventListener('click', () => window.location.reload());
 	}
 });
 </script>

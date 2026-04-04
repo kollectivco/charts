@@ -163,12 +163,6 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 			<div class="kc-profile-info">
 				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
 					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">Artist</span>
-					<?php if ( $popularity > 0 ) : ?>
-						<span style="font-size: 10px; font-weight: 800; color: #1DB954; display: flex; align-items: center; gap: 4px;">
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.491 17.293a.75.75 0 01-1.03.249c-2.859-1.747-6.458-2.141-10.701-1.17a.75.75 0 11-.336-1.462c4.639-1.06 8.604-.614 11.819 1.353a.75.75 0 01.248 1.03zm1.465-3.264a.938.938 0 01-1.287.308c-3.27-2.009-8.254-2.593-12.122-1.418a.937.937 0 11-.548-1.792c4.417-1.34 9.907-.69 13.649 1.61a.938.938 0 01.308 1.292zm.125-3.41c-3.921-2.328-10.377-2.541-14.127-1.402a1.125 1.125 0 01-.655-2.155c4.298-1.305 11.428-1.05 15.891 1.603a1.125 1.125 0 11-1.109 1.954z"/></svg>
-							<?php echo $popularity; ?> Popularity
-						</span>
-					<?php endif; ?>
 				</div>
 				<h1 class="kc-page-title" style="margin: 0; line-height: 1;"><?php echo esc_html($artist->display_name); ?></h1>
 				<?php if ( ! empty($artist->display_name_franko) ) : ?>
@@ -185,9 +179,6 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 			</div>
 		</header>
 
-		<div class="kc-breadcrumb" style="margin-top: 20px;">
-			<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="<?php echo home_url('/charts'); ?>">Top Artists</a> <span>/</span> <?php echo esc_html($artist->display_name); ?>
-		</div>
 
 		<!-- ENRICHED STATS -->
 		<div class="kc-stats-grid" style="margin-top: 40px; border-top: 1px solid var(--k-divider); padding-top: 40px;">
@@ -230,45 +221,9 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 					</div>
 				</div>
 				<?php endif; ?>
-				<?php if ( ! empty($intel->total_streams) ) : ?>
-				<div class="kc-stat-pill">
-					<label>Local Reach</label>
-					<div style="display: flex; align-items: baseline; gap: 4px;">
-						<span class="val"><?php echo number_format($intel->total_streams / 1000000, 1); ?>M</span>
-					</div>
-				</div>
-				<?php endif; ?>
-			<?php endif; ?>
-
-			<?php if ( $sp_url ) : ?>
-			<a href="<?php echo esc_url($sp_url); ?>" target="_blank" class="kc-stat-pill" style="text-decoration: none; border-color: #1DB954; background: rgba(29, 185, 84, 0.05);">
-				<label style="color: #169c46;">Spotify Profile</label>
-				<div style="display: flex; align-items: center; gap: 8px; color: #169c46; font-weight: 800; font-size: 14px; margin-top: 4px;">
-					Open on App ↗
-				</div>
-			</a>
-			<?php endif; ?>
-
-			<?php if ( $yt_url ) : ?>
-			<a href="<?php echo esc_url($yt_url); ?>" target="_blank" class="kc-stat-pill" style="text-decoration: none; border-color: #ff0000; background: rgba(255, 0, 0, 0.05);">
-				<label style="color: #cc0000;">YouTube Profile</label>
-				<div style="display: flex; align-items: center; gap: 8px; color: #cc0000; font-weight: 800; font-size: 14px; margin-top: 4px;">
-					Open Channel ↗
-				</div>
-			</a>
 			<?php endif; ?>
 		</div>
 
-		<?php if ( current_user_can('manage_options') && !empty($debug_notes) ) : ?>
-		<div style="margin-top:20px; background:#fef2f2; color:#991b1b; padding:15px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid #fecaca;">
-			<div>Diagnostics / Resolution Notes:</div>
-			<ul style="margin:5px 0 0 20px; font-weight:600;">
-				<?php foreach($debug_notes as $note): ?>
-					<li><?php echo esc_html($note); ?></li>
-				<?php endforeach; ?>
-			</ul>
-		</div>
-		<?php endif; ?>
 
 		<!-- ABOUT (Conditional) -->
 		<?php 

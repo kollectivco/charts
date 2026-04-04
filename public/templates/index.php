@@ -25,7 +25,7 @@ function kc_get_preview_entries($def) {
 			LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
 			LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
 			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 3
+			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 4
 		", $def->chart_type, $def->country_code ), ARRAY_A );
 		
 		set_transient( $cache_key, $entries, HOUR_IN_SECONDS );
@@ -62,7 +62,12 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
     ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 5
 ", $top_artists_chart->country_code ) ) : array();
 
+use Charts\Core\Settings;
 \Charts\Core\StandaloneLayout::get_header();
+
+$homepage_show_artists = Settings::get('homepage_show_artists');
+$homepage_show_more    = Settings::get('homepage_show_more');
+$section_order         = explode(',', Settings::get('homepage_section_order'));
 ?>
 
 <div class="kc-root">
@@ -97,7 +102,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 
 	<?php
 	$global_settings = \Charts\Core\HomepageSlider::get_global_settings();
-	if ( ! empty( $hero_slides ) && $global_settings['slider_enable'] ) : ?>
+	if ( (in_array('slider', $section_order) || empty($section_order)) && ! empty( $hero_slides ) && $global_settings['slider_enable'] ) : ?>
 	<section class="kc-hero-slider-section" style="overflow: hidden; width: 100%;">
 		<?php
 		\Charts\Core\HomepageSlider::render($hero_slides, $global_settings, 'shell');
@@ -108,7 +113,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 	<div class="kc-container">
 		
 		<!-- 2. TOP ARTISTS STRIP -->
-		<?php if ( ! empty( $featured_artists ) ) : ?>
+		<?php if ( $homepage_show_artists && ! empty( $featured_artists ) ) : ?>
 		<section class="kc-section">
 			<div class="kc-section-header">
 				<h2 class="kc-section-title">
@@ -135,6 +140,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 		<?php endif; ?>
 
 		<!-- 3. ALL CHARTS SECTION -->
+		<?php if ( $homepage_show_more ) : ?>
 		<section class="kc-section">
 			<div class="kc-section-header">
 				<h2 class="kc-section-title">
@@ -187,11 +193,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 								<?php endif; ?>
 							</div>
 
-							<div class="kc-card-footer">
-								<?php 
-								$week_date = !empty($entries[0]->created_at) ? date('M j, Y', strtotime($entries[0]->created_at)) : date('M j, Y');
-								?>
-								<span class="kc-card-week">Week of <?php echo $week_date; ?></span>
+							<div class="kc-card-footer" style="justify-content: center;">
 								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-card-cta">See Full Chart</a>
 							</div>
 						</article>
@@ -199,6 +201,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 				<?php endif; ?>
 			</div>
 		</section>
+		<?php endif; ?>
 
 	</div>
 </div>

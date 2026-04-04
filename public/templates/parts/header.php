@@ -2,17 +2,16 @@
 /**
  * Kontentainment Charts — Premium Light Mode Header
  */
-$theme_mode   = get_option( 'charts_theme_mode', 'light' );
-$logo_id_main = ( $theme_mode === 'dark' ) ? get_option( 'charts_logo_id_dark' ) : get_option( 'charts_logo_id_light' );
-$logo_id_fall = ( $theme_mode === 'dark' ) ? get_option( 'charts_logo_id_light' ) : get_option( 'charts_logo_id_dark' );
-$logo_id      = $logo_id_main ?: $logo_id_fall;
+use Charts\Core\Settings;
 
-$logo_alt     = get_option( 'charts_logo_alt' );
-$wordmark     = get_option( 'charts_wordmark', 'KCharts' ); 
-$show_logo    = get_option( 'charts_show_logo', 1 );
-$show_nav     = get_option( 'charts_show_nav', 1 );
-$show_search  = get_option( 'charts_show_search', 1 );
-$menu_id      = get_option( 'charts_header_menu_id' );
+$theme_mode   = Settings::get( 'theme_mode' );
+$logo_id      = Settings::get_active_logo_id();
+$logo_alt     = Settings::get( 'logo_alt' );
+$wordmark     = Settings::get( 'wordmark' ); 
+$show_logo    = Settings::get( 'show_logo' );
+$show_nav     = Settings::get( 'show_nav' );
+$show_search  = Settings::get( 'show_search' );
+$menu_id      = Settings::get( 'header_menu_id' );
 $week_date    = date('F j, Y'); 
 ?>
 <!DOCTYPE html>
@@ -25,11 +24,11 @@ $week_date    = date('F j, Y');
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 	<style>
 		:root {
-			--k-primary: <?php echo esc_attr( get_option('charts_color_primary', '#3b82f6') ); ?>;
-			--k-bg-light: <?php echo esc_attr( get_option('charts_color_bg_light', '#ffffff') ); ?>;
-			--k-bg-dark: <?php echo esc_attr( get_option('charts_color_bg_dark', '#0f172a') ); ?>;
-			--k-font-heading: <?php echo esc_attr( get_option('charts_font_heading', 'Inter, sans-serif') ); ?>;
-			--k-font-body: <?php echo esc_attr( get_option('charts_font_body', 'Inter, sans-serif') ); ?>;
+			--k-primary: <?php echo esc_attr( Settings::get('color_primary') ); ?>;
+			--k-bg-light: <?php echo esc_attr( Settings::get('color_bg_light') ); ?>;
+			--k-bg-dark: <?php echo esc_attr( Settings::get('color_bg_dark') ); ?>;
+			--k-font-heading: <?php echo esc_attr( Settings::get('font_heading') ); ?>;
+			--k-font-body: <?php echo esc_attr( Settings::get('font_body') ); ?>;
 		}
 		
 		html[data-theme="light"] {

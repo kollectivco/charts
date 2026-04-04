@@ -83,6 +83,15 @@ class SpotifyApiClient {
 	}
 
 	/**
+	 * Search for tracks.
+	 */
+	public function search_track( $query, $limit = 5 ) {
+		$data = $this->request( 'search?q=' . urlencode($query) . '&type=track&limit=' . $limit );
+		if ( is_wp_error( $data ) ) return $data;
+		return $data['tracks']['items'] ?? array();
+	}
+
+	/**
 	 * Fetch top tracks for an artist.
 	 */
 	public function get_artist_top_tracks( $artist_id, $market = 'US' ) {
