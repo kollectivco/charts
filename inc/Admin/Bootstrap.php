@@ -70,6 +70,7 @@ class Bootstrap {
 				update_option( 'charts_logo_id', intval( $_POST['logo_id'] ?? 0 ) );
 				update_option( 'charts_logo_alt', sanitize_text_field( $_POST['logo_alt'] ?? '' ) );
 				update_option( 'charts_wordmark', sanitize_text_field( $_POST['wordmark'] ?? '' ) );
+				update_option( 'charts_theme_mode', sanitize_text_field( $_POST['theme_mode'] ?? 'light' ) );
 				
 				// Element Visibility
 				update_option( 'charts_show_logo', isset( $_POST['show_logo'] ) ? 1 : 0 );
@@ -81,8 +82,44 @@ class Bootstrap {
 				update_option( 'charts_footer_description', sanitize_textarea_field( $_POST['footer_description'] ?? '' ) );
 				update_option( 'charts_footer_copyright', sanitize_text_field( $_POST['footer_copyright'] ?? '' ) );
 
-				// Homepage Slider Style
-				update_option( 'charts_homepage_slider_style', sanitize_text_field( $_POST['homepage_slider_style'] ?? 'style-1' ) );
+				// Homepage Slider - General
+				update_option( 'charts_slider_style', sanitize_text_field( $_POST['slider_style'] ?? 'coverflow' ) );
+				update_option( 'charts_slider_enable', isset( $_POST['slider_enable'] ) ? 1 : 0 );
+				update_option( 'charts_slider_count', intval( $_POST['slider_count'] ?? 5 ) );
+				update_option( 'charts_slider_loop', isset( $_POST['slider_loop'] ) ? 1 : 0 );
+				update_option( 'charts_slider_autoplay', isset( $_POST['slider_autoplay'] ) ? 1 : 0 );
+				update_option( 'charts_slider_delay', intval( $_POST['slider_delay'] ?? 3000 ) );
+				update_option( 'charts_slider_arrows', isset( $_POST['slider_arrows'] ) ? 1 : 0 );
+				update_option( 'charts_slider_pagination', isset( $_POST['slider_pagination'] ) ? 1 : 0 );
+				update_option( 'charts_slider_swipe', isset( $_POST['slider_swipe'] ) ? 1 : 0 );
+				update_option( 'charts_slider_keyboard', isset( $_POST['slider_keyboard'] ) ? 1 : 0 );
+
+				// Homepage Slider - Motion
+				update_option( 'charts_slider_speed', intval( $_POST['slider_speed'] ?? 600 ) );
+				update_option( 'charts_slider_easing', sanitize_text_field( $_POST['slider_easing'] ?? 'cubic-bezier(0.25, 1, 0.5, 1)' ) );
+				update_option( 'charts_slider_center', isset( $_POST['slider_center'] ) ? 1 : 0 );
+				update_option( 'charts_slider_depth', intval( $_POST['slider_depth'] ?? 150 ) );
+				update_option( 'charts_slider_rotation', intval( $_POST['slider_rotation'] ?? 45 ) );
+				update_option( 'charts_slider_opacity', floatval( $_POST['slider_opacity'] ?? 0.6 ) );
+				update_option( 'charts_slider_scale', floatval( $_POST['slider_scale'] ?? 0.8 ) );
+				update_option( 'charts_slider_spacing', intval( $_POST['slider_spacing'] ?? 50 ) );
+				update_option( 'charts_slider_shadow', floatval( $_POST['slider_shadow'] ?? 0.3 ) );
+				update_option( 'charts_slider_glow', isset( $_POST['slider_glow'] ) ? 1 : 0 );
+
+				// Homepage Slider - Layout
+				update_option( 'charts_slider_max_width', sanitize_text_field( $_POST['slider_max_width'] ?? '1440px' ) );
+				update_option( 'charts_slider_min_height', sanitize_text_field( $_POST['slider_min_height'] ?? '500px' ) );
+				update_option( 'charts_slider_aspect_ratio', sanitize_text_field( $_POST['slider_aspect_ratio'] ?? '16/9' ) );
+				update_option( 'charts_slider_align', sanitize_text_field( $_POST['slider_align'] ?? 'center' ) );
+				update_option( 'charts_slider_overlay', floatval( $_POST['slider_overlay'] ?? 0.5 ) );
+				update_option( 'charts_slider_radius', sanitize_text_field( $_POST['slider_radius'] ?? '16px' ) );
+				update_option( 'charts_slider_mobile_mode', sanitize_text_field( $_POST['slider_mobile_mode'] ?? 'stack' ) );
+
+				// Homepage Slider - Content
+				update_option( 'charts_slider_show_label', isset( $_POST['slider_show_label'] ) ? 1 : 0 );
+				update_option( 'charts_slider_show_meta', isset( $_POST['slider_show_meta'] ) ? 1 : 0 );
+				update_option( 'charts_slider_show_cta', isset( $_POST['slider_show_cta'] ) ? 1 : 0 );
+				update_option( 'charts_slider_cta_text', sanitize_text_field( $_POST['slider_cta_text'] ?? 'VIEW CHART' ) );
 
 				// Markets Management
 				if ( isset( $_POST['markets'] ) && is_array( $_POST['markets'] ) ) {

@@ -62,6 +62,14 @@ $slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
 						<span class="input-helper">Used when no logo is selected or as high-fidelity fallback.</span>
 					</div>
 					<div class="form-group">
+						<label for="theme_mode">Chart Theme Mode</label>
+						<select name="theme_mode" id="theme_mode" class="form-control">
+							<option value="light" <?php selected( get_option('charts_theme_mode', 'light'), 'light' ); ?>>Light Mode</option>
+							<option value="dark" <?php selected( get_option('charts_theme_mode', 'light'), 'dark' ); ?>>Dark Mode</option>
+						</select>
+						<span class="input-helper">Determine the base color palette for all public chart interfaces.</span>
+					</div>
+					<div class="form-group">
 						<label>Shell Configuration</label>
 						<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; font-size:12px; color:#64748b; line-height:1.5;">
 							<div style="display:flex; align-items:center; gap:10px; color:#0f172a; font-weight:700; margin-bottom:5px;">
@@ -175,23 +183,146 @@ $slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
 			<!-- 3.5 Homepage Configuration -->
 			<div class="premium-form-card">
 				<div class="card-header">
-					<h3>Homepage Configuration</h3>
-					<p>Manage the visual presentation of the primary hero slider.</p>
+					<h3>Homepage Slider Engine</h3>
+					<p>Configure the motion, layout, and content of the cinematic hero slider on the charts homepage.</p>
 				</div>
-				<div class="premium-form-grid">
-					<div class="form-group">
-						<label for="homepage_slider_style">Default Slider Style</label>
-						<select name="homepage_slider_style" id="homepage_slider_style" class="form-control">
-							<option value="style-1" <?php selected( $slider_style, 'style-1' ); ?>>Style 1: Editorial Hero</option>
-							<option value="style-2" <?php selected( $slider_style, 'style-2' ); ?>>Style 2: Bento Rail</option>
-							<option value="style-3" <?php selected( $slider_style, 'style-3' ); ?>>Style 3: Minimal Coverflow</option>
-						</select>
-						<span class="input-helper">Global default for the cinematic hero module.</span>
+				
+				<?php 
+				$s_style = get_option('charts_slider_style', 'coverflow');
+				$s_enable = get_option('charts_slider_enable', 1);
+				$s_count = get_option('charts_slider_count', 5);
+				$s_loop = get_option('charts_slider_loop', 1);
+				$s_auto = get_option('charts_slider_autoplay', 1);
+				$s_delay = get_option('charts_slider_delay', 3000);
+				$s_arrows = get_option('charts_slider_arrows', 1);
+				$s_dots = get_option('charts_slider_pagination', 1);
+				$s_swipe = get_option('charts_slider_swipe', 1);
+				$s_kb = get_option('charts_slider_keyboard', 1);
+
+				$s_speed = get_option('charts_slider_speed', 600);
+				$s_ease = get_option('charts_slider_easing', 'cubic-bezier(0.25, 1, 0.5, 1)');
+				$s_center = get_option('charts_slider_center', 1);
+				$s_depth = get_option('charts_slider_depth', 150);
+				$s_rot = get_option('charts_slider_rotation', 45);
+				$s_opac = get_option('charts_slider_opacity', 0.6);
+				$s_scale = get_option('charts_slider_scale', 0.8);
+				$s_space = get_option('charts_slider_spacing', 50);
+				$s_shadow = get_option('charts_slider_shadow', 0.3);
+				$s_glow = get_option('charts_slider_glow', 1);
+
+				$s_max = get_option('charts_slider_max_width', '1440px');
+				$s_min = get_option('charts_slider_min_height', '500px');
+				$s_ratio = get_option('charts_slider_aspect_ratio', '16/9');
+				$s_align = get_option('charts_slider_align', 'center');
+				$s_over = get_option('charts_slider_overlay', 0.5);
+				$s_rad = get_option('charts_slider_radius', '16px');
+				$s_mob = get_option('charts_slider_mobile_mode', 'stack');
+
+				$s_slabel = get_option('charts_slider_show_label', 1);
+				$s_smeta = get_option('charts_slider_show_meta', 1);
+				$s_scta = get_option('charts_slider_show_cta', 1);
+				$s_cta = get_option('charts_slider_cta_text', 'VIEW CHART');
+				?>
+
+				<div class="premium-form-grid" style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px;">
+					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">General Settings</h4>
+					
+					<div class="form-group form-group-full">
+						<div class="toggle-item" style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px;">
+							<label class="switch"><input type="checkbox" name="slider_enable" value="1" <?php checked(1, $s_enable); ?>><span class="slider"></span></label>
+							<label style="font-weight: 700;">Enable Homepage Slider</label>
+						</div>
 					</div>
+
 					<div class="form-group">
-						<label>Presentation Preview</label>
-						<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; font-size:12px; color:#64748b;">
-							Individual Elementor widgets can override this setting via their own "Display Style" control.
+						<label for="slider_style">Default Slider Style</label>
+						<select name="slider_style" id="slider_style" class="form-control">
+							<option value="coverflow" <?php selected('coverflow', $s_style); ?>>Coverflow 3D</option>
+							<option value="stacked" <?php selected('stacked', $s_style); ?>>Stacked Cards</option>
+							<option value="minimal" <?php selected('minimal', $s_style); ?>>Minimal Motion</option>
+						</select>
+						<span class="input-helper">Master architecture applied to the root shell homepage.</span>
+					</div>
+					
+					<div class="form-group">
+						<label for="slider_count">Number of Slides</label>
+						<input type="number" name="slider_count" id="slider_count" class="form-control" value="<?php echo esc_attr($s_count); ?>">
+					</div>
+
+					<div class="form-group">
+						<label for="slider_delay">Autoplay Delay (ms)</label>
+						<input type="number" name="slider_delay" id="slider_delay" class="form-control" value="<?php echo esc_attr($s_delay); ?>">
+					</div>
+
+					<div class="form-group form-group-full">
+						<div class="toggle-row" style="grid-template-columns: repeat(3, 1fr);">
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_loop" value="1" <?php checked(1, $s_loop); ?>><span class="slider"></span></label><label>Infinite Loop</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_autoplay" value="1" <?php checked(1, $s_auto); ?>><span class="slider"></span></label><label>Autoplay</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_arrows" value="1" <?php checked(1, $s_arrows); ?>><span class="slider"></span></label><label>Navigation Arrows</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_pagination" value="1" <?php checked(1, $s_dots); ?>><span class="slider"></span></label><label>Pagination Dots</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_swipe" value="1" <?php checked(1, $s_swipe); ?>><span class="slider"></span></label><label>Touch Swipe</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_keyboard" value="1" <?php checked(1, $s_kb); ?>><span class="slider"></span></label><label>Keyboard Nav</label></div>
+						</div>
+					</div>
+				</div>
+
+				<div class="premium-form-grid" style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px;">
+					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">Motion & Physics</h4>
+					
+					<div class="form-group"><label>Animation Speed (ms)</label><input type="number" name="slider_speed" class="form-control" value="<?php echo esc_attr($s_speed); ?>"></div>
+					<div class="form-group"><label>Easing</label><input type="text" name="slider_easing" class="form-control" value="<?php echo esc_attr($s_ease); ?>"></div>
+					
+					<div class="form-group"><label>Side Card Depth (Z)</label><input type="number" name="slider_depth" class="form-control" value="<?php echo esc_attr($s_depth); ?>"></div>
+					<div class="form-group"><label>Rotation Angle</label><input type="number" name="slider_rotation" class="form-control" value="<?php echo esc_attr($s_rot); ?>"></div>
+					
+					<div class="form-group"><label>Side Opacity (0-1)</label><input type="number" step="0.1" name="slider_opacity" class="form-control" value="<?php echo esc_attr($s_opac); ?>"></div>
+					<div class="form-group"><label>Side Scale (0-1)</label><input type="number" step="0.1" name="slider_scale" class="form-control" value="<?php echo esc_attr($s_scale); ?>"></div>
+					
+					<div class="form-group"><label>Card Spacing (px)</label><input type="number" name="slider_spacing" class="form-control" value="<?php echo esc_attr($s_space); ?>"></div>
+					<div class="form-group"><label>Shadow Intensity (0-1)</label><input type="number" step="0.1" name="slider_shadow" class="form-control" value="<?php echo esc_attr($s_shadow); ?>"></div>
+
+					<div class="form-group form-group-full">
+						<div class="toggle-row" style="grid-template-columns: repeat(2, 1fr);">
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_center" value="1" <?php checked(1, $s_center); ?>><span class="slider"></span></label><label>Center Mode</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_glow" value="1" <?php checked(1, $s_glow); ?>><span class="slider"></span></label><label>Active Card Glow</label></div>
+						</div>
+					</div>
+				</div>
+
+				<div class="premium-form-grid" style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px;">
+					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">Layout Constraints</h4>
+					
+					<div class="form-group"><label>Hero Max Width</label><input type="text" name="slider_max_width" class="form-control" value="<?php echo esc_attr($s_max); ?>"></div>
+					<div class="form-group"><label>Hero Min Height</label><input type="text" name="slider_min_height" class="form-control" value="<?php echo esc_attr($s_min); ?>"></div>
+
+					<div class="form-group"><label>Image Aspect Ratio</label><input type="text" name="slider_aspect_ratio" class="form-control" value="<?php echo esc_attr($s_ratio); ?>"></div>
+					<div class="form-group"><label>Text Alignment</label>
+						<select name="slider_align" class="form-control">
+							<option value="left" <?php selected('left', $s_align); ?>>Left</option>
+							<option value="center" <?php selected('center', $s_align); ?>>Center</option>
+						</select>
+					</div>
+
+					<div class="form-group"><label>Border Radius</label><input type="text" name="slider_radius" class="form-control" value="<?php echo esc_attr($s_rad); ?>"></div>
+					<div class="form-group"><label>Overlay Strength (0-1)</label><input type="number" step="0.1" name="slider_overlay" class="form-control" value="<?php echo esc_attr($s_over); ?>"></div>
+					
+					<div class="form-group form-group-full"><label>Mobile Layout Mode</label>
+						<select name="slider_mobile_mode" class="form-control">
+							<option value="stack" <?php selected('stack', $s_mob); ?>>Standard Flow</option>
+							<option value="swipe" <?php selected('swipe', $s_mob); ?>>Horizontal Swipe / Snapping</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="premium-form-grid">
+					<h4 style="grid-column: 1 / -1; margin: 0 0 10px; font-size: 15px; font-weight: 800; color: #0f172a;">Content Injection</h4>
+					
+					<div class="form-group"><label>CTA Label Text</label><input type="text" name="slider_cta_text" class="form-control" value="<?php echo esc_attr($s_cta); ?>"></div>
+					<div class="form-group"><label>Element Toggles</label>
+						<div style="display:flex; flex-direction:column; gap:10px;">
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_show_label" value="1" <?php checked(1, $s_slabel); ?>><span class="slider"></span></label><label>Show Chart Label / Badge</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_show_meta" value="1" <?php checked(1, $s_smeta); ?>><span class="slider"></span></label><label>Show Meta / Artist Data</label></div>
+							<div class="toggle-item"><label class="switch"><input type="checkbox" name="slider_show_cta" value="1" <?php checked(1, $s_scta); ?>><span class="slider"></span></label><label>Show CTA Button</label></div>
 						</div>
 					</div>
 				</div>

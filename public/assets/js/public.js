@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2. MOTION CAROUSEL ENGINE
     const initMotionCarousel = () => {
-        const wraps = document.querySelectorAll('.kc-motion-carousel-wrap');
+        const wraps = document.querySelectorAll('.kc-slider-system');
         
         wraps.forEach(wrap => {
             const container = wrap.querySelector('.kc-motion-carousel');
@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const dots = wrap.querySelectorAll('.kc-motion-dot');
             if (!slides.length) return;
 
-            const style = wrap.getAttribute('data-carousel-style') || 'coverflow';
-            const opts = JSON.parse(wrap.getAttribute('data-carousel-options') || '{}');
+            const opts = JSON.parse(wrap.getAttribute('data-config') || '{}');
+            const style = opts.style || 'coverflow';
 
             // Configure
             const config = {

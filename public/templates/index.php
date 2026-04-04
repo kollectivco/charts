@@ -95,91 +95,13 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 	}
 	?>
 
-	<?php if ( ! empty( $hero_slides ) ) : ?>
+	<?php
+	$global_settings = \Charts\Core\HomepageSlider::get_global_settings();
+	if ( ! empty( $hero_slides ) && $global_settings['slider_enable'] ) : ?>
 	<section class="kc-hero-slider-section" style="overflow: hidden; width: 100%;">
 		<?php
-		$style_map = ['style-1' => 'coverflow', 'style-2' => 'stacked', 'style-3' => 'minimal'];
-		$style = $style_map[$slider_style] ?? 'coverflow';
-
-		// Enforce safe and stable motion parameters for the shell homepage
-		$opts = json_encode([
-			'speed' => 600,
-			'easing' => 'cubic-bezier(0.25, 1, 0.5, 1)',
-			'rotation' => 45,
-			'depth' => 150,
-			'spacing' => 50,
-			'visible' => 3,
-			'autoplay' => true,
-			'loop' => true,
-			'center' => true,
-			'opacity' => 0.6,
-			'scale' => 0.8,
-			'shadow' => 0.3,
-			'glow' => true
-		]);
+		\Charts\Core\HomepageSlider::render($hero_slides, $global_settings, 'shell');
 		?>
-		<div class="kc-motion-carousel-wrap kc-style-<?php echo esc_attr($style); ?>" data-carousel-style="<?php echo esc_attr($style); ?>" data-carousel-options='<?php echo esc_attr($opts); ?>' style="max-width: 1440px; margin: 0 auto;">
-			<div class="kc-motion-carousel">
-				
-				<?php foreach ( $hero_slides as $index => $slide ) : ?>
-					<?php if ( $style === 'coverflow' ) : ?>
-						<div class="kc-motion-slide" style="--slide-accent: <?php echo esc_attr($slide['accent']); ?>;">
-							<div class="kc-cf-card">
-								<img class="kc-cf-bg" src="<?php echo esc_url($slide['image']); ?>" alt="">
-								<div class="kc-cf-overlay"></div>
-								<div class="kc-cf-content">
-									<span class="kc-badge"><?php echo esc_html($slide['platform']); ?></span>
-									<h2 class="kc-cf-leader"><?php echo esc_html($slide['leader_name']); ?></h2>
-									<div class="kc-cf-artist">by <?php echo esc_html($slide['leader_artist']); ?></div>
-									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-cf-btn">VIEW FULL CHART</a>
-								</div>
-							</div>
-						</div>
-
-					<?php elseif ( $style === 'stacked' ) : ?>
-						<div class="kc-motion-slide" style="--slide-accent: <?php echo esc_attr($slide['accent']); ?>;">
-							<div class="kc-st-card">
-								<div class="kc-st-visual">
-									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
-								</div>
-								<div class="kc-st-info">
-									<h3 class="kc-st-title"><?php echo esc_html($slide['title']); ?></h3>
-									<h2 class="kc-st-leader"><?php echo esc_html($slide['leader_name']); ?></h2>
-									<div class="kc-st-artist">by <?php echo esc_html($slide['leader_artist']); ?></div>
-									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-st-link">Explore Chart</a>
-								</div>
-							</div>
-						</div>
-
-					<?php else : ?>
-						<div class="kc-motion-slide" style="--slide-accent: <?php echo esc_attr($slide['accent']); ?>;">
-							<div class="kc-min-wrapper">
-								<div class="kc-min-card">
-									<img src="<?php echo esc_url($slide['image']); ?>" alt="">
-									<a href="<?php echo esc_url($slide['url']); ?>" class="kc-min-overlay"></a>
-								</div>
-								<div class="kc-min-text">
-									<h2 class="kc-min-leader"><?php echo esc_html($slide['leader_name']); ?></h2>
-									<div class="kc-min-artist"><?php echo esc_html($slide['leader_artist']); ?></div>
-								</div>
-							</div>
-						</div>
-					<?php endif; ?>
-				<?php endforeach; ?>
-
-			</div>
-			
-			<div class="kc-motion-controls">
-				<button class="kc-motion-prev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-				<button class="kc-motion-next"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-			</div>
-			
-			<div class="kc-motion-pagination">
-				<?php foreach ( $hero_slides as $index => $slide ) : ?>
-					<span class="kc-motion-dot <?php echo $index === 0 ? 'is-active' : ''; ?>"></span>
-				<?php endforeach; ?>
-			</div>
-		</div>
 	</section>
 	<?php endif; ?>
 

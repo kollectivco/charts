@@ -16,40 +16,24 @@ class ChartGrid extends Widget_Base {
 	public function get_categories() { return [ 'charts' ]; }
 
 	protected function register_controls() {
-		$this->start_controls_section( 'section_content', [ 'label' => __( 'Query Configuration', 'charts' ) ] );
+		// Use generalized helper for query controls
+		\Charts\Integrations\Elementor\ControlHelper::add_query_controls( $this, false );
 
-		$this->add_control( 'chart_type', [
-			'label' => __( 'Chart Type', 'charts' ),
-			'type' => Controls_Manager::SELECT,
-			'options' => [
-				'all' => 'All',
-				'top-songs' => 'Top Songs',
-				'top-artists' => 'Top Artists',
-				'top-videos' => 'Top Videos',
-				'viral' => 'Viral / Trending'
-			],
-			'default' => 'all'
-		] );
+		// Use generalized helper for Layout controls, adding real variants!
+		\Charts\Integrations\Elementor\ControlHelper::add_layout_controls( $this, [
+			'grid' => 'Standard Grid',
+			'bento' => 'Bento Box Layout',
+			'minimal' => 'Minimal / Compact',
+			'editorial' => 'Editorial List'
+		]);
 
-		$this->add_control( 'limit', [
-			'label' => __( 'Limit', 'charts' ),
-			'type' => Controls_Manager::NUMBER,
-			'default' => 6
-		] );
+		// Visibility Toggles
+		\Charts\Integrations\Elementor\ControlHelper::add_visibility_controls( $this, [
+			'show_cover', 'show_artist', 'show_meta', 'show_cta'
+		]);
 
-		$this->add_control( 'columns', [
-			'label' => __( 'Columns', 'charts' ),
-			'type' => Controls_Manager::SELECT,
-			'options' => [
-				'12' => 'Full Width (1)',
-				'6'  => 'Half (2)',
-				'4'  => 'Third (3)',
-				'3'  => 'Quarter (4)'
-			],
-			'default' => '4'
-		] );
-
-		$this->end_controls_section();
+		// Styling options
+		\Charts\Integrations\Elementor\ControlHelper::add_style_controls( $this );
 	}
 
 	protected function render() {
@@ -57,27 +41,40 @@ class ChartGrid extends Widget_Base {
 		$manager = new \Charts\Admin\SourceManager();
 		$definitions = $manager->get_definitions( true );
 
+		$style_variant = $settings['style_variant'] ?? 'grid';
+		$cols = $settings['grid_columns'] ?? '3';
+
 		if ( $settings['chart_type'] !== 'all' ) {
 			$definitions = array_filter( $definitions, function($d) use ($settings) {
 				return $d->chart_type === $settings['chart_type'];
+			});
+		}
+		
+		if ( !empty($settings['market_filter']) && $settings['market_filter'] !== 'all' ) {
+			$definitions = array_filter( $definitions, function($d) use ($settings) {
+				return $d->country_code === $settings['market_filter'];
 			});
 		}
 
 		$definitions = array_slice( $definitions, 0, $settings['limit'] );
 		
 		if ( empty( $definitions ) ) {
-			echo 'No charts found matching criteria.';
+			echo '<div class="kc-empty">No charts found matching criteria.</div>';
 			return;
 		}
 
-		echo '<div class="kc-root"><div class="kc-bento-grid">';
+		// Calculate explicit grid CSS classes based on the generalized columns setting
+		$grid_class = "kc-grid kc-grid-{$cols} kc-variant-{$style_variant} kc-widget-grid";
+
+		echo '<div class="kc-root">';
+		echo '<div class="' . esc_attr($grid_class) . '">';
 		foreach ( $definitions as $def ) {
-			$this->render_card( $def, $settings['columns'] );
+			$this->render_card( $def, $settings );
 		}
 		echo '</div></div>';
 	}
 
-	private function render_card( $def, $cols ) {
+	private function render_card( $def, $settings ) {
 		global $wpdb;
 		// Fetch preview rows (top 3)
 		$rows = $wpdb->get_results( $wpdb->prepare( "
@@ -86,31 +83,53 @@ class ChartGrid extends Widget_Base {
 			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
 			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
 		", $def->chart_type, $def->country_code ) );
+
+		$style = $settings['style_variant'];
+		$show_cover = $settings['show_cover'] === 'yes';
+		$show_meta = $settings['show_meta'] === 'yes';
+		$show_artist = $settings['show_artist'] === 'yes';
+		$show_cta = $settings['show_cta'] === 'yes';
 ?>
-		<div class="kc-card" style="grid-column: span <?php echo $cols; ?>; padding: 0;">
-			<div class="kc-list-header" style="padding: 24px;">
-				<div class="kc-list-title">
-					<span class="kc-brand-name" style="font-size: 9px;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></span>
-					<h3 style="font-size: 1.1rem; margin-top: 4px;"><?php echo esc_html($def->title); ?></h3>
-				</div>
+		<article class="kc-chart-card kc-widget-card style-<?php echo esc_attr($style); ?>" style="display:flex; flex-direction:column; background:var(--k-surface); border:1px solid var(--k-border); border-radius:var(--k-radius-lg); overflow:hidden; transition:transform 0.2s, box-shadow 0.2s;">
+			<?php if ( $show_cover ) : ?>
+			<div class="kc-card-header" style="height:140px; background:var(--k-chart-bg); padding:24px; display:flex; flex-direction:column; justify-content:flex-end;">
+				<div class="kc-card-title kc-title" style="font-size:20px; font-weight:900; letter-spacing:-0.02em; margin:0; position:relative; z-index:2; color:inherit;"><?php echo esc_html($def->title); ?></div>
+				<?php if ( $show_meta ) : ?>
+					<div class="kc-card-label kc-meta" style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:inherit; margin-bottom:4px; position:relative; z-index:2;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></div>
+				<?php endif; ?>
 			</div>
-			<div class="kc-list-content" style="padding: 0 0 16px;">
+			<?php else : ?>
+			<div style="padding:24px 24px 0;">
+				<?php if ( $show_meta ) : ?>
+					<div class="kc-card-label kc-meta" style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--k-text-muted); margin-bottom:4px;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></div>
+				<?php endif; ?>
+				<div class="kc-card-title kc-title" style="font-size:20px; font-weight:900; letter-spacing:-0.02em; margin:0; color:var(--k-text);"><?php echo esc_html($def->title); ?></div>
+			</div>
+			<?php endif; ?>
+
+			<div class="kc-card-list" style="padding:16px 0; flex-grow:1;">
 				<?php foreach ( $rows as $row ) : ?>
-					<div class="kc-preview-row" style="padding: 10px 24px;">
-						<span class="kc-preview-rank" style="font-size: 12px;"><?php echo $row->rank_position; ?></span>
-						<div class="kc-preview-info">
-							<span class="kc-preview-name" style="font-size: 13px;"><?php echo esc_html($row->track_name); ?></span>
-							<span class="kc-preview-artist" style="font-size: 11px;"><?php echo esc_html($row->artist_names); ?></span>
+					<div class="kc-card-entry" style="display:flex; align-items:center; gap:12px; padding:12px 24px; border-bottom:1px solid var(--k-divider);">
+						<div class="kc-entry-rank" style="font-size:12px; font-weight:800; width:14px;"><?php echo $row->rank_position; ?></div>
+						<div class="kc-entry-info" style="min-width:0; flex-grow:1;">
+							<div class="kc-entry-name" style="font-size:13px; font-weight:700; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($row->track_name); ?></div>
+							<?php if ( $show_artist ) : ?>
+								<div class="kc-entry-artist" style="font-size:11px; font-weight:500; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($row->artist_names); ?></div>
+							<?php endif; ?>
 						</div>
 					</div>
 				<?php endforeach; ?>
 			</div>
-			<div style="padding: 16px 24px; border-top: 1px solid var(--k-border); margin-top: auto;">
-				<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="font-size: 12px; font-weight: 800; text-decoration: none; color: var(--k-accent);">
-					VIEW FULL CHART &rarr;
+
+			<?php if ( $show_cta ) : ?>
+			<div class="kc-card-footer" style="padding:20px 24px; border-top:1px solid var(--k-divider); display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+				<span class="kc-card-week" style="font-size:10px; font-weight:600; color:var(--k-text-muted);">Updated Weekly</span>
+				<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-card-cta" style="font-size:10px; font-weight:800; color:var(--k-accent-purple); text-decoration:none; display:flex; align-items:center; gap:4px;">
+					<?php echo esc_html($settings['card_cta_text'] ?? 'VIEW CHART'); ?> &rarr;
 				</a>
 			</div>
-		</div>
+			<?php endif; ?>
+		</article>
 <?php
 	}
 }

@@ -178,7 +178,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 				<?php if ( ! empty($genres) ) : ?>
 					<div style="display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;">
 						<?php foreach ( array_slice($genres, 0, 3) as $genre ) : ?>
-							<span style="background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: capitalize;"><?php echo esc_html($genre); ?></span>
+							<span style="background: var(--k-surface-alt); color: var(--k-text-dim); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: capitalize;"><?php echo esc_html($genre); ?></span>
 						<?php endforeach; ?>
 					</div>
 				<?php endif; ?>
@@ -190,7 +190,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 		</div>
 
 		<!-- ENRICHED STATS -->
-		<div class="kc-stats-grid" style="margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 40px;">
+		<div class="kc-stats-grid" style="margin-top: 40px; border-top: 1px solid var(--k-divider); padding-top: 40px;">
 			<?php if ( $followers > 0 ) : ?>
 			<div class="kc-stat-pill">
 				<label>Global Followers</label>

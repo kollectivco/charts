@@ -30,13 +30,26 @@ class ChartLeader extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+
+		\Charts\Integrations\Elementor\ControlHelper::add_layout_controls( $this, [
+			'standard' => 'Standard Hero',
+			'minimal' => 'Minimal Card'
+		]);
+
+		\Charts\Integrations\Elementor\ControlHelper::add_visibility_controls( $this, [
+			'show_cover', 'show_artist', 'show_meta', 'show_cta'
+		]);
+
+		\Charts\Integrations\Elementor\ControlHelper::add_style_controls( $this );
 	}
 
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 		$manager = new \Charts\Admin\SourceManager();
-		$def = $manager->get_definition( $settings['chart_id'] );
 		
+		if ( empty($settings['chart_id']) ) return;
+
+		$def = $manager->get_definition( $settings['chart_id'] );
 		if ( ! $def ) return;
 
 		global $wpdb;
@@ -48,43 +61,85 @@ class ChartLeader extends Widget_Base {
 		", $def->chart_type, $def->country_code ) );
 		
 		if ( ! $row ) return;
+
+		$style_variant = $settings['style_variant'] ?? 'standard';
+		$show_cover    = $settings['show_cover'] !== 'no';
+		$show_artist   = $settings['show_artist'] !== 'no';
+		$show_cta      = $settings['show_cta'] === 'yes';
+		$show_meta     = $settings['show_meta'] !== 'no';
 ?>
 		<div class="kc-root">
-			<div class="kc-card kc-card-wide" style="border: none; padding: 0; background: linear-gradient(to right, #ffffff, #f1f5f9); overflow: hidden; box-shadow: var(--k-shadow-premium);">
-				<div style="display: grid; grid-template-columns: 400px 1fr; gap: 48px; align-items: center;">
-					<div class="hero-art" style="position: relative;">
-						<span class="kc-row-rank" style="position: absolute; top: 12px; left: 12px; font-size: 8rem; line-height: 1; color: white; text-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10;">1</span>
-						<img src="<?php echo esc_url($row->cover_image); ?>" alt="<?php echo esc_attr($row->track_name); ?>" style="width: 100%; height: 400px; object-fit: cover;">
+			<div class="kc-widget-card kc-hero-card kc-variant-<?php echo esc_attr($style_variant); ?>" style="border:1px solid var(--k-border); padding:0; background:var(--k-surface-alt); overflow:hidden; border-radius:var(--k-radius-lg); box-shadow:var(--k-shadow-md);">
+				
+				<?php if ( $style_variant === 'standard' ) : ?>
+					<div style="display:flex; flex-wrap:wrap; align-items:center;">
+						<?php if ( $show_cover ) : ?>
+						<div class="hero-art" style="position:relative; flex:1; min-width:300px;">
+							<span class="kc-row-rank" style="position:absolute; top:24px; left:24px; font-size:4rem; font-weight:900; line-height:1; color:#fff; text-shadow:0 4px 12px rgba(0,0,0,0.5); z-index:10;">1</span>
+							<img src="<?php echo esc_url($row->cover_image); ?>" alt="<?php echo esc_attr($row->track_name); ?>" style="width:100%; height:100%; min-height:400px; object-fit:cover;">
+						</div>
+						<?php endif; ?>
+						<div class="hero-info" style="flex:1.5; padding:48px; min-width:300px;">
+							<?php if ( $show_meta ) : ?>
+								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
+							<?php endif; ?>
+							
+							<h1 class="kc-title" style="font-size:clamp(2rem, 5vw, 4rem); font-weight:900; letter-spacing:-0.05em; line-height:0.95; margin-bottom:16px; color:var(--k-text);">
+								<?php echo esc_html($row->track_name); ?>
+							</h1>
+							
+							<?php if ( $show_artist ) : ?>
+								<p style="font-size:1.5rem; font-weight:700; color:var(--k-accent); margin-bottom:32px;">
+									<?php echo esc_html($row->artist_names); ?>
+								</p>
+							<?php endif; ?>
+							
+							<?php if ( $show_meta ) : ?>
+							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
+								<div class="kc-stat-item">
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">WKS ON CHART</span>
+									<span style="font-size:24px; font-weight:900; color:var(--k-text);"><?php echo $row->weeks_on_chart ?: 1; ?></span>
+								</div>
+								<div class="kc-stat-item">
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">PEAK</span>
+									<span style="font-size:24px; font-weight:900; color:var(--k-text);">#<?php echo $row->peak_rank ?: 1; ?></span>
+								</div>
+								<div class="kc-stat-item">
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">TREND</span>
+									<span style="font-size:16px; font-weight:900; color:var(--k-text);"><?php echo strtoupper($row->movement_direction); ?></span>
+								</div>
+							</div>
+							<?php endif; ?>
+
+							<?php if ( $show_cta ) : ?>
+								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="display:inline-flex; align-items:center; gap:8px; padding:16px 32px; background:var(--k-text); color:var(--k-surface); font-size:12px; font-weight:800; text-decoration:none; border-radius:40px; letter-spacing:0.05em; transition:transform 0.2s;">
+									<?php echo esc_html($settings['card_cta_text'] ?? 'Explore Market Intelligence'); ?> &rarr;
+								</a>
+							<?php endif; ?>
+						</div>
 					</div>
-					<div class="hero-info" style="padding: 48px 48px 48px 0;">
-						<span class="kc-brand-name" style="margin-bottom: 12px; display: block; letter-spacing: 0.2em;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
-						<h1 style="font-size: clamp(2rem, 5vw, 4rem); font-weight: 900; letter-spacing: -0.05em; line-height: 0.95; margin-bottom: 16px;">
+				<?php else : // Minimal Variant ?>
+					<div style="padding:48px; text-align:center; position:relative; z-index:2;">
+						<?php if ( $show_meta ) : ?>
+							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
+						<?php endif; ?>
+						<h2 class="kc-title" style="font-size:3rem; font-weight:950; letter-spacing:-0.03em; margin:0 0 16px; color:var(--k-text);">
 							<?php echo esc_html($row->track_name); ?>
-						</h1>
-						<p style="font-size: 1.5rem; font-weight: 700; color: var(--k-accent); margin-bottom: 32px;">
-							<?php echo esc_html($row->artist_names); ?>
-						</p>
-						<div class="kc-stats-bar" style="margin-top: 0; gap: 48px;">
-							<div class="kc-stat-item">
-								<span class="kc-stat-lbl">WEEKS ON CHART</span>
-								<span class="kc-stat-val" style="font-size: 2rem;"><?php echo $row->weeks_on_chart ?: 1; ?></span>
+						</h2>
+						<?php if ( $show_artist ) : ?>
+							<p style="font-size:1.25rem; font-weight:700; color:var(--k-accent); margin:0;">
+								<?php echo esc_html($row->artist_names); ?>
+							</p>
+						<?php endif; ?>
+						<?php if ( $show_cta ) : ?>
+							<div style="margin-top:32px;">
+								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="font-size:12px; font-weight:800; color:var(--k-text); text-decoration:underline;">
+									<?php echo esc_html($settings['card_cta_text'] ?? 'View Chart'); ?>
+								</a>
 							</div>
-							<div class="kc-stat-item">
-								<span class="kc-stat-lbl">PEAK</span>
-								<span class="kc-stat-val" style="font-size: 2rem;">#<?php echo $row->peak_rank ?: 1; ?></span>
-							</div>
-							<div class="kc-stat-item">
-								<span class="kc-stat-lbl">TREND</span>
-								<span class="kc-stat-val" style="font-size: 1rem; padding-top: 10px;"><?php echo strtoupper($row->movement_direction); ?></span>
-							</div>
-						</div>
-						<div style="margin-top: 48px;">
-							<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-btn large">
-								<?php _e( 'Explore Market Intelligence', 'charts' ); ?> &rarr;
-							</a>
-						</div>
+						<?php endif; ?>
 					</div>
-				</div>
+				<?php endif; ?>
 			</div>
 		</div>
 <?php

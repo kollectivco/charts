@@ -101,7 +101,7 @@ if ( $definition ) {
 								<span><?php echo intval($top->weeks_on_chart ?: 1); ?> wks on chart</span>
 							</div>
 						</div>
-						<div style="width: 80px; height: 80px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
+						<div style="width: 80px; height: 80px; background: var(--k-surface-alt); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
 						</div>
 					</div>
