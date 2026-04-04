@@ -18,23 +18,111 @@ if ( ! $artist ) {
 
 // Metadata decoding
 $metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+$debug_notes = array();
+$needs_sync = false;
 
-// Trigger background sync if data is missing or stale (once per hour max)
-if ( ! empty( $artist->spotify_id ) ) {
-	$last_sync = $metadata['last_sync'] ?? '1970-01-01 00:00:00';
-	if ( empty( $metadata['followers'] ) && ( time() - strtotime( $last_sync ) > HOUR_IN_SECONDS ) ) {
-		// Attempt sync in current request (low overhead for single artist)
-		( new \Charts\Services\SpotifyEnrichmentService() )->enrich_artist( $artist->id );
-		// Refresh object
-		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist->id ) );
-		$metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+// 1. Resolve Spotify ID if missing
+if ( empty( $artist->spotify_id ) ) {
+	$sp_api = new \Charts\Services\SpotifyApiClient();
+	if ( ! get_option('charts_spotify_client_id') ) {
+		$debug_notes[] = 'spotify: api credentials missing';
+	} else {
+		$search = $sp_api->search_artist( $artist->display_name );
+		if ( is_wp_error($search) ) {
+			$debug_notes[] = 'spotify: search error - ' . $search->get_error_message();
+		} elseif ( empty($search) ) {
+			$debug_notes[] = 'spotify: no match found';
+		} else {
+			$best_match = null;
+			foreach ( $search as $res ) {
+				if ( strtolower($res['name']) === strtolower($artist->display_name) ) {
+					$best_match = $res;
+					break;
+				}
+			}
+			if ( ! $best_match && !empty($search[0]) ) {
+				$best_match = $search[0];
+			}
+
+			if ( $best_match ) {
+				$wpdb->update( $wpdb->prefix . 'charts_artists', array('spotify_id' => $best_match['id']), array('id' => $artist->id) );
+				$artist->spotify_id = $best_match['id'];
+				$debug_notes[] = 'spotify: resolved ' . $best_match['id'];
+				$needs_sync = true;
+			} else {
+				$debug_notes[] = 'spotify: low-confidence result rejected';
+			}
+		}
 	}
 }
 
-$genres     = $metadata['genres'] ?? array();
-$followers  = $metadata['followers'] ?? 0;
-$popularity = $metadata['popularity'] ?? 0;
-$sp_url     = $metadata['external_url'] ?? '';
+// 2. Resolve YouTube Channel ID if missing
+$youtube_channel_id = $metadata['youtube_channel_id'] ?? null;
+if ( empty( $youtube_channel_id ) ) {
+	$yt_api = new \Charts\Services\YouTubeApiClient();
+	if ( ! $yt_api->is_configured() ) {
+		$debug_notes[] = 'youtube: api credentials missing';
+	} else {
+		$search = $yt_api->search_channels( $artist->display_name );
+		if ( is_wp_error($search) ) {
+			$debug_notes[] = 'youtube: search error - ' . $search->get_error_message();
+		} elseif ( empty($search) ) {
+			$debug_notes[] = 'youtube: no channel match found';
+		} else {
+			$best_match = $search[0];
+			$youtube_channel_id = $best_match['snippet']['channelId'];
+			
+			$metadata['youtube_channel_id'] = $youtube_channel_id;
+			$wpdb->update( $wpdb->prefix . 'charts_artists', array('metadata_json' => json_encode($metadata)), array('id' => $artist->id) );
+			$debug_notes[] = 'youtube: resolved ' . $youtube_channel_id;
+			$needs_sync = true;
+		}
+	}
+}
+
+// 3. Stale sync strategy
+if ( ! empty( $artist->spotify_id ) ) {
+	$last_sync = $metadata['last_sync'] ?? '1970-01-01 00:00:00';
+	if ( empty($metadata['followers']) || ( time() - strtotime( $last_sync ) > HOUR_IN_SECONDS * 48 ) ) {
+		$needs_sync = true;
+	}
+}
+if ( ! empty( $youtube_channel_id ) ) {
+    $yt_last_sync = $metadata['youtube_last_sync'] ?? '1970-01-01 00:00:00';
+    if ( empty($metadata['youtube_subscribers']) || ( time() - strtotime( $yt_last_sync ) > HOUR_IN_SECONDS * 48 ) ) {
+        $needs_sync = true;
+    }
+}
+
+if ( $needs_sync ) {
+	if ( ! empty( $artist->spotify_id ) ) {
+		( new \Charts\Services\SpotifyEnrichmentService() )->enrich_artist( $artist->id );
+	}
+	if ( ! empty( $youtube_channel_id ) ) {
+		( new \Charts\Services\YouTubeEnrichmentService() )->enrich_artist( $artist->id );
+	}
+	// Refresh object
+	$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist->id ) );
+	$metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+}
+
+$genres        = $metadata['genres'] ?? array();
+$followers     = $metadata['followers'] ?? 0;
+$popularity    = $metadata['popularity'] ?? 0;
+$sp_url        = $metadata['external_url'] ?? '';
+$yt_subscribers= $metadata['youtube_subscribers'] ?? 0;
+$yt_views      = $metadata['youtube_video_count'] ?? 0;
+$yt_url        = $metadata['youtube_url'] ?? '';
+$sp_top_tracks = $metadata['spotify_top_tracks'] ?? array();
+
+$fmt = function($num) {
+    if ($num >= 1000000) return number_format($num / 1000000, 1) . 'M';
+    if ($num >= 1000) return number_format($num / 1000, 1) . 'K';
+    return is_numeric($num) ? number_format($num) : $num;
+};
+
+// Use Spotify image first when available, fall back to YouTube thumbnail
+$display_image = !empty($artist->image) ? $artist->image : ($metadata['youtube_thumbnail'] ?? CHARTS_URL . 'public/assets/img/placeholder.png');
 
 // Charting tracks
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
@@ -71,7 +159,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 		
 		<!-- ARTIST HEADER -->
 		<header class="kc-profile-header" style="margin-top: 60px; display: flex; align-items: center; gap: 40px;">
-			<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-profile-avatar" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; box-shadow: var(--k-shadow-lg);">
+			<img src="<?php echo esc_url($display_image); ?>" class="kc-profile-avatar" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; box-shadow: var(--k-shadow-lg);">
 			<div class="kc-profile-info">
 				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
 					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">Artist</span>
@@ -107,7 +195,25 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 			<div class="kc-stat-pill">
 				<label>Global Followers</label>
 				<div style="display: flex; align-items: baseline; gap: 4px;">
-					<span class="val"><?php echo number_format($followers / 1000, 1); ?>K</span>
+					<span class="val"><?php echo esc_html($fmt($followers)); ?></span>
+				</div>
+			</div>
+			<?php endif; ?>
+
+			<?php if ( $yt_subscribers > 0 ) : ?>
+			<div class="kc-stat-pill">
+				<label>YouTube Subs</label>
+				<div style="display: flex; align-items: baseline; gap: 4px;">
+					<span class="val"><?php echo esc_html($fmt($yt_subscribers)); ?></span>
+				</div>
+			</div>
+			<?php endif; ?>
+			
+			<?php if ( $yt_views > 0 ) : ?>
+			<div class="kc-stat-pill">
+				<label>YouTube Vid Count</label>
+				<div style="display: flex; align-items: baseline; gap: 4px;">
+					<span class="val"><?php echo esc_html($fmt($yt_views)); ?></span>
 				</div>
 			</div>
 			<?php endif; ?>
@@ -142,7 +248,27 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 				</div>
 			</a>
 			<?php endif; ?>
+
+			<?php if ( $yt_url ) : ?>
+			<a href="<?php echo esc_url($yt_url); ?>" target="_blank" class="kc-stat-pill" style="text-decoration: none; border-color: #ff0000; background: rgba(255, 0, 0, 0.05);">
+				<label style="color: #cc0000;">YouTube Profile</label>
+				<div style="display: flex; align-items: center; gap: 8px; color: #cc0000; font-weight: 800; font-size: 14px; margin-top: 4px;">
+					Open Channel ↗
+				</div>
+			</a>
+			<?php endif; ?>
 		</div>
+
+		<?php if ( current_user_can('manage_options') && !empty($debug_notes) ) : ?>
+		<div style="margin-top:20px; background:#fef2f2; color:#991b1b; padding:15px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid #fecaca;">
+			<div>Diagnostics / Resolution Notes:</div>
+			<ul style="margin:5px 0 0 20px; font-weight:600;">
+				<?php foreach($debug_notes as $note): ?>
+					<li><?php echo esc_html($note); ?></li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+		<?php endif; ?>
 
 		<!-- ABOUT (Conditional) -->
 		<?php 
@@ -197,9 +323,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 				<section>
 					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">Popular Tracks</h3>
 					<div style="display: flex; flex-direction: column; gap: 12px;">
-						<?php if ( empty($popular_tracks) ) : ?>
-							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No popular tracks data.</p>
-						<?php else : ?>
+						<?php if ( !empty($popular_tracks) ) : ?>
 							<?php foreach ( $popular_tracks as $pt ) : ?>
 								<a href="<?php echo home_url('/charts/track/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
@@ -218,6 +342,21 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 									</div>
 								</a>
 							<?php endforeach; ?>
+						<?php elseif ( !empty($sp_top_tracks) ) : ?>
+							<?php $rk=1; foreach ( array_slice($sp_top_tracks, 0, 3) as $spt ) : ?>
+								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
+									<div style="display: flex; align-items: center; gap: 20px;">
+										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $rk++; ?></span>
+										<img src="<?php echo esc_url($spt['image'] ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px;">
+										<div>
+											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($spt['name']); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>
+										</div>
+									</div>
+								</div>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No popular tracks data.</p>
 						<?php endif; ?>
 					</div>
 				</section>

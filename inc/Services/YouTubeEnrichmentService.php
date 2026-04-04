@@ -100,4 +100,41 @@ class YouTubeEnrichmentService {
 
 		return $rows;
 	}
+
+	/**
+	 * Enrich an individual artist's YouTube channel metadata.
+	 */
+	public function enrich_artist( $artist_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_artists';
+		
+		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $artist_id ) );
+		if ( ! $artist ) return false;
+		
+		$meta = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+		$channel_id = $meta['youtube_channel_id'] ?? null;
+		
+		if ( empty( $channel_id ) ) return false;
+
+		$channels = $this->api_client->get_channels( array( $channel_id ) );
+		if ( is_wp_error( $channels ) || empty( $channels ) ) return false;
+
+		$channel = $channels[0];
+		
+		$snippet = $channel['snippet'] ?? array();
+		$stats = $channel['statistics'] ?? array();
+
+		$meta['youtube_subscribers'] = intval($stats['subscriberCount'] ?? 0);
+		$meta['youtube_video_count'] = intval($stats['videoCount'] ?? 0);
+		$meta['youtube_thumbnail']   = $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['medium']['url'] ?? null;
+		$meta['youtube_url']         = 'https://www.youtube.com/channel/' . $channel_id;
+		$meta['youtube_last_sync']   = current_time( 'mysql' );
+		
+		$update = array( 'metadata_json' => json_encode( $meta ) );
+		if ( empty($artist->image) && !empty($meta['youtube_thumbnail']) ) {
+			$update['image'] = $meta['youtube_thumbnail'];
+		}
+
+		return $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
+	}
 }

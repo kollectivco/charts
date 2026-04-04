@@ -72,6 +72,20 @@ class YouTubeApiClient {
 	}
 
 	/**
+	 * Search for channels.
+	 */
+	public function search_channels( $query, $limit = 5 ) {
+		$data = $this->request( 'search', array(
+			'part'       => 'snippet',
+			'q'          => $query,
+			'type'       => 'channel',
+			'maxResults' => $limit,
+		) );
+		if ( is_wp_error( $data ) ) return $data;
+		return $data['items'] ?? array();
+	}
+
+	/**
 	 * Get channel details.
 	 */
 	public function get_channels( array $ids ) {

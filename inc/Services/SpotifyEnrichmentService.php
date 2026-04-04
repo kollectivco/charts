@@ -100,11 +100,26 @@ class SpotifyEnrichmentService {
 		$data = $this->api->get_artist( $artist->spotify_id );
 		if ( is_wp_error( $data ) ) return $data;
 
+		$top_tracks_data = $this->api->get_artist_top_tracks( $artist->spotify_id, 'US' );
+		$top_tracks = array();
+		if ( ! is_wp_error($top_tracks_data) && !empty($top_tracks_data['tracks']) ) {
+			foreach (array_slice($top_tracks_data['tracks'], 0, 10) as $t) {
+				$top_tracks[] = array(
+					'id' => $t['id'],
+					'name' => $t['name'],
+					'preview_url' => $t['preview_url'] ?? null,
+					'image' => $t['album']['images'][0]['url'] ?? null
+				);
+			}
+		}
+
 		$meta = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
 		$meta['genres']       = $data['genres'] ?? array();
 		$meta['followers']    = $data['followers']['total'] ?? 0;
 		$meta['popularity']   = $data['popularity'] ?? 0;
 		$meta['external_url'] = $data['external_urls']['spotify'] ?? null;
+		$meta['spotify_top_tracks'] = $top_tracks;
+		$meta['spotify_id']   = $artist->spotify_id;
 		$meta['last_sync']    = current_time( 'mysql' );
 
 		$update = array(
@@ -114,6 +129,8 @@ class SpotifyEnrichmentService {
 
 		if ( ! empty( $data['images'][0]['url'] ) ) {
 			$update['image'] = $data['images'][0]['url'];
+			$meta['spotify_image'] = $data['images'][0]['url'];
+			$update['metadata_json'] = json_encode( $meta );
 		}
 
 		return $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
