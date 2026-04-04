@@ -63,7 +63,7 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 ", $top_artists_chart->country_code ) ) : array();
 
 use Charts\Core\Settings;
-\Charts\Core\StandaloneLayout::get_header();
+\Charts\Core\PublicIntegration::get_header();
 
 $homepage_show_artists = Settings::get('homepage_show_artists');
 $homepage_show_more    = Settings::get('homepage_show_more');
@@ -74,41 +74,19 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	
 	<!-- 1. DYNAMIC HERO SLIDER -->
 	<?php
-	$slider_style = get_option( 'charts_homepage_slider_style', 'style-1' );
-	$hero_slides = [];
-	$hero_chart_ids = array_map(function($d){ return $d->id; }, array_slice($definitions, 0, 3));
-	foreach ( $hero_chart_ids as $id ) {
-		$def = $manager->get_definition( $id );
-		if ( ! $def ) continue;
-		$leader = $wpdb->get_row( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 1
-		", $def->chart_type, $def->country_code ) );
-		$hero_slides[] = [
-			'title'       => $def->title,
-			'subtitle'    => $def->chart_summary,
-			'leader_name' => $leader->track_name ?? 'Trending Now',
-			'leader_artist'=> $leader->artist_names ?? 'Global Charts',
-			'image'       => $leader->cover_image ?? (!empty($def->cover_image_url) ? $def->cover_image_url : CHARTS_URL . 'public/assets/img/placeholder.png'),
-			'url'         => home_url('/charts/' . $def->slug . '/'),
-			'accent'      => $def->accent_color ?: '#fe025b',
-			'platform'    => $def->platform ?? 'Global',
-			'region'      => $def->country_name ?? 'Global'
-		];
-	}
+	$slider_settings = \Charts\Core\HomepageSlider::get_global_settings();
+	if ( (in_array('slider', $section_order) || empty($section_order)) && $slider_settings['slider_enable'] ) : 
+		$hero_slides = \Charts\Core\HomepageSlider::get_slides_data( [], $slider_settings['slider_count'] );
+		if ( ! empty( $hero_slides ) ) :
 	?>
-
-	<?php
-	$global_settings = \Charts\Core\HomepageSlider::get_global_settings();
-	if ( (in_array('slider', $section_order) || empty($section_order)) && ! empty( $hero_slides ) && $global_settings['slider_enable'] ) : ?>
 	<section class="kc-hero-slider-section" style="overflow: hidden; width: 100%;">
 		<?php
-		\Charts\Core\HomepageSlider::render($hero_slides, $global_settings, 'shell');
+		\Charts\Core\HomepageSlider::render($hero_slides, $slider_settings, 'homepage');
 		?>
 	</section>
-	<?php endif; ?>
+	<?php 
+		endif;
+	endif; ?>
 
 	<div class="kc-container">
 		
@@ -206,4 +184,4 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	</div>
 </div>
 
-<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
+<?php \Charts\Core\PublicIntegration::get_footer(); ?>

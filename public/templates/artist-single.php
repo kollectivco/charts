@@ -10,9 +10,9 @@ $slug = get_query_var( 'charts_artist_slug' );
 $artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
 
 if ( ! $artist ) {
-	\Charts\Core\StandaloneLayout::get_header();
+	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Artist Not Found</h1></div>';
-	\Charts\Core\StandaloneLayout::get_footer();
+	\Charts\Core\PublicIntegration::get_footer();
 	return;
 }
 
@@ -151,7 +151,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 	ORDER BY e.rank_position ASC LIMIT 2
 ", $artist->id ) );
 
-\Charts\Core\StandaloneLayout::get_header();
+\Charts\Core\PublicIntegration::get_header();
 ?>
 
 <div class="kc-root">
@@ -179,50 +179,6 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 			</div>
 		</header>
 
-
-		<!-- ENRICHED STATS -->
-		<div class="kc-stats-grid" style="margin-top: 40px; border-top: 1px solid var(--k-divider); padding-top: 40px;">
-			<?php if ( $followers > 0 ) : ?>
-			<div class="kc-stat-pill">
-				<label>Global Followers</label>
-				<div style="display: flex; align-items: baseline; gap: 4px;">
-					<span class="val"><?php echo esc_html($fmt($followers)); ?></span>
-				</div>
-			</div>
-			<?php endif; ?>
-
-			<?php if ( $yt_subscribers > 0 ) : ?>
-			<div class="kc-stat-pill">
-				<label>YouTube Subs</label>
-				<div style="display: flex; align-items: baseline; gap: 4px;">
-					<span class="val"><?php echo esc_html($fmt($yt_subscribers)); ?></span>
-				</div>
-			</div>
-			<?php endif; ?>
-			
-			<?php if ( $yt_views > 0 ) : ?>
-			<div class="kc-stat-pill">
-				<label>YouTube Vid Count</label>
-				<div style="display: flex; align-items: baseline; gap: 4px;">
-					<span class="val"><?php echo esc_html($fmt($yt_views)); ?></span>
-				</div>
-			</div>
-			<?php endif; ?>
-			
-			<?php 
-			$intel = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'artist' AND entity_id = %d", $artist->id ) );
-			if ( $intel ) : 
-			?>
-				<?php if ( ! empty($intel->weeks_on_chart) ) : ?>
-				<div class="kc-stat-pill">
-					<label>Weeks Local Chart</label>
-					<div style="display: flex; align-items: baseline; gap: 4px;">
-						<span class="val"><?php echo intval($intel->weeks_on_chart); ?></span>
-					</div>
-				</div>
-				<?php endif; ?>
-			<?php endif; ?>
-		</div>
 
 
 		<!-- ABOUT (Conditional) -->
@@ -421,4 +377,4 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 	</div>
 </div>
 
-<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
+<?php \Charts\Core\PublicIntegration::get_footer(); ?>

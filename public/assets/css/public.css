@@ -4,7 +4,7 @@
  * Reference-derived hierarchy and rhythm.
  */
 
-:root, [data-theme="light"] {
+:root, .kc-theme-light {
 	/* Palette - Premium Light Mode */
 	--k-bg: #f6f6f6;
 	--k-surface: #ffffff;
@@ -32,7 +32,7 @@
 	--k-shadow-heavy: 0 14px 28px rgba(0,0,0,0.25);
 }
 
-[data-theme="dark"] {
+.kc-theme-dark {
 	/* Palette - Premium Dark Mode */
 	--k-bg: #0f0f0f;
 	--k-surface: #141414;
@@ -55,12 +55,8 @@
 
 .kc-root {
 	font-family: 'Inter', system-ui, -apple-system, sans-serif;
-	background: var(--k-bg);
 	color: var(--k-text);
 	-webkit-font-smoothing: antialiased;
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
 	overflow-x: hidden;
 }
 

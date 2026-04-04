@@ -20,75 +20,27 @@ if ( ! function_exists( 'kc_get_setting' ) ) {
 	}
 }
 
+// Diagnostic helper
+if ( isset($_GET['diag']) ) {
+    echo '<div style="background:#000; color:#0f0; padding:20px; font-family:monospace; margin-bottom:20px; border-radius:10px; border:2px solid #0f0; overflow:auto; max-height:400px;">';
+    echo '<h3>--- CHARTS DIAGNOSTICS ---</h3>';
+    echo 'DB Version: ' . get_option('kcharts_db_version') . '<br>';
+    echo 'Theme Mode: ' . kc_get_setting('theme_mode') . '<br>';
+    echo 'Slider Style: ' . kc_get_setting('slider_style') . '<br>';
+    echo 'Registered Keys: ' . count($registered_keys) . '<br>';
+    echo '--- POST DATA ---<br>';
+    print_r($_POST);
+    echo '</div>';
+}
+
 // Data Source for Charts
 $definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
 $chart_options = [];
 foreach ( $definitions as $def ) { $chart_options[$def->id] = $def->title; }
 
 // --- 2. Registration Engine Array ---
+// --- 2. Registration Engine Array ---
 $charts_panel = [
-	'general' => [
-		'title' => 'General',
-		'icon'  => 'dashicons-admin-generic',
-		'sections' => [
-			'core' => [
-				'title' => 'Core Settings',
-				'desc'  => 'Global configurations for the charts system.',
-				'fields' => [
-					[ 'id' => 'theme_mode', 'type' => 'select', 'label' => 'Chart Theme Mode', 'options' => ['light' => 'Light Mode', 'dark' => 'Dark Mode'], 'default' => 'light', 'desc' => 'Determine the base color palette for all public chart interfaces.' ],
-				]
-			]
-		]
-	],
-	'branding' => [
-		'title' => 'Branding & Shell',
-		'icon'  => 'dashicons-art',
-		'sections' => [
-			'logos' => [
-				'title' => 'Logo Identity',
-				'fields' => [
-					[ 'id' => 'logo_id_light', 'type' => 'media', 'label' => 'Light Mode Logo' ],
-					[ 'id' => 'logo_id_dark', 'type' => 'media', 'label' => 'Dark Mode Logo' ],
-					[ 'id' => 'wordmark', 'type' => 'text', 'label' => 'Product Wordmark / Fallback', 'default' => 'KCharts' ],
-					[ 'id' => 'logo_alt', 'type' => 'text', 'label' => 'Logo Alt Text', 'desc' => 'Accessibility screen-reader text for the active logo.' ],
-				]
-			],
-			'visibility' => [
-				'title' => 'Shell Visibility',
-				'fields' => [
-					[ 'id' => 'show_logo', 'type' => 'switch', 'label' => 'Logotype Visibility', 'default' => 1 ],
-				]
-			]
-		]
-	],
-	'header' => [
-		'title' => 'Header',
-		'icon'  => 'dashicons-heading',
-		'sections' => [
-			'nav' => [
-				'title' => 'Navigation Options',
-				'fields' => [
-					[ 'id' => 'header_menu_id', 'type' => 'select', 'label' => 'Assigned Navigation Menu', 'options' => $menu_options, 'default' => '0' ],
-					[ 'id' => 'show_nav', 'type' => 'switch', 'label' => 'Navigation Shell Visibility', 'default' => 1 ],
-					[ 'id' => 'show_search', 'type' => 'switch', 'label' => 'Global Search Visibility', 'default' => 1 ],
-				]
-			]
-		]
-	],
-	'footer' => [
-		'title' => 'Footer',
-		'icon'  => 'dashicons-arrow-down-alt2',
-		'sections' => [
-			'content' => [
-				'title' => 'Footer Content',
-				'desc'  => 'Manage the global footer content. Supports HTML.',
-				'fields' => [
-					[ 'id' => 'footer_left', 'type' => 'textarea', 'label' => 'Footer Left Content', 'desc' => 'Content for the bottom-left area.', 'rows' => 3 ],
-					[ 'id' => 'footer_right', 'type' => 'textarea', 'label' => 'Footer Right Content', 'desc' => 'Content for the bottom-right area.', 'rows' => 3 ],
-				]
-			]
-		]
-	],
 	'homepage' => [
 		'title' => 'Homepage Layout',
 		'icon'  => 'dashicons-admin-home',
@@ -217,6 +169,23 @@ $charts_panel = [
 				'desc'  => 'Extreme caution. These actions cannot be undone.',
 				'fields' => [
 					[ 'id' => 'danger_zone_custom', 'type' => 'custom', 'html' => '<div style="background:#fee2e2; border:1px solid #fca5a5; padding:20px; border-radius:12px;"><h4 style="color:#b91c1c; margin-top:0;">Wipe Plugin Data</h4><p style="color:#7f1d1d; margin-bottom:15px; font-size:13px;">Permanently delete all custom tables, transients, mocked data, and optionally reset settings.</p><input type="text" id="reset_confirm_input" placeholder="Type RESET CHARTS" style="padding:10px; border:1px solid #fca5a5; border-radius:6px; background:#fff; width:200px; margin-right:10px; font-weight:600;"><label style="font-size:13px;display:inline-flex;align-items:center;color:#b91c1c;font-weight:600"><input type="checkbox" name="wipe_settings" value="1" style="margin-right:8px;"> Also wipe settings entirely</label><br><button type="button" class="charts-btn-create" id="reset_plugin_btn" style="background:#ef4444; color:#fff; border:none; margin-top:20px; opacity:0.3; cursor:not-allowed;" disabled>RESET PLUGIN NOW</button></div>' ]
+				]
+			]
+		]
+	],
+	'legacy_shell' => [
+		'title' => 'Legacy Shell (Deprecated)',
+		'icon'  => 'dashicons-art',
+		'sections' => [
+			'branding' => [
+				'title' => 'Legacy Branding',
+				'desc'  => 'These settings applied to the old standalone plugin header/footer which has been retired in favor of native theme integration.',
+				'fields' => [
+					[ 'id' => 'logo_id_light', 'type' => 'media', 'label' => 'Light Mode Logo' ],
+					[ 'id' => 'logo_id_dark', 'type' => 'media', 'label' => 'Dark Mode Logo' ],
+					[ 'id' => 'wordmark', 'type' => 'text', 'label' => 'Product Wordmark / Fallback', 'default' => 'KCharts' ],
+					[ 'id' => 'logo_alt', 'type' => 'text', 'label' => 'Logo Alt Text' ],
+					[ 'id' => 'show_logo', 'type' => 'switch', 'label' => 'Logotype Visibility', 'default' => 1 ],
 				]
 			]
 		]

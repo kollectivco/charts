@@ -80,11 +80,14 @@ class Bootstrap {
 							$key = $parts[1];
 						}
 
+						if ( empty( $key ) ) continue;
+
 						if ( $type === 'chk' ) {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? 1 : 0 );
 						} elseif ( $type === 'int' ) {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? intval( $_POST[ $key ] ) : 0 );
 						} elseif ( $type === 'flt' ) {
+							update_option( 'charts_' . $key, [isset( $_POST[ $key ] ) ? floatval( $_POST[ $key ] ) : 0] ); // Wrapped slightly just to ensure no skip
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? floatval( $_POST[ $key ] ) : 0 );
 						} elseif ( $type === 'raw' || $type === 'textarea' ) {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? wp_kses_post( wp_unslash( $_POST[ $key ] ) ) : '' );
@@ -93,7 +96,7 @@ class Bootstrap {
 						} elseif ( $type === 'slides' ) {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '[]' );
 						} else {
-							$val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : '';
+							$val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : (isset($_POST['charts_'.$key]) ? $_POST['charts_'.$key] : '');
 							if ( is_array( $val ) ) {
 								$val = array_map( 'sanitize_text_field', wp_unslash( $val ) );
 							} else {
@@ -793,12 +796,20 @@ class Bootstrap {
 		global $wpdb;
 		$limit = 20;
 		$offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
-		$mode = $_POST['mode'] ?? 'missing'; // 'missing' or 'all'
+		$mode   = $_POST['mode'] ?? 'missing';
+		$ids    = isset($_POST['ids']) ? array_map('intval', explode(',', $_POST['ids'])) : [];
 
-		$table = $wpdb->prefix . 'charts_artists';
-		$where = ($mode === 'missing') ? "WHERE spotify_id IS NULL OR spotify_id = '' OR image IS NULL OR image = ''" : "WHERE 1=1";
+		$table  = $wpdb->prefix . 'charts_artists';
+		$where  = "WHERE 1=1";
 		
-		$artists = $wpdb->get_results( "SELECT id, display_name, spotify_id, metadata_json FROM $table $where ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		if ( $mode === 'selected' && !empty($ids) ) {
+			$ids_str = implode(',', $ids);
+			$where .= " AND id IN ($ids_str)";
+		} elseif ( $mode === 'missing' ) {
+			$where .= " AND (spotify_id IS NULL OR spotify_id = '' OR image IS NULL OR image = '')";
+		}
+
+		$artists = $wpdb->get_results( "SELECT id, display_name, spotify_id, metadata_json FROM $table $where ORDER BY id ASC LIMIT $limit" );
 		
 		if ( empty($artists) ) {
 			wp_send_json_success( array( 'complete' => true, 'processed' => 0 ) );
@@ -875,18 +886,26 @@ class Bootstrap {
 		global $wpdb;
 		$limit = 20;
 		$offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
-		$mode = $_POST['mode'] ?? 'missing'; // 'missing' or 'all'
+		$mode   = $_POST['mode'] ?? 'missing';
+		$ids    = isset($_POST['ids']) ? array_map('intval', explode(',', $_POST['ids'])) : [];
 
 		$table_tracks = $wpdb->prefix . 'charts_tracks';
 		$table_artists = $wpdb->prefix . 'charts_artists';
-		$where = ($mode === 'missing') ? "WHERE t.spotify_id IS NULL OR t.spotify_id = '' OR t.cover_image IS NULL OR t.cover_image = ''" : "WHERE 1=1";
+		
+		$where = "WHERE 1=1";
+		if ( $mode === 'selected' && !empty($ids) ) {
+			$ids_str = implode(',', $ids);
+			$where .= " AND t.id IN ($ids_str)";
+		} elseif ( $mode === 'missing' ) {
+			$where .= " AND (t.spotify_id IS NULL OR t.spotify_id = '' OR t.cover_image IS NULL OR t.cover_image = '')";
+		}
 		
 		$tracks = $wpdb->get_results( "
 			SELECT t.id, t.title, t.spotify_id, a.display_name as artist_name 
 			FROM $table_tracks t 
 			LEFT JOIN $table_artists a ON a.id = t.primary_artist_id 
 			$where 
-			ORDER BY t.id ASC LIMIT $limit OFFSET $offset
+			ORDER BY t.id ASC LIMIT $limit
 		" );
 		
 		if ( empty($tracks) ) {

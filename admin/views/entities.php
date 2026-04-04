@@ -57,7 +57,15 @@ if ( $type === 'artist' ) {
 	);
 }
 
-// 3. Fetch Items for Listing
+// 3. Pagination Settings
+$per_page = 100;
+$current_page = max( 1, isset( $_GET['paged'] ) ? intval( $_GET['paged'] ) : 1 );
+$offset = ( $current_page - 1 ) * $per_page;
+
+// 4. Filters & Search
+$filter_spotify = isset( $_GET['spotify_linked'] ) ? $_GET['spotify_linked'] : '';
+$filter_image   = isset( $_GET['has_image'] ) ? $_GET['has_image'] : '';
+
 $items = array();
 $total = 0;
 
@@ -66,39 +74,49 @@ if ( $type === 'artist' ) {
 	if ( $search ) {
 		$where .= $wpdb->prepare( " AND (display_name LIKE %s OR slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
 	}
-	$items = $wpdb->get_results( "SELECT * FROM $artists_table {$where} ORDER BY display_name ASC LIMIT 200" );
+	if ( $filter_spotify === 'yes' ) $where .= " AND spotify_id IS NOT NULL AND spotify_id != ''";
+	if ( $filter_spotify === 'no' ) $where .= " AND (spotify_id IS NULL OR spotify_id = '')";
+	if ( $filter_image === 'yes' ) $where .= " AND image IS NOT NULL AND image != ''";
+	if ( $filter_image === 'no' ) $where .= " AND (image IS NULL OR image = '')";
+
+	$items = $wpdb->get_results( "SELECT * FROM $artists_table {$where} ORDER BY display_name ASC LIMIT $per_page OFFSET $offset" );
 	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $artists_table {$where}" );
 	$title = __( 'Artists', 'charts' );
 } elseif ( $type === 'track' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
-		$where .= $wpdb->prepare( " AND (title LIKE %s OR slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+		$where .= $wpdb->prepare( " AND (t.title LIKE %s OR t.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
 	}
+	if ( $filter_spotify === 'yes' ) $where .= " AND t.spotify_id IS NOT NULL AND t.spotify_id != ''";
+	if ( $filter_spotify === 'no' ) $where .= " AND (t.spotify_id IS NULL OR t.spotify_id = '')";
+	if ( $filter_image === 'yes' ) $where .= " AND t.cover_image IS NOT NULL AND t.cover_image != ''";
+	if ( $filter_image === 'no' ) $where .= " AND (t.cover_image IS NULL OR t.cover_image = '')";
+
 	$items = $wpdb->get_results( "
 		SELECT t.*, a.display_name AS artist_name 
 		FROM $tracks_table t 
 		LEFT JOIN $artists_table a ON a.id = t.primary_artist_id
 		{$where} 
-		ORDER BY t.title ASC LIMIT 200
+		ORDER BY t.title ASC LIMIT $per_page OFFSET $offset
 	" );
-	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $tracks_table {$where}" );
+	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $tracks_table t {$where}" );
 	$title = __( 'Tracks', 'charts' );
 } elseif ( $type === 'clip' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
-		$where .= $wpdb->prepare( " AND (title LIKE %s OR slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+		$where .= $wpdb->prepare( " AND (v.title LIKE %s OR v.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
 	}
 	$items = $wpdb->get_results( "
 		SELECT v.*, a.display_name AS artist_name 
 		FROM $videos_table v 
 		LEFT JOIN $artists_table a ON a.id = v.primary_artist_id
 		{$where} 
-		ORDER BY v.title ASC LIMIT 200
+		ORDER BY v.title ASC LIMIT $per_page OFFSET $offset
 	" );
-	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table {$where}" );
+	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table v {$where}" );
 	$title = __( 'Music Clips', 'charts' );
 } else {
-	// Advanced / Denormalized View from charts_entries
+	// Advanced Explorer
 	$where = "WHERE track_name != '' AND track_name IS NOT NULL";
 	if ( $search ) {
 		$where .= $wpdb->prepare( " AND (track_name LIKE %s OR artist_names LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
@@ -112,11 +130,16 @@ if ( $type === 'artist' ) {
 		{$where}
 		GROUP BY track_name, artist_names
 		ORDER BY appearances DESC
-		LIMIT 200
+		LIMIT $per_page OFFSET $offset
 	" );
 	$total = $wpdb->get_var( "SELECT COUNT(DISTINCT track_name) FROM $entries_table {$where}" );
 	$title = __( 'Entities (Advanced Explorer)', 'charts' );
 }
+
+$num_pages = ceil( $total / $per_page );
+$page_title = $title;
+$total_items = $total;
+$entity_type = $type;
 
 ?>
 <div class="charts-admin-wrap premium-light">
@@ -125,27 +148,73 @@ if ( $type === 'artist' ) {
 			<h1 class="charts-admin-title"><?php echo esc_html( $page_title ); ?></h1>
 			<p class="charts-admin-subtitle"><?php printf( __( 'Canonical library containing %d indexed %s entities.', 'charts' ), $total_items, strtolower($page_title) ); ?></p>
 		</div>
-		<div class="charts-admin-actions" style="display: flex; gap: 10px;">
-			<?php if ($type === 'artist' || $type === 'track'): ?>
-				<button type="button" class="charts-btn-secondary" id="sync-entities-trigger">
-					<span class="dashicons dashicons-update" style="margin-right:8px; vertical-align: middle;"></span>
-					<?php printf( __( 'Sync Missing %s', 'charts' ), $type === 'artist' ? 'Profiles' : 'Metadata' ); ?>
-				</button>
+		<div class="charts-admin-actions" style="display: flex; gap: 10px; align-items: center;">
+			<?php if ($type !== 'advanced'): ?>
+				<!-- Modern Action Center -->
+				<div class="kc-action-hub" style="display: flex; gap: 8px; background: #fff; padding: 6px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
+					<button type="button" class="charts-btn-secondary" id="sync-selected-trigger" style="margin: 0; padding: 6px 12px; font-size: 12px;">
+						<span class="dashicons dashicons-forms" style="font-size:16px; width:16px; height:16px; margin-right:4px;"></span>
+						<?php _e( 'Sync Selected', 'charts' ); ?>
+					</button>
+					<button type="button" class="charts-btn-secondary" id="sync-entities-trigger" style="margin: 0; padding: 6px 12px; font-size: 12px; border-color: #6366f1; color: #6366f1;">
+						<span class="dashicons dashicons-update" style="font-size:16px; width:16px; height:16px; margin-right:4px;"></span>
+						<?php _e( 'Sync Missing', 'charts' ); ?>
+					</button>
+					<button type="button" class="charts-btn-secondary" id="sync-all-trigger" style="margin: 0; padding: 6px 12px; font-size: 12px;">
+						<span class="dashicons dashicons-database-export" style="font-size:16px; width:16px; height:16px; margin-right:4px;"></span>
+						<?php _e( 'Sync All', 'charts' ); ?>
+					</button>
+				</div>
 			<?php endif; ?>
+			
 			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
 				<span class="dashicons dashicons-plus" style="margin-right:8px; vertical-align: middle;"></span>
 				<?php printf( __( 'Add New %s', 'charts' ), rtrim($page_title, 's') ); ?>
 			</a>
 		</div>
-		<div class="charts-actions">
-			<form method="get" action="">
-				<input type="hidden" name="page" value="<?php echo esc_attr( $page ); ?>">
-				<input type="text" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php _e( 'Search...', 'charts' ); ?>" class="charts-search-input">
-			</form>
-		</div>
 	</header>
 
-	<?php settings_errors( 'charts' ); ?>
+	<!-- Filters & Pagination Bar -->
+	<div style="background: #fff; padding: 16px 24px; border-radius: 12px; box-shadow: var(--k-shadow-sm); margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+		<form method="get" style="display: flex; gap: 12px; align-items: center;">
+			<input type="hidden" name="page" value="<?php echo esc_attr($page); ?>">
+			
+			<input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php _e( 'Search by name...', 'charts' ); ?>" class="charts-input" style="width: 250px; margin: 0;">
+			
+			<select name="spotify_linked" class="charts-input" style="margin: 0;">
+				<option value=""><?php _e( 'Spotify Sync Status', 'charts' ); ?></option>
+				<option value="yes" <?php selected($filter_spotify, 'yes'); ?>><?php _e( 'Linked Only', 'charts' ); ?></option>
+				<option value="no" <?php selected($filter_spotify, 'no'); ?>><?php _e( 'Missing Only', 'charts' ); ?></option>
+			</select>
+
+			<select name="has_image" class="charts-input" style="margin: 0;">
+				<option value=""><?php _e( 'Visual Maturity', 'charts' ); ?></option>
+				<option value="yes" <?php selected($filter_image, 'yes'); ?>><?php _e( 'Has Artwork', 'charts' ); ?></option>
+				<option value="no" <?php selected($filter_image, 'no'); ?>><?php _e( 'Missing Artwork', 'charts' ); ?></option>
+			</select>
+
+			<button type="submit" class="charts-btn-secondary" style="margin: 0; padding: 8px 20px;"><?php _e( 'Filter', 'charts' ); ?></button>
+			<?php if($search || $filter_spotify || $filter_image): ?>
+				<a href="<?php echo admin_url('admin.php?page='.$page); ?>" style="font-size: 11px; text-decoration: none; color: #666;"><?php _e( 'Clear All', 'charts' ); ?></a>
+			<?php endif; ?>
+		</form>
+
+		<!-- Pagination Navigation -->
+		<div class="kc-pagination" style="display: flex; align-items: center; gap: 10px;">
+			<span style="font-size: 13px; font-weight: 700; color: #666;">
+				<?php printf( __( 'Showing %d - %d of %d', 'charts' ), $offset + 1, min($offset + $per_page, $total), $total ); ?>
+			</span>
+			<div style="display: flex; gap: 4px;">
+				<?php if($current_page > 1): ?>
+					<a href="<?php echo add_query_arg('paged', $current_page - 1); ?>" class="charts-btn-secondary" style="padding: 4px 10px; margin: 0;"><span class="dashicons dashicons-arrow-left-alt2"></span></a>
+				<?php endif; ?>
+				
+				<?php if($current_page < $num_pages): ?>
+					<a href="<?php echo add_query_arg('paged', $current_page + 1); ?>" class="charts-btn-secondary" style="padding: 4px 10px; margin: 0;"><span class="dashicons dashicons-arrow-right-alt2"></span></a>
+				<?php endif; ?>
+			</div>
+		</div>
+	</div>
 
 	<!-- KPI Analytics Bar -->
 	<?php if ( ! empty( $kpis ) ) : ?>
@@ -315,7 +384,10 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 	}
 
-	const syncTrigger = document.getElementById('sync-entities-trigger');
+	const syncAllTrigger = document.getElementById('sync-all-trigger');
+	const syncSelectedTrigger = document.getElementById('sync-selected-trigger');
+	const syncEntitiesTrigger = document.getElementById('sync-entities-trigger');
+	
 	const syncModal = document.getElementById('sync-progress-modal');
 	const syncBar = document.getElementById('sync-progress-bar');
 	const syncStatus = document.getElementById('sync-status-text');
@@ -326,19 +398,36 @@ document.addEventListener('DOMContentLoaded', function() {
 	let totalUpdated = 0;
 	let totalSpotify = 0;
 	let totalPlatform = 0;
+	let syncMode = 'missing'; // 'missing', 'all', 'selected'
+	let selectedIds = [];
 
-	if (syncTrigger) {
-		syncTrigger.addEventListener('click', function() {
-			const type = '<?php echo $type; ?>';
-			const msg = type === 'artist' 
-				? 'This will scan all artists and enrich missing Spotify/YouTube data. Continue?' 
-				: 'This will scan all tracks and enrich missing Spotify/Artwork data. Continue?';
-			
-			if (!confirm(msg)) return;
-			
-			syncModal.style.display = 'flex';
-			runBatch(0);
+	if (syncEntitiesTrigger) syncEntitiesTrigger.addEventListener('click', () => startSync('missing'));
+	if (syncAllTrigger) syncAllTrigger.addEventListener('click', () => startSync('all'));
+	if (syncSelectedTrigger) {
+		syncSelectedTrigger.addEventListener('click', function() {
+			selectedIds = Array.from(document.querySelectorAll('.entity-checkbox:checked')).map(cb => cb.value);
+			if (selectedIds.length === 0) {
+				alert('Please select at least one item.');
+				return;
+			}
+			startSync('selected');
 		});
+	}
+
+	function startSync(mode) {
+		syncMode = mode;
+		totalProcessed = 0;
+		totalUpdated = 0;
+		totalSpotify = 0;
+		totalPlatform = 0;
+		
+		syncModal.style.display = 'flex';
+		syncBar.style.width = '0%';
+		syncBar.style.background = '#6366f1';
+		syncResults.style.display = 'none';
+		closeBtn.style.display = 'none';
+		
+		runBatch(0);
 	}
 
 	function runBatch(offset) {
@@ -347,7 +436,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		formData.append('action', type === 'artist' ? 'charts_sync_artists' : 'charts_sync_tracks');
 		formData.append('nonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
 		formData.append('offset', offset);
-		formData.append('mode', 'missing');
+		formData.append('mode', syncMode);
+		
+		if (syncMode === 'selected') {
+			formData.append('ids', selectedIds.slice(offset, offset + 20).join(','));
+		}
 
 		fetch(ajaxurl, {
 			method: 'POST',
@@ -356,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		.then(res => res.json())
 		.then(res => {
 			if (res.success) {
-				if (res.data.complete) {
+				if (res.data.complete || (syncMode === 'selected' && offset + 20 >= selectedIds.length)) {
 					finishSync();
 				} else {
 					totalProcessed += res.data.processed;
@@ -365,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					totalPlatform += (type === 'artist') ? res.data.youtube_linked : res.data.covers_updated;
 
 					updateStats();
-					runBatch(res.data.next_offset);
+					runBatch(offset + 20);
 				}
 			} else {
 				alert('Error: ' + res.data.message);
@@ -382,7 +475,8 @@ document.addEventListener('DOMContentLoaded', function() {
 		document.getElementById('res-spotify').innerText = totalSpotify;
 		document.getElementById('res-platform').innerText = totalPlatform;
 		
-		let progress = Math.min(95, (totalProcessed / 500) * 100); 
+		let totalToSync = syncMode === 'selected' ? selectedIds.length : (<?php echo $total; ?> || 500);
+		let progress = Math.min(98, (totalProcessed / totalToSync) * 100); 
 		syncBar.style.width = progress + '%';
 	}
 
@@ -390,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		syncBar.style.width = '100%';
 		syncBar.style.background = '#22c55e';
 		document.getElementById('sync-status-title').innerText = 'Sync Complete!';
-		syncStatus.innerText = 'Finished processing all matching artists.';
+		syncStatus.innerText = 'Finished processing queue.';
 		closeBtn.style.display = 'inline-block';
 	}
 

@@ -17,9 +17,9 @@ $table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix
 $item  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
 
 if ( ! $item ) {
-	\Charts\Core\StandaloneLayout::get_header();
+	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';
-	\Charts\Core\StandaloneLayout::get_footer();
+	\Charts\Core\PublicIntegration::get_footer();
 	return;
 }
 
@@ -45,7 +45,7 @@ $artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_a
 $more_table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix . 'charts_tracks';
 $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHERE primary_artist_id = %d AND id != %d LIMIT 2", $item->primary_artist_id, $item->id ) );
 
-\Charts\Core\StandaloneLayout::get_header();
+\Charts\Core\PublicIntegration::get_header();
 ?>
 
 <div class="kc-root">
@@ -257,4 +257,4 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 	</div>
 </div>
 
-<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
+<?php \Charts\Core\PublicIntegration::get_footer(); ?>

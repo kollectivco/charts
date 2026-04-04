@@ -14,8 +14,8 @@ class Bootstrap {
 		// Initialize Public Routing
 		\Charts\Core\Router::init();
 
-		// Initialize Standalone Layout system
-		\Charts\Core\StandaloneLayout::init();
+		// Initialize Public Integration system
+		\Charts\Core\PublicIntegration::init();
 
 		// Initialize SEO module
 		\Charts\Core\SEO::init();

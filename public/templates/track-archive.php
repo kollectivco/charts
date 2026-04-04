@@ -20,7 +20,7 @@ $tracks = $wpdb->get_results( "
 	LIMIT 100
 " );
 
-\Charts\Core\StandaloneLayout::get_header();
+\Charts\Core\PublicIntegration::get_header();
 ?>
 
 <div class="kc-container">
@@ -107,4 +107,4 @@ $tracks = $wpdb->get_results( "
 	</div>
 
 <script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
-<?php \Charts\Core\StandaloneLayout::get_footer(); ?>
+<?php \Charts\Core\PublicIntegration::get_footer(); ?>
