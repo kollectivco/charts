@@ -39,6 +39,7 @@ class Bootstrap {
 	public static function register_widgets( $widgets_manager ) {
 		// Include widget files
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartGrid.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartCarousel.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/FeaturedChart.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartTable.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartLeader.php';
@@ -46,6 +47,7 @@ class Bootstrap {
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
+		$widgets_manager->register( new Widgets\ChartCarousel() );
 		$widgets_manager->register( new Widgets\FeaturedChart() );
 		$widgets_manager->register( new Widgets\ChartTable() );
 		$widgets_manager->register( new Widgets\ChartLeader() );

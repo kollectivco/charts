@@ -231,7 +231,67 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // 4. WIDGET CAROUSEL ENGINE (Standard Swiper-like fallback)
+    const initWidgetCarousels = () => {
+        const carousels = document.querySelectorAll('.kc-widget-carousel-wrap');
+        
+        carousels.forEach(wrap => {
+            const container = wrap.querySelector('.swiper-container');
+            const wrapper = wrap.querySelector('.swiper-wrapper');
+            const slides = wrap.querySelectorAll('.swiper-slide');
+            const nextBtn = wrap.querySelector('.kc-next');
+            const prevBtn = wrap.querySelector('.kc-prev');
+            if (!slides.length) return;
+
+            const config = JSON.parse(wrap.getAttribute('data-carousel-config') || '{}');
+            let currentIdx = 0;
+            const total = slides.length;
+            
+            // Basic responsive slides per view logic
+            const getSlidesPerView = () => {
+                const w = window.innerWidth;
+                if (w < 768) return config.slidesPerView?.mobile || 1;
+                if (w < 1024) return config.slidesPerView?.tablet || 2;
+                return config.slidesPerView?.desktop || 3;
+            };
+
+            const update = (idx) => {
+                const spv = getSlidesPerView();
+                const maxIdx = Math.max(0, total - spv);
+                
+                if (config.loop) {
+                    if (idx < 0) idx = maxIdx;
+                    if (idx > maxIdx) idx = 0;
+                } else {
+                    idx = Math.max(0, Math.min(idx, maxIdx));
+                }
+                
+                currentIdx = idx;
+                const spacing = config.spaceBetween || 30;
+                const offset = currentIdx * (100 / spv);
+                
+                wrapper.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transform = `translateX(-${offset}%)`;
+            };
+
+            if (nextBtn) nextBtn.addEventListener('click', () => update(currentIdx + 1));
+            if (prevBtn) prevBtn.addEventListener('click', () => update(currentIdx - 1));
+
+            // Initial alignment
+            update(0);
+            
+            window.addEventListener('resize', () => update(currentIdx));
+        });
+    };
+
     initExpandables();
     initMotionCarousel();
     initMobileMenu();
+    initWidgetCarousels();
+
+    // Elementor Preview Init
+    if (window.elementorFrontend) {
+        elementorFrontend.hooks.addAction('frontend/element_ready/charts_carousel.default', initWidgetCarousels);
+        elementorFrontend.hooks.addAction('frontend/element_ready/hero_slider.default', initMotionCarousel);
+    }
 });

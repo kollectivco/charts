@@ -14,11 +14,20 @@ class Settings {
 			// Branded Shell options removed
 			
 			// Design System
+			// Design System
+			'design_mode'          => 'light', // light, dark, system
 			'color_primary'        => '#3b82f6',
-			'color_bg_light'       => '#ffffff',
-			'color_bg_dark'        => '#0f172a',
+			'color_secondary'      => '#6366f1',
+			'color_bg_light'       => '#f6f6f6',
+			'color_surface_light'  => '#ffffff',
+			'color_text_light'     => '#262626',
+			'color_bg_dark'        => '#0f0f0f',
+			'color_surface_dark'   => '#141414',
+			'color_text_dark'      => '#ffffff',
 			'font_heading'         => 'Inter, sans-serif',
 			'font_body'            => 'Inter, sans-serif',
+			'font_meta'            => 'Inter, sans-serif',
+			'custom_fonts_json'    => '[]',
 			
 			// Homepage
 			'homepage_layout'      => 'standard',

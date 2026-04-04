@@ -88,28 +88,58 @@ class ControlHelper {
             ]);
         }
 
-        $widget->add_control( 'grid_columns', [
+        $widget->add_responsive_control( 'grid_columns', [
             'label' => __( 'Grid Columns', 'charts' ),
             'type' => Controls_Manager::SELECT,
             'options' => [
                 '1' => '1 Column',
                 '2' => '2 Columns',
                 '3' => '3 Columns',
-                '4' => '4 Columns'
+                '4' => '4 Columns',
+                '5' => '5 Columns',
+                '6' => '6 Columns',
             ],
             'default' => '3',
+            'tablet_default' => '2',
+            'mobile_default' => '1',
             'condition' => [
-                'style_variant' => ['grid', 'bento', 'cards']
+                'style_variant' => ['grid', 'cards', 'compact', 'minimal']
             ]
         ]);
         
         $widget->add_control( 'grid_gap', [
             'label' => __( 'Column Gap (px)', 'charts' ),
-            'type' => Controls_Manager::NUMBER,
-            'default' => 24,
-            'selectors' => [
-                '{{WRAPPER}} .kc-widget-grid' => 'gap: {{VALUE}}px;',
+            'type' => Controls_Manager::SLIDER,
+            'range' => [
+                'px' => [
+                    'min' => 0,
+                    'max' => 100,
+                ],
             ],
+            'default' => [
+                'size' => 24,
+            ],
+            'selectors' => [
+                '{{WRAPPER}} .kc-widget-grid' => 'gap: {{SIZE}}px;',
+            ],
+        ]);
+
+        $widget->add_control( 'image_ratio', [
+            'label' => __( 'Image Ratio', 'charts' ),
+            'type' => Controls_Manager::SELECT,
+            'options' => [
+                '1/1' => 'Square (1:1)',
+                '4/3' => 'Classic (4:3)',
+                '16/9' => 'Video (16:9)',
+                'auto' => 'Original'
+            ],
+            'default' => '16/9',
+            'selectors' => [
+                '{{WRAPPER}} .kc-card-header img' => 'aspect-ratio: {{VALUE}}; object-fit: cover;',
+            ],
+            'condition' => [
+                'show_cover' => 'yes'
+            ]
         ]);
 
         $widget->end_controls_section();
@@ -186,6 +216,29 @@ class ControlHelper {
             'name' => 'card_shadow',
             'selector' => '{{WRAPPER}} .kc-widget-card',
         ]);
+
+        $widget->add_control( 'overlay_intensity', [
+            'label' => __( 'Overlay Intensity', 'charts' ),
+            'type' => Controls_Manager::SLIDER,
+            'range' => [
+                'px' => [
+                    'min' => 0,
+                    'max' => 1,
+                    'step' => 0.1,
+                ],
+            ],
+            'default' => [
+                'size' => 0.6,
+            ],
+            'selectors' => [
+                '{{WRAPPER}} .kc-card-header img' => 'opacity: {{SIZE}};',
+                '{{WRAPPER}} .kc-card-overlay' => 'opacity: {{SIZE}};',
+            ],
+            'condition' => [
+                'style_variant' => ['overlay', 'editorial']
+            ]
+        ]);
+
         $widget->end_controls_section();
 
         // Typography

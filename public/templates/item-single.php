@@ -48,7 +48,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 \Charts\Core\PublicIntegration::get_header();
 ?>
 
-<div class="kc-root">
+<div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
 	<div class="kc-container">
 		
 		<div class="kc-breadcrumb">
@@ -69,9 +69,9 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 					<div style="display: flex; gap: 8px; margin-bottom: 16px;">
 						<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"><?php echo strtoupper($type); ?></span>
 					</div>
-					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;"><?php echo esc_html($item->title); ?></h1>
+					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em; font-family: var(--k-font-h);"><?php echo esc_html($item->title); ?></h1>
 					<?php if ( ! empty($item->title_franko) ) : ?>
-						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em;"><?php echo esc_html($item->title_franko); ?></div>
+						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-dim); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em; font-family: var(--k-font-h);"><?php echo esc_html($item->title_franko); ?></div>
 					<?php endif; ?>
 					
 					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
@@ -168,7 +168,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 		<?php if ( ! empty($more_items) ) : ?>
 		<section class="kc-section" style="padding: 100px 0 60px;">
 			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">More by <?php echo esc_html($artist->display_name); ?></h3>
-			<div class="kc-grid kc-grid-3">
+			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php foreach ( $more_items as $mi ) : ?>
 					<a href="<?php echo home_url('/charts/' . $type . '/' . $mi->slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-radius: 12px; text-decoration: none;">
 						<div style="display: flex; align-items: center; gap: 20px;">
@@ -210,9 +210,9 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 				<h2 class="kc-section-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> More Charts</h2>
 				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &rarr;</a>
 			</div>
-			<div class="kc-grid kc-grid-3">
+			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				$other_defs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions LIMIT 3" );
+				$other_defs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
 				foreach ( $other_defs as $odef ) : 
 					$oentries = $wpdb->get_results( $wpdb->prepare( "
 						SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
@@ -221,8 +221,8 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 						LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
 						LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
 						LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-						WHERE s.chart_type = %s AND s.country_code = %s 
-						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3"
+						WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
 					, $odef->chart_type, $odef->country_code ) );
 				?>
 					<article class="kc-chart-card">
@@ -245,8 +245,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 								</div>
 							<?php endforeach; ?>
 						</div>
-						<div class="kc-card-footer">
-							<span class="kc-card-week">Week of <?php echo date('M j, Y'); ?></span>
+						<div class="kc-card-footer" style="justify-content: center;">
 							<a href="<?php echo home_url('/charts/'.$odef->slug.'/'); ?>" class="kc-card-cta">See Full Chart</a>
 						</div>
 					</article>

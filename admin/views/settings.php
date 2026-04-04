@@ -122,18 +122,42 @@ $charts_panel = [
 		'title' => 'Design System',
 		'icon'  => 'dashicons-palmtree',
 		'sections' => [
-			'colors' => [
-				'title' => 'Global Brand Colors',
-				'desc'  => 'Configure dynamic color tokens injected into the CSS variables.',
+			'appearance' => [
+				'title' => 'Theme Appearance',
+				'fields' => [
+					[ 'id' => 'design_mode', 'type' => 'select', 'label' => 'Charts Content Mode', 'options' => ['light' => 'Light Mode', 'dark' => 'Dark Mode', 'system' => 'Inherit Theme/Browser'], 'default' => 'light', 'desc' => 'Control the internal background/text of charts components.' ],
+				]
+			],
+			'brand_colors' => [
+				'title' => 'Brand Colors',
+				'desc'  => 'Configure primary and secondary brand accents.',
 				'fields' => [
 					[ 'id' => 'color_primary', 'type' => 'color', 'label' => 'Primary Brand Color', 'default' => '#3b82f6' ],
+					[ 'id' => 'color_secondary', 'type' => 'color', 'label' => 'Secondary Brand Color', 'default' => '#6366f1' ],
 				]
 			],
 			'typography' => [
 				'title' => 'Typography',
 				'fields' => [
-					[ 'id' => 'font_heading', 'type' => 'text', 'label' => 'Heading Font Family', 'default' => 'Inter, sans-serif' ],
-					[ 'id' => 'font_body', 'type' => 'text', 'label' => 'Body Font Family', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_heading', 'type' => 'font', 'label' => 'Heading Font Family', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_body', 'type' => 'font', 'label' => 'Body Font Family', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_meta', 'type' => 'font', 'label' => 'Meta/Label Font Family', 'default' => 'Inter, sans-serif' ],
+				]
+			],
+			'custom_fonts' => [
+				'title' => 'Custom Font Manager',
+				'fields' => [
+					[ 'id' => 'custom_fonts_json', 'type' => 'slides_manager', 'label' => 'Define Custom Fonts', 'desc' => 'Add font-family names here to make them selectable above.' ],
+				]
+			],
+			'ui_surfaces' => [
+				'title' => 'Surfaces & UI Styling',
+				'desc'  => 'Advanced adjustments for light/dark mode components.',
+				'fields' => [
+					[ 'id' => 'color_bg_light', 'type' => 'color', 'label' => 'Light: Main Background', 'default' => '#f6f6f6' ],
+					[ 'id' => 'color_surface_light', 'type' => 'color', 'label' => 'Light: Card Surface', 'default' => '#ffffff' ],
+					[ 'id' => 'color_bg_dark', 'type' => 'color', 'label' => 'Dark: Main Background', 'default' => '#0f0f0f' ],
+					[ 'id' => 'color_surface_dark', 'type' => 'color', 'label' => 'Dark: Card Surface', 'default' => '#141414' ],
 				]
 			]
 		]
@@ -200,6 +224,30 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 			case 'password':
 			case 'number':
 				echo '<input type="' . esc_attr($field['type']) . '" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" class="form-control">';
+				break;
+			case 'font':
+				$custom_fonts = json_decode(kc_get_setting('custom_fonts_json', '[]'), true) ?: [];
+				$standard_fonts = [
+					'Inter, sans-serif' => 'Inter (Modern Sans)',
+					'system-ui, sans-serif' => 'System Default Sans',
+					'Georgia, serif' => 'Georgia (Serif)',
+					'monospace' => 'Monospace',
+				];
+				echo '<select name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" class="form-control" style="max-width:400px;">';
+				echo '<optgroup label="Standard Fonts">';
+				foreach ( $standard_fonts as $v => $l ) { echo '<option value="' . esc_attr($v) . '" ' . selected( $val, $v, false ) . '>' . esc_html($l) . '</option>'; }
+				echo '</optgroup>';
+				if ( !empty($custom_fonts) ) {
+					echo '<optgroup label="Custom Fonts">';
+					foreach ( $custom_fonts as $f ) {
+						if ( empty($f['title']) ) continue;
+						echo '<option value="' . esc_attr($f['title']) . '" ' . selected( $val, $f['title'], false ) . '>' . esc_html($f['title']) . '</option>';
+					}
+					echo '</optgroup>';
+				}
+				echo '</select>';
+				echo '<p style="font-size:11px; margin-top:5px; color:#64748b;">Or type a custom name below:</p>';
+				echo '<input type="text" name="' . esc_attr($id) . '_manual" placeholder="Custom weight/family..." class="form-control" style="margin-top:5px; border-style:dashed;">';
 				break;
 			case 'range':
 				echo '<div class="kc-range-wrapper" style="display:flex; align-items:center; gap:15px; max-width:400px;">';

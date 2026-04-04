@@ -124,21 +124,33 @@ $fmt = function($num) {
 // Use Spotify image first when available, fall back to YouTube thumbnail
 $display_image = !empty($artist->image) ? $artist->image : ($metadata['youtube_thumbnail'] ?? CHARTS_URL . 'public/assets/img/placeholder.png');
 
-// Charting tracks
+// Charting tracks - Enriched with canonical data
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, MAX(p.period_start) as latest_period
+	SELECT e.*, 
+	       COALESCE(t.cover_image, v.thumbnail) as canonical_image,
+	       t.cover_image as track_cover,
+	       v.thumbnail as video_thumb
 	FROM {$wpdb->prefix}charts_entries e
-	JOIN {$wpdb->prefix}charts_periods p ON p.id = e.period_id
-	WHERE e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
-	GROUP BY e.item_id
+	LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+	LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+	WHERE e.item_type IN ('track', 'video') 
+	  AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
+	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 4
 ", $artist->id ) );
 
-// Popular tracks (Simulation based on highest rank)
+// Popular tracks - Enriched with canonical data
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.* FROM {$wpdb->prefix}charts_entries e
-	WHERE e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
-	ORDER BY e.rank_position ASC LIMIT 2
+	SELECT e.*, 
+	       t.cover_image as track_cover,
+	       v.thumbnail as video_thumb
+	FROM {$wpdb->prefix}charts_entries e
+	LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+	LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+	WHERE e.item_type IN ('track', 'video') 
+	  AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
+	GROUP BY e.item_type, e.item_id
+	ORDER BY e.rank_position ASC LIMIT 5
 ", $artist->id ) );
 
 // Chart Rankings
@@ -154,7 +166,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 \Charts\Core\PublicIntegration::get_header();
 ?>
 
-<div class="kc-root">
+<div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
 	<div class="kc-container">
 		
 		<!-- ARTIST HEADER -->
@@ -195,7 +207,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 		<?php endif; ?>
 
 		<!-- MAIN GRID -->
-		<div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 60px;">
+		<div class="kc-artist-grid">
 			
 			<!-- COL 1 -->
 			<div>
@@ -207,13 +219,13 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No current charting tracks.</p>
 						<?php else : ?>
 							<?php foreach ( $charting_tracks as $ct ) : ?>
-								<a href="<?php echo home_url('/charts/track/' . $ct->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
+								<a href="<?php echo home_url('/charts/' . ($ct->item_type === 'video' ? 'clip' : 'track') . '/' . $ct->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $ct->rank_position; ?></span>
-										<img src="<?php echo esc_url($ct->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px;">
+										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($ct, $ct->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
-											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($ct->track_name); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>
+											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text); font-family: var(--k-font-h);"><?php echo esc_html($ct->track_name); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-dim); font-family: var(--k-font-m);"><?php echo esc_html($artist->display_name); ?></span>
 										</div>
 									</div>
 									<div style="display: flex; align-items: center; gap: 20px;">
@@ -236,10 +248,10 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 					<div style="display: flex; flex-direction: column; gap: 12px;">
 						<?php if ( !empty($popular_tracks) ) : ?>
 							<?php foreach ( $popular_tracks as $pt ) : ?>
-								<a href="<?php echo home_url('/charts/track/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
+								<a href="<?php echo home_url('/charts/' . ($pt->item_type === 'video' ? 'clip' : 'track') . '/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $pt->rank_position; ?></span>
-										<img src="<?php echo esc_url($pt->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px;">
+										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($pt->track_name); ?></span>
 											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>
@@ -258,7 +270,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $rk++; ?></span>
-										<img src="<?php echo esc_url($spt['image'] ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px;">
+										<img src="<?php echo esc_url($spt['image'] ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($spt['name']); ?></span>
 											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>
@@ -285,7 +297,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 							<?php foreach ( $chart_rankings as $cr ) : ?>
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;">
 									<div style="display: flex; align-items: center; gap: 12px;">
-										<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist')); ?>" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
 										<span style="font-size: 13px; font-weight: 800;"><?php echo esc_html($cr->definition_title ?: 'Top Artists'); ?></span>
 									</div>
 									<div style="text-align: right;">
@@ -330,25 +342,28 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &rarr;</a>
 			</div>
 			
-			<div class="kc-grid kc-grid-3">
+			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions LIMIT 3" );
+				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
 				foreach ( $mdefs as $mdef ) : 
 					$mentries = $wpdb->get_results( $wpdb->prepare( "
-						SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
+						SELECT e.*, 
+						       t.cover_image as track_cover,
+						       v.thumbnail as video_thumb,
+						       a.image as artist_image
 						FROM {$wpdb->prefix}charts_entries e 
 						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id 
 						LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
 						LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
 						LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-						WHERE s.chart_type = %s AND s.country_code = %s 
-						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3"
+						WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
 					, $mdef->chart_type, $mdef->country_code ) );
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $mdef->accent_color ?: '#fe025b'; ?>;"></div>
 						<div class="kc-card-header">
-							<img src="<?php echo esc_url($mentries[0]->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($mentries[0], $mentries[0]->item_type)); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">Weekly Chart</span>
 							<h3 class="kc-card-title"><?php echo esc_html($mdef->title); ?></h3>
@@ -357,7 +372,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 							<?php foreach ( $mentries as $me ) : ?>
 								<div class="kc-card-entry">
 									<span class="kc-entry-rank"><?php echo $me->rank_position; ?></span>
-									<img class="kc-entry-art" src="<?php echo esc_url($me->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+									<img class="kc-entry-art" src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($me, $me->item_type)); ?>">
 									<div class="kc-entry-info">
 										<span class="kc-entry-name"><?php echo esc_html($me->track_name); ?></span>
 										<span class="kc-entry-artist"><?php echo esc_html($me->artist_names); ?></span>
@@ -365,8 +380,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 								</div>
 							<?php endforeach; ?>
 						</div>
-						<div class="kc-card-footer">
-							<span class="kc-card-week">Week of <?php echo date('M j, Y'); ?></span>
+						<div class="kc-card-footer" style="justify-content: center;">
 							<a href="<?php echo home_url('/charts/'.$mdef->slug.'/'); ?>" class="kc-card-cta">See Full Chart</a>
 						</div>
 					</article>

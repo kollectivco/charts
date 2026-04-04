@@ -150,18 +150,20 @@ $entity_type = $type;
 		</div>
 		<div class="charts-admin-actions" style="display: flex; gap: 10px; align-items: center;">
 			<?php if ($type !== 'advanced'): ?>
-				<!-- Modern Action Center -->
-				<div class="kc-action-hub" style="display: flex; gap: 8px; background: #fff; padding: 6px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
-					<button type="button" class="charts-btn-secondary" id="sync-selected-trigger" style="margin: 0; padding: 6px 12px; font-size: 12px;">
-						<span class="dashicons dashicons-forms" style="font-size:16px; width:16px; height:16px; margin-right:4px;"></span>
+				<!-- Premium Logic Hub -->
+				<div class="kc-logic-hub">
+					<button type="button" class="kc-hub-btn" id="sync-selected-trigger">
+						<span class="dashicons dashicons-forms"></span>
 						<?php _e( 'Sync Selected', 'charts' ); ?>
 					</button>
-					<button type="button" class="charts-btn-secondary" id="sync-entities-trigger" style="margin: 0; padding: 6px 12px; font-size: 12px; border-color: #6366f1; color: #6366f1;">
-						<span class="dashicons dashicons-update" style="font-size:16px; width:16px; height:16px; margin-right:4px;"></span>
+					<div class="kc-hub-divider"></div>
+					<button type="button" class="kc-hub-btn featured" id="sync-entities-trigger">
+						<span class="dashicons dashicons-update"></span>
 						<?php _e( 'Sync Missing', 'charts' ); ?>
 					</button>
-					<button type="button" class="charts-btn-secondary" id="sync-all-trigger" style="margin: 0; padding: 6px 12px; font-size: 12px;">
-						<span class="dashicons dashicons-database-export" style="font-size:16px; width:16px; height:16px; margin-right:4px;"></span>
+					<div class="kc-hub-divider"></div>
+					<button type="button" class="kc-hub-btn" id="sync-all-trigger">
+						<span class="dashicons dashicons-database-export"></span>
 						<?php _e( 'Sync All', 'charts' ); ?>
 					</button>
 				</div>
