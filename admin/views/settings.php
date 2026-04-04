@@ -5,13 +5,8 @@
  */
 
 // --- 1. Fetch Dependencies & Helpers ---
-$menus = wp_get_nav_menus();
-$menu_options = [ '0' => '— Select WordPress Menu —' ];
-if ( ! empty( $menus ) ) {
-	foreach ( $menus as $menu ) {
-		$menu_options[ $menu->term_id ] = $menu->name;
-	}
-}
+// --- 1. Fetch Dependencies & Helpers ---
+// Menus and Branding Shell logic removed.
 
 // Ensure option fallback securely
 if ( ! function_exists( 'kc_get_setting' ) ) {
@@ -25,7 +20,6 @@ if ( isset($_GET['diag']) ) {
     echo '<div style="background:#000; color:#0f0; padding:20px; font-family:monospace; margin-bottom:20px; border-radius:10px; border:2px solid #0f0; overflow:auto; max-height:400px;">';
     echo '<h3>--- CHARTS DIAGNOSTICS ---</h3>';
     echo 'DB Version: ' . get_option('kcharts_db_version') . '<br>';
-    echo 'Theme Mode: ' . kc_get_setting('theme_mode') . '<br>';
     echo 'Slider Style: ' . kc_get_setting('slider_style') . '<br>';
     echo 'Registered Keys: ' . count($registered_keys) . '<br>';
     echo '--- POST DATA ---<br>';
@@ -133,8 +127,6 @@ $charts_panel = [
 				'desc'  => 'Configure dynamic color tokens injected into the CSS variables.',
 				'fields' => [
 					[ 'id' => 'color_primary', 'type' => 'color', 'label' => 'Primary Brand Color', 'default' => '#3b82f6' ],
-					[ 'id' => 'color_bg_light', 'type' => 'color', 'label' => 'Background Color (Light)', 'default' => '#ffffff' ],
-					[ 'id' => 'color_bg_dark', 'type' => 'color', 'label' => 'Background Color (Dark)', 'default' => '#0f172a' ],
 				]
 			],
 			'typography' => [
@@ -169,23 +161,6 @@ $charts_panel = [
 				'desc'  => 'Extreme caution. These actions cannot be undone.',
 				'fields' => [
 					[ 'id' => 'danger_zone_custom', 'type' => 'custom', 'html' => '<div style="background:#fee2e2; border:1px solid #fca5a5; padding:20px; border-radius:12px;"><h4 style="color:#b91c1c; margin-top:0;">Wipe Plugin Data</h4><p style="color:#7f1d1d; margin-bottom:15px; font-size:13px;">Permanently delete all custom tables, transients, mocked data, and optionally reset settings.</p><input type="text" id="reset_confirm_input" placeholder="Type RESET CHARTS" style="padding:10px; border:1px solid #fca5a5; border-radius:6px; background:#fff; width:200px; margin-right:10px; font-weight:600;"><label style="font-size:13px;display:inline-flex;align-items:center;color:#b91c1c;font-weight:600"><input type="checkbox" name="wipe_settings" value="1" style="margin-right:8px;"> Also wipe settings entirely</label><br><button type="button" class="charts-btn-create" id="reset_plugin_btn" style="background:#ef4444; color:#fff; border:none; margin-top:20px; opacity:0.3; cursor:not-allowed;" disabled>RESET PLUGIN NOW</button></div>' ]
-				]
-			]
-		]
-	],
-	'legacy_shell' => [
-		'title' => 'Legacy Shell (Deprecated)',
-		'icon'  => 'dashicons-art',
-		'sections' => [
-			'branding' => [
-				'title' => 'Legacy Branding',
-				'desc'  => 'These settings applied to the old standalone plugin header/footer which has been retired in favor of native theme integration.',
-				'fields' => [
-					[ 'id' => 'logo_id_light', 'type' => 'media', 'label' => 'Light Mode Logo' ],
-					[ 'id' => 'logo_id_dark', 'type' => 'media', 'label' => 'Dark Mode Logo' ],
-					[ 'id' => 'wordmark', 'type' => 'text', 'label' => 'Product Wordmark / Fallback', 'default' => 'KCharts' ],
-					[ 'id' => 'logo_alt', 'type' => 'text', 'label' => 'Logo Alt Text' ],
-					[ 'id' => 'show_logo', 'type' => 'switch', 'label' => 'Logotype Visibility', 'default' => 1 ],
 				]
 			]
 		]

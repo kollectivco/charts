@@ -10,9 +10,6 @@ class PublicIntegration {
 	 * Initialize theme integration.
 	 */
 	public static function init() {
-		// Register footer widget area (kept for legacy support if needed)
-		add_action( 'widgets_init', array( self::class, 'register_sidebars' ) );
-		
 		// Add body classes for charts routes
 		add_filter( 'body_class', array( self::class, 'add_body_classes' ) );
 	}
@@ -23,24 +20,11 @@ class PublicIntegration {
 	public static function add_body_classes( $classes ) {
 		if ( self::is_charts_page() ) {
 			$classes[] = 'kc-charts-route';
-			$classes[] = 'kc-theme-' . Settings::get('theme_mode', 'light');
 		}
 		return $classes;
 	}
 
-	/**
-	 * Register the Charts Footer Widget Area.
-	 */
-	public static function register_sidebars() {
-		register_sidebar( array(
-			'name'          => __( 'Charts Footer Widget Area', 'charts' ),
-			'id'            => 'charts-footer-widgets',
-			'before_widget' => '<div id="%1$s" class="widget %2$s">',
-			'after_widget'  => '</div>',
-			'before_title'  => '<h3 class="widget-title">',
-			'after_title'   => '</h3>',
-		) );
-	}
+	// Sidebars removed
 
 	/**
 	 * Check if the current page should be handled by the plugin's public logic.
@@ -87,8 +71,6 @@ class PublicIntegration {
 		// Injected CSS variables for charts content
 		$variables = [
 			'--k-primary'      => Settings::get('color_primary'),
-			'--k-bg-light'     => Settings::get('color_bg_light'),
-			'--k-bg-dark'      => Settings::get('color_bg_dark'),
 			'--k-font-heading' => Settings::get('font_heading'),
 			'--k-font-body'    => Settings::get('font_body'),
 		];

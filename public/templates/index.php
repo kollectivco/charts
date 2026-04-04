@@ -79,7 +79,7 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 		$hero_slides = \Charts\Core\HomepageSlider::get_slides_data( [], $slider_settings['slider_count'] );
 		if ( ! empty( $hero_slides ) ) :
 	?>
-	<section class="kc-hero-slider-section" style="overflow: hidden; width: 100%;">
+	<section class="kc-hero-slider-section">
 		<?php
 		\Charts\Core\HomepageSlider::render($hero_slides, $slider_settings, 'homepage');
 		?>
@@ -183,5 +183,4 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 
 	</div>
 </div>
-
 <?php \Charts\Core\PublicIntegration::get_footer(); ?>

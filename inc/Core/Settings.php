@@ -11,24 +11,7 @@ class Settings {
 	 */
 	public static function get_defaults() {
 		return [
-			// General
-			'theme_mode'           => 'light',
-			
-			// Branding
-			'wordmark'             => 'KCharts',
-			'logo_id_light'        => '',
-			'logo_id_dark'         => '',
-			'logo_alt'             => '',
-			'show_logo'            => 1,
-			
-			// Header
-			'header_menu_id'       => '0',
-			'show_nav'             => 1,
-			'show_search'          => 1,
-			
-			// Footer
-			'footer_left'          => '',
-			'footer_right'         => '',
+			// Branded Shell options removed
 			
 			// Design System
 			'color_primary'        => '#3b82f6',
