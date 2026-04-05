@@ -110,10 +110,53 @@ $charts_panel = [
 			'content_viz' => [
 				'title' => 'Content Visibility',
 				'fields' => [
-					[ 'id' => 'slider_show_label', 'type' => 'switch', 'label' => 'Show Platform Label', 'default' => 1 ],
-					[ 'id' => 'slider_show_meta', 'type' => 'switch', 'label' => 'Show Artist/Meta Info', 'default' => 1 ],
-					[ 'id' => 'slider_show_cta', 'type' => 'switch', 'label' => 'Show CTA Button', 'default' => 1 ],
 					[ 'id' => 'slider_cta_text', 'type' => 'text', 'label' => 'Button Text', 'default' => 'VIEW CHART' ],
+				]
+			]
+		]
+	],
+	'premium_slider' => [
+		'title' => 'Premium Hero Slider',
+		'icon'  => 'dashicons-video-alt3',
+		'sections' => [
+			'p_toggle' => [
+				'title' => 'Billboard Engine',
+				'fields' => [
+					[ 'id' => 'slider_premium_enable', 'type' => 'switch', 'label' => 'Enable Premium Billboard Slider', 'default' => 0 ],
+				]
+			],
+			'p_manager' => [
+				'title' => 'Slides Content',
+				'fields' => [
+					[ 'id' => 'slider_premium_slides', 'type' => 'premium_slides_manager', 'label' => 'Manage Billboard Slides' ],
+				]
+			],
+			'p_behavior' => [
+				'title' => 'Slider Behavior',
+				'fields' => [
+					[ 'id' => 'slider_premium_autoplay', 'type' => 'switch', 'label' => 'Autoplay Slides', 'default' => 1 ],
+					[ 'id' => 'slider_premium_delay', 'type' => 'number', 'label' => 'Autoplay Delay (ms)', 'default' => 5000 ],
+					[ 'id' => 'slider_premium_speed', 'type' => 'number', 'label' => 'Transition Speed (ms)', 'default' => 800 ],
+					[ 'id' => 'slider_premium_loop', 'type' => 'switch', 'label' => 'Infinite Loop', 'default' => 1 ],
+					[ 'id' => 'slider_premium_pause', 'type' => 'switch', 'label' => 'Pause on Hover', 'default' => 1 ],
+				]
+			],
+			'p_style' => [
+				'title' => 'Cinematic Styling',
+				'fields' => [
+					[ 'id' => 'slider_premium_height', 'type' => 'number', 'label' => 'Desktop Height (vh)', 'default' => 70 ],
+					[ 'id' => 'slider_premium_radius', 'type' => 'number', 'label' => 'Border Radius (px)', 'default' => 20 ],
+					[ 'id' => 'slider_premium_overlay', 'type' => 'range', 'label' => 'Dark Overlay Intensity (%)', 'default' => 75, 'min' => 0, 'max' => 100 ],
+					[ 'id' => 'slider_premium_alignment', 'type' => 'select', 'label' => 'Content Alignment', 'options' => ['left'=>'Left Aligned','center'=>'Centered'], 'default' => 'left' ],
+					[ 'id' => 'slider_premium_btn_style', 'type' => 'select', 'label' => 'Button Shape', 'options' => ['pill'=>'Pill Shape','rounded'=>'Rounded Corners','square'=>'Sharp Edges'], 'default' => 'pill' ],
+				]
+			],
+			'p_mobile' => [
+				'title' => 'Mobile Optimization',
+				'fields' => [
+					[ 'id' => 'slider_premium_mobile_height', 'type' => 'number', 'label' => 'Mobile Height (vh)', 'default' => 50 ],
+					[ 'id' => 'slider_premium_font_scale', 'type' => 'range', 'label' => 'Mobile Font Scale (%)', 'default' => 100, 'min' => 50, 'max' => 150 ],
+					[ 'id' => 'slider_premium_hide_secondary_mobile', 'type' => 'switch', 'label' => 'Hide Secondary Button on Mobile', 'default' => 1 ],
 				]
 			]
 		]
@@ -139,15 +182,17 @@ $charts_panel = [
 			'typography' => [
 				'title' => 'Typography',
 				'fields' => [
-					[ 'id' => 'font_heading', 'type' => 'font', 'label' => 'Heading Font Family', 'default' => 'Inter, sans-serif' ],
-					[ 'id' => 'font_body', 'type' => 'font', 'label' => 'Body Font Family', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_en_heading', 'type' => 'font', 'label' => 'English Heading Font', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_en_body', 'type' => 'font', 'label' => 'English Body Font', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_ar_heading', 'type' => 'font', 'label' => 'Arabic Heading Font', 'default' => 'Inter, sans-serif' ],
+					[ 'id' => 'font_ar_body', 'type' => 'font', 'label' => 'Arabic Body Font', 'default' => 'Inter, sans-serif' ],
 					[ 'id' => 'font_meta', 'type' => 'font', 'label' => 'Meta/Label Font Family', 'default' => 'Inter, sans-serif' ],
 				]
 			],
 			'custom_fonts' => [
 				'title' => 'Custom Font Manager',
 				'fields' => [
-					[ 'id' => 'custom_fonts_json', 'type' => 'slides_manager', 'label' => 'Define Custom Fonts', 'desc' => 'Add font-family names here to make them selectable above.' ],
+					[ 'id' => 'custom_fonts_data', 'type' => 'font_manager', 'label' => 'Manage Custom Fonts', 'desc' => 'Upload .woff2 or .ttf files and give them a family name.' ],
 				]
 			],
 			'ui_surfaces' => [
@@ -158,6 +203,12 @@ $charts_panel = [
 					[ 'id' => 'color_surface_light', 'type' => 'color', 'label' => 'Light: Card Surface', 'default' => '#ffffff' ],
 					[ 'id' => 'color_bg_dark', 'type' => 'color', 'label' => 'Dark: Main Background', 'default' => '#0f0f0f' ],
 					[ 'id' => 'color_surface_dark', 'type' => 'color', 'label' => 'Dark: Card Surface', 'default' => '#141414' ],
+				]
+			],
+			'labels' => [
+				'title' => 'Label Customization',
+				'fields' => [
+					[ 'id' => 'label_breakdown', 'type' => 'text', 'label' => 'Breakdown CTA Label', 'default' => 'More Details', 'desc' => 'Text for the "Full Breakdown" links (arrows are added automatically).' ],
 				]
 			]
 		]
@@ -207,7 +258,7 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 		elseif ( $field['type'] === 'range' || $field['type'] === 'float' ) $prefix = 'flt:';
 		elseif ( $field['type'] === 'textarea' ) $prefix = 'raw:';
 		elseif ( $field['type'] === 'media' ) $prefix = 'med:';
-		elseif ( $field['type'] === 'slides_manager' ) $prefix = 'slides:';
+		elseif ( $field['type'] === 'slides_manager' || $field['type'] === 'premium_slides_manager' || $field['type'] === 'font_manager' ) $prefix = 'slides:';
 		
 		if ( $field['type'] !== 'custom' ) {
 			$registered_keys[] = $prefix . $id;
@@ -226,22 +277,25 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 				echo '<input type="' . esc_attr($field['type']) . '" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" class="form-control">';
 				break;
 			case 'font':
-				$custom_fonts = json_decode(kc_get_setting('custom_fonts_json', '[]'), true) ?: [];
+				$custom_data = json_decode(kc_get_setting('custom_fonts_data', '[]'), true) ?: [];
 				$standard_fonts = [
 					'Inter, sans-serif' => 'Inter (Modern Sans)',
 					'system-ui, sans-serif' => 'System Default Sans',
 					'Georgia, serif' => 'Georgia (Serif)',
 					'monospace' => 'Monospace',
+                    'Cairo, sans-serif' => 'Cairo (Arabic - Google)',
+                    'Almarai, sans-serif' => 'Almarai (Arabic - Google)',
+                    'Amiri, serif' => 'Amiri (Arabic - Google)',
 				];
 				echo '<select name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" class="form-control" style="max-width:400px;">';
-				echo '<optgroup label="Standard Fonts">';
+				echo '<optgroup label="Standard & Google Fonts">';
 				foreach ( $standard_fonts as $v => $l ) { echo '<option value="' . esc_attr($v) . '" ' . selected( $val, $v, false ) . '>' . esc_html($l) . '</option>'; }
 				echo '</optgroup>';
-				if ( !empty($custom_fonts) ) {
-					echo '<optgroup label="Custom Fonts">';
-					foreach ( $custom_fonts as $f ) {
-						if ( empty($f['title']) ) continue;
-						echo '<option value="' . esc_attr($f['title']) . '" ' . selected( $val, $f['title'], false ) . '>' . esc_html($f['title']) . '</option>';
+				if ( !empty($custom_data) ) {
+					echo '<optgroup label="Uploaded Custom Fonts">';
+					foreach ( $custom_data as $f ) {
+						if ( empty($f['family']) ) continue;
+						echo '<option value="' . esc_attr($f['family']) . '" ' . selected( $val, $f['family'], false ) . '>' . esc_html($f['family']) . '</option>';
 					}
 					echo '</optgroup>';
 				}
@@ -249,6 +303,23 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 				echo '<p style="font-size:11px; margin-top:5px; color:#64748b;">Or type a custom name below:</p>';
 				echo '<input type="text" name="' . esc_attr($id) . '_manual" placeholder="Custom weight/family..." class="form-control" style="margin-top:5px; border-style:dashed;">';
 				break;
+            case 'font_manager':
+                $val = kc_get_setting( $field['id'], '[]' );
+                $fonts = json_decode($val, true) ?: [];
+                echo '<div class="kc-font-manager" id="kc-font-manager-'.esc_attr($field['id']).'">';
+                echo '<input type="hidden" name="'.esc_attr($field['id']).'" value="'.esc_attr($val).'" class="kc-fonts-json">';
+                echo '<div class="kc-fonts-list">';
+                foreach($fonts as $f) {
+                    echo '<div class="kc-font-item kc-card" style="padding:15px; margin-bottom:10px; display:flex; gap:15px; align-items:center;">';
+                    echo '<div style="flex:1;"><input type="text" placeholder="Font Family Name" class="kc-f-family form-control" value="'.esc_attr($f['family']??'').'" style="margin-bottom:8px;">';
+                    echo '<div style="display:flex; gap:10px; align-items:center;"><input type="text" placeholder="Font File URL (.woff2/.ttf)" class="kc-f-url form-control" value="'.esc_attr($f['url']??'').'"><button type="button" class="kc-f-upload btn-mini" style="height:38px;">Upload</button></div></div>';
+                    echo '<button type="button" class="kc-slide-remove">&times;</button>';
+                    echo '</div>';
+                }
+                echo '</div>';
+                echo '<button type="button" class="kc-add-font-btn charts-btn-create" style="width:auto; padding:10px 20px;">+ Add New Font Face Row</button>';
+                echo '</div>';
+                break;
 			case 'range':
 				echo '<div class="kc-range-wrapper" style="display:flex; align-items:center; gap:15px; max-width:400px;">';
 				echo '<input type="range" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" step="' . esc_attr($field['step'] ?? 1) . '" min="' . esc_attr($field['min'] ?? 0) . '" max="' . esc_attr($field['max'] ?? 100) . '" oninput="this.nextElementSibling.innerText=this.value" style="flex:1;">';
@@ -295,22 +366,32 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 				echo '</div>';
 				break;
             case 'slides_manager':
+                echo '</div>';
+                echo '<button type="button" class="kc-add-slide-btn"><span class="dashicons dashicons-plus-alt2"></span> Add Custom Slide</button>';
+                echo '</div>';
+                break;
+            case 'premium_slides_manager':
+                $val = kc_get_setting( $field['id'], '[]' );
                 $slides = json_decode($val, true) ?: [];
-                echo '<div class="kc-slides-manager" id="kc-slides-manager-'.esc_attr($id).'">';
-                echo '<input type="hidden" name="'.esc_attr($id).'" value="'.esc_attr($val).'" class="kc-slides-json">';
+                echo '<div class="kc-premium-slides-manager" id="kc-premium-slides-manager-'.esc_attr($field['id']).'">';
+                echo '<input type="hidden" name="'.esc_attr($field['id']).'" value="'.esc_attr($val).'" class="kc-slides-json">';
                 echo '<div class="kc-slides-list">';
-                foreach($slides as $slide) {
-                    echo '<div class="kc-slide-item">';
+                foreach($slides as $index => $slide) {
+                    $img_url = !empty($slide['image']) ? (is_numeric($slide['image']) ? wp_get_attachment_image_url($slide['image'], 'thumbnail') : $slide['image']) : '';
+                    echo '<div class="kc-slide-item kc-premium-slide-item">';
                     echo '<div class="kc-slide-handle"><span class="dashicons dashicons-move"></span></div>';
+                    echo '<div class="kc-premium-slide-thumb"><img src="'.esc_url($img_url).'" style="'.($img_url ? '' : 'display:none;').'">'.(!$img_url ? '<span class="dashicons dashicons-format-image"></span>':'').'</div>';
                     echo '<div class="kc-slide-main">';
-                    echo '<input type="text" placeholder="Slide Title" class="kc-slide-title" value="'.esc_attr($slide['title']??'').'">';
-                    echo '<input type="text" placeholder="Subtitle/Artist" class="kc-slide-subtitle" value="'.esc_attr($slide['subtitle']??'').'">';
+                    echo '<div class="kc-field-row"><input type="text" placeholder="Title" class="kc-p-title" value="'.esc_attr($slide['title']??'').'"><input type="text" placeholder="Description" class="kc-p-desc" value="'.esc_attr($slide['desc']??'').'"></div>';
+                    echo '<div class="kc-field-row"><input type="text" placeholder="Badge" class="kc-p-badge" value="'.esc_attr($slide['badge']??'').'"><input type="hidden" class="kc-p-image" value="'.esc_attr($slide['image']??'').'"><button type="button" class="kc-p-upload btn-mini">Image</button></div>';
+                    echo '<div class="kc-field-row"><input type="text" placeholder="Btn 1 Text" class="kc-p-b1-t" value="'.esc_attr($slide['btn1_text']??'').'"><input type="text" placeholder="Btn 1 Link" class="kc-p-b1-l" value="'.esc_attr($slide['btn1_link']??'').'"></div>';
+                    echo '<div class="kc-field-row"><input type="text" placeholder="Btn 2 Text" class="kc-p-b2-t" value="'.esc_attr($slide['btn2_text']??'').'"><input type="text" placeholder="Btn 2 Link" class="kc-p-b2-l" value="'.esc_attr($slide['btn2_link']??'').'"></div>';
                     echo '</div>';
                     echo '<div class="kc-slide-actions"><button type="button" class="kc-slide-remove">&times;</button></div>';
                     echo '</div>';
                 }
                 echo '</div>';
-                echo '<button type="button" class="kc-add-slide-btn"><span class="dashicons dashicons-plus-alt2"></span> Add Custom Slide</button>';
+                echo '<button type="button" class="kc-add-premium-slide-btn"><span class="dashicons dashicons-plus-alt2"></span> Add Billboard Slide</button>';
                 echo '</div>';
                 break;
 			case 'custom':
@@ -391,6 +472,16 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
 input:checked + .slider { background-color: #10b981; }
 input:checked + .slider:before { transform: translateX(20px); }
+
+/* Premium Slide Internal Styles */
+.kc-premium-slide-item { padding: 20px; border-radius: 16px !important; margin-bottom: 15px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.kc-premium-slide-thumb { width: 60px; height: 60px; background: #e2e8f0; border-radius: 8px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.kc-premium-slide-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.kc-premium-slide-thumb .dashicons { font-size: 24px; color: #94a3b8; }
+.kc-field-row { display: flex; gap: 10px; margin-bottom: 8px; }
+.kc-field-row:last-child { margin-bottom: 0; }
+.kc-field-row input { height: 32px !important; font-size: 11px !important; padding: 4px 8px !important; }
+.btn-mini { padding: 4px 10px; font-size: 10px; font-weight: 700; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; }
 </style>
 
 <div class="kc-settings-wrapper wrap">
@@ -595,14 +686,101 @@ jQuery(document).ready(function($) {
 
     function updateSlidesJson($manager) {
         var slides = [];
-        $manager.find('.kc-slide-item').each(function() {
-            slides.push({
-                title: $(this).find('.kc-slide-title').val(),
-                subtitle: $(this).find('.kc-slide-subtitle').val()
+        if ($manager.hasClass('kc-premium-slides-manager')) {
+            $manager.find('.kc-premium-slide-item').each(function() {
+                slides.push({
+                    title: $(this).find('.kc-p-title').val(),
+                    desc: $(this).find('.kc-p-desc').val(),
+                    badge: $(this).find('.kc-p-badge').val(),
+                    image: $(this).find('.kc-p-image').val(),
+                    btn1_text: $(this).find('.kc-p-b1-t').val(),
+                    btn1_link: $(this).find('.kc-p-b1-l').val(),
+                    btn2_text: $(this).find('.kc-p-b2-t').val(),
+                    btn2_link: $(this).find('.kc-p-b2-l').val()
+                });
             });
-        });
-        $manager.find('.kc-slides-json').val(JSON.stringify(slides));
+        } else if ($manager.hasClass('kc-font-manager')) {
+            $manager.find('.kc-font-item').each(function() {
+                slides.push({
+                    family: $(this).find('.kc-f-family').val(),
+                    url: $(this).find('.kc-f-url').val()
+                });
+            });
+        } else {
+            $manager.find('.kc-slide-item').each(function() {
+                slides.push({
+                    title: $(this).find('.kc-slide-title').val(),
+                    subtitle: $(this).find('.kc-slide-subtitle').val()
+                });
+            });
+        }
+        $manager.find('.kc-slides-json, .kc-fonts-json').val(JSON.stringify(slides));
     }
+
+    $('.kc-add-premium-slide-btn').on('click', function() {
+        var $list = $(this).siblings('.kc-slides-list');
+        var html = `
+            <div class="kc-slide-item kc-premium-slide-item">
+                <div class="kc-slide-handle"><span class="dashicons dashicons-move"></span></div>
+                <div class="kc-premium-slide-thumb"><span class="dashicons dashicons-format-image"></span></div>
+                <div class="kc-slide-main">
+                    <div class="kc-field-row"><input type="text" placeholder="Title" class="kc-p-title"><input type="text" placeholder="Description" class="kc-p-desc"></div>
+                    <div class="kc-field-row"><input type="text" placeholder="Badge" class="kc-p-badge"><input type="hidden" class="kc-p-image"><button type="button" class="kc-p-upload btn-mini">Image</button></div>
+                    <div class="kc-field-row"><input type="text" placeholder="Btn 1 Text" class="kc-p-b1-t"><input type="text" placeholder="Btn 1 Link" class="kc-p-b1-l"></div>
+                    <div class="kc-field-row"><input type="text" placeholder="Btn 2 Text" class="kc-p-b2-t"><input type="text" placeholder="Btn 2 Link" class="kc-p-b2-l"></div>
+                </div>
+                <div class="kc-slide-actions"><button type="button" class="kc-slide-remove">&times;</button></div>
+            </div>
+        `;
+        $list.append(html);
+        updateSlidesJson($(this).closest('.kc-premium-slides-manager'));
+    });
+
+    $(document).on('click', '.kc-p-upload', function() {
+        var $item = $(this).closest('.kc-slide-item');
+        var frame = wp.media({ title: 'Select Slide Image', button: { text: 'Use Image' }, multiple: false });
+        frame.on('select', function() {
+            var attachment = frame.state().get('selection').first().toJSON();
+            $item.find('.kc-p-image').val(attachment.id || attachment.url);
+            $item.find('.kc-premium-slide-thumb').html('<img src="'+attachment.url+'">');
+            updateSlidesJson($item.closest('.kc-premium-slides-manager'));
+        });
+        frame.open();
+    });
+
+    $(document).on('input', '.kc-premium-slide-item input, .kc-font-item input', function() {
+        updateSlidesJson($(this).closest('.kc-premium-slides-manager, .kc-font-manager'));
+    });
+
+    // Font Manager Logic
+    $('.kc-add-font-btn').on('click', function() {
+        var $list = $(this).siblings('.kc-fonts-list');
+        var html = `
+            <div class="kc-font-item kc-card" style="padding:15px; margin-bottom:10px; display:flex; gap:15px; align-items:center;">
+                <div style="flex:1;">
+                    <input type="text" placeholder="Font Family Name" class="kc-f-family form-control" style="margin-bottom:8px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" placeholder="Font File URL (.woff2/.ttf)" class="kc-f-url form-control">
+                        <button type="button" class="kc-f-upload btn-mini" style="height:38px;">Upload</button>
+                    </div>
+                </div>
+                <button type="button" class="kc-slide-remove">&times;</button>
+            </div>
+        `;
+        $list.append(html);
+        updateSlidesJson($(this).closest('.kc-font-manager'));
+    });
+
+    $(document).on('click', '.kc-f-upload', function() {
+        var $item = $(this).closest('.kc-font-item');
+        var frame = wp.media({ title: 'Upload Font File', button: { text: 'Use Font' }, library: { type: 'application/x-font-ttf,application/x-font-woff,application/font-woff2,font/woff2,font/ttf' }, multiple: false });
+        frame.on('select', function() {
+            var attachment = frame.state().get('selection').first().toJSON();
+            $item.find('.kc-f-url').val(attachment.url);
+            updateSlidesJson($item.closest('.kc-font-manager'));
+        });
+        frame.open();
+    });
 
     // Live Preview Sync mock
     $('#slider_style, #slider_radius, #slider_overlay').on('change input', function() {

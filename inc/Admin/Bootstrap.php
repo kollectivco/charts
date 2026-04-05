@@ -97,6 +97,12 @@ class Bootstrap {
 							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '[]' );
 						} else {
 							$val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : (isset($_POST['charts_'.$key]) ? $_POST['charts_'.$key] : '');
+							
+							// Handle manual font override if present
+							if ( isset($_POST[$key . '_manual']) && !empty($_POST[$key . '_manual']) ) {
+								$val = sanitize_text_field(wp_unslash($_POST[$key . '_manual']));
+							}
+
 							if ( is_array( $val ) ) {
 								$val = array_map( 'sanitize_text_field', wp_unslash( $val ) );
 							} else {

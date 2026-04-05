@@ -99,12 +99,6 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 					$item_stats = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = %s AND entity_id = %d", $type, $item->id ) );
 					if ( $item_stats ) : 
 					?>
-						<?php if ( ! empty($item_stats->total_streams) ) : ?>
-						<div class="kc-stat-pill">
-							<label>Total Views</label>
-							<span class="val"><?php echo number_format($item_stats->total_streams / 1000000, 1); ?>M</span>
-						</div>
-						<?php endif; ?>
 						<?php if ( ! empty($item_stats->weeks_on_chart) ) : ?>
 						<div class="kc-stat-pill">
 							<label>Weeks on Chart</label>

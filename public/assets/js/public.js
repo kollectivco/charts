@@ -295,3 +295,71 @@ document.addEventListener('DOMContentLoaded', function() {
         elementorFrontend.hooks.addAction('frontend/element_ready/hero_slider.default', initMotionCarousel);
     }
 });
+
+/**
+ * Premium Billboard Slider Engine
+ */
+class BillboardEngine {
+    constructor(el, config) {
+        this.el = el;
+        this.slides = el.querySelectorAll('.kc-billboard-slide');
+        this.dots = el.querySelectorAll('.kc-bb-dot');
+        this.config = config;
+        this.current = 0;
+        this.total = this.slides.length;
+        this.timer = null;
+        this.isInteracting = false;
+
+        this.init();
+    }
+
+    init() {
+        if (this.total <= 1) return;
+        
+        if (this.config.autoplay) {
+            this.startTimer();
+            if (this.config.pause) {
+                this.el.addEventListener('mouseenter', () => this.stopTimer());
+                this.el.addEventListener('mouseleave', () => this.startTimer());
+            }
+        }
+    }
+
+    goTo(index) {
+        if (index === this.current) return;
+        
+        // Handle loop
+        if (index < 0) {
+            if (this.config.loop) index = this.total - 1;
+            else index = 0;
+        } else if (index >= this.total) {
+            if (this.config.loop) index = 0;
+            else index = this.total - 1;
+        }
+
+        this.slides[this.current].classList.remove('is-active');
+        this.dots[this.current].classList.remove('is-active');
+        
+        this.current = index;
+        
+        this.slides[this.current].classList.add('is-active');
+        this.dots[this.current].classList.add('is-active');
+
+        if (this.config.autoplay && !this.isInteracting) {
+            this.stopTimer();
+            this.startTimer();
+        }
+    }
+
+    next() { this.goTo(this.current + 1); }
+    prev() { this.goTo(this.current - 1); }
+
+    startTimer() {
+        this.stopTimer();
+        this.timer = setInterval(() => this.next(), this.config.delay);
+    }
+
+    stopTimer() {
+        if (this.timer) clearInterval(this.timer);
+    }
+}

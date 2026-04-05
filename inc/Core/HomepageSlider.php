@@ -41,6 +41,26 @@ class HomepageSlider {
         ];
     }
 
+    public static function get_premium_settings() {
+        return [
+            'enable'      => Settings::get('slider_premium_enable'),
+            'slides'      => Settings::get('slider_premium_slides'),
+            'height'      => Settings::get('slider_premium_height'),
+            'radius'      => Settings::get('slider_premium_radius'),
+            'overlay'     => Settings::get('slider_premium_overlay'),
+            'alignment'   => Settings::get('slider_premium_alignment'),
+            'autoplay'    => Settings::get('slider_premium_autoplay'),
+            'delay'       => Settings::get('slider_premium_delay'),
+            'speed'       => Settings::get('slider_premium_speed'),
+            'loop'        => Settings::get('slider_premium_loop'),
+            'pause'       => Settings::get('slider_premium_pause'),
+            'btn_style'   => Settings::get('slider_premium_btn_style'),
+            'mobile_height' => Settings::get('slider_premium_mobile_height'),
+            'font_scale'  => Settings::get('slider_premium_font_scale'),
+            'hide_secondary_mobile' => Settings::get('slider_premium_hide_secondary_mobile'),
+        ];
+    }
+
     public static function get_slides_data($chart_ids, $count = 5) {
         if ( empty( $chart_ids ) ) {
             $manager = new \Charts\Admin\SourceManager();
@@ -104,6 +124,21 @@ class HomepageSlider {
         return $slides;
     }
 
+    public static function get_premium_slides_data() {
+        $slides_json = Settings::get('slider_premium_slides');
+        $slides = json_decode($slides_json, true) ?: [];
+        
+        foreach ( $slides as &$slide ) {
+            if ( !empty($slide['image']) && is_numeric($slide['image']) ) {
+                $slide['image_url'] = wp_get_attachment_image_url($slide['image'], 'full');
+            } else {
+                $slide['image_url'] = !empty($slide['image']) ? $slide['image'] : CHARTS_URL . 'public/assets/img/placeholder.png';
+            }
+        }
+        
+        return $slides;
+    }
+
     public static function render($slides, $settings, $context = 'widget') {
         if (empty($slides)) {
             echo '<div style="padding:40px; text-align:center; border:2px dashed #eee;">No chart data found for slider.</div>';
@@ -131,6 +166,59 @@ class HomepageSlider {
         include $template;
 
         echo "</div>";
+    }
+
+    public static function render_premium($slides, $settings) {
+        if ( empty($slides) ) return;
+
+        $height = esc_attr($settings['height'] . 'vh');
+        $mobile_height = esc_attr($settings['mobile_height'] . 'vh');
+        $radius = esc_attr($settings['radius'] . 'px');
+        $alignment_class = $settings['alignment'] === 'center' ? 'kc-bb-centered' : '';
+        $btn_class = 'kb-' . $settings['btn_style'];
+        $overlay_op = floatval($settings['overlay'] / 100);
+
+        echo '<section class="kc-billboard-slider '.esc_attr($alignment_class).'" style="--kb-height: '.esc_attr($settings['height']).'; --kb-mobile-height: '.esc_attr($settings['mobile_height']).'; --kb-radius: '.esc_attr($radius).'; display:block;">';
+        echo '<div class="kc-billboard-wrapper">';
+        
+        foreach ( $slides as $index => $slide ) {
+            $active = $index === 0 ? 'is-active' : '';
+            echo '<div class="kc-billboard-slide '.esc_attr($active).'" data-index="'.esc_attr($index).'">';
+            echo '<img src="'.esc_url($slide['image_url']).'" class="kc-bb-bg" alt="">';
+            echo '<div class="kc-bb-overlay" style="background: linear-gradient('.($settings['alignment'] === 'center' ? '0deg' : '90deg').', rgba(0,0,0,'.esc_attr($overlay_op).') 0%, rgba(0,0,0,'.esc_attr($overlay_op * 0.5).') 60%, rgba(0,0,0,0) 100%);"></div>';
+            echo '<div class="kc-bb-content">';
+            if ( !empty($slide['badge']) ) echo '<span class="kc-bb-badge">'.esc_html($slide['badge']).'</span>';
+            echo '<h2 class="kc-bb-title">'.esc_html($slide['title']).'</h2>';
+            if ( !empty($slide['desc']) ) echo '<p class="kc-bb-desc">'.esc_html($slide['desc']).'</p>';
+            echo '<div class="kc-bb-actions">';
+            if ( !empty($slide['btn1_text']) ) echo '<a href="'.esc_url($slide['btn1_link']).'" class="kc-btn-p '.esc_attr($btn_class).'"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> '.esc_html($slide['btn1_text']).'</a>';
+            if ( !empty($slide['btn2_text']) ) echo '<a href="'.esc_url($slide['btn2_link']).'" class="kc-btn-s '.esc_attr($btn_class).' '.($settings['hide_secondary_mobile'] ? 'k-mobile-hide' : '').'">'.esc_html($slide['btn2_text']).'</a>';
+            echo '</div>';
+            echo '</div>';
+            echo '</div>';
+        }
+
+        echo '<div class="kc-bb-nav kc-bb-prev" onclick="this.closest(\'.kc-billboard-slider\').ChartsBillboard.prev()"><span class="dashicons dashicons-arrow-left-alt2"></span></div>';
+        echo '<div class="kc-bb-nav kc-bb-next" onclick="this.closest(\'.kc-billboard-slider\').ChartsBillboard.next()"><span class="dashicons dashicons-arrow-right-alt2"></span></div>';
+        
+        echo '<div class="kc-bb-dots">';
+        foreach ( $slides as $index => $slide ) {
+            $active = $index === 0 ? 'is-active' : '';
+            echo '<div class="kc-bb-dot '.esc_attr($active).'" data-index="'.esc_attr($index).'" onclick="this.closest(\'.kc-billboard-slider\').ChartsBillboard.goTo('.$index.')"></div>';
+        }
+        echo '</div>';
+
+        echo '</div>';
+        
+        $config = json_encode([
+            'autoplay' => (bool)$settings['autoplay'],
+            'delay'    => intval($settings['delay']),
+            'speed'    => intval($settings['speed']),
+            'loop'     => (bool)$settings['loop'],
+            'pause'    => (bool)$settings['pause']
+        ]);
+        echo '<script>document.addEventListener("DOMContentLoaded", () => { const el = document.querySelector(".kc-billboard-slider"); if(el) el.ChartsBillboard = new BillboardEngine(el, '.$config.'); });</script>';
+        echo '</section>';
     }
 
     private static function build_config($settings, $style) {

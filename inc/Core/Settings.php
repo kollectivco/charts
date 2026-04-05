@@ -24,10 +24,17 @@ class Settings {
 			'color_bg_dark'        => '#0f0f0f',
 			'color_surface_dark'   => '#141414',
 			'color_text_dark'      => '#ffffff',
-			'font_heading'         => 'Inter, sans-serif',
-			'font_body'            => 'Inter, sans-serif',
+			
+			// Typography - English
+			'font_en_heading'      => 'Inter, sans-serif',
+			'font_en_body'         => 'Inter, sans-serif',
+			// Typography - Arabic
+			'font_ar_heading'      => 'Inter, sans-serif',
+			'font_ar_body'         => 'Inter, sans-serif',
+			
 			'font_meta'            => 'Inter, sans-serif',
 			'custom_fonts_json'    => '[]',
+			'custom_fonts_data'    => '[]', // Detailed font objects with weighting
 			
 			// Homepage
 			'homepage_layout'      => 'standard',
@@ -60,8 +67,25 @@ class Settings {
 			'slider_mobile_mode'   => 'stack',
 			'slider_show_label'    => 1,
 			'slider_show_meta'     => 1,
-			'slider_show_cta'      => 1,
 			'slider_cta_text'      => 'VIEW CHART',
+			
+			// Premium Hero Slider (Billboard style)
+			'slider_premium_enable'    => 0,
+			'slider_premium_slides'    => '[]',
+			'slider_premium_height'    => 70,
+			'slider_premium_radius'    => 20,
+			'slider_premium_overlay'   => 75,
+			'slider_premium_alignment' => 'left',
+			'slider_premium_autoplay'  => 1,
+			'slider_premium_delay'     => 5000,
+			'slider_premium_speed'     => 800,
+			'slider_premium_loop'      => 1,
+			'slider_premium_pause'     => 1,
+			'slider_premium_btn_style' => 'pill',
+			'slider_premium_font_scale' => 100,
+			'slider_premium_mobile_height' => 50,
+			'slider_premium_hide_secondary_mobile' => 1,
+			'label_breakdown'      => 'More Details',
 		];
 	}
 
@@ -72,7 +96,17 @@ class Settings {
 		$defaults = self::get_defaults();
 		$default = $fallback !== null ? $fallback : ($defaults[$key] ?? '');
 		
-		return get_option( 'charts_' . $key, $default );
+		$val = get_option( 'charts_' . $key, $default );
+
+		// Specific handling for legacy font_heading/font_body mapping to English versions if not set
+		if ( ($key === 'font_en_heading' || $key === 'font_heading') && empty(get_option('charts_font_en_heading')) ) {
+			return get_option('charts_font_heading', $default);
+		}
+		if ( ($key === 'font_en_body' || $key === 'font_body') && empty(get_option('charts_font_en_body')) ) {
+			return get_option('charts_font_body', $default);
+		}
+
+		return $val;
 	}
 
 	/**

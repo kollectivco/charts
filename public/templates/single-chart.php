@@ -188,25 +188,9 @@ if ( $definition ) {
 												<label>Weeks on Chart</label>
 												<span><?php echo intval($e->weeks_on_chart ?: 1); ?></span>
 											</div>
-											<?php if ( ! empty($e->views_count) ) : ?>
-											<div class="kc-details-item">
-												<label>Total Views</label>
-												<span><?php echo number_format($e->views_count); ?></span>
-											</div>
-											<?php elseif ( ! empty($e->streams_count) ) : ?>
-											<div class="kc-details-item">
-												<label>Total Streams</label>
-												<span><?php echo number_format($e->streams_count); ?></span>
-											</div>
-											<?php endif; ?>
-											<?php if ( ! empty($e->release_date) ) : ?>
-											<div class="kc-details-item">
-												<label>Release Date</label>
-												<span><?php echo date('M j, Y', strtotime($e->release_date)); ?></span>
-											</div>
-											<?php endif; ?>
-											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 2 : 3; ?>;">
-												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;">Full Breakdown &rarr;</a>
+											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 1 : 2; ?>;">
+												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'More Details') . ' &rarr;'); ?>
+												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;"><?php echo $label; ?></a>
 											</div>
 										</div>
 									</div>

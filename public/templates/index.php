@@ -74,10 +74,16 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	
 	<!-- 1. DYNAMIC HERO SLIDER -->
 	<?php
+	$p_settings = \Charts\Core\HomepageSlider::get_premium_settings();
 	$slider_settings = \Charts\Core\HomepageSlider::get_global_settings();
-	if ( (in_array('slider', $section_order) || empty($section_order)) && $slider_settings['slider_enable'] ) : 
-		$hero_slides = \Charts\Core\HomepageSlider::get_slides_data( [], $slider_settings['slider_count'] );
-		if ( ! empty( $hero_slides ) ) :
+	
+	if ( (in_array('slider', $section_order) || empty($section_order)) ) :
+		if ( $p_settings['enable'] ) :
+			$p_slides = \Charts\Core\HomepageSlider::get_premium_slides_data();
+			\Charts\Core\HomepageSlider::render_premium($p_slides, $p_settings);
+		elseif ( $slider_settings['slider_enable'] ) :
+			$hero_slides = \Charts\Core\HomepageSlider::get_slides_data( [], $slider_settings['slider_count'] );
+			if ( ! empty( $hero_slides ) ) :
 	?>
 	<section class="kc-hero-slider-section">
 		<?php
@@ -85,6 +91,7 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 		?>
 	</section>
 	<?php 
+			endif;
 		endif;
 	endif; ?>
 

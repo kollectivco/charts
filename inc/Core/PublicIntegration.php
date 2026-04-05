@@ -82,8 +82,10 @@ class PublicIntegration {
 		$variables = [
 			'--k-primary'        => Settings::get('color_primary'),
 			'--k-secondary'      => Settings::get('color_secondary'),
-			'--k-font-heading'   => Settings::get('font_heading'),
-			'--k-font-body'      => Settings::get('font_body'),
+			'--k-f-en-heading'   => Settings::get('font_en_heading'),
+			'--k-f-en-body'      => Settings::get('font_en_body'),
+			'--k-f-ar-heading'   => Settings::get('font_ar_heading'),
+			'--k-f-ar-body'      => Settings::get('font_ar_body'),
 			'--k-font-meta'      => Settings::get('font_meta'),
 		];
 
@@ -107,6 +109,20 @@ class PublicIntegration {
 		}
 		echo '}';
 		
+		echo '}';
+		
+        // Arabic Context Override (Scoped to .kc-charts-route or specific elements)
+        echo '.kc-charts-route[dir="rtl"], .rtl .kc-charts-route {';
+        echo '--k-f-en-heading: var(--k-f-ar-heading);';
+        echo '--k-f-en-body: var(--k-f-ar-body);';
+        echo '}';
+
+        // Map internal aliases for easier usage in components
+        echo '.kc-charts-route {';
+        echo '--k-f-heading: var(--k-f-en-heading);';
+        echo '--k-f-body: var(--k-f-en-body);';
+        echo '}';
+
 		if ( $mode === 'system' ) {
 			echo '@media (prefers-color-scheme: dark) {';
 			echo ':root {';
@@ -116,6 +132,20 @@ class PublicIntegration {
 			echo '}';
 			echo '}';
 		}
+
+        // Render Custom @font-face rules
+        $custom_fonts = json_decode(Settings::get('custom_fonts_data', '[]'), true) ?: [];
+        if ( !empty($custom_fonts) ) {
+            foreach ( $custom_fonts as $f ) {
+                if ( empty($f['family']) || empty($f['url']) ) continue;
+                echo '@font-face {';
+                echo 'font-family: "' . esc_attr($f['family']) . '";';
+                echo 'src: url("' . esc_url($f['url']) . '");';
+                echo 'font-display: swap;';
+                echo '}';
+            }
+        }
+
 		echo '</style>';
 	}
 
