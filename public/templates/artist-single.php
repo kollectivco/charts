@@ -124,7 +124,7 @@ $fmt = function($num) {
 // Use Spotify image first when available, fall back to YouTube thumbnail
 $display_image = !empty($artist->image) ? $artist->image : ($metadata['youtube_thumbnail'] ?? CHARTS_URL . 'public/assets/img/placeholder.png');
 
-// Charting tracks - Enriched with canonical data
+// Charting tracks - Enriched with canonical data (including collaborations)
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, 
 	       COALESCE(t.cover_image, v.thumbnail) as canonical_image,
@@ -134,12 +134,16 @@ $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
 	LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
 	WHERE e.item_type IN ('track', 'video') 
-	  AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
+	  AND (
+	  	(e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d))
+	  	OR 
+	  	(e.item_type = 'video' AND e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d))
+	  )
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 4
-", $artist->id ) );
+", $artist->id, $artist->id ) );
 
-// Popular tracks - Enriched with canonical data
+// Popular tracks - Enriched with canonical data (including collaborations)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, 
 	       t.cover_image as track_cover,
@@ -148,10 +152,14 @@ $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 	LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
 	LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
 	WHERE e.item_type IN ('track', 'video') 
-	  AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d)
+	  AND (
+	  	(e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d))
+	  	OR 
+	  	(e.item_type = 'video' AND e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d))
+	  )
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 5
-", $artist->id ) );
+", $artist->id, $artist->id ) );
 
 // Chart Rankings
 $chart_rankings = $wpdb->get_results( $wpdb->prepare( "

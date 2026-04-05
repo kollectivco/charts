@@ -11,7 +11,7 @@
 // Ensure option fallback securely
 if ( ! function_exists( 'kc_get_setting' ) ) {
 	function kc_get_setting( $id, $default = '' ) {
-		return get_option( 'charts_' . $id, $default );
+		return \Charts\Core\Settings::get( $id, $default );
 	}
 }
 
@@ -179,22 +179,6 @@ $charts_panel = [
 					[ 'id' => 'color_secondary', 'type' => 'color', 'label' => 'Secondary Brand Color', 'default' => '#6366f1' ],
 				]
 			],
-			'typography' => [
-				'title' => 'Typography',
-				'fields' => [
-					[ 'id' => 'font_en_heading', 'type' => 'font', 'label' => 'English Heading Font', 'default' => 'Inter, sans-serif' ],
-					[ 'id' => 'font_en_body', 'type' => 'font', 'label' => 'English Body Font', 'default' => 'Inter, sans-serif' ],
-					[ 'id' => 'font_ar_heading', 'type' => 'font', 'label' => 'Arabic Heading Font', 'default' => 'Inter, sans-serif' ],
-					[ 'id' => 'font_ar_body', 'type' => 'font', 'label' => 'Arabic Body Font', 'default' => 'Inter, sans-serif' ],
-					[ 'id' => 'font_meta', 'type' => 'font', 'label' => 'Meta/Label Font Family', 'default' => 'Inter, sans-serif' ],
-				]
-			],
-			'custom_fonts' => [
-				'title' => 'Custom Font Manager',
-				'fields' => [
-					[ 'id' => 'custom_fonts_data', 'type' => 'font_manager', 'label' => 'Manage Custom Fonts', 'desc' => 'Upload .woff2 or .ttf files and give them a family name.' ],
-				]
-			],
 			'ui_surfaces' => [
 				'title' => 'Surfaces & UI Styling',
 				'desc'  => 'Advanced adjustments for light/dark mode components.',
@@ -276,50 +260,6 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 			case 'number':
 				echo '<input type="' . esc_attr($field['type']) . '" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" class="form-control">';
 				break;
-			case 'font':
-				$custom_data = json_decode(kc_get_setting('custom_fonts_data', '[]'), true) ?: [];
-				$standard_fonts = [
-					'Inter, sans-serif' => 'Inter (Modern Sans)',
-					'system-ui, sans-serif' => 'System Default Sans',
-					'Georgia, serif' => 'Georgia (Serif)',
-					'monospace' => 'Monospace',
-                    'Cairo, sans-serif' => 'Cairo (Arabic - Google)',
-                    'Almarai, sans-serif' => 'Almarai (Arabic - Google)',
-                    'Amiri, serif' => 'Amiri (Arabic - Google)',
-				];
-				echo '<select name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" class="form-control" style="max-width:400px;">';
-				echo '<optgroup label="Standard & Google Fonts">';
-				foreach ( $standard_fonts as $v => $l ) { echo '<option value="' . esc_attr($v) . '" ' . selected( $val, $v, false ) . '>' . esc_html($l) . '</option>'; }
-				echo '</optgroup>';
-				if ( !empty($custom_data) ) {
-					echo '<optgroup label="Uploaded Custom Fonts">';
-					foreach ( $custom_data as $f ) {
-						if ( empty($f['family']) ) continue;
-						echo '<option value="' . esc_attr($f['family']) . '" ' . selected( $val, $f['family'], false ) . '>' . esc_html($f['family']) . '</option>';
-					}
-					echo '</optgroup>';
-				}
-				echo '</select>';
-				echo '<p style="font-size:11px; margin-top:5px; color:#64748b;">Or type a custom name below:</p>';
-				echo '<input type="text" name="' . esc_attr($id) . '_manual" placeholder="Custom weight/family..." class="form-control" style="margin-top:5px; border-style:dashed;">';
-				break;
-            case 'font_manager':
-                $val = kc_get_setting( $field['id'], '[]' );
-                $fonts = json_decode($val, true) ?: [];
-                echo '<div class="kc-font-manager" id="kc-font-manager-'.esc_attr($field['id']).'">';
-                echo '<input type="hidden" name="'.esc_attr($field['id']).'" value="'.esc_attr($val).'" class="kc-fonts-json">';
-                echo '<div class="kc-fonts-list">';
-                foreach($fonts as $f) {
-                    echo '<div class="kc-font-item kc-card" style="padding:15px; margin-bottom:10px; display:flex; gap:15px; align-items:center;">';
-                    echo '<div style="flex:1;"><input type="text" placeholder="Font Family Name" class="kc-f-family form-control" value="'.esc_attr($f['family']??'').'" style="margin-bottom:8px;">';
-                    echo '<div style="display:flex; gap:10px; align-items:center;"><input type="text" placeholder="Font File URL (.woff2/.ttf)" class="kc-f-url form-control" value="'.esc_attr($f['url']??'').'"><button type="button" class="kc-f-upload btn-mini" style="height:38px;">Upload</button></div></div>';
-                    echo '<button type="button" class="kc-slide-remove">&times;</button>';
-                    echo '</div>';
-                }
-                echo '</div>';
-                echo '<button type="button" class="kc-add-font-btn charts-btn-create" style="width:auto; padding:10px 20px;">+ Add New Font Face Row</button>';
-                echo '</div>';
-                break;
 			case 'range':
 				echo '<div class="kc-range-wrapper" style="display:flex; align-items:center; gap:15px; max-width:400px;">';
 				echo '<input type="range" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" step="' . esc_attr($field['step'] ?? 1) . '" min="' . esc_attr($field['min'] ?? 0) . '" max="' . esc_attr($field['max'] ?? 100) . '" oninput="this.nextElementSibling.innerText=this.value" style="flex:1;">';
@@ -715,6 +655,7 @@ jQuery(document).ready(function($) {
             });
         }
         $manager.find('.kc-slides-json, .kc-fonts-json').val(JSON.stringify(slides));
+        $manager.find('input[type="hidden"]').first().trigger('change');
     }
 
     $('.kc-add-premium-slide-btn').on('click', function() {

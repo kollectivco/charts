@@ -67,6 +67,8 @@ class Bootstrap {
 				// Handle dynamic settings registration
 				if ( isset( $_POST['charts_registered_fields'] ) ) {
 					$fields = explode( ',', sanitize_text_field( $_POST['charts_registered_fields'] ) );
+					$settings_to_update = [];
+
 					foreach ( $fields as $field_def ) {
 						$field_def = trim( $field_def );
 						if ( empty( $field_def ) ) continue;
@@ -82,34 +84,38 @@ class Bootstrap {
 
 						if ( empty( $key ) ) continue;
 
+						$val = '';
 						if ( $type === 'chk' ) {
-							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+							$val = isset( $_POST[ $key ] ) ? 1 : 0;
 						} elseif ( $type === 'int' ) {
-							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? intval( $_POST[ $key ] ) : 0 );
+							$val = isset( $_POST[ $key ] ) ? intval( $_POST[ $key ] ) : 0;
 						} elseif ( $type === 'flt' ) {
-							update_option( 'charts_' . $key, [isset( $_POST[ $key ] ) ? floatval( $_POST[ $key ] ) : 0] ); // Wrapped slightly just to ensure no skip
-							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? floatval( $_POST[ $key ] ) : 0 );
+							$val = isset( $_POST[ $key ] ) ? floatval( $_POST[ $key ] ) : 0;
 						} elseif ( $type === 'raw' || $type === 'textarea' ) {
-							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? wp_kses_post( wp_unslash( $_POST[ $key ] ) ) : '' );
+							$val = isset( $_POST[ $key ] ) ? wp_kses_post( wp_unslash( $_POST[ $key ] ) ) : '';
 						} elseif ( $type === 'med' ) {
-							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? sanitize_text_field( $_POST[ $key ] ) : '' );
+							$val = isset( $_POST[ $key ] ) ? sanitize_text_field( $_POST[ $key ] ) : '';
 						} elseif ( $type === 'slides' ) {
-							update_option( 'charts_' . $key, isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '[]' );
+							$val = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '[]';
 						} else {
-							$val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : (isset($_POST['charts_'.$key]) ? $_POST['charts_'.$key] : '');
+							$posted_val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : (isset($_POST['charts_'.$key]) ? $_POST['charts_'.$key] : '');
 							
 							// Handle manual font override if present
 							if ( isset($_POST[$key . '_manual']) && !empty($_POST[$key . '_manual']) ) {
-								$val = sanitize_text_field(wp_unslash($_POST[$key . '_manual']));
+								$posted_val = $_POST[$key . '_manual'];
 							}
 
-							if ( is_array( $val ) ) {
-								$val = array_map( 'sanitize_text_field', wp_unslash( $val ) );
+							if ( is_array( $posted_val ) ) {
+								$val = array_map( 'sanitize_text_field', wp_unslash( $posted_val ) );
 							} else {
-								$val = sanitize_text_field( wp_unslash( $val ) );
+								$val = sanitize_text_field( wp_unslash( $posted_val ) );
 							}
-							update_option( 'charts_' . $key, $val );
 						}
+						$settings_to_update[$key] = $val;
+					}
+					
+					if ( !empty($settings_to_update) ) {
+						\Charts\Core\Settings::update($settings_to_update);
 					}
 				}
 
@@ -502,6 +508,8 @@ class Bootstrap {
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
 			'nonce'    => wp_create_nonce( 'charts_admin_action' ),
 		) );
+
+		wp_localize_script( 'charts-admin', 'kcharts_theme_options', \Charts\Core\Settings::get_defaults() );
 	}
 
 	/**

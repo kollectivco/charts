@@ -75,12 +75,23 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 					<?php endif; ?>
 					
 					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
-						<?php if ( $artist ) : ?>
+						<?php 
+						// Link all artists
+						$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM {$wpdb->prefix}charts_" . ( $type === 'video' ? 'video' : 'track' ) . "_artists WHERE " . ( $type === 'video' ? 'video' : 'track' ) . "_id = %d", $item->id ) );
+						if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
+						
+						foreach ( $artist_ids as $a_id ) :
+							$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
+							if ( $artist ) :
+						?>
 							<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;">
 								<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
 								<?php echo esc_html($artist->display_name); ?>
 							</a>
-						<?php endif; ?>
+						<?php 
+							endif;
+						endforeach; 
+						?>
 						<?php if ( ! empty($item->release_date) ) : ?>
 							<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);"><?php echo esc_html($item->release_date); ?></span>
 						<?php endif; ?>

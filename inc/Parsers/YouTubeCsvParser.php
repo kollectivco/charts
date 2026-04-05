@@ -308,7 +308,7 @@ class YouTubeCsvParser {
 
 		// Artist string
 		$artist_str = $raw['artist_names'] ?? '';
-		$artist_arr = array_filter( array_map( 'trim', explode( ',', $artist_str ) ) );
+		$artist_arr = \Charts\Services\Normalizer::split_artists( $artist_str );
 
 		return array(
 			'rank'           => $rank,

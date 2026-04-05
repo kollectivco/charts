@@ -15,9 +15,6 @@ $current_module = get_query_var( 'charts_module', 'overview' );
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/dashboard.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
 	<link rel="stylesheet" href="<?php echo CHARTS_URL . 'admin/assets/css/admin.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
 	<link rel="stylesheet" href="<?php echo includes_url( 'css/dashicons.min.css' ); ?>">

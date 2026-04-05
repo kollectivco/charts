@@ -25,18 +25,7 @@ class Settings {
 			'color_surface_dark'   => '#141414',
 			'color_text_dark'      => '#ffffff',
 			
-			// Typography - English
-			'font_en_heading'      => 'Inter, sans-serif',
-			'font_en_body'         => 'Inter, sans-serif',
-			// Typography - Arabic
-			'font_ar_heading'      => 'Inter, sans-serif',
-			'font_ar_body'         => 'Inter, sans-serif',
-			
-			'font_meta'            => 'Inter, sans-serif',
-			'custom_fonts_json'    => '[]',
-			'custom_fonts_data'    => '[]', // Detailed font objects with weighting
-			
-			// Homepage
+			// Layout
 			'homepage_layout'      => 'standard',
 			'homepage_show_featured' => 1,
 			'homepage_show_artists'  => 1,
@@ -90,36 +79,65 @@ class Settings {
 	}
 
 	/**
-	 * Main getter with automatic prefixing and fail-safe defaults
+	 * Canonical option key for all theme settings
+	 */
+	private static $option_name = 'kcharts_theme_options';
+
+	/**
+	 * Cached settings data to prevent multiple get_option calls
+	 */
+	private static $cache = null;
+
+	/**
+	 * Main getter with dot notation support and fail-safe defaults
 	 */
 	public static function get( $key, $fallback = null ) {
-		$defaults = self::get_defaults();
-		$default = $fallback !== null ? $fallback : ($defaults[$key] ?? '');
-		
-		$val = get_option( 'charts_' . $key, $default );
-
-		// Specific handling for legacy font_heading/font_body mapping to English versions if not set
-		if ( ($key === 'font_en_heading' || $key === 'font_heading') && empty(get_option('charts_font_en_heading')) ) {
-			return get_option('charts_font_heading', $default);
+		if ( self::$cache === null ) {
+			self::$cache = get_option( self::$option_name, [] );
+			if ( ! is_array( self::$cache ) ) {
+				self::$cache = json_decode( self::$cache, true ) ?: [];
+			}
 		}
-		if ( ($key === 'font_en_body' || $key === 'font_body') && empty(get_option('charts_font_en_body')) ) {
-			return get_option('charts_font_body', $default);
+
+		$defaults = self::get_defaults();
+		$default = $fallback !== null ? $fallback : ($defaults[ $key ] ?? '');
+
+		// Handle dot notation if needed later, but keys are currently flat in the storage map
+		$val = isset( self::$cache[ $key ] ) ? self::$cache[ $key ] : $default;
+
+		// Fallback for legacy individual options if not found in unified storage (one-time migration feel)
+		if ( ! isset( self::$cache[ $key ] ) ) {
+			$legacy = get_option( 'charts_' . $key );
+			if ( false !== $legacy ) {
+				$val = $legacy;
+			}
 		}
 
 		return $val;
 	}
 
 	/**
+	 * Update the unified settings array
+	 */
+	public static function update( $new_data ) {
+		$current = get_option( self::$option_name, [] );
+		if ( ! is_array( $current ) ) {
+			$current = json_decode( $current, true ) ?: [];
+		}
+
+		$updated = array_merge( $current, $new_data );
+		update_option( self::$option_name, $updated );
+		self::$cache = $updated;
+	}
+
+	/**
 	 * Specifically retrieve the active logo based on theme mode
 	 */
 	public static function get_active_logo_id() {
-		$mode = self::get('theme_mode');
-		$dark = self::get('logo_id_dark');
-		$light = self::get('logo_id_light');
+		$mode = self::get('design_mode');
+		$dark = self::get('color_surface_dark');
+		$light = self::get('color_surface_light');
 		
-		if ( $mode === 'dark' ) {
-			return $dark ?: $light;
-		}
-		return $light ?: $dark;
+		return self::get('logo_id');
 	}
 }

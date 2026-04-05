@@ -19,16 +19,12 @@ $week_date    = date('F j, Y');
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 	<style>
 		:root {
 			--k-primary: <?php echo esc_attr( Settings::get('color_primary') ); ?>;
 			--k-bg-light: <?php echo esc_attr( Settings::get('color_bg_light') ); ?>;
+			--k-bg-light: <?php echo esc_attr( Settings::get('color_bg_light') ); ?>;
 			--k-bg-dark: <?php echo esc_attr( Settings::get('color_bg_dark') ); ?>;
-			--k-font-heading: <?php echo esc_attr( Settings::get('font_heading') ); ?>;
-			--k-font-body: <?php echo esc_attr( Settings::get('font_body') ); ?>;
 		}
 		
 		html[data-theme="light"] {
@@ -36,12 +32,6 @@ $week_date    = date('F j, Y');
 		}
 		html[data-theme="dark"] {
 			background-color: var(--k-bg-dark);
-		}
-		.charts-product-header, .kc-root {
-			font-family: var(--k-font-body);
-		}
-		h1, h2, h3, h4, h5, h6, .charts-wordmark {
-			font-family: var(--k-font-heading);
 		}
 	</style>
 	<?php wp_head(); ?>

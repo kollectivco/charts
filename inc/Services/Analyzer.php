@@ -149,10 +149,9 @@ class Analyzer {
 			);
 		}
 
-		// 4. Artist with Most Entries
 		$artist_counts = array();
 		foreach ( $entries as $e ) {
-			$artists = array_map( 'trim', explode( ',', $e->artist_names ) );
+			$artists = Normalizer::split_artists( $e->artist_names );
 			foreach ( $artists as $a ) {
 				if ( empty( $a ) ) continue;
 				$artist_counts[ $a ] = ( $artist_counts[ $a ] ?? 0 ) + 1;
@@ -163,10 +162,20 @@ class Analyzer {
 		$count      = current( $artist_counts );
 		
 		if ( $top_artist && $count > 1 ) {
+			// Try to find the artist object for a better link
+			$norm_top = mb_strtolower( $top_artist );
+			$artist_obj = $wpdb->get_row( $wpdb->prepare( "SELECT id, slug FROM {$wpdb->prefix}charts_artists WHERE normalized_name = %s", $norm_top ) );
+			
 			$this->save_insight( $period_id, $source_id, 'most_entries',
 				__( 'Dominating the Chart', 'charts' ),
 				sprintf( __( '%s currently has %d tracks on the chart.', 'charts' ), $top_artist, $count ),
-				array( 'artist' => $top_artist, 'count' => $count )
+				array( 
+					'artist' => $top_artist, 
+					'count' => $count,
+					'item_id' => $artist_obj ? $artist_obj->id : 0,
+					'item_slug' => $artist_obj ? $artist_obj->slug : '',
+					'item_type' => 'artist'
+				)
 			);
 		}
 	}

@@ -88,14 +88,14 @@ class SpotifyCsvImporter {
 				continue;
 			}
 
-			// Primary artist name – fall back to first item or 'Unknown Artist'
-			$primary_name = ! empty( $artists_arr[0] ) ? trim( $artists_arr[0] ) : ( $artist_raw !== '' ? explode( ',', $artist_raw )[0] : 'Unknown Artist' );
-			if ( $primary_name === '' ) {
-				$primary_name = 'Unknown Artist';
-			}
-
 			// Resolve / create primary artist
 			$primary_artist_id = $this->ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
+
+			// Link ALL artists (multi-artist support)
+			$all_artists = ! empty( $artists_arr ) ? $artists_arr : \Charts\Services\Normalizer::split_artists( $artist_raw );
+			if ( empty( $all_artists ) && ! empty( $primary_name ) ) {
+				$all_artists = array( $primary_name );
+			}
 
 			// Resolve / create track
 			$enrichment   = $row['enrichment'] ?? array();
@@ -111,14 +111,13 @@ class SpotifyCsvImporter {
 				continue;
 			}
 
-			// Link ALL artists (multi-artist support)
-			$all_artists = ! empty( $artists_arr ) ? $artists_arr : ( $artist_raw !== '' ? array_map('trim', explode(',', $artist_raw)) : array($primary_name) );
-			foreach ( $all_artists as $idx => $a_name ) {
+			foreach ( $all_artists as $a_name ) {
 				$a_name = trim($a_name);
 				if ( empty($a_name) ) continue;
-				// Enrichment data only available for primary artist in current flow, but we can expand later
 				$a_id = $this->ensure_artist( $a_name );
-				$this->link_track_artist( $track_id, $a_id );
+				if ( $track_id && $a_id ) {
+					$this->link_track_artist( $track_id, $a_id );
+				}
 			}
 
 			$item_type = $meta['item_type'] ?? 'track';

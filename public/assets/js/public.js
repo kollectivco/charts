@@ -54,8 +54,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 easing: opts.easing || 'cubic-bezier(0.25, 1, 0.5, 1)',
                 rotation: parseFloat(opts.rotation) || 45,
                 depth: parseFloat(opts.depth) || 150,
-                spacing: parseFloat(opts.spacing) || 20, // using % makes it responsive
+                spacing: parseFloat(opts.spacing) || 50, 
                 autoplay: opts.autoplay || false,
+                delay: parseInt(opts.delay) || 3000,
                 loop: opts.loop || false,
                 opacity: parseFloat(opts.opacity) || 0.6,
                 scale: parseFloat(opts.scale) || 0.8,
@@ -204,9 +205,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (config.autoplay) {
-                let interval = setInterval(goNext, 4000);
+                let interval = setInterval(goNext, config.delay);
                 wrap.addEventListener('mouseenter', () => clearInterval(interval));
-                wrap.addEventListener('mouseleave', () => interval = setInterval(goNext, 4000));
+                wrap.addEventListener('mouseleave', () => interval = setInterval(goNext, config.delay));
             }
         });
     };

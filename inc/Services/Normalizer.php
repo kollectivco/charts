@@ -55,6 +55,54 @@ class Normalizer {
 	}
 
 	/**
+	 * Split a multi-artist string into individual names.
+	 * Supports: &, and, x, feat, ft, featuring, comma, and semicolon.
+	 */
+	public static function split_artists( $artist_str ) {
+		if ( empty( $artist_str ) ) {
+			return array();
+		}
+
+		// List of delimiters to split by
+		// We use word boundaries \b for text-based delimiters to avoid splitting names like "Alexander"
+		$delimiters = array(
+			',',
+			';',
+			'&',
+			' \bfeat\b ',
+			' \bft\b ',
+			' \bfeaturing\b ',
+			' \band\b ',
+			' \bx\b ',
+			// Arabic 'and' (wa) often appears as space-separated or attached, but attached is risky to split.
+			// Just handle common European/Standard characters here.
+		);
+
+		// Normalize delimiters to a single character for easy splitting
+		$clean_str = $artist_str;
+		foreach ( $delimiters as $d ) {
+			// If delimiter starts/ends with \b, it's a regex
+			if ( strpos( $d, '\b' ) !== false ) {
+				$clean_str = preg_replace( '/' . trim($d) . '/i', '|', $clean_str );
+			} else {
+				$clean_str = str_replace( $d, '|', $clean_str );
+			}
+		}
+
+		$parts = explode( '|', $clean_str );
+		$artists = array();
+
+		foreach ( $parts as $p ) {
+			$p = trim( $p );
+			if ( ! empty( $p ) ) {
+				$artists[] = $p;
+			}
+		}
+
+		return array_values( array_unique( $artists ) );
+	}
+
+	/**
 	 * Clean mixed Arabic/English text.
 	 */
 	private static function clean_mixed_text( $text ) {

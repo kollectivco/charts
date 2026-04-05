@@ -24,9 +24,9 @@
 	--k-accent-soft: rgba(254, 2, 91, 0.08);
 	
 	/* Typography */
-	--k-font-h: var(--k-font-heading, 'Inter', sans-serif);
-	--k-font-b: var(--k-font-body, 'Inter', sans-serif);
-	--k-font-m: var(--k-font-meta, 'Inter', sans-serif);
+	--k-font-h: var(--k-font-heading, "KChartsEnglish", sans-serif);
+	--k-font-b: var(--k-font-body, "KChartsEnglish", sans-serif);
+	--k-font-m: var(--k-font-meta, "KChartsEnglish", sans-serif);
 
 	/* Sizing */
 	--k-radius-lg: 16px;

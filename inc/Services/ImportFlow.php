@@ -57,8 +57,24 @@ class ImportFlow {
 				$item_id = $artist_id;
 			} elseif ( $item_type === 'video' ) {
 				$item_id = $this->quick_video( $this->normalize_title( $title ), $artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
+				// Link all artists for video
+				$all_yt_artists = \Charts\Services\Normalizer::split_artists( implode( ', ', $row['artists'] ?? array() ) );
+				foreach ( $all_yt_artists as $a_name ) {
+					$a_id = $this->quick_artist( $a_name );
+					if ( $item_id && $a_id ) {
+						$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}charts_video_artists (video_id, artist_id) VALUES (%d, %d)", $item_id, $a_id ) );
+					}
+				}
 			} else {
 				$item_id = $this->quick_track( $this->normalize_title( $title ), $artist_id, $row['image'] ?? null );
+				// Link all artists for track
+				$all_yt_artists = \Charts\Services\Normalizer::split_artists( implode( ', ', $row['artists'] ?? array() ) );
+				foreach ( $all_yt_artists as $a_name ) {
+					$a_id = $this->quick_artist( $a_name );
+					if ( $item_id && $a_id ) {
+						$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}charts_track_artists (track_id, artist_id) VALUES (%d, %d)", $item_id, $a_id ) );
+					}
+				}
 			}
 
 			if ( ! $item_id ) continue;
