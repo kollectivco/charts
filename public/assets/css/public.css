@@ -1465,3 +1465,118 @@
     .kc-ps-nav { display: none; }
     .ps-hide-s-m .kc-ps-btn-s { display: none !important; }
 }
+/* --- 13. BILLBOARD SLIDER REFINEMENTS --- */
+.kc-hero-slider-section {
+    padding-top: 30px; /* Gap from header */
+}
+
+.kc-premium-slider {
+    position: relative;
+    width: 100%;
+    margin-bottom: 60px;
+    height: var(--kb-height, 60vh);
+    border-radius: var(--kb-radius, 28px);
+    overflow: hidden;
+}
+
+.kc-ps-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.kc-ps-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+    z-index: 1;
+}
+
+.kc-ps-slide.is-active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 2;
+}
+
+.kc-ps-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.1);
+    transition: transform 10s linear;
+}
+
+.is-active .kc-ps-bg {
+    transform: scale(1);
+}
+
+.kc-ps-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+    z-index: 2;
+}
+
+.kc-ps-content {
+    position: relative;
+    z-index: 10;
+    padding: 60px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: #fff;
+    max-width: 800px;
+}
+
+.kc-ps-title {
+    font-size: 56px;
+    font-weight: 950;
+    line-height: 1;
+    margin: 0 0 16px;
+    letter-spacing: -0.04em;
+}
+
+.kc-ps-desc {
+    font-size: 18px;
+    opacity: 0.8;
+    margin-bottom: 32px;
+}
+
+.kc-ps-actions {
+    display: flex;
+    gap: 16px;
+}
+
+.kc-ps-btn-p {
+    background: var(--k-accent);
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.kc-ps-btn-p:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .kc-hero-slider-section { padding-top: 20px; }
+    .kc-premium-slider { height: var(--kb-mobile-height, 50vh); border-radius: 16px; }
+    .kc-ps-content { padding: 30px; }
+    .kc-ps-title { font-size: 32px; }
+    .kc-ps-desc { font-size: 14px; }
+}

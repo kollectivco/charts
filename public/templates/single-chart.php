@@ -59,10 +59,8 @@ if ( $definition ) {
 		<?php if ( $page_state === 'not_found' ) : ?>
 			<section class="kc-page-hero" style="text-align: center;"><h1>Chart Not Found</h1><p>The requested chart definition does not exist.</p></section>
 		<?php else : ?>
-			
-				<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="<?php echo home_url('/charts'); ?>">Charts</a> <span>/</span> <?php echo \Charts\Core\Typography::apply($definition->title); ?>
 
-			<header class="kc-page-hero" style="padding: 20px 0 60px;">
+			<header class="kc-page-hero" style="padding: 40px 0 60px;">
 				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($definition->title); ?>"><?php echo esc_html($definition->title); ?></h1>
 				<?php if ( ! empty($definition->title_ar) ) : ?>
 					<p class="kc-page-subtitle k-font-ar"><?php echo esc_html($definition->title_ar); ?></p>
@@ -73,19 +71,21 @@ if ( $definition ) {
 				<?php endif; ?>
 			</header>
 
-			<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 60px;">
+			<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 100px;">
 				<!-- #1 FEATURED TRACK -->
-				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; ?>
+				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; 
+					$chart_color = $definition->accent_color ?: 'var(--k-accent)';
+				?>
 					<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative;">
 					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
 					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
-						<div style="position: relative; display: flex; align-items: center; gap: 30px;">
+						<div style="position: relative; display: flex; align-items: center; gap: 10px;">
+							<div style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">1</div>
 							<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
-							<div style="font-size: 140px; font-weight: 950; color: #fff; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.2); letter-spacing: -0.05em; margin-bottom: -10px;">1</div>
 						</div>
 						<div style="flex-grow: 1;">
 							<div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-								<span style="background: var(--k-accent); color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#1 This Week</span>
+								<span style="background: <?php echo esc_attr($chart_color); ?>; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#1 This Week</span>
 								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
 									<span style="font-size: 14px; font-weight: 800; color: #2ecc71;">+<?php echo intval($top->movement_value); ?></span>
 								<?php endif; ?>
@@ -94,11 +94,6 @@ if ( $definition ) {
 							<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top->artist_names); ?>"><?php echo esc_html($top->artist_names); ?></h3>
 							
 							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
-								<?php if ( ! empty($top->views_count) ) : ?>
-									<span style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--k-accent);"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <?php echo number_format($top->views_count / 1000000, 1); ?>M Views</span>
-								<?php elseif ( ! empty($top->streams_count) ) : ?>
-									<span style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--k-accent);"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <?php echo number_format($top->streams_count / 1000000, 1); ?>M Streams</span>
-								<?php endif; ?>
 								<span>Peak #<?php echo intval($top->peak_rank ?: 1); ?></span>
 								<span><?php echo intval($top->weeks_on_chart ?: 1); ?> wks on chart</span>
 							</div>
@@ -108,8 +103,8 @@ if ( $definition ) {
 			</div>
 
 			<!-- RANKINGS TABLE -->
-			<section class="kc-section" style="padding-top: 0; padding-bottom: 120px;">
-				<div class="kc-section-header" style="justify-content: flex-start; gap: 12px;">
+			<section class="kc-section" style="padding-top: 40px; padding-bottom: 120px;">
+				<div class="kc-section-header" style="justify-content: flex-start; gap: 12px; margin-bottom: 32px;">
 					<h2 class="kc-section-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted);">Full Rankings</h2>
 					<?php if ( $period ) : ?>
 						<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo date('M j, Y', strtotime($period->period_start)); ?></span>

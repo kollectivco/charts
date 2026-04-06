@@ -48,25 +48,32 @@ class HomepageSlider {
             'height'      => Settings::get('slider_premium_height'),
             'radius'      => Settings::get('slider_premium_radius'),
             'overlay'     => Settings::get('slider_premium_overlay'),
-            'alignment'   => Settings::get('slider_premium_alignment'),
             'autoplay'    => Settings::get('slider_premium_autoplay'),
             'delay'       => Settings::get('slider_premium_delay'),
             'speed'       => Settings::get('slider_premium_speed'),
-            'loop'        => Settings::get('slider_premium_loop'),
             'pause'       => Settings::get('slider_premium_pause'),
-            'btn_style'   => Settings::get('slider_premium_btn_style'),
             'mobile_height' => Settings::get('slider_premium_mobile_height'),
-            'font_scale'  => Settings::get('slider_premium_font_scale'),
-            'hide_secondary_mobile' => Settings::get('slider_premium_hide_secondary_mobile'),
+            'width'       => Settings::get('slider_premium_width'),
         ];
     }
 
-    public static function get_slides_data($chart_ids, $count = 5) {
-        if ( empty( $chart_ids ) ) {
+    /**
+     * Get slide data based on the chosen source mode and chart selection.
+     */
+    public static function get_slides_data($chart_ids = [], $count = 5) {
+        $source_mode = Settings::get('slider_premium_source', 'latest');
+        $selected_charts = (array)Settings::get('slider_premium_charts', []);
+        
+        // Contextually resolve chart IDs
+        if ( $source_mode === 'latest' ) {
             $manager = new \Charts\Admin\SourceManager();
             $defs = $manager->get_definitions( true );
             $chart_ids = array_map( function($d){ return $d->id; }, $defs );
+        } else {
+            $chart_ids = $selected_charts;
         }
+
+        if ( empty($chart_ids) ) return [];
 
         $slides = [];
         $manager = new \Charts\Admin\SourceManager();
@@ -76,48 +83,59 @@ class HomepageSlider {
             $def = $manager->get_definition( $id );
             if ( ! $def ) continue;
 
-            $row = $wpdb->get_row( $wpdb->prepare( "
-                SELECT e.* FROM {$wpdb->prefix}charts_entries e
-                JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-                WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-                ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 1
-            ", $def->chart_type, $def->country_code ) );
+            // Mode: Top Item From Each Chart
+            if ( $source_mode === 'selection_top' || $source_mode === 'latest' ) {
+                $row = $wpdb->get_row( $wpdb->prepare( "
+                    SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) as resolved_thumb 
+                    FROM {$wpdb->prefix}charts_entries e
+                    JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+                    LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+                    LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+                    LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
+                    WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+                    ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 1
+                ", $def->chart_type, $def->country_code ) );
 
-            $slides[] = [
-                'id'            => $def->id,
-                'title'         => $def->title_ar ?: $def->title,
-                'subtitle'      => $def->chart_summary,
-                'leader_name'   => $row->track_name ?? 'Trending Now',
-                'leader_artist' => $row->artist_names ?? 'Global Charts',
-                'image'         => $row->cover_image ?? $def->cover_image_url ?? CHARTS_URL . 'public/assets/img/placeholder.png',
-                'url'           => home_url('/charts/' . $def->slug . '/'),
-                'accent'        => $def->accent_color ?: '#fe025b',
-                'platform'      => $def->platform ?? 'Global',
-                'region'        => $def->country_name ?? 'Global'
-            ];
+                $slides[] = [
+                    'id'            => $def->id,
+                    'title'         => $row->track_name ?? $def->title,
+                    'desc'          => $row->artist_names ?? $def->chart_summary,
+                    'badge'         => '#1 Trending',
+                    'image_url'     => $row->resolved_thumb ?? $def->cover_image_url ?? CHARTS_URL . 'public/assets/img/placeholder.png',
+                    'btn1_text'     => Settings::get('label_breakdown', 'View Chart'),
+                    'btn1_link'     => home_url('/charts/' . $def->slug . '/'),
+                    'accent'        => $def->accent_color ?: '#fe025b'
+                ];
+            } 
+            // Mode: Selected Charts Only (The charts themselves)
+            else {
+                $slides[] = [
+                    'id'            => $def->id,
+                    'title'         => $def->title,
+                    'desc'          => $def->chart_summary,
+                    'badge'         => 'Selection',
+                    'image_url'     => $def->cover_image_url ?? CHARTS_URL . 'public/assets/img/placeholder.png',
+                    'btn1_text'     => 'View Chart',
+                    'btn1_link'     => home_url('/charts/' . $def->slug . '/'),
+                    'accent'        => $def->accent_color ?: '#fe025b'
+                ];
+            }
         }
 
-        // --- MANUAL SLIDES OVERLAY ---
-        $source_mode = Settings::get('slider_source_mode');
-        if ( $source_mode === 'manual' ) {
-            $manual_json = Settings::get('slider_manual_slides');
-            $manual_data = json_decode($manual_json, true);
-            if ( !empty($manual_data) && is_array($manual_data) ) {
-                $manual_slides = [];
-                foreach ( $manual_data as $m ) {
-                    $manual_slides[] = [
-                        'title'         => $m['title'] ?? 'Featured',
-                        'subtitle'      => $m['subtitle'] ?? '',
-                        'leader_name'   => $m['title'] ?? 'Featured',
-                        'leader_artist' => $m['subtitle'] ?? '',
-                        'image'         => $m['image'] ?? CHARTS_URL . 'public/assets/img/placeholder.png',
-                        'url'           => $m['url'] ?? '#',
-                        'accent'        => $m['accent'] ?? '#fe025b',
-                        'platform'      => 'Selection',
-                        'region'        => 'Global'
-                    ];
-                }
-                return $manual_slides;
+        // --- MANUAL SLIDES OVERLAY (Legacy/Manual Support) ---
+        $manual_json = Settings::get('slider_premium_slides');
+        $manual_data = json_decode($manual_json, true);
+        if ( !empty($manual_data) && is_array($manual_data) ) {
+            foreach ( $manual_data as $m ) {
+                $slides[] = [
+                    'title'         => $m['title'] ?? 'Featured',
+                    'desc'          => $m['subtitle'] ?? '',
+                    'badge'         => 'Featured',
+                    'image_url'     => !empty($m['image']) ? (is_numeric($m['image']) ? wp_get_attachment_image_url($m['image'], 'full') : $m['image']) : CHARTS_URL . 'public/assets/img/placeholder.png',
+                    'btn1_text'     => 'View More',
+                    'btn1_link'     => $m['url'] ?? '#',
+                    'accent'        => $m['accent'] ?? '#fe025b'
+                ];
             }
         }
 
@@ -192,7 +210,6 @@ class HomepageSlider {
             if ( !empty($slide['desc']) ) echo '<p class="kc-bb-desc">'.esc_html($slide['desc']).'</p>';
             echo '<div class="kc-bb-actions">';
             if ( !empty($slide['btn1_text']) ) echo '<a href="'.esc_url($slide['btn1_link']).'" class="kc-btn-p '.esc_attr($btn_class).'"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> '.esc_html($slide['btn1_text']).'</a>';
-            if ( !empty($slide['btn2_text']) ) echo '<a href="'.esc_url($slide['btn2_link']).'" class="kc-btn-s '.esc_attr($btn_class).' '.($settings['hide_secondary_mobile'] ? 'k-mobile-hide' : '').'">'.esc_html($slide['btn2_text']).'</a>';
             echo '</div>';
             echo '</div>';
             echo '</div>';

@@ -82,17 +82,18 @@ class PublicIntegration {
 		$variables = [
 			'--k-primary'        => Settings::get('color_primary'),
 			'--k-secondary'      => Settings::get('color_secondary'),
+			'--k-radius-md'      => Settings::get('ui_card_radius', 24) . 'px',
 		];
 
 		// Mode-specific Surface/Text
 		if ( $mode === 'dark' ) {
-			$variables['--k-bg-override']      = Settings::get('color_bg_dark');
-			$variables['--k-surface-override'] = Settings::get('color_surface_dark');
-			$variables['--k-text-override']    = Settings::get('color_text_dark');
+			$variables['--k-bg']      = Settings::get('color_bg_dark', '#0f0f0f');
+			$variables['--k-surface'] = Settings::get('color_surface_dark', '#141414');
+			$variables['--k-text']    = Settings::get('color_text_dark', '#ffffff');
 		} else {
-			$variables['--k-bg-override']      = Settings::get('color_bg_light');
-			$variables['--k-surface-override'] = Settings::get('color_surface_light');
-			$variables['--k-text-override']    = Settings::get('color_text_light');
+			$variables['--k-bg']      = Settings::get('color_bg_light', '#f6f6f6');
+			$variables['--k-surface'] = Settings::get('color_surface_light', '#ffffff');
+			$variables['--k-text']    = Settings::get('color_text_light', '#262626');
 		}
 
 		echo '<style id="kc-design-tokens">';
@@ -106,8 +107,12 @@ class PublicIntegration {
 				echo esc_html($key) . ': ' . esc_attr($val) . ';';
 			}
 		}
+		echo '}';
+		
 		echo '.kc-charts-route {';
 		echo 'font-family: var(--k-font-en);';
+		echo 'background: var(--k-bg) !important;';
+		echo 'color: var(--k-text) !important;';
 		echo '}';
 		
         // Arabic Context Specific Overrides
@@ -136,16 +141,27 @@ class PublicIntegration {
 	 * Priorities: Enriched Canonical > Entry-level Metadata > Source-specific Thumbs > Placeholder
 	 */
 	public static function resolve_artwork( $item, $type = 'track' ) {
-		// 1. Check if we have an object with a direct resolved_image or cover_image
+		// 1. Check if we have an object with a direct resolved_image or cover_image or image
 		if ( ! empty( $item->resolved_image ) ) return $item->resolved_image;
 		
 		// 2. Try canonical table data based on type
 		if ( $type === 'track' && ! empty( $item->track_cover ) ) return $item->track_cover;
 		if ( $type === 'video' && ! empty( $item->video_thumb ) ) return $item->video_thumb;
-		if ( $type === 'artist' && ! empty( $item->artist_image ) ) return $item->artist_image;
+		
+		// Artist specific image field 'image' is common in artist table
+		if ( $type === 'artist' ) {
+			if ( ! empty( $item->artist_image ) ) return $item->artist_image;
+			if ( ! empty( $item->image ) ) return $item->image;
+		}
 
-		// 3. Fallback to entry stored image
+		// 3. Fallback to entry stored image or metadata-stored thumbnail
 		if ( ! empty( $item->cover_image ) ) return $item->cover_image;
+		
+		// Final JSON fallback if it exists as an object
+		if ( isset($item->metadata_json) ) {
+			$meta = json_decode($item->metadata_json, true);
+			if ( !empty($meta['youtube_thumbnail']) ) return $meta['youtube_thumbnail'];
+		}
 
 		// 4. Default placeholder
 		return CHARTS_URL . 'public/assets/img/placeholder.png';

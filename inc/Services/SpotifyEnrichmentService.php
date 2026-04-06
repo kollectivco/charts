@@ -133,6 +133,7 @@ class SpotifyEnrichmentService {
 			$update['metadata_json'] = json_encode( $meta );
 		}
 
+		return $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
 	}
 
 	/**

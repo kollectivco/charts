@@ -28,11 +28,8 @@ $artists = $wpdb->get_results( "
 	
 	<div class="kc-container">
 		
-		<div class="kc-breadcrumb">
-			<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> Artists
-		</div>
 
-		<header class="kc-page-hero" style="padding-bottom: 20px;">
+		<header class="kc-page-hero" style="padding: 40px 0 20px;">
 			<div class="kc-eyebrow">Discovery</div>
 			<h1 class="kc-page-title">Top Artists</h1>
 			<p style="font-size: 13px; color: var(--k-text-dim); max-width: 600px; font-weight: 500;">

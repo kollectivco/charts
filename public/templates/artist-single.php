@@ -115,14 +115,8 @@ $yt_views      = $metadata['youtube_video_count'] ?? 0;
 $yt_url        = $metadata['youtube_url'] ?? '';
 $sp_top_tracks = $metadata['spotify_top_tracks'] ?? array();
 
-$fmt = function($num) {
-    if ($num >= 1000000) return number_format($num / 1000000, 1) . 'M';
-    if ($num >= 1000) return number_format($num / 1000, 1) . 'K';
-    return is_numeric($num) ? number_format($num) : $num;
-};
-
-// Use Spotify image first when available, fall back to YouTube thumbnail
-$display_image = !empty($artist->image) ? $artist->image : ($metadata['youtube_thumbnail'] ?? CHARTS_URL . 'public/assets/img/placeholder.png');
+// Centralized image resolution
+$display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist');
 
 // Charting tracks - Enriched with canonical data (including collaborations)
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "

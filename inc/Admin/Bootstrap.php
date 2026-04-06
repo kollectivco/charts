@@ -98,7 +98,13 @@ class Bootstrap {
 						} elseif ( $type === 'slides' ) {
 							$val = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '[]';
 						} else {
-							$posted_val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : '';
+							$posted_val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : null;
+							
+							if ( $posted_val === null ) {
+								// If it's a switch/checkbox, it won't be in POST if off
+								if ( $type === 'chk' ) $val = 0;
+								else continue; // Skip others if not posted
+							}
 
 							if ( is_array( $posted_val ) ) {
 								$val = array_map( 'sanitize_text_field', wp_unslash( $posted_val ) );

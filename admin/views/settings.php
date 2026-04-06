@@ -18,110 +18,130 @@ foreach ( $definitions as $def ) { $chart_options[$def->id] = $def->title; }
 // --- 2. Registration Engine Array ---
 $charts_panel = [
 	'homepage' => [
-		'title' => 'Homepage Layout',
+		'title' => 'Charts Homepage',
 		'sections' => [
 			'structure' => [
-				'title' => 'Homepage Structure',
+				'title' => 'Homepage Layout',
 				'fields' => [
-					[ 'id' => 'homepage_layout', 'type' => 'select', 'label' => 'Homepage Style', 'options' => ['standard' => 'Standard Billboard', 'minimal' => 'Minimal Focus'], 'default' => 'standard' ],
-					[ 'id' => 'homepage_show_featured', 'type' => 'switch', 'label' => 'Show Featured Section', 'default' => 1 ],
-					[ 'id' => 'homepage_show_artists', 'type' => 'switch', 'label' => 'Show Artists Row', 'default' => 1 ],
-					[ 'id' => 'homepage_show_more', 'type' => 'switch', 'label' => 'Show "More Charts" Grid', 'default' => 1 ],
-					[ 'id' => 'homepage_section_order', 'type' => 'text', 'label' => 'Section Sorting', 'default' => 'slider,artists,charts', 'desc' => 'Comma separated keys: slider, artists, charts' ],
+					[ 'id' => 'homepage_layout', 'type' => 'select', 'label' => 'Homepage Mode', 'options' => ['standard' => 'Full Billboard (Premium)', 'minimal' => 'Minimal Grid Only'], 'default' => 'standard' ],
+					[ 'id' => 'homepage_show_artists', 'type' => 'switch', 'label' => 'Show Trending Artists Row', 'default' => 1 ],
+					[ 'id' => 'homepage_show_more', 'type' => 'switch', 'label' => 'Show "All Charts" Grid', 'default' => 1 ],
+					[ 'id' => 'homepage_section_order', 'type' => 'text', 'label' => 'Section Arrangement', 'default' => 'slider,artists,charts', 'desc' => 'Order for: slider, artists, charts' ],
+				]
+			],
+			'design' => [
+				'title' => 'Aesthetic Controls',
+				'fields' => [
+					[ 'id' => 'homepage_padding_top', 'type' => 'number', 'label' => 'Top Spacing (px)', 'default' => 40 ],
+					[ 'id' => 'homepage_section_spacing', 'type' => 'number', 'label' => 'Section Gap (px)', 'default' => 80 ],
 				]
 			]
 		]
 	],
 	'slider' => [
-		'title' => 'Slider System',
+		'title' => 'Hero Billboard',
 		'sections' => [
 			'p_toggle' => [
-				'title' => 'Billboard Engine',
+				'title' => 'Slider Engine',
 				'fields' => [
-					[ 'id' => 'slider_premium_enable', 'type' => 'switch', 'label' => 'Enable Premium Billboard Slider', 'default' => 0 ],
+					[ 'id' => 'slider_premium_enable', 'type' => 'switch', 'label' => 'Activate Cinematic Slider', 'default' => 1 ],
 				]
 			],
-			'p_manager' => [
-				'title' => 'Slides Content',
+			'p_source' => [
+				'title' => 'Dynamic Content',
 				'fields' => [
-					[ 'id' => 'slider_premium_slides', 'type' => 'premium_slides_manager', 'label' => 'Manage Billboard Slides' ],
+					[ 'id' => 'slider_premium_source', 'type' => 'select', 'label' => 'Source Logic', 'options' => [
+						'latest' => 'Automated (Latest Charts)',
+						'selected' => 'Manual (Selected Charts)',
+						'selection_top' => 'Trending (#1 from Selected)'
+					], 'default' => 'latest' ],
+					[ 'id' => 'slider_premium_charts', 'type' => 'chart_select', 'label' => 'Source Selection', 'desc' => 'Choose individual charts for manual/trending modes' ],
 				]
 			],
 			'p_behavior' => [
-				'title' => 'Slider Behavior',
+				'title' => 'Motion & Timing',
 				'fields' => [
-					[ 'id' => 'slider_premium_autoplay', 'type' => 'switch', 'label' => 'Autoplay Slides', 'default' => 1 ],
-					[ 'id' => 'slider_premium_delay', 'type' => 'number', 'label' => 'Autoplay Delay (ms)', 'default' => 5000 ],
-					[ 'id' => 'slider_premium_speed', 'type' => 'number', 'label' => 'Transition Speed (ms)', 'default' => 800 ],
-					[ 'id' => 'slider_premium_loop', 'type' => 'switch', 'label' => 'Infinite Loop', 'default' => 1 ],
-					[ 'id' => 'slider_premium_pause', 'type' => 'switch', 'label' => 'Pause on Hover', 'default' => 1 ],
+					[ 'id' => 'slider_premium_autoplay', 'type' => 'switch', 'label' => 'Enable Autoplay', 'default' => 1 ],
+					[ 'id' => 'slider_premium_delay', 'type' => 'number', 'label' => 'Hold Time (ms)', 'default' => 5000 ],
+					[ 'id' => 'slider_premium_speed', 'type' => 'number', 'label' => 'Transition Time (ms)', 'default' => 800 ],
+					[ 'id' => 'slider_premium_pause', 'type' => 'switch', 'label' => 'Pause on Interaction', 'default' => 1 ],
 				]
 			],
 			'p_style' => [
-				'title' => 'Cinematic Styling',
+				'title' => 'Visual Presence',
 				'fields' => [
-					[ 'id' => 'slider_premium_height', 'type' => 'number', 'label' => 'Desktop Height (vh)', 'default' => 70 ],
-					[ 'id' => 'slider_premium_width', 'type' => 'number', 'label' => 'Container Max Width (px)', 'default' => 1400 ],
-					[ 'id' => 'slider_premium_radius', 'type' => 'number', 'label' => 'Border Radius (px)', 'default' => 28 ],
-					[ 'id' => 'slider_premium_overlay', 'type' => 'range', 'label' => 'Dark Overlay Intensity (%)', 'default' => 75, 'min' => 0, 'max' => 100 ],
-					[ 'id' => 'slider_premium_alignment', 'type' => 'select', 'label' => 'Content Alignment', 'options' => ['left'=>'Left Aligned','center'=>'Centered'], 'default' => 'left' ],
-					[ 'id' => 'slider_premium_btn_style', 'type' => 'select', 'label' => 'Button Shape', 'options' => ['pill'=>'Pill Shape','rounded'=>'Rounded Corners','square'=>'Sharp Edges'], 'default' => 'pill' ],
-				]
-			],
-			'p_mobile' => [
-				'title' => 'Mobile Optimization',
-				'fields' => [
+					[ 'id' => 'slider_premium_height', 'type' => 'number', 'label' => 'Desktop Height (vh)', 'default' => 60 ],
 					[ 'id' => 'slider_premium_mobile_height', 'type' => 'number', 'label' => 'Mobile Height (vh)', 'default' => 50 ],
-					[ 'id' => 'slider_premium_font_scale', 'type' => 'range', 'label' => 'Mobile Font Scale (%)', 'default' => 100, 'min' => 50, 'max' => 150 ],
-					[ 'id' => 'slider_premium_hide_secondary_mobile', 'type' => 'switch', 'label' => 'Hide Secondary Button on Mobile', 'default' => 1 ],
+					[ 'id' => 'slider_premium_width', 'type' => 'number', 'label' => 'Max Content Width (px)', 'default' => 1400 ],
+					[ 'id' => 'slider_premium_radius', 'type' => 'number', 'label' => 'Card Rounded Corners (px)', 'default' => 28 ],
+					[ 'id' => 'slider_premium_overlay', 'type' => 'range', 'label' => 'Shadow Intensity (%)', 'default' => 75, 'min' => 0, 'max' => 100 ],
 				]
 			]
 		]
 	],
 	'design' => [
-		'title' => 'Design System',
+		'title' => 'The Design System',
 		'sections' => [
-			'appearance' => [
-				'title' => 'Theme Appearance',
+			'core_ui' => [
+				'title' => 'Branding & Colors',
 				'fields' => [
-					[ 'id' => 'design_mode', 'type' => 'select', 'label' => 'Charts Content Mode', 'options' => ['light' => 'Light Mode', 'dark' => 'Dark Mode', 'system' => 'Inherit Theme/Browser'], 'default' => 'light' ],
-				]
-			],
-			'brand_colors' => [
-				'title' => 'Brand Colors',
-				'fields' => [
+					[ 'id' => 'design_mode', 'type' => 'select', 'label' => 'Appearance Mode', 'options' => ['light' => 'Pristine Light', 'dark' => 'Deep Midnight', 'system' => 'Auto (OS Adaptive)'], 'default' => 'light' ],
 					[ 'id' => 'color_primary', 'type' => 'color', 'label' => 'Primary Brand Color', 'default' => '#3b82f6' ],
-					[ 'id' => 'color_secondary', 'type' => 'color', 'label' => 'Secondary Brand Color', 'default' => '#6366f1' ],
+					[ 'id' => 'color_secondary', 'type' => 'color', 'label' => 'Accent/Detail Color', 'default' => '#6366f1' ],
 				]
 			],
-			'labels' => [
-				'title' => 'Label Customization',
+			'surfaces' => [
+				'title' => 'Surface Control',
 				'fields' => [
-					[ 'id' => 'label_breakdown', 'type' => 'text', 'label' => 'Breakdown CTA Label', 'default' => 'More Details' ],
+					[ 'id' => 'color_bg_light', 'type' => 'color', 'label' => 'Page Background (Light)', 'default' => '#f6f6f6' ],
+					[ 'id' => 'color_surface_light', 'type' => 'color', 'label' => 'Card Surface (Light)', 'default' => '#ffffff' ],
+					[ 'id' => 'color_bg_dark', 'type' => 'color', 'label' => 'Page Background (Dark)', 'default' => '#0f0f0f' ],
+					[ 'id' => 'color_surface_dark', 'type' => 'color', 'label' => 'Card Surface (Dark)', 'default' => '#141414' ],
+				]
+			],
+			'customization' => [
+				'title' => 'Global UI Settings',
+				'fields' => [
+					[ 'id' => 'ui_card_radius', 'type' => 'number', 'label' => 'Standard Card Radius (px)', 'default' => 24 ],
+					[ 'id' => 'label_breakdown', 'type' => 'text', 'label' => 'Chart CTA Text', 'default' => 'View Chart' ],
 				]
 			]
 		]
 	],
 	'apis' => [
-		'title' => 'APIs',
+		'title' => 'Service Nexus',
 		'sections' => [
-			'keys' => [
-				'title' => 'Service Credentials',
+			'spotify' => [
+				'title' => 'Spotify Web API',
 				'fields' => [
-					[ 'id' => 'spotify_client_id', 'type' => 'text', 'label' => 'Spotify Client ID' ],
-					[ 'id' => 'spotify_client_secret', 'type' => 'password', 'label' => 'Spotify Client Secret' ],
-					[ 'id' => 'youtube_api_key', 'type' => 'password', 'label' => 'YouTube Data API v3 Key' ],
+					[ 'id' => 'spotify_client_id', 'type' => 'text', 'label' => 'Client ID' ],
+					[ 'id' => 'spotify_client_secret', 'type' => 'password', 'label' => 'Client Secret' ],
+					[ 'id' => 'spotify_test', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=test_spotify_api&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Test Connection</button>' ]
+				]
+			],
+			'youtube' => [
+				'title' => 'YouTube Data API',
+				'fields' => [
+					[ 'id' => 'youtube_api_key', 'type' => 'password', 'label' => 'Data API v3 Key' ],
+					[ 'id' => 'youtube_test', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=test_youtube_api&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Test Connection</button>' ]
 				]
 			]
 		]
 	],
 	'maintenance' => [
-		'title' => 'Maintenance',
+		'title' => 'Operations',
 		'sections' => [
+			'tools' => [
+				'title' => 'Data Management',
+				'fields' => [
+					[ 'id' => 'asset_backfill', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-primary" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=backfill_media&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Backfill Missing Images</button>' ],
+					[ 'id' => 'integrity_check', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=run_integrity_check&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Re-link Broken Entries</button>' ],
+				]
+			],
 			'danger' => [
 				'title' => 'Danger Zone',
 				'fields' => [
-					[ 'id' => 'danger_zone_custom', 'type' => 'custom', 'html' => '<div style="background:#fee2e2; border:1px solid #fca5a5; padding:20px; border-radius:12px;"><h4 style="color:#b91c1c; margin-top:0;">Wipe Plugin Data</h4><p style="color:#7f1d1d; margin-bottom:15px; font-size:13px;">Permanently delete all custom tables and optionally reset settings. Type RESET CHARTS below.</p><input type="text" id="reset_confirm_input" placeholder="Type RESET CHARTS" class="regular-text"><br><br><label><input type="checkbox" name="wipe_settings" value="1"> Also wipe settings entirely</label><br><br><button type="button" class="button button-link-delete" id="reset_plugin_btn" disabled>RESET PLUGIN NOW</button></div>' ]
+					[ 'id' => 'danger_zone_custom', 'type' => 'custom', 'html' => '<div class="kc-danger-bento"><p>Type <strong>RESET CHARTS</strong> to destroy all data.</p><input type="text" id="reset_confirm_input" placeholder="Confirmation text..." class="regular-text"><br><br><label><input type="checkbox" name="wipe_settings" value="1"> Also wipe settings</label><br><br><button type="button" class="charts-btn charts-btn-outline" id="reset_plugin_btn" disabled style="color:#ef4444; border-color:#fca5a5;">PURGE ALL DATA</button></div>' ]
 				]
 			]
 		]
@@ -197,6 +217,15 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 				echo '<button type="button" class="kc-add-premium-slide-btn button">Add Slide</button>';
 				echo '</div>';
 				break;
+			case 'chart_select':
+				$charts = (new \Charts\Admin\SourceManager())->get_definitions( true );
+				$val = is_array($val) ? $val : [];
+				echo '<select name="' . esc_attr($id) . '[]" multiple style="height:120px; width:100%; max-width:400px;">';
+				foreach ( $charts as $c ) {
+					echo '<option value="' . esc_attr($c->id) . '" ' . (in_array($c->id, $val) ? 'selected' : '') . '>' . esc_html($c->title) . '</option>';
+				}
+				echo '</select>';
+				break;
 			case 'custom':
 				echo $field['html'];
 				break;
@@ -210,137 +239,94 @@ if ( ! function_exists( 'kc_render_field' ) ) {
 }
 ?>
 
-<div class="wrap kc-settings-tabs-wrap">
-	<h1>Kontentainment Charts Settings</h1>
+<<div class="wrap charts-admin-wrap premium-light">
+	<div class="charts-admin-header">
+		<div>
+			<h1 class="charts-admin-title">Charts Suite</h1>
+			<p class="charts-admin-subtitle">Product Configuration & Experience Engine</p>
+		</div>
+		<div class="charts-header-actions">
+			<button type="submit" form="charts-settings-form" class="charts-btn charts-btn-primary large">Keep Changes</button>
+		</div>
+	</div>
 	
-	<h2 class="nav-tab-wrapper">
+	<div class="kc-bento-navigation">
 		<?php $first = true; foreach ( $charts_panel as $id => $tab ) : ?>
-			<a href="#tab-<?php echo $id; ?>" class="nav-tab <?php echo $first ? 'nav-tab-active' : ''; ?>" data-tab="<?php echo $id; ?>"><?php echo esc_html($tab['title']); ?></a>
+			<button type="button" class="kc-bento-nav-item <?php echo $first ? 'is-active' : ''; ?>" data-tab="<?php echo $id; ?>">
+				<?php echo esc_html($tab['title']); ?>
+			</button>
 		<?php $first = false; endforeach; ?>
-	</h2>
+	</div>
 
-	<form method="post" action="" id="charts-settings-form">
+	<form method="post" action="" id="charts-settings-form" class="kc-bento-form-engine">
 		<?php wp_nonce_field( 'charts_admin_action' ); ?>
 		<?php settings_errors( 'charts' ); ?>
 		<input type="hidden" name="charts_action" value="save_settings">
 
-		<div class="kc-tabs-content">
+		<div class="kc-bento-tabs-wrapper">
 			<?php $first = true; foreach ( $charts_panel as $tab_id => $tab ) : ?>
-				<div id="tab-<?php echo $tab_id; ?>" class="kc-tab-content-panel <?php echo $first ? 'active' : ''; ?>">
-					<?php foreach ( $tab['sections'] as $sec ) : ?>
-						<div class="kc-settings-section">
-							<h3><?php echo esc_html($sec['title']); ?></h3>
-							<table class="form-table">
-								<?php foreach ( $sec['fields'] as $field ) : ?>
-									<tr>
-										<th scope="row"><?php echo esc_html($field['label'] ?? ''); ?></th>
-										<td><?php kc_render_field($field); ?></td>
-									</tr>
-								<?php endforeach; ?>
-							</table>
-						</div>
-					<?php endforeach; ?>
+				<div id="tab-<?php echo $tab_id; ?>" class="kc-bento-tab-panel <?php echo $first ? 'is-active' : ''; ?>">
+					<div class="charts-bento-grid">
+						<?php foreach ( $tab['sections'] as $sec_id => $sec ) : ?>
+							<div class="charts-bento-card <?php echo in_array($sec_id, ['p_manager','danger']) ? 'full-width' : ''; ?>">
+								<h3 class="card-title"><?php echo esc_html($sec['title']); ?></h3>
+								<div class="card-body">
+									<?php foreach ( $sec['fields'] as $field ) : ?>
+										<div class="kc-bento-field-wrap">
+											<div class="kc-bento-field-label"><?php echo esc_html($field['label'] ?? ''); ?></div>
+											<div class="kc-bento-field-input"><?php kc_render_field($field); ?></div>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
 				</div>
 			<?php $first = false; endforeach; ?>
 		</div>
 
 		<input type="hidden" name="charts_registered_fields" value="<?php echo esc_attr( implode( ',', $registered_keys ) ); ?>">
-		
-		<p class="submit">
-			<input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes">
-		</p>
 	</form>
 </div>
 
 <style>
-.kc-tab-content-panel { display: none; }
-.kc-tab-content-panel.active { display: block; margin-top:20px; }
-.kc-settings-section { margin-bottom: 30px; background:#fff; padding: 20px; border-radius:8px; border:1px solid #ccd0d4; }
-.kc-settings-section h3 { margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:20px; }
-.kc-settings-tabs-wrap .nav-tab { cursor:pointer; }
-.kc-badge { background:#0073aa; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px; }
-.kc-slide-item { display:flex; align-items:center; gap:10px; margin-bottom:8px; background:#f9f9f9; padding:8px; border-radius:4px; border:1px solid #eee; }
-.kc-slide-item input { flex:1; }
+.charts-admin-wrap.premium-light { background: #f0f2f5; padding: 40px; }
+.kc-bento-navigation { display: flex; gap: 12px; margin-bottom: 32px; background: #fff; padding: 8px; border-radius: 16px; border: 1px solid #e2e8f0; width: fit-content; }
+.kc-bento-nav-item { border: none; background: transparent; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; color: #64748b; cursor: pointer; transition: all 0.2s; }
+.kc-bento-nav-item.is-active { background: #0f172a; color: #fff; }
+
+.kc-bento-tab-panel { display: none; }
+.kc-bento-tab-panel.is-active { display: block; animation: kc-fade-in 0.3s ease-out; }
+
+.kc-bento-field-wrap { margin-bottom: 24px; }
+.kc-bento-field-label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; letter-spacing: 0.05em; }
+.kc-bento-field-input select, .kc-bento-field-input input[type="text"], .kc-bento-field-input input[type="number"], .kc-bento-field-input input[type="password"] { 
+    width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px; font-weight: 600; color: #1e293b;
+}
+
+.kc-danger-bento { background: #fff1f2; border: 1px solid #fecaca; padding: 24px; border-radius: 16px; color: #991b1b; }
+
+@keyframes kc-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 <script>
 jQuery(document).ready(function($) {
 	// Tab Switching
-	$('.nav-tab').on('click', function(e) {
+	$('.kc-bento-nav-item').on('click', function(e) {
 		e.preventDefault();
-		$('.nav-tab').removeClass('nav-tab-active');
-		$(this).addClass('nav-tab-active');
+		$('.kc-bento-nav-item').removeClass('is-active');
+		$(this).addClass('is-active');
 		
-		$('.kc-tab-content-panel').removeClass('active');
+		$('.kc-bento-tab-panel').removeClass('is-active');
 		var target = $(this).data('tab');
-		$('#tab-' + target).addClass('active');
+		$('#tab-' + target).addClass('is-active');
 		window.location.hash = target;
 	});
 
 	// Hash Handling
 	var hash = window.location.hash.substring(1);
-	if (hash && $('.nav-tab[data-tab="'+hash+'"]').length) {
-		$('.nav-tab[data-tab="'+hash+'"]').trigger('click');
+	if (hash && $('.kc-bento-nav-item[data-tab="'+hash+'"]').length) {
+		$('.kc-bento-nav-item[data-tab="'+hash+'"]').trigger('click');
 	}
-
-	// Premium Slide Manager
-	$('.kc-add-premium-slide-btn').on('click', function() {
-		var $list = $(this).siblings('.kc-slides-list');
-		var html = `
-			<div class="kc-slide-item">
-				<img src="" width="40" height="40" style="object-fit:cover; border-radius:4px; display:none">
-				<input type="text" placeholder="Title" class="kc-p-title">
-				<input type="hidden" class="kc-p-image">
-				<button type="button" class="kc-p-upload button-secondary">Img</button>
-				<button type="button" class="kc-slide-remove button-link-delete">&times;</button>
-			</div>
-		`;
-		$list.append(html);
-	});
-
-	$(document).on('click', '.kc-slide-remove', function() {
-		var $manager = $(this).closest('.kc-slides-manager');
-		$(this).closest('.kc-slide-item').remove();
-		updateJson($manager);
-	});
-
-	$(document).on('click', '.kc-p-upload', function() {
-		var $item = $(this).closest('.kc-slide-item');
-		var frame = wp.media({ title: 'Select Image', button: { text: 'Use Image' }, multiple: false });
-		frame.on('select', function() {
-			var attachment = frame.state().get('selection').first().toJSON();
-			$item.find('.kc-p-image').val(attachment.id || attachment.url);
-			$item.find('img').attr('src', attachment.url).show();
-			updateJson($item.closest('.kc-slides-manager'));
-		});
-		frame.open();
-	});
-
-	$(document).on('input', '.kc-p-title', function() {
-		updateJson($(this).closest('.kc-slides-manager'));
-	});
-
-	function updateJson($manager) {
-		var slides = [];
-		$manager.find('.kc-slide-item').each(function() {
-			slides.push({
-				title: $(this).find('.kc-p-title').val(),
-				image: $(this).find('.kc-p-image').val()
-			});
-		});
-		$manager.find('.kc-slides-json').val(JSON.stringify(slides));
-	}
-
-	// Maintenance
-	$('#reset_confirm_input').on('input', function() {
-		$('#reset_plugin_btn').prop('disabled', $(this).val() !== 'RESET CHARTS');
-	});
-
-	$('#reset_plugin_btn').on('click', function() {
-		if (confirm('Are you absolutely sure? This will wipe all data!')) {
-			$('<input>').attr({type: 'hidden', name: 'charts_action', value: 'reset_plugin'}).appendTo('#charts-settings-form');
-			$('#charts-settings-form').submit();
-		}
-	});
 });
 </script>

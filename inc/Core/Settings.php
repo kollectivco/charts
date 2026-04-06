@@ -60,8 +60,10 @@ class Settings {
 			
 			// Premium Hero Slider (Billboard style)
 			'slider_premium_enable'    => 1,
+			'slider_premium_source'    => 'latest', // latest, selected, selection_top
+			'slider_premium_charts'    => [],
 			'slider_premium_slides'    => '[]',
-			'slider_premium_height'    => 70,
+			'slider_premium_height'    => 60,
 			'slider_premium_width'     => 1400,
 			'slider_premium_radius'    => 28,
 			'slider_premium_overlay'   => 75,
@@ -101,20 +103,13 @@ class Settings {
 		}
 
 		$defaults = self::get_defaults();
-		$default = $fallback !== null ? $fallback : ($defaults[ $key ] ?? '');
-
-		// Handle dot notation if needed later, but keys are currently flat in the storage map
-		$val = isset( self::$cache[ $key ] ) ? self::$cache[ $key ] : $default;
-
-		// Fallback for legacy individual options if not found in unified storage (one-time migration feel)
-		if ( ! isset( self::$cache[ $key ] ) ) {
-			$legacy = get_option( 'charts_' . $key );
-			if ( false !== $legacy ) {
-				$val = $legacy;
-			}
+		
+		// If key not in cache, try defaults. If not in defaults, use fallback.
+		if ( !isset(self::$cache[$key]) ) {
+			return $fallback !== null ? $fallback : ($defaults[$key] ?? '');
 		}
 
-		return $val;
+		return self::$cache[$key];
 	}
 
 	/**
@@ -135,10 +130,6 @@ class Settings {
 	 * Specifically retrieve the active logo based on theme mode
 	 */
 	public static function get_active_logo_id() {
-		$mode = self::get('design_mode');
-		$dark = self::get('color_surface_dark');
-		$light = self::get('color_surface_light');
-		
 		return self::get('logo_id');
 	}
 }

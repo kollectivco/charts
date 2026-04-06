@@ -74,54 +74,29 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	
 	<!-- 1. PREMIUM HERO SLIDER (The Only Homepage Slider) -->
 	<?php
-	// Fetch slides based on settings (defaulting to auto latest charts)
-	$hero_settings = [
-		'source_mode'           => Settings::get('slider_source_mode', 'auto'),
-		'slide_count'           => intval(Settings::get('slider_count', 5)),
-		'autoplay'              => Settings::get('slider_premium_autoplay', 1) ? 'yes' : 'no',
-		'autoplay_delay'        => intval(Settings::get('slider_premium_delay', 5000)),
-		'transition_speed'      => intval(Settings::get('slider_premium_speed', 800)),
-		'loop'                  => Settings::get('slider_premium_loop', 1) ? 'yes' : 'no',
-		'show_arrows'           => 'yes',
-		'show_dots'             => 'yes',
-		'hide_secondary_mobile' => Settings::get('slider_premium_hide_secondary_mobile', 1) ? 'yes' : 'no'
-	];
-
-	// Prepare data
-	$slides_data = \Charts\Core\HomepageSlider::get_slides_data([], $hero_settings['slide_count']);
-	$slides = [];
-	foreach ( $slides_data as $s ) {
-		$slides[] = [
-			'title' => $s['title'],
-			'badge' => __( '#1 TRENDING', 'charts' ),
-			'desc' => $s['subtitle'] ?: __( 'Top performing tracks and videos on the global stage.', 'charts' ),
-			'image_url' => $s['image'],
-			'btn1_text' => __( 'View Chart', 'charts' ),
-			'btn1_link' => $s['url'],
-			'btn2_text' => __( 'Add to Library', 'charts' ),
-			'btn2_link' => '#',
-		];
-	}
+	// Fetch slides based on settings
+	$slider_settings = \Charts\Core\HomepageSlider::get_premium_settings();
+	$slides = \Charts\Core\HomepageSlider::get_slides_data();
 
 	$config = [
-		'autoplay' => $hero_settings['autoplay'] === 'yes',
-		'delay' => $hero_settings['autoplay_delay'],
-		'speed' => $hero_settings['transition_speed'],
-		'loop' => $hero_settings['loop'] === 'yes',
-		'show_arrows' => $hero_settings['show_arrows'] === 'yes',
-		'show_dots' => $hero_settings['show_dots'] === 'yes',
+		'autoplay' => (bool)$slider_settings['autoplay'],
+		'delay' => (int)$slider_settings['delay'],
+		'speed' => (int)$slider_settings['speed'],
+		'loop' => (bool)$slider_settings['loop'],
+		'show_arrows' => true,
+		'show_dots' => true,
 	];
 
 	if ( ! empty( $slides ) ) :
 	?>
-	<section class="kc-hero-slider-section">
-		<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 60px;">
+	<section class="kc-hero-slider-section" style="padding-top: <?php echo esc_attr(Settings::get('homepage_padding_top', 40)); ?>px;">
+		<div class="kc-slider-container" style="max-width: <?php echo esc_attr($slider_settings['width'] ?? 1400); ?>px; margin: 0 auto; padding: 0 40px; margin-bottom: <?php echo esc_attr(Settings::get('homepage_section_spacing', 80)); ?>px;">
 			<?php include CHARTS_PATH . 'public/templates/parts/premium-slider.php'; ?>
 		</div>
 	</section>
 	<?php endif; ?>
 
-	<div class="kc-container">
+	<div class="kc-container" style="display: flex; flex-direction: column; gap: <?php echo esc_attr(Settings::get('homepage_section_spacing', 80)); ?>px;">
 		
 		<!-- 2. TOP ARTISTS STRIP -->
 		<?php if ( $homepage_show_artists && ! empty( $featured_artists ) ) : ?>

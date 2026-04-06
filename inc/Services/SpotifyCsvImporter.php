@@ -205,9 +205,12 @@ class SpotifyCsvImporter {
 		$normalized = mb_strtolower( $this->import_flow->normalize_title( $display_name ) );
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
 		if ( $id ) {
-			// Backfill spotify_id if now available
+			// Backfill spotify_id and image if now available
 			if ( ! empty( $enrichment_data['spotify_id'] ) ) {
-				$wpdb->update( $table, array( 'spotify_id' => $enrichment_data['spotify_id'] ), array( 'id' => $id ) );
+				$wpdb->update( $table, array( 
+					'spotify_id' => $enrichment_data['spotify_id'],
+					'image' => $enrichment_data['image'] ?? $enrichment_data['images'][0]['url'] ?? null
+				), array( 'id' => $id ) );
 			}
 			return $id;
 		}
@@ -221,6 +224,7 @@ class SpotifyCsvImporter {
 			'normalized_name' => $normalized,
 			'slug'            => $slug,
 			'spotify_id'      => $enrichment_data['spotify_id'] ?? null,
+			'image'           => $enrichment_data['image'] ?? $enrichment_data['images'][0]['url'] ?? null,
 			'created_at'      => current_time( 'mysql' ),
 			'updated_at'      => current_time( 'mysql' ),
 		) );

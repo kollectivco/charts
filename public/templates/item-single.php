@@ -51,12 +51,9 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 <div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
 	<div class="kc-container">
 		
-		<div class="kc-breadcrumb">
-			<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="#"><?php echo ucfirst($type); ?>s</a> <span>/</span> <?php echo esc_html($item->title); ?>
-		</div>
 
 		<!-- TRACK HERO CARD -->
-		<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin-bottom: 60px;">
+		<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin: 40px 0 60px;">
 			<img src="<?php echo esc_url($item->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.1; filter: blur(80px); transform: scale(1.5);">
 			<div style="position: relative; z-index: 10; display: flex; align-items: center; padding: 60px; gap: 60px;">
 				<div style="position: relative; width: 280px; height: 280px;">
