@@ -599,7 +599,7 @@
 	padding: 0 48px;
 }
 
-.is-expanded + .kc-details-row .kc-details-inner,
+.kc-rank-row.is-expanded + .kc-details-row .kc-details-inner,
 .kc-row-item.is-expanded .kc-details-inner {
 	max-height: 1000px; /* Allow content to breathe */
 	opacity: 1;

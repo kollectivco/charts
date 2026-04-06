@@ -59,10 +59,11 @@ class Settings {
 			'slider_cta_text'      => 'VIEW CHART',
 			
 			// Premium Hero Slider (Billboard style)
-			'slider_premium_enable'    => 0,
+			'slider_premium_enable'    => 1,
 			'slider_premium_slides'    => '[]',
 			'slider_premium_height'    => 70,
-			'slider_premium_radius'    => 20,
+			'slider_premium_width'     => 1400,
+			'slider_premium_radius'    => 28,
 			'slider_premium_overlay'   => 75,
 			'slider_premium_alignment' => 'left',
 			'slider_premium_autoplay'  => 1,
@@ -74,7 +75,7 @@ class Settings {
 			'slider_premium_font_scale' => 100,
 			'slider_premium_mobile_height' => 50,
 			'slider_premium_hide_secondary_mobile' => 1,
-			'label_breakdown'      => 'More Details',
+			'label_breakdown'      => 'View Chart',
 		];
 	}
 

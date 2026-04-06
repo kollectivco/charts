@@ -56,7 +56,7 @@ $artists = $wpdb->get_results( "
 						<header class="kc-row-header">
 							<img src="<?php echo esc_url( $img ); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: var(--k-shadow-sm);">
 							<div style="flex-grow: 1;">
-								<h3 style="font-size: 18px; font-weight: 950; color: var(--k-text); margin: 0;"><?php echo esc_html( $artist->display_name ); ?></h3>
+								<h3 style="font-size: 18px; font-weight: 950; color: var(--k-text); margin: 0;" class="<?php echo \Charts\Core\Typography::get_font_class( $artist->display_name ); ?>"><?php echo esc_html( $artist->display_name ); ?></h3>
 								<span style="display: block; font-size: 11px; font-weight: 850; color: var(--k-text-dim); margin-top: 4px; text-transform: uppercase;">Indexed Entity</span>
 							</div>
 							<div class="kc-row-meta" style="display: flex; gap: 40px; margin-right: 40px; text-align: right;">

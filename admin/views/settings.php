@@ -61,7 +61,8 @@ $charts_panel = [
 				'title' => 'Cinematic Styling',
 				'fields' => [
 					[ 'id' => 'slider_premium_height', 'type' => 'number', 'label' => 'Desktop Height (vh)', 'default' => 70 ],
-					[ 'id' => 'slider_premium_radius', 'type' => 'number', 'label' => 'Border Radius (px)', 'default' => 20 ],
+					[ 'id' => 'slider_premium_width', 'type' => 'number', 'label' => 'Container Max Width (px)', 'default' => 1400 ],
+					[ 'id' => 'slider_premium_radius', 'type' => 'number', 'label' => 'Border Radius (px)', 'default' => 28 ],
 					[ 'id' => 'slider_premium_overlay', 'type' => 'range', 'label' => 'Dark Overlay Intensity (%)', 'default' => 75, 'min' => 0, 'max' => 100 ],
 					[ 'id' => 'slider_premium_alignment', 'type' => 'select', 'label' => 'Content Alignment', 'options' => ['left'=>'Left Aligned','center'=>'Centered'], 'default' => 'left' ],
 					[ 'id' => 'slider_premium_btn_style', 'type' => 'select', 'label' => 'Button Shape', 'options' => ['pill'=>'Pill Shape','rounded'=>'Rounded Corners','square'=>'Sharp Edges'], 'default' => 'pill' ],

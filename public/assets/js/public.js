@@ -6,30 +6,25 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 1. EXPANDABLE ROWS (Archive & Ranking Lists)
     const initExpandables = () => {
-        const rows = document.querySelectorAll('.kc-rank-row, .kc-row-header');
-        
-        rows.forEach(row => {
-            row.addEventListener('click', function(e) {
-                // Ignore clicks on direct links within the row
-                if (e.target.tagName === 'A') return;
-                
-                const currentOpen = document.querySelector('.is-expanded');
-                const targetRow = this.closest('.kc-rank-row') || this.closest('.kc-row-item');
-                
-                // If clicking a row that's already open, just collapse it
-                if (targetRow.classList.contains('is-expanded')) {
-                    targetRow.classList.remove('is-expanded');
-                    return;
-                }
+        document.addEventListener('click', function(e) {
+            const rowTrigger = e.target.closest('.kc-rank-row, .kc-row-header');
+            if (!rowTrigger) return;
 
-                // Close other open rows
-                if (currentOpen) {
-                    currentOpen.classList.remove('is-expanded');
-                }
+            // Don't expand if clicking a link or inside a link
+            if (e.target.tagName === 'A' || e.target.closest('a')) return;
 
-                // Open this row
-                targetRow.classList.add('is-expanded');
-            });
+            const target = rowTrigger.closest('.kc-rank-row') || rowTrigger.closest('.kc-row-item');
+            if (!target) return;
+
+            const isAlreadyExpanded = target.classList.contains('is-expanded');
+
+            // Close others (exclusive mode)
+            document.querySelectorAll('.is-expanded').forEach(el => el.classList.remove('is-expanded'));
+
+            // Toggle current if it wasn't already expanded
+            if (!isAlreadyExpanded) {
+                target.classList.add('is-expanded');
+            }
         });
     };
 
@@ -347,75 +342,6 @@ class BillboardEngine {
         this.dots[this.current].classList.add('is-active');
 
         if (this.config.autoplay && !this.isInteracting) {
-            this.stopTimer();
-            this.startTimer();
-        }
-    }
-
-    next() { this.goTo(this.current + 1); }
-    prev() { this.goTo(this.current - 1); }
-
-    startTimer() {
-        this.stopTimer();
-        this.timer = setInterval(() => this.next(), this.config.delay);
-    }
-
-    stopTimer() {
-        if (this.timer) clearInterval(this.timer);
-    }
-}
-
-/**
- * Premium Slider Engine
- */
-class PremiumSliderEngine {
-    constructor(el, config) {
-        this.el = el;
-        this.slides = el.querySelectorAll('.kc-ps-slide');
-        this.dots = el.querySelectorAll('.kc-ps-dot');
-        this.config = config;
-        this.current = 0;
-        this.total = this.slides.length;
-        this.timer = null;
-        this.isInteracting = false;
-
-        this.init();
-    }
-
-    init() {
-        if (this.total <= 1) return;
-        
-        if (this.config.autoplay) {
-            this.startTimer();
-            this.el.addEventListener('mouseenter', () => this.stopTimer());
-            this.el.addEventListener('mouseleave', () => this.startTimer());
-        }
-
-        // Swipe support
-        let startX = 0;
-        this.el.addEventListener('touchstart', (e) => startX = e.touches[0].clientX, {passive: true});
-        this.el.addEventListener('touchend', (e) => {
-            let endX = e.changedTouches[0].clientX;
-            if (startX - endX > 50) this.next();
-            if (endX - startX > 50) this.prev();
-        }, {passive: true});
-    }
-
-    goTo(index) {
-        if (index === this.current) return;
-        
-        if (index < 0) index = this.config.loop ? this.total - 1 : 0;
-        else if (index >= this.total) index = this.config.loop ? 0 : this.total - 1;
-
-        this.slides[this.current].classList.remove('is-active');
-        if(this.dots[this.current]) this.dots[this.current].classList.remove('is-active');
-        
-        this.current = index;
-        
-        this.slides[this.current].classList.add('is-active');
-        if(this.dots[this.current]) this.dots[this.current].classList.add('is-active');
-
-        if (this.config.autoplay) {
             this.stopTimer();
             this.startTimer();
         }

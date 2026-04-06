@@ -76,15 +76,15 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	<?php
 	// Fetch slides based on settings (defaulting to auto latest charts)
 	$hero_settings = [
-		'source_mode' => 'auto',
-		'slide_count' => 5,
-		'autoplay' => 'yes',
-		'autoplay_delay' => 5000,
-		'transition_speed' => 800,
-		'loop' => 'yes',
-		'show_arrows' => 'yes',
-		'show_dots' => 'yes',
-		'hide_secondary_mobile' => 'yes'
+		'source_mode'           => Settings::get('slider_source_mode', 'auto'),
+		'slide_count'           => intval(Settings::get('slider_count', 5)),
+		'autoplay'              => Settings::get('slider_premium_autoplay', 1) ? 'yes' : 'no',
+		'autoplay_delay'        => intval(Settings::get('slider_premium_delay', 5000)),
+		'transition_speed'      => intval(Settings::get('slider_premium_speed', 800)),
+		'loop'                  => Settings::get('slider_premium_loop', 1) ? 'yes' : 'no',
+		'show_arrows'           => 'yes',
+		'show_dots'             => 'yes',
+		'hide_secondary_mobile' => Settings::get('slider_premium_hide_secondary_mobile', 1) ? 'yes' : 'no'
 	];
 
 	// Prepare data
@@ -115,7 +115,9 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	if ( ! empty( $slides ) ) :
 	?>
 	<section class="kc-hero-slider-section">
-		<?php include CHARTS_PATH . 'public/templates/parts/premium-slider.php'; ?>
+		<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 60px;">
+			<?php include CHARTS_PATH . 'public/templates/parts/premium-slider.php'; ?>
+		</div>
 	</section>
 	<?php endif; ?>
 

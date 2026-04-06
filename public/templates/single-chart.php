@@ -60,14 +60,12 @@ if ( $definition ) {
 			<section class="kc-page-hero" style="text-align: center;"><h1>Chart Not Found</h1><p>The requested chart definition does not exist.</p></section>
 		<?php else : ?>
 			
-			<div class="kc-breadcrumb">
-				<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="<?php echo home_url('/charts'); ?>">Charts</a> <span>/</span> <?php echo esc_html($definition->title); ?>
-			</div>
+				<a href="<?php echo home_url('/charts'); ?>">Home</a> <span>/</span> <a href="<?php echo home_url('/charts'); ?>">Charts</a> <span>/</span> <?php echo \Charts\Core\Typography::apply($definition->title); ?>
 
 			<header class="kc-page-hero" style="padding: 20px 0 60px;">
-				<h1 class="kc-page-title"><?php echo esc_html($definition->title); ?></h1>
+				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($definition->title); ?>"><?php echo esc_html($definition->title); ?></h1>
 				<?php if ( ! empty($definition->title_ar) ) : ?>
-					<p class="kc-page-subtitle" style="font-family: inherit;"><?php echo esc_html($definition->title_ar); ?></p>
+					<p class="kc-page-subtitle k-font-ar"><?php echo esc_html($definition->title_ar); ?></p>
 				<?php endif; ?>
 				
 				<?php if ( ! empty($definition->chart_summary) ) : ?>
@@ -75,38 +73,39 @@ if ( $definition ) {
 				<?php endif; ?>
 			</header>
 
-			<!-- #1 FEATURED TRACK -->
-			<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; ?>
-				<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative; margin-bottom: 60px;">
+			<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 60px;">
+				<!-- #1 FEATURED TRACK -->
+				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; ?>
+					<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative;">
 					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
 					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
-						<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
+						<div style="position: relative; display: flex; align-items: center; gap: 30px;">
+							<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
+							<div style="font-size: 140px; font-weight: 950; color: #fff; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.2); letter-spacing: -0.05em; margin-bottom: -10px;">1</div>
+						</div>
 						<div style="flex-grow: 1;">
-							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-								<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;">#1 This Week</span>
+							<div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+								<span style="background: var(--k-accent); color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#1 This Week</span>
 								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
-									<span style="font-size: 12px; font-weight: 800; color: #2ecc71;">+<?php echo intval($top->movement_value); ?></span>
+									<span style="font-size: 14px; font-weight: 800; color: #2ecc71;">+<?php echo intval($top->movement_value); ?></span>
 								<?php endif; ?>
 							</div>
-							<h2 style="font-size: 48px; font-weight: 950; margin: 0; line-height: 1;"><?php echo esc_html($top->track_name); ?></h2>
-							<h3 style="font-size: 24px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px;"><?php echo esc_html($top->artist_names); ?></h3>
+							<h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($top->track_name); ?>"><?php echo esc_html($top->track_name); ?></h2>
+							<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top->artist_names); ?>"><?php echo esc_html($top->artist_names); ?></h3>
 							
-							<div style="display: flex; align-items: center; gap: 32px; margin-top: 32px; font-size: 11px; font-weight: 800; color: var(--k-text-dim);">
+							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
 								<?php if ( ! empty($top->views_count) ) : ?>
-									<span>▶ <?php echo number_format($top->views_count / 1000000, 1); ?>M Views</span>
+									<span style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--k-accent);"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <?php echo number_format($top->views_count / 1000000, 1); ?>M Views</span>
 								<?php elseif ( ! empty($top->streams_count) ) : ?>
-									<span>▶ <?php echo number_format($top->streams_count / 1000000, 1); ?>M Streams</span>
+									<span style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--k-accent);"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> <?php echo number_format($top->streams_count / 1000000, 1); ?>M Streams</span>
 								<?php endif; ?>
 								<span>Peak #<?php echo intval($top->peak_rank ?: 1); ?></span>
 								<span><?php echo intval($top->weeks_on_chart ?: 1); ?> wks on chart</span>
 							</div>
 						</div>
-						<div style="width: 80px; height: 80px; background: var(--k-surface-alt); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-						</div>
 					</div>
-				</div>
-			<?php endif; ?>
+				<?php endif; ?>
+			</div>
 
 			<!-- RANKINGS TABLE -->
 			<section class="kc-section" style="padding-top: 0; padding-bottom: 120px;">
@@ -147,11 +146,11 @@ if ( $definition ) {
 									</div>
 								</td>
 								<td>
-									<div style="display: flex; align-items: center; gap: 16px;">
+										<div style="display: flex; align-items: center; gap: 16px;">
 										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
 										<div>
-											<span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($e->track_name); ?></span>
-											<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);"><?php echo esc_html($e->artist_names); ?></span>
+											<span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($e->track_name); ?>"><?php echo esc_html($e->track_name); ?></span>
+											<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
 										</div>
 									</div>
 								</td>
