@@ -139,8 +139,8 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 						<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);"></div>
 						<div style="position: absolute; top: 16px; left: 16px; width: 32px; height: 32px; background: var(--k-accent-purple); color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">#<?php echo $art->rank_position; ?></div>
 						<div style="position: absolute; bottom: 24px; left: 24px; right: 24px;">
-							<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; font-family: var(--k-font-h); letter-spacing: -0.02em;"><?php echo esc_html($art->track_name); ?></h3>
-							<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; font-family: var(--k-font-m); text-transform: uppercase; letter-spacing: 0.05em;">Trending Artist</p>
+							<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class($art->track_name); ?>"><?php echo esc_html($art->track_name); ?></h3>
+							<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;" class="<?php echo \Charts\Core\Typography::get_font_class('Trending Artist'); ?>">Trending Artist</p>
 						</div>
 					</a>
 				<?php endforeach; ?>
@@ -174,8 +174,8 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 							<div class="kc-card-header">
 								<img src="<?php echo esc_url(!empty($def->cover_image_url) ? $def->cover_image_url : (!empty($entries[0]->resolved_image) ? $entries[0]->resolved_image : CHARTS_URL . 'public/assets/img/placeholder.png')); ?>">
 								<div class="kc-card-header-overlay" style="background: linear-gradient(to top, <?php echo $accent; ?>dd, transparent);"></div>
-								<span class="kc-card-label" style="font-family: var(--k-font-m);">Weekly Chart</span>
-								<h3 class="kc-card-title" style="font-family: var(--k-font-h);"><?php echo esc_html($def->title); ?></h3>
+								<span class="kc-card-label">Weekly Chart</span>
+								<h3 class="kc-card-title"><?php echo \Charts\Core\Typography::apply($def->title); ?></h3>
 							</div>
 
 							<div class="kc-card-list">
@@ -190,12 +190,12 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 									<?php endif; ?>
 								<?php else : ?>
 									<?php foreach ( $entries as $e ) : ?>
-										<div class="kc-card-entry" style="font-family: var(--k-font-b);">
+										<div class="kc-card-entry">
 											<span class="kc-entry-rank"><?php echo $e->rank_position; ?></span>
 											<img class="kc-entry-art" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 											<div class="kc-entry-info">
-												<span class="kc-entry-name"><?php echo esc_html($e->track_name); ?></span>
-												<span class="kc-entry-artist" style="font-family: var(--k-font-m);"><?php echo esc_html($e->artist_names); ?></span>
+												<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class($e->track_name); ?>"><?php echo esc_html($e->track_name); ?></span>
+												<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
 											</div>
 										</div>
 									<?php endforeach; ?>

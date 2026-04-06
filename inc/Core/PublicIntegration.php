@@ -97,54 +97,8 @@ class PublicIntegration {
 
 		echo '<style id="kc-design-tokens">';
 		
-		// 1. Fixed Typography Definitions
-		$font_path = CHARTS_URL . 'public/assets/fonts/';
-		
-		echo "
-		@font-face {
-			font-family: 'KChartsArabic';
-			src: url('{$font_path}CircularSpotifyTxT-Bold.ttf') format('truetype');
-			font-weight: 700;
-			font-style: normal;
-			font-display: swap;
-		}
-		@font-face {
-			font-family: 'KChartsEnglish';
-			src: url('{$font_path}spotify-mix/SpotifyMix-Regular.woff2') format('woff2'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Regular.woff') format('woff'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Regular.ttf') format('truetype');
-			font-weight: 400;
-			font-style: normal;
-			font-display: swap;
-		}
-		@font-face {
-			font-family: 'KChartsEnglish';
-			src: url('{$font_path}spotify-mix/SpotifyMix-Medium.woff2') format('woff2'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Medium.woff') format('woff'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Medium.ttf') format('truetype');
-			font-weight: 500;
-			font-style: normal;
-			font-display: swap;
-		}
-		@font-face {
-			font-family: 'KChartsEnglish';
-			src: url('{$font_path}spotify-mix/SpotifyMix-Bold.woff2') format('woff2'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Bold.woff') format('woff'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Bold.ttf') format('truetype');
-			font-weight: 700;
-			font-style: normal;
-			font-display: swap;
-		}
-		@font-face {
-			font-family: 'KChartsEnglish';
-			src: url('{$font_path}spotify-mix/SpotifyMix-Black.woff2') format('woff2'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Black.woff') format('woff'),
-			     url('{$font_path}spotify-mix/SpotifyMix-Black.ttf') format('truetype');
-			font-weight: 900;
-			font-style: normal;
-			font-display: swap;
-		}
-		";
+		// 1. Intelligent Typography System
+		echo \Charts\Core\Typography::get_font_face_css();
 
 		echo ':root {';
 		foreach ( $variables as $key => $val ) {
@@ -152,25 +106,12 @@ class PublicIntegration {
 				echo esc_html($key) . ': ' . esc_attr($val) . ';';
 			}
 		}
-		// Fixed typography tokens
-		echo '--k-f-en: "KChartsEnglish", system-ui, sans-serif;';
-		echo '--k-f-ar: "KChartsArabic", "KChartsEnglish", sans-serif;';
-		echo '}';
-		
 		echo '.kc-charts-route {';
-		echo 'font-family: var(--k-f-en);';
-		echo '--k-font-heading: var(--k-f-en);';
-		echo '--k-font-body: var(--k-f-en);';
-		echo '--k-font-meta: var(--k-f-en);';
+		echo 'font-family: var(--k-font-en);';
 		echo '}';
 		
-        // Arabic/RTL Context Override
-        echo '.kc-charts-route[dir="rtl"], .rtl .kc-charts-route, .kc-charts-route .is-arabic {';
-        echo 'font-family: var(--k-f-ar) !important;';
-		echo '--k-font-heading: var(--k-f-ar) !important;';
-        echo '--k-font-body: var(--k-f-ar) !important;';
-		echo '--k-font-meta: var(--k-f-ar) !important;';
-        echo '}';
+        // Arabic Context Specific Overrides
+        echo '.kc-charts-route .is-arabic { font-family: var(--k-font-ar) !important; }';
 
 		if ( $mode === 'system' ) {
 			echo '@media (prefers-color-scheme: dark) {';

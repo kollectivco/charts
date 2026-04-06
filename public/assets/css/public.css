@@ -24,9 +24,12 @@
 	--k-accent-soft: rgba(254, 2, 91, 0.08);
 	
 	/* Typography */
-	--k-font-h: var(--k-font-heading, "KChartsEnglish", sans-serif);
-	--k-font-b: var(--k-font-body, "KChartsEnglish", sans-serif);
-	--k-font-m: var(--k-font-meta, "KChartsEnglish", sans-serif);
+	--k-font-ar: var(--k-font-ar, 'KChartsArabic', sans-serif);
+	--k-font-en: var(--k-font-en, 'KChartsEnglish', system-ui, sans-serif);
+	
+	--k-font-h: var(--k-font-en);
+	--k-font-b: var(--k-font-en);
+	--k-font-m: var(--k-font-en);
 
 	/* Sizing */
 	--k-radius-lg: 16px;

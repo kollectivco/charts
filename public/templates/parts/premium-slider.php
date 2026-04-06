@@ -10,19 +10,19 @@
                     <?php if ( !empty($slide['badge']) ) : ?>
                         <span class="kc-ps-badge"><?php echo esc_html($slide['badge']); ?></span>
                     <?php endif; ?>
-                    <h2 class="kc-ps-title"><?php echo esc_html($slide['title']); ?></h2>
+                    <h2 class="kc-ps-title"><?php echo \Charts\Core\Typography::apply($slide['title']); ?></h2>
                     <?php if ( !empty($slide['desc']) ) : ?>
-                        <p class="kc-ps-desc"><?php echo esc_html($slide['desc']); ?></span>
+                        <p class="kc-ps-desc"><?php echo \Charts\Core\Typography::apply($slide['desc']); ?></p>
                     <?php endif; ?>
                     <div class="kc-ps-actions">
                         <?php if ( !empty($slide['btn1_text']) ) : ?>
-                            <a href="<?php echo esc_url($slide['btn1_link']); ?>" class="kc-ps-btn-p">
+                            <a href="<?php echo esc_url($slide['btn1_link']); ?>" class="kc-ps-btn-p <?php echo \Charts\Core\Typography::get_font_class($slide['btn1_text']); ?>">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                 <?php echo esc_html($slide['btn1_text']); ?>
                             </a>
                         <?php endif; ?>
                         <?php if ( !empty($slide['btn2_text']) ) : ?>
-                            <a href="<?php echo esc_url($slide['btn2_link']); ?>" class="kc-ps-btn-s">
+                            <a href="<?php echo esc_url($slide['btn2_link']); ?>" class="kc-ps-btn-s <?php echo \Charts\Core\Typography::get_font_class($slide['btn2_text']); ?>">
                                 <?php echo esc_html($slide['btn2_text']); ?>
                             </a>
                         <?php endif; ?>

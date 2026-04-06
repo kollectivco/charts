@@ -184,7 +184,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
 					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">Artist</span>
 				</div>
-				<h1 class="kc-page-title" style="margin: 0; line-height: 1;"><?php echo esc_html($artist->display_name); ?></h1>
+				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>" style="margin: 0; line-height: 1;"><?php echo esc_html($artist->display_name); ?></h1>
 				<?php if ( ! empty($artist->display_name_franko) ) : ?>
 					<div style="font-size: 20px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; opacity: 0.4;"><?php echo esc_html($artist->display_name_franko); ?></div>
 				<?php endif; ?>
@@ -232,8 +232,8 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $ct->rank_position; ?></span>
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($ct, $ct->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
-											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text); font-family: var(--k-font-h);"><?php echo esc_html($ct->track_name); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-dim); font-family: var(--k-font-m);"><?php echo esc_html($artist->display_name); ?></span>
+											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($ct->track_name); ?>"><?php echo esc_html($ct->track_name); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-dim);" class="<?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>"><?php echo esc_html($artist->display_name); ?></span>
 										</div>
 									</div>
 									<div style="display: flex; align-items: center; gap: 20px;">
@@ -261,8 +261,8 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $pt->rank_position; ?></span>
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
-											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($pt->track_name); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>
+											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($pt->track_name); ?>"><?php echo esc_html($pt->track_name); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>"><?php echo esc_html($artist->display_name); ?></span>
 										</div>
 									</div>
 									<div style="display: flex; align-items: center; gap: 20px;">
@@ -306,7 +306,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;">
 									<div style="display: flex; align-items: center; gap: 12px;">
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist')); ?>" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
-										<span style="font-size: 13px; font-weight: 800;"><?php echo esc_html($cr->definition_title ?: 'Top Artists'); ?></span>
+										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class($cr->definition_title); ?>"><?php echo esc_html($cr->definition_title ?: 'Top Artists'); ?></span>
 									</div>
 									<div style="text-align: right;">
 										<div style="font-size: 24px; font-weight: 950; color: var(--k-text);">#<?php echo $cr->rank_position; ?></div>

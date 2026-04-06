@@ -69,9 +69,9 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 					<div style="display: flex; gap: 8px; margin-bottom: 16px;">
 						<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"><?php echo strtoupper($type); ?></span>
 					</div>
-					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em; font-family: var(--k-font-h);"><?php echo esc_html($item->title); ?></h1>
+					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;" class="<?php echo \Charts\Core\Typography::get_font_class($item->title); ?>"><?php echo esc_html($item->title); ?></h1>
 					<?php if ( ! empty($item->title_franko) ) : ?>
-						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-dim); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em; font-family: var(--k-font-h);"><?php echo esc_html($item->title_franko); ?></div>
+						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-dim); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em;"><?php echo esc_html($item->title_franko); ?></div>
 					<?php endif; ?>
 					
 					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
@@ -84,7 +84,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 							$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
 							if ( $artist ) :
 						?>
-							<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;">
+							<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;" class="<?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>">
 								<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
 								<?php echo esc_html($artist->display_name); ?>
 							</a>
@@ -147,7 +147,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 										<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
 									</div>
 									<div>
-										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);"><?php echo esc_html($app->definition_title ?: 'Standard Chart'); ?></h4>
+										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($app->definition_title); ?>"><?php echo esc_html($app->definition_title ?: 'Standard Chart'); ?></h4>
 										<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);">Week of <?php echo date('M j, Y', strtotime($app->period_start)); ?></span>
 									</div>
 								</div>
@@ -179,7 +179,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 						<div style="display: flex; align-items: center; gap: 20px;">
 							<img src="<?php echo esc_url($mi->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 10px;">
 							<div>
-								<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);"><?php echo esc_html($mi->title); ?></h4>
+								<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($mi->title); ?>"><?php echo esc_html($mi->title); ?></h4>
 							</div>
 						</div>
 						<div style="width: 32px; height: 32px; border: 1px solid var(--k-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--k-accent); border-color: var(--k-accent);">

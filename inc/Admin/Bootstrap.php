@@ -100,10 +100,6 @@ class Bootstrap {
 						} else {
 							$posted_val = isset( $_POST[ $key ] ) ? $_POST[ $key ] : (isset($_POST['charts_'.$key]) ? $_POST['charts_'.$key] : '');
 							
-							// Handle manual font override if present
-							if ( isset($_POST[$key . '_manual']) && !empty($_POST[$key . '_manual']) ) {
-								$posted_val = $_POST[$key . '_manual'];
-							}
 
 							if ( is_array( $posted_val ) ) {
 								$val = array_map( 'sanitize_text_field', wp_unslash( $posted_val ) );
