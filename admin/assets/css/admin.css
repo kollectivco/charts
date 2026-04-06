@@ -1016,3 +1016,34 @@ input:checked + .slider:before { transform: translateX(20px); }
 	.kc-logic-hub { flex-direction: column; align-items: stretch; width: 100%; }
 	.kc-hub-divider { height: 1px; width: 100%; margin: 2px 0; }
 }
+
+/* --- SETTINGS TAB LAYOUT --- */
+.kc-settings-tabs-wrap { margin-top: 20px; }
+.kc-tab-content-panel { display: none; }
+.kc-tab-content-panel.active { display: block; animation: settingsFadeIn 0.3s ease; }
+
+.kc-settings-section { 
+    background: #fff; 
+    border: 1px solid #ccd0d4; 
+    border-radius: 12px; 
+    padding: 30px; 
+    margin-bottom: 30px; 
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.kc-settings-section h3 { 
+    margin: 0 0 24px 0; 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: #1e293b; 
+    border-bottom: 2px solid #f8fafc; 
+    padding-bottom: 12px;
+}
+
+.kc-tab-field-row { margin-bottom: 10px; }
+.kc-tab-field-row label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px; color: #1e293b; }
+
+@keyframes settingsFadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}

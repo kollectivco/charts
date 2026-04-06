@@ -1267,3 +1267,198 @@
 	.kc-bb-nav { display: none; }
     .k-mobile-hide { display: none !important; }
 }
+
+/* --- 15. PREMIUM HERO SLIDER (BILLBOARD REPLACEMENT) --- */
+.kc-premium-slider {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+    border-radius: 28px;
+    overflow: hidden;
+    background: #000;
+}
+
+.kc-ps-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.kc-ps-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+}
+
+.kc-ps-slide.is-active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 5;
+}
+
+.kc-ps-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.1);
+    transition: transform 8s linear;
+}
+
+.kc-ps-slide.is-active .kc-ps-bg {
+    transform: scale(1);
+}
+
+.kc-ps-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--ps-overlay-color, #000) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
+    opacity: calc(var(--ps-overlay-op, 75) / 100);
+    z-index: 2;
+}
+
+.kc-ps-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding: 0 80px;
+    color: #fff;
+    max-width: 800px;
+}
+
+.kc-ps-badge {
+    display: inline-block;
+    background: #fe025b;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(254, 2, 91, 0.4);
+    animation: fadeInUp 0.6s 0.2s both;
+}
+
+.kc-ps-title {
+    font-family: var(--k-f-en);
+    font-size: clamp(32px, 6vw, 72px);
+    font-weight: 950;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    margin: 0 0 20px 0;
+    color: #fff;
+    animation: fadeInUp 0.8s 0.3s both;
+}
+
+.kc-ps-desc {
+    font-size: 18px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+    line-height: 1.5;
+    max-width: 500px;
+    animation: fadeInUp 0.8s 0.4s both;
+}
+
+.kc-ps-actions {
+    display: flex;
+    gap: 16px;
+    animation: fadeInUp 0.8s 0.5s both;
+}
+
+.kc-ps-btn-p, .kc-ps-btn-s {
+    padding: 16px 32px;
+    font-size: 14px;
+    font-weight: 900;
+    text-decoration: none;
+    border-radius: 100px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kc-ps-btn-p {
+    background: var(--k-accent);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(254, 2, 91, 0.3);
+}
+
+.kc-ps-btn-p:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(254, 2, 91, 0.4);
+}
+
+.kc-ps-btn-s {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.kc-ps-btn-s:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-3px);
+}
+
+.kc-ps-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.kc-ps-nav:hover { background: rgba(0,0,0,0.5); transform: translateY(-50%) scale(1.1); }
+.kc-ps-prev { left: 30px; }
+.kc-ps-next { right: 30px; }
+
+.kc-ps-dots {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 20;
+}
+
+.kc-ps-dot {
+    width: 10px;
+    height: 10px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.kc-ps-dot.is-active {
+    background: var(--k-accent);
+    transform: scale(1.3);
+}
+
+@media (max-width: 768px) {
+    .kc-premium-slider { height: 50vh; border-radius: 0; }
+    .kc-ps-content { padding: 0 30px; }
+    .kc-ps-title { font-size: 32px; }
+    .kc-ps-desc { font-size: 14px; margin-bottom: 30px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .kc-ps-nav { display: none; }
+    .ps-hide-s-m .kc-ps-btn-s { display: none !important; }
+}

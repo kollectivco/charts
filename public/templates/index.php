@@ -72,28 +72,52 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 
 <div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
 	
-	<!-- 1. DYNAMIC HERO SLIDER -->
+	<!-- 1. PREMIUM HERO SLIDER (The Only Homepage Slider) -->
 	<?php
-	$p_settings = \Charts\Core\HomepageSlider::get_premium_settings();
-	$slider_settings = \Charts\Core\HomepageSlider::get_global_settings();
-	
-	if ( (in_array('slider', $section_order) || empty($section_order)) ) :
-		if ( $p_settings['enable'] ) :
-			$p_slides = \Charts\Core\HomepageSlider::get_premium_slides_data();
-			\Charts\Core\HomepageSlider::render_premium($p_slides, $p_settings);
-		elseif ( $slider_settings['slider_enable'] ) :
-			$hero_slides = \Charts\Core\HomepageSlider::get_slides_data( [], $slider_settings['slider_count'] );
-			if ( ! empty( $hero_slides ) ) :
+	// Fetch slides based on settings (defaulting to auto latest charts)
+	$hero_settings = [
+		'source_mode' => 'auto',
+		'slide_count' => 5,
+		'autoplay' => 'yes',
+		'autoplay_delay' => 5000,
+		'transition_speed' => 800,
+		'loop' => 'yes',
+		'show_arrows' => 'yes',
+		'show_dots' => 'yes',
+		'hide_secondary_mobile' => 'yes'
+	];
+
+	// Prepare data
+	$slides_data = \Charts\Core\HomepageSlider::get_slides_data([], $hero_settings['slide_count']);
+	$slides = [];
+	foreach ( $slides_data as $s ) {
+		$slides[] = [
+			'title' => $s['title'],
+			'badge' => __( '#1 TRENDING', 'charts' ),
+			'desc' => $s['subtitle'] ?: __( 'Top performing tracks and videos on the global stage.', 'charts' ),
+			'image_url' => $s['image'],
+			'btn1_text' => __( 'View Chart', 'charts' ),
+			'btn1_link' => $s['url'],
+			'btn2_text' => __( 'Add to Library', 'charts' ),
+			'btn2_link' => '#',
+		];
+	}
+
+	$config = [
+		'autoplay' => $hero_settings['autoplay'] === 'yes',
+		'delay' => $hero_settings['autoplay_delay'],
+		'speed' => $hero_settings['transition_speed'],
+		'loop' => $hero_settings['loop'] === 'yes',
+		'show_arrows' => $hero_settings['show_arrows'] === 'yes',
+		'show_dots' => $hero_settings['show_dots'] === 'yes',
+	];
+
+	if ( ! empty( $slides ) ) :
 	?>
 	<section class="kc-hero-slider-section">
-		<?php
-		\Charts\Core\HomepageSlider::render($hero_slides, $slider_settings, 'homepage');
-		?>
+		<?php include CHARTS_PATH . 'public/templates/parts/premium-slider.php'; ?>
 	</section>
-	<?php 
-			endif;
-		endif;
-	endif; ?>
+	<?php endif; ?>
 
 	<div class="kc-container">
 		
