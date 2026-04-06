@@ -248,6 +248,43 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 			</div>
 		</form>
 	</div>
+
+	<!-- New: Direct Artist by URL Import -->
+	<div class="premium-form-card" style="margin-top: 40px;">
+		<header class="step-header">
+			<span class="step-number" style="background:var(--charts-primary); color:#fff; border-radius:50%; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; margin-right:10px;">URL</span>
+			<h3><?php esc_html_e( 'Direct Artist Intelligence Import', 'charts' ); ?></h3>
+		</header>
+		
+		<form method="post" action="" style="margin-top:20px;">
+			<?php wp_nonce_field( 'charts_admin_action' ); ?>
+			<input type="hidden" name="charts_action" value="import_artist_url">
+			
+			</div>
+		</form>
+	</div>
+
+	<!-- New: Direct Location by URL Import -->
+	<div class="premium-form-card" style="margin-top: 40px;">
+		<header class="step-header">
+			<span class="step-number" style="background:#ef4444; color:#fff; border-radius:50%; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; margin-right:10px;">LOC</span>
+			<h3><?php esc_html_e( 'Location Intelligence Import', 'charts' ); ?></h3>
+		</header>
+		
+		<form method="post" action="" style="margin-top:20px;">
+			<?php wp_nonce_field( 'charts_admin_action' ); ?>
+			<input type="hidden" name="charts_action" value="import_location_url">
+			
+			<div class="form-group" style="margin-bottom:20px;">
+				<label for="location_url" style="display:block; font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;"><?php esc_html_e( 'YouTube Charts Location URL', 'charts' ); ?></label>
+				<div style="display:flex; gap:12px;">
+					<input type="url" name="location_url" id="location_url" class="premium-input" placeholder="https://charts.youtube.com/location/..." required style="flex-grow:1; height:56px; border-radius:12px; border:1px solid #e2e8f0; padding:0 20px; font-size:15px; background:#f8fafc;">
+					<button type="submit" class="charts-btn-create" style="height:56px; padding:0 30px; border-radius:12px; font-weight:800; background:#ef4444; border-color:#ef4444;"><?php esc_html_e( 'Import Location', 'charts' ); ?></button>
+				</div>
+				<span class="input-helper" style="display:block; margin-top:8px; font-size:12px; color:#64748b;"><?php esc_html_e( 'Paste a YouTube Charts location URL (e.g. City or Region) to scrape metadata and associated chart rankings.', 'charts' ); ?></span>
+			</div>
+		</form>
+	</div>
 </div>
 
 <style>

@@ -167,6 +167,16 @@ class Bootstrap {
 				$processed = true;
 				break;
 			
+			case 'import_artist_url':
+				self::process_artist_url_import();
+				$processed = true;
+				break;
+			
+			case 'import_location_url':
+				self::process_location_url_import();
+				$processed = true;
+				break;
+			
 			case 'unified_import':
 				$run_id = self::process_unified_import();
 				if ( is_numeric($run_id) ) {
@@ -712,6 +722,61 @@ class Bootstrap {
 		} catch ( \Exception $e ) {
 			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
 			return false;
+		}
+	}
+
+	/**
+	 * Process Import Artist by URL.
+	 */
+	private static function process_artist_url_import() {
+		if ( empty( $_POST['artist_url'] ) ) {
+			add_settings_error( 'charts', 'no_url', __( 'Please provide a YouTube Charts artist URL.', 'charts' ), 'error' );
+			return;
+		}
+
+		$url = sanitize_url( $_POST['artist_url'] );
+		$importer = new \Charts\Services\YouTubeChartsArtistImporter();
+		$result = $importer->import_by_url( $url );
+
+		if ( is_wp_error( $result ) ) {
+			add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+		} else {
+			$msg = sprintf( 
+				__( 'Successfully %1$s artist <strong>%2$s</strong> from YouTube Charts.', 'charts' ), 
+				$result['status'], 
+				esc_html( $result['name'] ) 
+			);
+			if ( !empty($result['image']) ) {
+				$msg .= ' ' . __( 'Image resolved successfully.', 'charts' );
+			}
+			add_settings_error( 'charts', 'import_success', $msg, 'success' );
+		}
+	}
+
+	/**
+	 * Process Import Location by URL.
+	 */
+	private static function process_location_url_import() {
+		if ( empty( $_POST['location_url'] ) ) {
+			add_settings_error( 'charts', 'no_url', __( 'Please provide a YouTube Charts location URL.', 'charts' ), 'error' );
+			return;
+		}
+
+		$url = sanitize_url( $_POST['location_url'] );
+		$importer = new \Charts\Services\YouTubeChartsLocationImporter();
+		$result = $importer->import_by_url( $url );
+
+		if ( is_wp_error( $result ) ) {
+			add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+		} else {
+			$msg = sprintf( 
+				__( 'Successfully %1$s location <strong>%2$s</strong> from YouTube Charts. Found %3$d artists and %4$d songs.', 'charts' ), 
+				$result['status'], 
+				esc_html( $result['name'] ),
+				$result['artist_count'],
+				$result['track_count']
+			);
+			add_settings_error( 'charts', 'import_success', $msg, 'success' );
 		}
 	}
 
