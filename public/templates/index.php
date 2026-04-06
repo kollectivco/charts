@@ -65,9 +65,9 @@ $featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
 use Charts\Core\Settings;
 \Charts\Core\PublicIntegration::get_header();
 
-$homepage_show_artists = Settings::get('homepage_show_artists');
-$homepage_show_more    = Settings::get('homepage_show_more');
-$section_order         = explode(',', Settings::get('homepage_section_order'));
+$homepage_show_artists = Settings::get('homepage.show_artists_row');
+$homepage_show_more    = Settings::get('homepage.show_charts_grid');
+$section_order         = explode(',', Settings::get('homepage.section_order'));
 ?>
 
 <div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
@@ -75,28 +75,28 @@ $section_order         = explode(',', Settings::get('homepage_section_order'));
 	<!-- 1. PREMIUM HERO SLIDER (The Only Homepage Slider) -->
 	<?php
 	// Fetch slides based on settings
-	$slider_settings = \Charts\Core\HomepageSlider::get_premium_settings();
-	$slides = \Charts\Core\HomepageSlider::get_slides_data();
+	$settings = \Charts\Core\HomepageSlider::get_premium_settings();
+	$slides   = \Charts\Core\HomepageSlider::get_slides_data();
 
 	$config = [
-		'autoplay' => (bool)$slider_settings['autoplay'],
-		'delay' => (int)$slider_settings['delay'],
-		'speed' => (int)$slider_settings['speed'],
-		'loop' => (bool)$slider_settings['loop'],
+		'autoplay' => (bool)$settings['autoplay'],
+		'delay' => (int)$settings['delay'],
+		'speed' => (int)$settings['speed'],
+		'loop' => (bool)$settings['loop'],
 		'show_arrows' => true,
 		'show_dots' => true,
 	];
 
 	if ( ! empty( $slides ) ) :
 	?>
-	<section class="kc-hero-slider-section" style="padding-top: <?php echo esc_attr(Settings::get('homepage_padding_top', 40)); ?>px;">
-		<div class="kc-slider-container" style="max-width: <?php echo esc_attr($slider_settings['width'] ?? 1400); ?>px; margin: 0 auto; padding: 0 40px; margin-bottom: <?php echo esc_attr(Settings::get('homepage_section_spacing', 80)); ?>px;">
+	<section class="kc-hero-slider-section" style="padding-top: <?php echo esc_attr(Settings::get('homepage.padding_top', 40)); ?>px;">
+		<div class="kc-slider-container" style="max-width: <?php echo esc_attr($settings['width'] ?? 1400); ?>px; margin: 0 auto; padding: 0 40px; margin-bottom: <?php echo esc_attr(Settings::get('homepage.section_spacing', 80)); ?>px;">
 			<?php include CHARTS_PATH . 'public/templates/parts/premium-slider.php'; ?>
 		</div>
 	</section>
 	<?php endif; ?>
 
-	<div class="kc-container" style="display: flex; flex-direction: column; gap: <?php echo esc_attr(Settings::get('homepage_section_spacing', 80)); ?>px;">
+	<div class="kc-container" style="display: flex; flex-direction: column; gap: <?php echo esc_attr(Settings::get('homepage.section_spacing', 80)); ?>px;">
 		
 		<!-- 2. TOP ARTISTS STRIP -->
 		<?php if ( $homepage_show_artists && ! empty( $featured_artists ) ) : ?>

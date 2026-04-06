@@ -63,6 +63,17 @@ class Bootstrap {
 		$processed = false;
 
 		switch ( $action ) {
+			case 'save_settings_v2':
+				if ( ! current_user_can( 'manage_options' ) ) return;
+				check_admin_referer( 'kcharts_save_v2' );
+
+				if ( isset( $_POST['kc_opt'] ) && is_array( $_POST['kc_opt'] ) ) {
+					\Charts\Core\Settings::update_all( $_POST['kc_opt'] );
+					add_settings_error( 'charts', 'settings_saved', __( 'Settings nexus synchronized successfully.', 'charts' ), 'success' );
+				}
+				$processed = true;
+				break;
+
 			case 'save_settings':
 				// Handle dynamic settings registration
 				if ( isset( $_POST['charts_registered_fields'] ) ) {
@@ -116,25 +127,41 @@ class Bootstrap {
 					}
 					
 					if ( !empty($settings_to_update) ) {
-						\Charts\Core\Settings::update($settings_to_update);
+						\Charts\Core\Settings::update_all($settings_to_update);
 					}
 				}
+				$processed = true;
+				break;
 
-				// Markets Management
-				if ( isset( $_POST['markets'] ) && is_array( $_POST['markets'] ) ) {
-					$markets = [];
-					foreach ( $_POST['markets'] as $m ) {
-						if ( empty($m['name']) || empty($m['code']) ) continue;
-						$markets[] = [
-							'name' => sanitize_text_field($m['name']),
-							'code' => strtoupper(sanitize_text_field($m['code'])),
-							'slug' => sanitize_title($m['slug'] ?: $m['name']),
-						];
-					}
-					update_option( 'charts_markets', $markets );
+			case 'run_integrity_check':
+			case 'run_integrity_check_v2':
+				\Charts\Core\Integrity::recalculate_entity_links();
+				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
+				$processed = true;
+				break;
+
+			case 'backfill_media':
+			case 'backfill_media_v2':
+				$manager = new \Charts\Services\AssetManager();
+				$results = $manager->backfill_all();
+				$summary = sprintf( 
+					__( 'Media backfill complete. Tracks: %d/%d updated. Artists: %d/%d updated. Videos: %d/%d updated.', 'charts' ),
+					$results['tracks']['updated'], $results['tracks']['processed'],
+					$results['artists']['updated'], $results['artists']['processed'],
+					$results['videos']['updated'], $results['videos']['processed']
+				);
+				add_settings_error( 'charts', 'backfill_success', $summary, 'success' );
+				$processed = true;
+				break;
+
+			case 'reset_plugin_v2':
+				if ( $_POST['confirm_reset'] !== 'RESET CHARTS' ) {
+					add_settings_error( 'charts', 'reset_failed', __( 'Confirmation failed. Please type exactly: RESET CHARTS', 'charts' ), 'error' );
+				} else {
+					$wipe_settings = isset( $_POST['wipe_settings'] ) ? (bool)$_POST['wipe_settings'] : false;
+					self::wipe_all_data( $wipe_settings );
+					add_settings_error( 'charts', 'reset_success', __( 'Plugin has been successfully reset. All data purged.', 'charts' ), 'success' );
 				}
-
-				add_settings_error( 'charts', 'settings_saved', __( 'Settings saved.', 'charts' ), 'success' );
 				$processed = true;
 				break;
 
@@ -231,6 +258,14 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'delete_location':
+				global $wpdb;
+				$id = intval( $_POST['id'] );
+				$wpdb->delete( $wpdb->prefix . 'charts_locations', array( 'id' => $id ) );
+				add_settings_error( 'charts', 'location_deleted', __( 'Location intelligence deleted.', 'charts' ), 'success' );
+				$processed = true;
+				break;
+				
 			case 'run_integrity_check':
 				\Charts\Core\Integrity::recalculate_entity_links();
 				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
@@ -498,6 +533,15 @@ class Bootstrap {
 			'charts-settings',
 			array( self::class, 'render_settings' )
 		);
+
+		add_submenu_page(
+			'charts-dashboard',
+			__( 'Locations', 'charts' ),
+			__( 'Locations', 'charts' ),
+			'manage_options',
+			'charts-locations',
+			array( self::class, 'render_locations' )
+		);
 	}
 
 	/**
@@ -568,6 +612,10 @@ class Bootstrap {
 
 	public static function render_import_center() {
 		self::render_view( 'import-center' );
+	}
+
+	public static function render_locations() {
+		self::render_view( 'locations' );
 	}
 
 	/**
@@ -1144,10 +1192,15 @@ class Bootstrap {
 				'charts_font_body',
 				'charts_seo_title_suffix',
 				'kcharts_db_version',
+				'kcharts_settings_v2',
+				'kcharts_theme_options'
 			);
 			foreach ( $options as $opt ) {
 				delete_option( $opt );
 			}
+
+			// Clear all plugin transients
+			$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_kc_%' OR option_name LIKE '_transient_timeout_kc_%'" );
 		}
 
 		// Ensure we trigger a re-setup if needed

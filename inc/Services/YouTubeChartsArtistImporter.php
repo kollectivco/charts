@@ -97,53 +97,39 @@ class YouTubeChartsArtistImporter {
      * Create or Update the artist in the DB.
      */
     private function process_artist_data($data, $url) {
-        global $wpdb;
-        $table = $wpdb->prefix . 'charts_artists';
+        $matcher = new Matcher();
+        $artist_id = $matcher->match_artist($data['name']);
 
-        // 1. Search for existing by external reference or name
-        $artist = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE display_name = %s OR metadata_json LIKE %s",
-            $data['name'],
-            '%' . $wpdb->esc_like($data['id_path']) . '%'
-        ));
-
-        $metadata = [];
-        if ($artist && !empty($artist->metadata_json)) {
-            $metadata = json_decode($artist->metadata_json, true);
+        if (!$artist_id) {
+            return new \WP_Error('save_failed', __('Failed to create artist canonical record.', 'charts'));
         }
 
+        global $wpdb;
+        $table = $wpdb->prefix . 'charts_artists';
+        $artist = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $artist_id));
+
+        $metadata = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : [];
         $metadata['yt_charts_url'] = $url;
         $metadata['yt_charts_id']  = $data['id_path'];
         $metadata['last_scraped_at'] = current_time('mysql');
         
         $payload = [
             'display_name'  => $data['name'],
-            'image'         => !empty($data['image']) ? $data['image'] : ($artist->image ?? ''),
             'metadata_json' => json_encode($metadata)
         ];
 
-        if ($artist) {
-            $wpdb->update($table, $payload, ['id' => $artist->id]);
-            $artist_id = $artist->id;
-            $status = 'updated';
-        } else {
-            $payload['slug'] = sanitize_title($data['name']);
-            $wpdb->insert($table, $payload);
-            $artist_id = $wpdb->insert_id;
-            $status = 'created';
+        // Only update image if not already set or specifically provided
+        if (!empty($data['image']) && (empty($artist->image) || strpos($artist->image, 'placeholder') !== false)) {
+            $payload['image'] = $data['image'];
         }
 
-        // 4. Trigger enrichment if API is available
-        if ($this->wp_api->is_configured()) {
-             // We can queue a search to resolve channel IDs or Spotify IDs
-             // (Logic would go here or be handled by the existing Sync Artists action)
-        }
+        $wpdb->update($table, $payload, ['id' => $artist_id]);
 
         return [
             'id'     => $artist_id,
             'name'   => $data['name'],
-            'status' => $status,
-            'image'  => $payload['image']
+            'status' => (strtotime($artist->created_at) > (time() - 30)) ? 'created' : 'updated',
+            'image'  => $payload['image'] ?? $artist->image
         ];
     }
 }

@@ -77,23 +77,23 @@ class PublicIntegration {
 	public static function render_design_tokens() {
 		if ( ! self::is_charts_page() ) return;
 
-		$mode = Settings::get('design_mode', 'light');
+		$mode = Settings::get('design.mode', 'light');
 		
 		$variables = [
-			'--k-primary'        => Settings::get('color_primary'),
-			'--k-secondary'      => Settings::get('color_secondary'),
-			'--k-radius-md'      => Settings::get('ui_card_radius', 24) . 'px',
+			'--k-primary'        => Settings::get('design.primary_color'),
+			'--k-secondary'      => Settings::get('design.accent_color'),
+			'--k-radius-md'      => Settings::get('design.card_radius_px', 24) . 'px',
 		];
 
 		// Mode-specific Surface/Text
 		if ( $mode === 'dark' ) {
-			$variables['--k-bg']      = Settings::get('color_bg_dark', '#0f0f0f');
-			$variables['--k-surface'] = Settings::get('color_surface_dark', '#141414');
-			$variables['--k-text']    = Settings::get('color_text_dark', '#ffffff');
+			$variables['--k-bg']      = Settings::get('design.bg_color_dark', '#0f0f0f');
+			$variables['--k-surface'] = Settings::get('design.surface_color_dark', '#141414');
+			$variables['--k-text']    = Settings::get('design.text_color_dark', '#ffffff');
 		} else {
-			$variables['--k-bg']      = Settings::get('color_bg_light', '#f6f6f6');
-			$variables['--k-surface'] = Settings::get('color_surface_light', '#ffffff');
-			$variables['--k-text']    = Settings::get('color_text_light', '#262626');
+			$variables['--k-bg']      = Settings::get('design.bg_color_light', '#f6f6f6');
+			$variables['--k-surface'] = Settings::get('design.surface_color_light', '#ffffff');
+			$variables['--k-text']    = Settings::get('design.text_color_light', '#262626');
 		}
 
 		echo '<style id="kc-design-tokens">';

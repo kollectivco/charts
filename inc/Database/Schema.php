@@ -18,6 +18,9 @@ class Schema {
 
 		$charset_collate = $wpdb->get_charset_collate();
 
+		// Trigger settings migration if needed
+		\Charts\Core\Settings::get_all();
+
 		// ── dbDelta CREATE TABLE statements ─────────────────────────────────
 		$queries = array(
 

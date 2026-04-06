@@ -177,7 +177,13 @@ class YouTubeChartsLocationImporter {
         }
 
         // Logic for auto-matching Artists/Tracks into entities can be added here
-        $this->match_entities($data);
+        $data = $this->match_entities($data);
+
+        // Re-save with updated JSON containing matched IDs
+        $wpdb->update($table, [
+            'artist_rankings_json' => json_encode($data['artist_rankings']),
+            'track_rankings_json'  => json_encode($data['track_rankings']),
+        ], ['id' => $id]);
 
         return [
             'id'             => $id,
@@ -192,7 +198,44 @@ class YouTubeChartsLocationImporter {
      * Best-effort entity matching for parsed rankings.
      */
     private function match_entities($data) {
-        // Logic to link scraped artists/tracks to canonical CPTs
-        // This uses the existing Matcher or Entity creation logic
+        $matcher = new Matcher();
+
+        // Match Artists
+        if (!empty($data['artist_rankings'])) {
+            foreach ($data['artist_rankings'] as &$ranking) {
+                $artist_id = $matcher->match_artist($ranking['name']);
+                if ($artist_id) {
+                    $ranking['local_artist_id'] = $artist_id;
+                    
+                    // Update artist image if we have one and they don't
+                    if (!empty($ranking['image'])) {
+                        global $wpdb;
+                        $wpdb->query($wpdb->prepare(
+                            "UPDATE {$wpdb->prefix}charts_artists SET image = %s WHERE id = %d AND (image IS NULL OR image = '')",
+                            $ranking['image'], $artist_id
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Match Tracks
+        if (!empty($data['track_rankings'])) {
+            foreach ($data['track_rankings'] as &$ranking) {
+                // 1. Resolve Primary Artist first
+                $artist_id = $matcher->match_artist($ranking['artist']);
+                if ($artist_id) {
+                    $ranking['local_artist_id'] = $artist_id;
+                    
+                    // 2. Resolve Track
+                    $track_id = $matcher->match_track($ranking['title'], $artist_id, ['image' => $ranking['image']]);
+                    if ($track_id) {
+                        $ranking['local_track_id'] = $track_id;
+                    }
+                }
+            }
+        }
+
+        return $data;
     }
 }

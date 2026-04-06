@@ -1,332 +1,416 @@
 <?php
 /**
- * Settings View - Kontentainment Charts Simplified Tab-Based Layout
+ * Settings UI - Production-Grade Bento Settings Center.
+ * Driven by the canonical Settings architecture (Settings::get, Settings::update).
  */
 
-// Ensure settings helper functions
-if ( ! function_exists( 'kc_get_setting' ) ) {
-	function kc_get_setting( $id, $default = '' ) {
-		return \Charts\Core\Settings::get( $id, $default );
-	}
-}
+use Charts\Core\Settings;
 
-// Data Source for Charts
-$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
-$chart_options = [];
-foreach ( $definitions as $def ) { $chart_options[$def->id] = $def->title; }
+$settings = Settings::get_all();
 
-// --- 2. Registration Engine Array ---
-$charts_panel = [
-	'homepage' => [
-		'title' => 'Charts Homepage',
-		'sections' => [
-			'structure' => [
-				'title' => 'Homepage Layout',
-				'fields' => [
-					[ 'id' => 'homepage_layout', 'type' => 'select', 'label' => 'Homepage Mode', 'options' => ['standard' => 'Full Billboard (Premium)', 'minimal' => 'Minimal Grid Only'], 'default' => 'standard' ],
-					[ 'id' => 'homepage_show_artists', 'type' => 'switch', 'label' => 'Show Trending Artists Row', 'default' => 1 ],
-					[ 'id' => 'homepage_show_more', 'type' => 'switch', 'label' => 'Show "All Charts" Grid', 'default' => 1 ],
-					[ 'id' => 'homepage_section_order', 'type' => 'text', 'label' => 'Section Arrangement', 'default' => 'slider,artists,charts', 'desc' => 'Order for: slider, artists, charts' ],
-				]
-			],
-			'design' => [
-				'title' => 'Aesthetic Controls',
-				'fields' => [
-					[ 'id' => 'homepage_padding_top', 'type' => 'number', 'label' => 'Top Spacing (px)', 'default' => 40 ],
-					[ 'id' => 'homepage_section_spacing', 'type' => 'number', 'label' => 'Section Gap (px)', 'default' => 80 ],
-				]
-			]
-		]
-	],
-	'slider' => [
-		'title' => 'Hero Billboard',
-		'sections' => [
-			'p_toggle' => [
-				'title' => 'Slider Engine',
-				'fields' => [
-					[ 'id' => 'slider_premium_enable', 'type' => 'switch', 'label' => 'Activate Cinematic Slider', 'default' => 1 ],
-				]
-			],
-			'p_source' => [
-				'title' => 'Dynamic Content',
-				'fields' => [
-					[ 'id' => 'slider_premium_source', 'type' => 'select', 'label' => 'Source Logic', 'options' => [
-						'latest' => 'Automated (Latest Charts)',
-						'selected' => 'Manual (Selected Charts)',
-						'selection_top' => 'Trending (#1 from Selected)'
-					], 'default' => 'latest' ],
-					[ 'id' => 'slider_premium_charts', 'type' => 'chart_select', 'label' => 'Source Selection', 'desc' => 'Choose individual charts for manual/trending modes' ],
-				]
-			],
-			'p_behavior' => [
-				'title' => 'Motion & Timing',
-				'fields' => [
-					[ 'id' => 'slider_premium_autoplay', 'type' => 'switch', 'label' => 'Enable Autoplay', 'default' => 1 ],
-					[ 'id' => 'slider_premium_delay', 'type' => 'number', 'label' => 'Hold Time (ms)', 'default' => 5000 ],
-					[ 'id' => 'slider_premium_speed', 'type' => 'number', 'label' => 'Transition Time (ms)', 'default' => 800 ],
-					[ 'id' => 'slider_premium_pause', 'type' => 'switch', 'label' => 'Pause on Interaction', 'default' => 1 ],
-				]
-			],
-			'p_style' => [
-				'title' => 'Visual Presence',
-				'fields' => [
-					[ 'id' => 'slider_premium_height', 'type' => 'number', 'label' => 'Desktop Height (vh)', 'default' => 60 ],
-					[ 'id' => 'slider_premium_mobile_height', 'type' => 'number', 'label' => 'Mobile Height (vh)', 'default' => 50 ],
-					[ 'id' => 'slider_premium_width', 'type' => 'number', 'label' => 'Max Content Width (px)', 'default' => 1400 ],
-					[ 'id' => 'slider_premium_radius', 'type' => 'number', 'label' => 'Card Rounded Corners (px)', 'default' => 28 ],
-					[ 'id' => 'slider_premium_overlay', 'type' => 'range', 'label' => 'Shadow Intensity (%)', 'default' => 75, 'min' => 0, 'max' => 100 ],
-				]
-			]
-		]
-	],
-	'design' => [
-		'title' => 'The Design System',
-		'sections' => [
-			'core_ui' => [
-				'title' => 'Branding & Colors',
-				'fields' => [
-					[ 'id' => 'design_mode', 'type' => 'select', 'label' => 'Appearance Mode', 'options' => ['light' => 'Pristine Light', 'dark' => 'Deep Midnight', 'system' => 'Auto (OS Adaptive)'], 'default' => 'light' ],
-					[ 'id' => 'color_primary', 'type' => 'color', 'label' => 'Primary Brand Color', 'default' => '#3b82f6' ],
-					[ 'id' => 'color_secondary', 'type' => 'color', 'label' => 'Accent/Detail Color', 'default' => '#6366f1' ],
-				]
-			],
-			'surfaces' => [
-				'title' => 'Surface Control',
-				'fields' => [
-					[ 'id' => 'color_bg_light', 'type' => 'color', 'label' => 'Page Background (Light)', 'default' => '#f6f6f6' ],
-					[ 'id' => 'color_surface_light', 'type' => 'color', 'label' => 'Card Surface (Light)', 'default' => '#ffffff' ],
-					[ 'id' => 'color_bg_dark', 'type' => 'color', 'label' => 'Page Background (Dark)', 'default' => '#0f0f0f' ],
-					[ 'id' => 'color_surface_dark', 'type' => 'color', 'label' => 'Card Surface (Dark)', 'default' => '#141414' ],
-				]
-			],
-			'customization' => [
-				'title' => 'Global UI Settings',
-				'fields' => [
-					[ 'id' => 'ui_card_radius', 'type' => 'number', 'label' => 'Standard Card Radius (px)', 'default' => 24 ],
-					[ 'id' => 'label_breakdown', 'type' => 'text', 'label' => 'Chart CTA Text', 'default' => 'View Chart' ],
-				]
-			]
-		]
-	],
-	'apis' => [
-		'title' => 'Service Nexus',
-		'sections' => [
-			'spotify' => [
-				'title' => 'Spotify Web API',
-				'fields' => [
-					[ 'id' => 'spotify_client_id', 'type' => 'text', 'label' => 'Client ID' ],
-					[ 'id' => 'spotify_client_secret', 'type' => 'password', 'label' => 'Client Secret' ],
-					[ 'id' => 'spotify_test', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=test_spotify_api&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Test Connection</button>' ]
-				]
-			],
-			'youtube' => [
-				'title' => 'YouTube Data API',
-				'fields' => [
-					[ 'id' => 'youtube_api_key', 'type' => 'password', 'label' => 'Data API v3 Key' ],
-					[ 'id' => 'youtube_test', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=test_youtube_api&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Test Connection</button>' ]
-				]
-			]
-		]
-	],
-	'maintenance' => [
-		'title' => 'Operations',
-		'sections' => [
-			'tools' => [
-				'title' => 'Data Management',
-				'fields' => [
-					[ 'id' => 'asset_backfill', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-primary" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=backfill_media&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Backfill Missing Images</button>' ],
-					[ 'id' => 'integrity_check', 'type' => 'custom', 'html' => '<button type="button" class="charts-btn charts-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=run_integrity_check&_wpnonce='.wp_create_nonce('charts_admin_action')).'\'">Re-link Broken Entries</button>' ],
-				]
-			],
-			'danger' => [
-				'title' => 'Danger Zone',
-				'fields' => [
-					[ 'id' => 'danger_zone_custom', 'type' => 'custom', 'html' => '<div class="kc-danger-bento"><p>Type <strong>RESET CHARTS</strong> to destroy all data.</p><input type="text" id="reset_confirm_input" placeholder="Confirmation text..." class="regular-text"><br><br><label><input type="checkbox" name="wipe_settings" value="1"> Also wipe settings</label><br><br><button type="button" class="charts-btn charts-btn-outline" id="reset_plugin_btn" disabled style="color:#ef4444; border-color:#fca5a5;">PURGE ALL DATA</button></div>' ]
-				]
-			]
-		]
-	],
+// 1. Panel Definition (The UI Schema)
+$panel = [
+    'homepage' => [
+        'title' => 'Charts Home',
+        'sections' => [
+            'layout' => [
+                'title' => 'Structural Strategy',
+                'fields' => [
+                    [ 'id' => 'homepage.layout', 'type' => 'select', 'label' => 'Display Mode', 'options' => ['standard' => 'Full Cinematic Billboard', 'minimal' => 'Focused Grid Minimalist'] ],
+                    [ 'id' => 'homepage.show_featured_row', 'type' => 'switch', 'label' => 'Show Featured Insight Section' ],
+                    [ 'id' => 'homepage.show_artists_row', 'type' => 'switch', 'label' => 'Show Trending Artists Row' ],
+                    [ 'id' => 'homepage.show_charts_grid', 'type' => 'switch', 'label' => 'Show Public Charts Browse Grid' ],
+                ]
+            ],
+            'design' => [
+                'title' => 'Aesthetic Spacing',
+                'fields' => [
+                    [ 'id' => 'homepage.padding_top', 'type' => 'number', 'label' => 'Top Buffer (px)', 'max' => 200 ],
+                    [ 'id' => 'homepage.section_spacing', 'type' => 'number', 'label' => 'Gap Between Blocks (px)', 'max' => 200 ],
+                    [ 'id' => 'homepage.section_order', 'type' => 'text', 'label' => 'Stack Arrangement', 'desc' => 'Comma separated: slider, artists, charts' ],
+                ]
+            ]
+        ]
+    ],
+    'billboard' => [
+        'title' => 'Hero Billboard',
+        'sections' => [
+            'engine' => [
+                'title' => 'Billboard Engine',
+                'fields' => [
+                    [ 'id' => 'slider.enable', 'type' => 'switch', 'label' => 'Activate Hero Billboard' ],
+                    [ 'id' => 'slider.source_mode', 'type' => 'select', 'label' => 'Content Strategy', 'options' => [
+                        'latest'         => 'Automatic: Latest Chart Updates',
+                        'selected'       => 'Curated: Selected Charts',
+                        'selection_top'  => 'Trending: #1 From Selections',
+                        'artists'        => 'Focus: Selected Artists',
+                        'tracks'         => 'Focus: Selected Tracks',
+                        'manual'         => 'Mixed: Manual Slide Builder'
+                    ]],
+                    [ 'id' => 'slider.selected_charts', 'type' => 'multiselect', 'label' => 'Choose Target Charts', 'options' => 'charts', 'show_on' => 'slider.source_mode:selected,selection_top' ],
+                    [ 'id' => 'slider.selected_artists', 'type' => 'multiselect', 'label' => 'Choose Featured Artists', 'options' => 'artists', 'show_on' => 'slider.source_mode:artists' ],
+                    [ 'id' => 'slider.selected_tracks', 'type' => 'multiselect', 'label' => 'Choose Featured Tracks', 'options' => 'tracks', 'show_on' => 'slider.source_mode:tracks' ],
+                ]
+            ],
+            'manual' => [
+                'title' => 'Manual Slide Builder',
+                'fields' => [
+                    [ 'id' => 'slider.manual_slides_json', 'type' => 'builder', 'label' => 'Slides Manifest', 'show_on' => 'slider.source_mode:manual' ],
+                ]
+            ],
+            'visuals' => [
+                'title' => 'Billboard Style',
+                'fields' => [
+                    [ 'id' => 'slider.height_vh', 'type' => 'number', 'label' => 'Desktop Height (vh)', 'min' => 30, 'max' => 100 ],
+                    [ 'id' => 'slider.mobile_height_vh', 'type' => 'number', 'label' => 'Mobile Height (vh)', 'min' => 30, 'max' => 100 ],
+                    [ 'id' => 'slider.max_width_px', 'type' => 'number', 'label' => 'Edge Limitation (px)', 'min' => 800, 'max' => 2400 ],
+                    [ 'id' => 'slider.border_radius_px', 'type' => 'number', 'label' => 'Card Curvature (px)', 'min' => 0, 'max' => 60 ],
+                    [ 'id' => 'slider.overlay_opacity_pct', 'type' => 'range', 'label' => 'Gradient Stealth Intensity (%)', 'min' => 0, 'max' => 100 ],
+                ]
+            ],
+            'motion' => [
+                'title' => 'Transitions & Timing',
+                'fields' => [
+                    [ 'id' => 'slider.autoplay', 'type' => 'switch', 'label' => 'Automated Carousel Motion' ],
+                    [ 'id' => 'slider.delay_ms', 'type' => 'number', 'label' => 'Slide Dwell Time (ms)', 'min' => 1000, 'max' => 30000 ],
+                    [ 'id' => 'slider.speed_ms', 'type' => 'number', 'label' => 'Transition Velocity (ms)', 'min' => 200, 'max' => 2000 ],
+                ]
+            ]
+        ]
+    ],
+    'design' => [
+        'title' => 'Design System',
+        'sections' => [
+            'branding' => [
+                'title' => 'Core Signature',
+                'fields' => [
+                    [ 'id' => 'design.mode', 'type' => 'select', 'label' => 'Environment Mode', 'options' => ['light' => 'Pristine Light', 'dark' => 'Deep Onyx', 'system' => 'OS Adaptive Mode'] ],
+                    [ 'id' => 'design.primary_color', 'type' => 'color', 'label' => 'Brand Accent (Primary)' ],
+                    [ 'id' => 'design.accent_color', 'type' => 'color', 'label' => 'Detail/Link Accent (Secondary)' ],
+                ]
+            ],
+            'typography' => [
+                'title' => 'Global UI',
+                'fields' => [
+                    [ 'id' => 'design.card_radius_px', 'type' => 'number', 'label' => 'Standard Card Radius (px)', 'max' => 60 ],
+                    [ 'id' => 'labels.chart_cta_text', 'type' => 'text', 'label' => 'CTA Button Copy', 'default' => 'See Full Chart' ],
+                ]
+            ]
+        ]
+    ],
+    'integrations' => [
+        'title' => 'Service Nexus',
+        'sections' => [
+            'spotify' => [
+                'title' => 'Spotify Ecosystem',
+                'fields' => [
+                    [ 'id' => 'api.spotify_client_id', 'type' => 'text', 'label' => 'Spotify Client ID' ],
+                    [ 'id' => 'api.spotify_client_secret', 'type' => 'password', 'label' => 'Spotify Client Secret' ],
+                ]
+            ],
+            'youtube' => [
+                'title' => 'YouTube Analytics',
+                'fields' => [
+                    [ 'id' => 'api.youtube_api_key', 'type' => 'password', 'label' => 'Google Cloud API Key' ],
+                ]
+            ]
+        ]
+    ],
+    'operations' => [
+        'title' => 'Operations',
+        'sections' => [
+            'tools' => [
+                'title' => 'System Maintenance',
+                'fields' => [
+                    [ 'id' => 'maint_backfill', 'type' => 'custom', 'html' => '<button type="button" class="kb-btn kb-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=backfill_media_v2&_wpnonce='.wp_create_nonce('kcharts_save_v2')).'\'">Backfill Missing Media</button>' ],
+                    [ 'id' => 'maint_integrity', 'type' => 'custom', 'html' => '<button type="button" class="kb-btn kb-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=run_integrity_check_v2&_wpnonce='.wp_create_nonce('kcharts_save_v2')).'\'">Reconcile Entity Links</button>' ],
+                ]
+            ],
+            'danger' => [
+                'title' => 'Structural Reset',
+                'fields' => [
+                    [ 'id' => 'maint_danger', 'type' => 'custom', 'html' => '
+                        <div class="kb-danger-zone">
+                            <p>To destroy all charts, entries, and data, type <strong>RESET CHARTS</strong> below.</p>
+                            <input type="text" name="confirm_reset" id="reset_confirm_input" placeholder="Type confirmation here..." class="kb-input" style="border-color:#fecaca;">
+                            <label style="margin-top:16px; display:block;"><input type="checkbox" name="wipe_settings" value="1"> Also purge configuration logic</label>
+                            <button type="submit" name="charts_action" value="reset_plugin_v2" id="reset_plugin_btn" class="kb-btn" style="margin-top:20px; background:#ef4444; color:#fff; width:100%; opacity:0.5; pointer-events:none;">PURGE SYSTEM DATA</button>
+                        </div>
+                    ' ],
+                ]
+            ]
+        ]
+    ]
 ];
 
-$registered_keys = [];
+// 2. Specialized Field Renderers
+function kc_render_bento_field( $field ) {
+    $id    = $field['id'];
+    $val   = \Charts\Core\Settings::get($id);
+    $name  = "kc_opt[" . str_replace('.', '][', $id) . "]"; // Nested name mapping
+    $show  = isset($field['show_on']) ? ' data-show-on="'.esc_attr($field['show_on']).'"' : '';
 
-if ( ! function_exists( 'kc_render_field' ) ) {
-	function kc_render_field( $field ) {
-		global $registered_keys;
-		$id = $field['id'];
-		$val = kc_get_setting( $id, $field['default'] ?? '' );
-		
-		$prefix = '';
-		if ( $field['type'] === 'switch' ) $prefix = 'chk:';
-		elseif ( $field['type'] === 'number' ) $prefix = 'int:';
-		elseif ( $field['type'] === 'range' || $field['type'] === 'float' ) $prefix = 'flt:';
-		elseif ( $field['type'] === 'textarea' ) $prefix = 'raw:';
-		elseif ( $field['type'] === 'media' ) $prefix = 'med:';
-		elseif ( $field['type'] === 'slides_manager' || $field['type'] === 'premium_slides_manager' ) $prefix = 'slides:';
-		
-		if ( $field['type'] !== 'custom' ) {
-			$registered_keys[] = $prefix . $id;
-		}
-		
-		echo '<div class="kc-tab-field-row">';
-		if ( isset($field['label']) && !in_array($field['type'], ['switch','custom']) ) {
-			echo '<label>' . esc_html($field['label']) . '</label>';
-		}
-		
-		switch ( $field['type'] ) {
-			case 'text':
-			case 'password':
-			case 'number':
-				echo '<input type="' . esc_attr($field['type']) . '" name="' . esc_attr($id) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" class="regular-text">';
-				break;
-			case 'range':
-				echo '<input type="range" name="' . esc_attr($id) . '" value="' . esc_attr($val) . '" step="' . esc_attr($field['step'] ?? 1) . '" min="' . esc_attr($field['min'] ?? 0) . '" max="' . esc_attr($field['max'] ?? 100) . '" oninput="this.nextElementSibling.innerText=this.value">';
-				echo ' <span class="kc-badge">' . esc_html($val) . '</span>';
-				break;
-			case 'color':
-				echo '<input type="color" name="' . esc_attr($id) . '" value="' . esc_attr($val) . '"> ';
-				echo '<input type="text" value="' . esc_attr($val) . '" class="small-text" onchange="this.previousElementSibling.value=this.value">';
-				break;
-			case 'select':
-				echo '<select name="' . esc_attr($id) . '">';
-				foreach ( $field['options'] as $v => $l ) {
-					echo '<option value="' . esc_attr($v) . '" ' . selected( $val, $v, false ) . '>' . esc_html($l) . '</option>';
-				}
-				echo '</select>';
-				break;
-			case 'switch':
-				echo '<label><input type="checkbox" name="' . esc_attr($id) . '" value="1" ' . checked( 1, $val, false ) . '> ' . esc_html($field['label']) . '</label>';
-				break;
-			case 'premium_slides_manager':
-				$val = kc_get_setting( $field['id'], '[]' );
-				$slides = json_decode($val, true) ?: [];
-				echo '<div class="kc-slides-manager kc-premium-slides-manager" id="manager-'.esc_attr($field['id']).'">';
-				echo '<input type="hidden" name="'.esc_attr($field['id']).'" value="'.esc_attr($val).'" class="kc-slides-json">';
-				echo '<div class="kc-slides-list">';
-				foreach($slides as $slide) {
-					$img_url = !empty($slide['image']) ? (is_numeric($slide['image']) ? wp_get_attachment_image_url($slide['image'], 'thumbnail') : $slide['image']) : '';
-					echo '<div class="kc-slide-item">';
-					echo '<img src="'.esc_url($img_url).'" width="40" height="40" style="object-fit:cover; border-radius:4px; '.($img_url?'':'display:none').'">';
-					echo '<input type="text" placeholder="Title" class="kc-p-title" value="'.esc_attr($slide['title']??'').'">';
-					echo '<input type="hidden" class="kc-p-image" value="'.esc_attr($slide['image']??'').'">';
-					echo '<button type="button" class="kc-p-upload button-secondary">Img</button>';
-					echo '<button type="button" class="kc-slide-remove button-link-delete">&times;</button>';
-					echo '</div>';
-				}
-				echo '</div>';
-				echo '<button type="button" class="kc-add-premium-slide-btn button">Add Slide</button>';
-				echo '</div>';
-				break;
-			case 'chart_select':
-				$charts = (new \Charts\Admin\SourceManager())->get_definitions( true );
-				$val = is_array($val) ? $val : [];
-				echo '<select name="' . esc_attr($id) . '[]" multiple style="height:120px; width:100%; max-width:400px;">';
-				foreach ( $charts as $c ) {
-					echo '<option value="' . esc_attr($c->id) . '" ' . (in_array($c->id, $val) ? 'selected' : '') . '>' . esc_html($c->title) . '</option>';
-				}
-				echo '</select>';
-				break;
-			case 'custom':
-				echo $field['html'];
-				break;
-		}
-		
-		if ( !empty($field['desc']) ) {
-			echo '<p class="description">' . wp_kses_post($field['desc']) . '</p>';
-		}
-		echo '</div>';
-	}
+    echo '<div class="kb-field-wrap"'. $show .'>';
+    if ( !empty($field['label']) && $field['type'] !== 'switch' ) {
+        echo '<label>' . esc_html($field['label']) . '</label>';
+    }
+
+    switch ( $field['type'] ) {
+        case 'custom':
+            echo $field['html'];
+            break;
+        case 'text':
+        case 'password':
+            echo '<input type="' . esc_attr($field['type']) . '" name="' . esc_attr($name) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" class="kb-input">';
+            break;
+            
+        case 'number':
+            echo '<input type="number" name="' . esc_attr($name) . '" id="' . esc_attr($id) . '" value="' . esc_attr($val) . '" min="' . esc_attr($field['min'] ?? 0) . '" max="' . esc_attr($field['max'] ?? 1000) . '" class="kb-input">';
+            break;
+
+        case 'select':
+            echo '<select name="' . esc_attr($name) . '" id="' . esc_attr($id) . '" class="kb-input">';
+            foreach ( $field['options'] as $v => $l ) {
+                echo '<option value="' . esc_attr($v) . '" ' . selected($val, $v, false) . '>' . esc_html($l) . '</option>';
+            }
+            echo '</select>';
+            break;
+
+        case 'multiselect':
+            global $wpdb;
+            $options = [];
+            if ( $field['options'] === 'charts' ) {
+                $results = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}charts_definitions ORDER BY title ASC");
+                foreach($results as $r) $options[$r->id] = $r->title;
+            } elseif ( $field['options'] === 'artists' ) {
+                $results = $wpdb->get_results("SELECT id, display_name as title FROM {$wpdb->prefix}charts_artists ORDER BY display_name ASC LIMIT 100");
+                foreach($results as $r) $options[$r->id] = $r->title;
+            } elseif ( $field['options'] === 'tracks' ) {
+                $results = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}charts_tracks ORDER BY title ASC LIMIT 100");
+                foreach($results as $r) $options[$r->id] = $r->title;
+            }
+            
+            $val = is_array($val) ? $val : [];
+            echo '<select name="' . esc_attr($name) . '[]" class="kb-input kb-multiselect" multiple style="height: 120px; padding: 10px;">';
+            foreach ( $options as $v => $l ) {
+                echo '<option value="' . esc_attr($v) . '" ' . (in_array($v, $val) ? 'selected' : '') . '>' . esc_html($l) . '</option>';
+            }
+            echo '</select>';
+            echo '<p class="kb-field-desc">Hold Ctrl/Cmd to select multiple.</p>';
+            break;
+
+        case 'builder':
+            echo '<div class="kb-builder-wrap">';
+            echo '<textarea name="' . esc_attr($name) . '" id="' . esc_attr($id) . '" class="kb-input" style="height: 180px; font-family: monospace; font-size: 12px; padding: 15px;">' . esc_textarea($val) . '</textarea>';
+            echo '<p class="kb-field-desc">Input a JSON array of slide objects. Example: [{"title":"Hot Release","subtitle":"Artist Name","image":"URL","url":"#"}]</p>';
+            echo '</div>';
+            break;
+
+        case 'switch':
+            echo '<label class="kb-toggle">';
+            echo '<input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked(1, $val, false) . '>';
+            echo '<span class="kb-toggle-slider"></span>';
+            echo '<span class="kb-toggle-label">' . esc_html($field['label']) . '</span>';
+            echo '</label>';
+            break;
+
+        case 'color':
+            echo '<div class="kb-color-group">';
+            echo '<input type="color" name="' . esc_attr($name) . '" value="' . esc_attr($val) . '">';
+            echo '<input type="text" value="' . esc_attr($val) . '" class="kb-input kb-color-hex" onchange="this.previousElementSibling.value=this.value">';
+            echo '</div>';
+            break;
+
+        case 'range':
+            echo '<div class="kb-range-group">';
+            echo '<input type="range" name="' . esc_attr($name) . '" value="' . esc_attr($val) . '" min="' . esc_attr($field['min'] ?? 0) . '" max="' . esc_attr($field['max'] ?? 100) . '" oninput="this.nextElementSibling.innerText=this.value">';
+            echo '<span class="kb-range-badge">' . esc_html($val) . '%</span>';
+            echo '</div>';
+            break;
+    }
+
+    if ( !empty($field['desc']) ) {
+        echo '<p class="kb-field-desc">' . esc_html($field['desc']) . '</p>';
+    }
+    echo '</div>';
 }
 ?>
 
-<<div class="wrap charts-admin-wrap premium-light">
-	<div class="charts-admin-header">
-		<div>
-			<h1 class="charts-admin-title">Charts Suite</h1>
-			<p class="charts-admin-subtitle">Product Configuration & Experience Engine</p>
-		</div>
-		<div class="charts-header-actions">
-			<button type="submit" form="charts-settings-form" class="charts-btn charts-btn-primary large">Keep Changes</button>
-		</div>
-	</div>
-	
-	<div class="kc-bento-navigation">
-		<?php $first = true; foreach ( $charts_panel as $id => $tab ) : ?>
-			<button type="button" class="kc-bento-nav-item <?php echo $first ? 'is-active' : ''; ?>" data-tab="<?php echo $id; ?>">
-				<?php echo esc_html($tab['title']); ?>
-			</button>
-		<?php $first = false; endforeach; ?>
-	</div>
+<div class="wrap kc-settings-wrap premium-bento">
+    <form method="post" action="" id="kc-main-settings-form">
+        <?php wp_nonce_field( 'kcharts_save_v2' ); ?>
+        <input type="hidden" name="charts_action" value="save_settings_v2">
 
-	<form method="post" action="" id="charts-settings-form" class="kc-bento-form-engine">
-		<?php wp_nonce_field( 'charts_admin_action' ); ?>
-		<?php settings_errors( 'charts' ); ?>
-		<input type="hidden" name="charts_action" value="save_settings">
+        <div class="kc-settings-header">
+            <div class="kc-branding">
+                <h1 class="kc-title"><?php _e( 'Settings Nexus', 'charts' ); ?></h1>
+                <p class="kc-subtitle"><?php _e( 'Product Logic & Experience Orchestration', 'charts' ); ?></p>
+            </div>
+            <div class="kc-header-actions">
+                <button type="submit" class="kb-btn kb-btn-primary"><?php _e( 'Synchronize Changes', 'charts' ); ?></button>
+            </div>
+        </div>
 
-		<div class="kc-bento-tabs-wrapper">
-			<?php $first = true; foreach ( $charts_panel as $tab_id => $tab ) : ?>
-				<div id="tab-<?php echo $tab_id; ?>" class="kc-bento-tab-panel <?php echo $first ? 'is-active' : ''; ?>">
-					<div class="charts-bento-grid">
-						<?php foreach ( $tab['sections'] as $sec_id => $sec ) : ?>
-							<div class="charts-bento-card <?php echo in_array($sec_id, ['p_manager','danger']) ? 'full-width' : ''; ?>">
-								<h3 class="card-title"><?php echo esc_html($sec['title']); ?></h3>
-								<div class="card-body">
-									<?php foreach ( $sec['fields'] as $field ) : ?>
-										<div class="kc-bento-field-wrap">
-											<div class="kc-bento-field-label"><?php echo esc_html($field['label'] ?? ''); ?></div>
-											<div class="kc-bento-field-input"><?php kc_render_field($field); ?></div>
-										</div>
-									<?php endforeach; ?>
-								</div>
-							</div>
-						<?php endforeach; ?>
-					</div>
-				</div>
-			<?php $first = false; endforeach; ?>
-		</div>
+        <?php settings_errors( 'charts' ); ?>
 
-		<input type="hidden" name="charts_registered_fields" value="<?php echo esc_attr( implode( ',', $registered_keys ) ); ?>">
-	</form>
+        <div class="kc-settings-layout">
+            <!-- Sidebar Nav -->
+            <nav class="kc-settings-nav">
+                <?php $first = true; foreach ( $panel as $id => $tab ) : ?>
+                    <button type="button" class="kb-nav-item <?php echo $first ? 'is-active' : ''; ?>" data-tab="<?php echo $id; ?>">
+                        <span class="kb-nav-indicator"></span>
+                        <?php echo esc_html($tab['title']); ?>
+                    </button>
+                <?php $first = false; endforeach; ?>
+            </nav>
+
+            <!-- Panels Section -->
+            <main class="kc-settings-panels">
+                <?php $first = true; foreach ( $panel as $tab_id => $tab ) : ?>
+                    <div id="panel-<?php echo $tab_id; ?>" class="kb-panel <?php echo $first ? 'is-active' : ''; ?>">
+                        <div class="kb-grid">
+                            <?php foreach ( $tab['sections'] as $sec_id => $sec ) : ?>
+                                <div class="kb-card">
+                                    <h3 class="kb-card-title"><?php echo esc_html($sec['title']); ?></h3>
+                                    <div class="kb-card-body">
+                                        <?php foreach ( $sec['fields'] as $field ) : ?>
+                                            <?php kc_render_bento_field($field); ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php $first = false; endforeach; ?>
+            </main>
+        </div>
+    </form>
 </div>
 
 <style>
-.charts-admin-wrap.premium-light { background: #f0f2f5; padding: 40px; }
-.kc-bento-navigation { display: flex; gap: 12px; margin-bottom: 32px; background: #fff; padding: 8px; border-radius: 16px; border: 1px solid #e2e8f0; width: fit-content; }
-.kc-bento-nav-item { border: none; background: transparent; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; color: #64748b; cursor: pointer; transition: all 0.2s; }
-.kc-bento-nav-item.is-active { background: #0f172a; color: #fff; }
-
-.kc-bento-tab-panel { display: none; }
-.kc-bento-tab-panel.is-active { display: block; animation: kc-fade-in 0.3s ease-out; }
-
-.kc-bento-field-wrap { margin-bottom: 24px; }
-.kc-bento-field-label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; letter-spacing: 0.05em; }
-.kc-bento-field-input select, .kc-bento-field-input input[type="text"], .kc-bento-field-input input[type="number"], .kc-bento-field-input input[type="password"] { 
-    width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px; font-weight: 600; color: #1e293b;
+:root {
+    --kb-primary: #3b82f6;
+    --kb-bg: #f8fafc;
+    --kb-card: #ffffff;
+    --kb-border: #e2e8f0;
+    --kb-text: #1e293b;
+    --kb-text-dim: #64748b;
+    --kb-radius: 16px;
+    --kb-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
-.kc-danger-bento { background: #fff1f2; border: 1px solid #fecaca; padding: 24px; border-radius: 16px; color: #991b1b; }
+.kc-settings-wrap.premium-bento { max-width: 1400px; margin: 40px auto; padding: 0 20px; font-family: -apple-system, system-ui, sans-serif; visibility: hidden; }
+.kc-settings-wrap.premium-bento.is-ready { visibility: visible; }
 
-@keyframes kc-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.kc-settings-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid var(--kb-border); }
+.kc-title { margin: 0; font-size: 32px; font-weight: 950; letter-spacing: -0.04em; color: var(--kb-text); }
+.kc-subtitle { margin: 4px 0 0; color: var(--kb-text-dim); font-size: 14px; font-weight: 600; }
+
+.kc-settings-layout { display: grid; grid-template-columns: 240px 1fr; gap: 40px; }
+
+/* Nav */
+.kc-settings-nav { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 100px; height: fit-content; }
+.kb-nav-item { background: transparent; border: none; padding: 12px 20px; text-align: left; font-weight: 800; font-size: 14px; color: var(--kb-text-dim); cursor: pointer; border-radius: 12px; transition: all 0.2s; position: relative; }
+.kb-nav-item:hover { background: rgba(0,0,0,0.02); }
+.kb-nav-item.is-active { background: #fff; color: var(--kb-primary); box-shadow: var(--kb-shadow); }
+.kb-nav-indicator { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 0px; height: 16px; background: var(--kb-primary); border-radius: 0 4px 4px 0; transition: width 0.2s; }
+.kb-nav-item.is-active .kb-nav-indicator { width: 4px; }
+
+/* Panels */
+.kb-panel { display: none; }
+.kb-panel.is-active { display: block; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.kb-danger-zone { background: #fff1f2; border: 1px solid #fecaca; padding: 24px; border-radius: 12px; color: #991b1b; }
+.kb-btn-outline { background: transparent; border: 1.5px solid var(--kb-border); color: var(--kb-text); }
+.kb-btn-outline:hover { background: var(--kb-bg); border-color: var(--kb-primary); }
+
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.kb-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.kb-card { background: #fff; border-radius: var(--kb-radius); border: 1px solid var(--kb-border); padding: 30px; box-shadow: var(--kb-shadow); }
+.kb-card-title { margin: 0 0 24px; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--kb-text-dim); border-bottom: 2px solid var(--kb-bg); padding-bottom: 12px; display: inline-block; }
+
+/* Fields */
+.kb-field-wrap { margin-bottom: 24px; }
+.kb-field-wrap label { display: block; font-size: 13px; font-weight: 700; color: var(--kb-text); margin-bottom: 8px; }
+.kb-input { width: 100%; height: 48px; border: 1.5px solid var(--kb-border); border-radius: 10px; padding: 0 16px; font-size: 14px; color: var(--kb-text); font-weight: 600; background: var(--kb-bg); transition: border-color 0.2s; }
+.kb-input:focus { border-color: var(--kb-primary); outline: none; background: #fff; }
+
+.kb-toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.kb-toggle input { display: none; }
+.kb-toggle-slider { width: 40px; height: 22px; background: #cbd5e1; border-radius: 100px; position: relative; transition: background 0.2s; }
+.kb-toggle-slider::after { content: ''; position: absolute; left: 4px; top: 4px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+.kb-toggle input:checked + .kb-toggle-slider { background: var(--kb-primary); }
+.kb-toggle input:checked + .kb-toggle-slider::after { transform: translateX(18px); }
+.kb-toggle-label { font-size: 14px; font-weight: 700; color: var(--kb-text); }
+
+.kb-btn { border: none; padding: 0 30px; height: 52px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; transition: all 0.2s; }
+.kb-btn-primary { background: var(--kb-primary); color: #fff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.kb-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
+
+.kb-field-desc { margin: 8px 0 0; font-size: 11px; font-weight: 600; color: var(--kb-text-dim); }
+
+.kb-color-group { display: flex; gap: 10px; }
+.kb-color-group input[type="color"] { width: 48px; height: 48px; padding: 0; border: 1px solid var(--kb-border); border-radius: 8px; cursor: pointer; }
+.kb-color-hex { flex: 1; text-transform: uppercase; }
+
+.kb-range-group { display: flex; align-items: center; gap: 15px; }
+.kb-range-group input { flex: 1; accent-color: var(--kb-primary); }
+.kb-range-badge { font-weight: 800; color: var(--kb-primary); font-size: 14px; min-width: 40px; }
 </style>
 
 <script>
 jQuery(document).ready(function($) {
-	// Tab Switching
-	$('.kc-bento-nav-item').on('click', function(e) {
-		e.preventDefault();
-		$('.kc-bento-nav-item').removeClass('is-active');
-		$(this).addClass('is-active');
-		
-		$('.kc-bento-tab-panel').removeClass('is-active');
-		var target = $(this).data('tab');
-		$('#tab-' + target).addClass('is-active');
-		window.location.hash = target;
-	});
+    $('.kc-settings-wrap').addClass('is-ready');
 
-	// Hash Handling
-	var hash = window.location.hash.substring(1);
-	if (hash && $('.kc-bento-nav-item[data-tab="'+hash+'"]').length) {
-		$('.kc-bento-nav-item[data-tab="'+hash+'"]').trigger('click');
-	}
+    // Nav Switch
+    $('.kb-nav-item').on('click', function() {
+        $('.kb-nav-item').removeClass('is-active');
+        $(this).addClass('is-active');
+
+        $('.kb-panel').removeClass('is-active');
+        var target = $(this).data('tab');
+        $('#panel-' + target).addClass('is-active');
+        
+        window.location.hash = target;
+    });
+
+    // Hash Logic
+    var hash = window.location.hash.substring(1);
+    if (hash && $('.kb-nav-item[data-tab="'+hash+'"]').length) {
+        $('.kb-nav-item[data-tab="'+hash+'"]').trigger('click');
+    }
+
+    // Reset Lock Logic
+    $('#reset_confirm_input').on('input', function() {
+        var val = $(this).val();
+        if (val === 'RESET CHARTS') {
+            $('#reset_plugin_btn').css({ 'opacity': 1, 'pointer-events': 'auto' });
+        } else {
+            $('#reset_plugin_btn').css({ 'opacity': 0.5, 'pointer-events': 'none' });
+        }
+    });
+
+    // Conditional Visibility Engine
+    function syncConditionalVisibility() {
+        $('[data-show-on]').each(function() {
+            var $el = $(this);
+            var condition = $el.data('show-on'); // slider.source_mode:manual
+            var parts = condition.split(':');
+            var targetId = parts[0];
+            var allowedValues = parts[1].split(',');
+
+            var $target = $('[id="'+targetId+'"], [name="kc_opt['+targetId.replace(/\./g, '][')+']"]');
+            var currentVal = $target.val();
+
+            if (allowedValues.indexOf(currentVal) !== -1) {
+                $el.show();
+            } else {
+                $el.hide();
+            }
+        });
+    }
+
+    $('select, input').on('change input', syncConditionalVisibility);
+    syncConditionalVisibility();
 });
 </script>
