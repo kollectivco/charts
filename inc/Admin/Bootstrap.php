@@ -54,12 +54,26 @@ class Bootstrap {
 			return;
 		}
 
-		// Nonce check
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'charts_admin_action' ) ) {
-			return;
+		// Unified Nonce & Integrity Check
+		$nonce = $_POST['_wpnonce'] ?? ($_REQUEST['_wpnonce'] ?? '');
+		$action = $_POST['charts_action'] ?? '';
+
+		// Log diagnostics for emergencies (view via error_log)
+		if ( defined('WP_DEBUG') && WP_DEBUG ) {
+			error_log("Charts Setting Sync Initialized: Action=$action, HasNonce=" . (!empty($nonce)?'YES':'NO'));
 		}
 
-		$action = $_POST['charts_action'];
+		if ( $action === 'save_settings_v2' ) {
+			if ( ! wp_verify_nonce( $nonce, 'kcharts_save_v2' ) ) {
+				if ( defined('WP_DEBUG') && WP_DEBUG ) error_log("Charts Sync Failure: Invalid Nonce for save_settings_v2");
+				return;
+			}
+		} else {
+			if ( ! wp_verify_nonce( $nonce, 'charts_admin_action' ) ) {
+				return;
+			}
+		}
+
 		$processed = false;
 
 		switch ( $action ) {

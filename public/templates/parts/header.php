@@ -3,37 +3,23 @@
  * Kontentainment Charts — Premium Light Mode Header
  */
 use Charts\Core\Settings;
+use Charts\Core\PublicIntegration;
 
-$theme_mode   = Settings::get( 'theme_mode' );
-$logo_id      = Settings::get_active_logo_id();
-$logo_alt     = Settings::get( 'logo_alt' );
-$wordmark     = Settings::get( 'wordmark' ); 
-$show_logo    = Settings::get( 'show_logo' );
-$show_nav     = Settings::get( 'show_nav' );
-$show_search  = Settings::get( 'show_search' );
-$menu_id      = Settings::get( 'header_menu_id' );
+$design_mode  = Settings::get( 'design.mode', 'light' );
+$logo_id      = Settings::get( 'branding.logo_id' );
+$logo_alt     = Settings::get( 'branding.logo_alt' );
+$wordmark     = Settings::get( 'labels.header_wordmark', 'Kontentainment' ); 
+$show_logo    = Settings::get( 'branding.show_logo', true );
+$show_nav     = Settings::get( 'branding.show_nav', true );
+$show_search  = Settings::get( 'branding.show_search', true );
+$menu_id      = Settings::get( 'branding.header_menu_id' );
 $week_date    = date('F j, Y'); 
 ?>
 <!DOCTYPE html>
-<html <?php language_attributes(); ?> data-theme="<?php echo esc_attr( $theme_mode ); ?>">
+<html <?php language_attributes(); ?> data-theme="<?php echo esc_attr( $design_mode ); ?>">
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<style>
-		:root {
-			--k-primary: <?php echo esc_attr( Settings::get('color_primary') ); ?>;
-			--k-bg-light: <?php echo esc_attr( Settings::get('color_bg_light') ); ?>;
-			--k-bg-light: <?php echo esc_attr( Settings::get('color_bg_light') ); ?>;
-			--k-bg-dark: <?php echo esc_attr( Settings::get('color_bg_dark') ); ?>;
-		}
-		
-		html[data-theme="light"] {
-			background-color: var(--k-bg-light);
-		}
-		html[data-theme="dark"] {
-			background-color: var(--k-bg-dark);
-		}
-	</style>
 	<?php wp_head(); ?>
 </head>
 <body <?php body_class( 'kc-root' ); ?>>

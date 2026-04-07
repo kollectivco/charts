@@ -4,13 +4,13 @@
  */
 global $wpdb;
 
-$spotify_id = get_option( 'charts_spotify_client_id' );
-$spotify_secret = get_option( 'charts_spotify_client_secret' );
-$youtube_key = get_option( 'charts_youtube_api_key' );
+$spotify_id = \Charts\Core\Settings::get('api.spotify_client_id');
+$spotify_secret = \Charts\Core\Settings::get('api.spotify_client_secret');
+$youtube_key = \Charts\Core\Settings::get('api.youtube_api_key');
 
-$wordmark = get_option( 'charts_wordmark', 'KCharts' );
-$show_logo = get_option( 'charts_show_logo', 1 );
-$show_nav = get_option( 'charts_show_nav', 1 );
+$wordmark = \Charts\Core\Settings::get( 'labels.chart_cta_text', 'KCharts' ); // Fallback as wordmark doesn't exist natively.
+$show_logo = 1;
+$show_nav = 1;
 
 // Re-using same form action as admin
 ?>

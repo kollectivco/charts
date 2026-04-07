@@ -1,4 +1,4 @@
-<div class="kc-premium-slider <?php echo $settings['source_mode'] === 'auto' ? 'kc-ps-auto' : 'kc-ps-manual'; ?> <?php echo $settings['hide_secondary_mobile'] === 'yes' ? 'ps-hide-s-m' : ''; ?>" data-config='<?php echo esc_attr(json_encode($config)); ?>'>
+<div class="kc-premium-slider <?php echo ($settings['source_mode'] ?? 'auto') === 'auto' ? 'kc-ps-auto' : 'kc-ps-manual'; ?> <?php echo ($settings['hide_secondary_mobile'] ?? 'no') === 'yes' ? 'ps-hide-s-m' : ''; ?>" data-config='<?php echo esc_attr(json_encode($config)); ?>'>
     <div class="kc-ps-wrapper">
         <?php foreach ( $slides as $index => $slide ) : 
             $active = $index === 0 ? 'is-active' : '';

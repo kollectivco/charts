@@ -80,9 +80,13 @@ class PublicIntegration {
 		$mode = Settings::get('design.mode', 'light');
 		
 		$variables = [
-			'--k-primary'        => Settings::get('design.primary_color'),
-			'--k-secondary'      => Settings::get('design.accent_color'),
-			'--k-radius-md'      => Settings::get('design.card_radius_px', 24) . 'px',
+			'--k-primary'            => Settings::get('design.primary_color'),
+			'--k-secondary'          => Settings::get('design.accent_color'),
+			'--k-radius-md'          => Settings::get('design.card_radius_px', 24) . 'px',
+			'--kb-height'            => Settings::get('slider.height_vh', 60) . 'vh',
+			'--kb-mobile-height'     => Settings::get('slider.mobile_height_vh', 50) . 'vh',
+			'--kb-radius'            => Settings::get('slider.border_radius_px', 28) . 'px',
+			'--kb-overlay-opacity'   => (Settings::get('slider.overlay_opacity_pct', 80) / 100),
 		];
 
 		// Mode-specific Surface/Text
@@ -121,9 +125,9 @@ class PublicIntegration {
 		if ( $mode === 'system' ) {
 			echo '@media (prefers-color-scheme: dark) {';
 			echo ':root {';
-			echo '--k-bg-override: ' . esc_attr(Settings::get('color_bg_dark')) . ';';
-			echo '--k-surface-override: ' . esc_attr(Settings::get('color_surface_dark')) . ';';
-			echo '--k-text-override: ' . esc_attr(Settings::get('color_text_dark')) . ';';
+			echo '--k-bg-override: ' . esc_attr(Settings::get('design.bg_color_dark')) . ';';
+			echo '--k-surface-override: ' . esc_attr(Settings::get('design.surface_color_dark')) . ';';
+			echo '--k-text-override: ' . esc_attr(Settings::get('design.text_color_dark')) . ';';
 			echo '}';
 			echo '}';
 		}

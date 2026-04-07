@@ -72,6 +72,8 @@ $panel = [
                 'title' => 'Transitions & Timing',
                 'fields' => [
                     [ 'id' => 'slider.autoplay', 'type' => 'switch', 'label' => 'Automated Carousel Motion' ],
+                    [ 'id' => 'slider.loop', 'type' => 'switch', 'label' => 'Infinite Loop Mode' ],
+                    [ 'id' => 'slider.pause_on_hover', 'type' => 'switch', 'label' => 'Pause Motion on Hover' ],
                     [ 'id' => 'slider.delay_ms', 'type' => 'number', 'label' => 'Slide Dwell Time (ms)', 'min' => 1000, 'max' => 30000 ],
                     [ 'id' => 'slider.speed_ms', 'type' => 'number', 'label' => 'Transition Velocity (ms)', 'min' => 200, 'max' => 2000 ],
                 ]
@@ -87,13 +89,25 @@ $panel = [
                     [ 'id' => 'design.mode', 'type' => 'select', 'label' => 'Environment Mode', 'options' => ['light' => 'Pristine Light', 'dark' => 'Deep Onyx', 'system' => 'OS Adaptive Mode'] ],
                     [ 'id' => 'design.primary_color', 'type' => 'color', 'label' => 'Brand Accent (Primary)' ],
                     [ 'id' => 'design.accent_color', 'type' => 'color', 'label' => 'Detail/Link Accent (Secondary)' ],
+                    [ 'id' => 'branding.show_logo', 'type' => 'switch', 'label' => 'Display Brand Logo' ],
+                    [ 'id' => 'branding.show_nav', 'type' => 'switch', 'label' => 'Display Primary Navigation' ],
+                    [ 'id' => 'branding.show_search', 'type' => 'switch', 'label' => 'Activate Global Search' ],
+                ]
+            ],
+            'labels' => [
+                'title' => 'Copy & Labels',
+                'fields' => [
+                    [ 'id' => 'labels.header_wordmark', 'type' => 'text', 'label' => 'Header Brand Text' ],
+                    [ 'id' => 'labels.chart_cta_text', 'type' => 'text', 'label' => 'Chart CTA Button Copy' ],
+                    [ 'id' => 'labels.footer_wordmark', 'type' => 'text', 'label' => 'Footer Wordmark' ],
+                    [ 'id' => 'labels.footer_left', 'type' => 'text', 'label' => 'Footer Copyright/Left' ],
+                    [ 'id' => 'labels.footer_right', 'type' => 'text', 'label' => 'Footer Attribution/Right' ],
                 ]
             ],
             'typography' => [
                 'title' => 'Global UI',
                 'fields' => [
                     [ 'id' => 'design.card_radius_px', 'type' => 'number', 'label' => 'Standard Card Radius (px)', 'max' => 60 ],
-                    [ 'id' => 'labels.chart_cta_text', 'type' => 'text', 'label' => 'CTA Button Copy', 'default' => 'See Full Chart' ],
                 ]
             ]
         ]
@@ -208,6 +222,7 @@ function kc_render_bento_field( $field ) {
 
         case 'switch':
             echo '<label class="kb-toggle">';
+            echo '<input type="hidden" name="' . esc_attr($name) . '" value="0">';
             echo '<input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked(1, $val, false) . '>';
             echo '<span class="kb-toggle-slider"></span>';
             echo '<span class="kb-toggle-label">' . esc_html($field['label']) . '</span>';
@@ -289,7 +304,7 @@ function kc_render_bento_field( $field ) {
 
 <style>
 :root {
-    --kb-primary: #3b82f6;
+    --kb-primary: <?php echo esc_attr(Settings::get('design.primary_color', '#fe025b')); ?>;
     --kb-bg: #f8fafc;
     --kb-card: #ffffff;
     --kb-border: #e2e8f0;
@@ -412,5 +427,16 @@ jQuery(document).ready(function($) {
 
     $('select, input').on('change input', syncConditionalVisibility);
     syncConditionalVisibility();
+
+    // Color Field Sync
+    $(document).on('input', 'input[type="color"]', function() {
+        $(this).next('.kb-color-hex').val($(this).val());
+    });
+    $(document).on('input', '.kb-color-hex', function() {
+        var val = $(this).val();
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+            $(this).prev('input[type="color"]').val(val);
+        }
+    });
 });
 </script>

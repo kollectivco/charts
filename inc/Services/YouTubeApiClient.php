@@ -11,7 +11,7 @@ class YouTubeApiClient {
 	private $base_url = 'https://www.googleapis.com/youtube/v3/';
 
 	public function __construct() {
-		$this->api_key = get_option( 'charts_youtube_api_key' );
+		$this->api_key = \Charts\Core\Settings::get( 'api.youtube_api_key' );
 	}
 
 	public function is_configured() {

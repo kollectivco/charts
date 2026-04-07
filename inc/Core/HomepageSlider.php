@@ -6,8 +6,10 @@ class HomepageSlider {
     public static function get_premium_settings() {
         return [
             'enable'               => Settings::get('slider.enable'),
-            'source_mode'          => Settings::get('slider.source_mode'),
+            'source_mode'          => Settings::get('slider.source_mode', 'latest'),
             'selected_charts'      => (array)Settings::get('slider.selected_charts', []),
+            'selected_artists'     => (array)Settings::get('slider.selected_artists', []),
+            'selected_tracks'      => (array)Settings::get('slider.selected_tracks', []),
             'manual_slides_json'   => Settings::get('slider.manual_slides_json', '[]'),
             'height_vh'            => Settings::get('slider.height_vh'),
             'mobile_height_vh'     => Settings::get('slider.mobile_height_vh'),
@@ -49,6 +51,11 @@ class HomepageSlider {
             case 'manual':
                 $slides = self::get_slides_from_manual($premium['manual_slides_json']);
                 break;
+        }
+
+        // EMERGENCY FALLBACK: If current strategy yields nothing, always try 'latest' charts
+        if ( empty($slides) && $mode !== 'latest' ) {
+            $slides = self::get_slides_from_charts('latest', $count);
         }
 
         return $slides;

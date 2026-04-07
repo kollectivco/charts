@@ -1519,7 +1519,7 @@
 .kc-ps-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+    background: linear-gradient(to top, rgba(0,0,0,var(--kb-overlay-opacity, 0.8)) 0%, rgba(0,0,0,calc(var(--kb-overlay-opacity, 0.8) * 0.25)) 60%, transparent 100%);
     z-index: 2;
 }
 

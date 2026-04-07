@@ -12,8 +12,8 @@ class SpotifyApiClient {
 	private $access_token;
 
 	public function __construct() {
-		$this->client_id     = get_option( 'charts_spotify_client_id' );
-		$this->client_secret = get_option( 'charts_spotify_client_secret' );
+		$this->client_id     = \Charts\Core\Settings::get( 'api.spotify_client_id' );
+		$this->client_secret = \Charts\Core\Settings::get( 'api.spotify_client_secret' );
 	}
 
 	/**

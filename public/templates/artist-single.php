@@ -24,7 +24,7 @@ $needs_sync = false;
 // 1. Resolve Spotify ID if missing
 if ( empty( $artist->spotify_id ) ) {
 	$sp_api = new \Charts\Services\SpotifyApiClient();
-	if ( ! get_option('charts_spotify_client_id') ) {
+	if ( ! \Charts\Core\Settings::get('api.spotify_client_id') ) {
 		$debug_notes[] = 'spotify: api credentials missing';
 	} else {
 		$search = $sp_api->search_artist( $artist->display_name );

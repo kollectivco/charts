@@ -2,9 +2,11 @@
 /**
  * Kontentainment Charts — Premium Light Mode Footer
  */
-$wordmark     = get_option( 'charts_wordmark', 'KCharts' ); 
-$footer_left  = get_option( 'charts_footer_left' );
-$footer_right = get_option( 'charts_footer_right' );
+use Charts\Core\Settings;
+
+$wordmark     = Settings::get( 'labels.footer_wordmark', 'KCharts' ); 
+$footer_left  = Settings::get( 'labels.footer_left' );
+$footer_right = Settings::get( 'labels.footer_right' );
 ?>
 </main> <!-- .charts-product-main -->
 
