@@ -92,7 +92,7 @@ class HomepageSlider {
                     $slides[] = [
                         'title'     => $row->track_name,
                         'desc'      => $row->artist_names,
-                        'badge'     => '#1 Trending',
+                        'badge'     => '',
                         'image_url' => $row->resolved_thumb ?: $def->cover_image_url,
                         'btn1_text' => 'View Chart',
                         'btn1_link' => home_url('/charts/' . $def->slug . '/'),
@@ -107,7 +107,7 @@ class HomepageSlider {
             $slides[] = [
                 'title'     => $def->title,
                 'desc'      => $def->chart_summary,
-                'badge'     => 'Featured Chart',
+                'badge'     => '',
                 'image_url' => $def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => 'Browse Chart',
                 'btn1_link' => home_url('/charts/' . $def->slug . '/'),
@@ -128,7 +128,7 @@ class HomepageSlider {
             $slides[] = [
                 'title'     => $a->display_name,
                 'desc'      => 'Trending Artist Profile',
-                'badge'     => 'Hot Artist',
+                'badge'     => '',
                 'image_url' => $a->image ?: CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => 'View Profile',
                 'btn1_link' => home_url('/charts/artist/' . ($a->slug ?? sanitize_title($a->display_name)) . '/'),
@@ -154,7 +154,7 @@ class HomepageSlider {
             $slides[] = [
                 'title'     => $t->title,
                 'desc'      => $t->artist_name,
-                'badge'     => 'Featured Track',
+                'badge'     => '',
                 'image_url' => $t->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => 'Listen Now',
                 'btn1_link' => '#',
@@ -172,7 +172,7 @@ class HomepageSlider {
             $slides[] = [
                 'title'     => $m['title'] ?? 'Featured',
                 'desc'      => $m['subtitle'] ?? '',
-                'badge'     => $m['badge'] ?? 'Featured',
+                'badge'     => '',
                 'image_url' => $m['image'] ?? CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => $m['btn_text'] ?? 'Learn More',
                 'btn1_link' => $m['url'] ?? '#',

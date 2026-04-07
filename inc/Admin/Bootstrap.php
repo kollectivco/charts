@@ -70,8 +70,19 @@ class Bootstrap {
 			}
 		} else {
 			if ( ! wp_verify_nonce( $nonce, 'charts_admin_action' ) ) {
+				if ( defined('WP_DEBUG') && WP_DEBUG ) error_log("Charts Sync Failure: Invalid Nonce for action=$action");
 				return;
 			}
+		}
+
+		// Pull any persistent errors from transients
+		$transient_key = 'kc_admin_errors_' . get_current_user_id();
+		$stored_errors = get_transient($transient_key);
+		if ( is_array($stored_errors) ) {
+			foreach($stored_errors as $e) {
+				add_settings_error($e['setting'], $e['code'], $e['message'], $e['type']);
+			}
+			delete_transient($transient_key);
 		}
 
 		$processed = false;
@@ -339,6 +350,12 @@ class Bootstrap {
 		if ( $processed ) {
 			self::clear_frontend_caches();
 			
+			// Persist settings errors across redirect
+			global $wp_settings_errors;
+			if ( !empty($wp_settings_errors) ) {
+				set_transient('kc_admin_errors_' . get_current_user_id(), $wp_settings_errors, 60);
+			}
+
 			// 1. Detect origin surface (admin vs external)
 			// At 'init' hook, get_query_var isn't ready, so we check the URI or referer
 			$referer = wp_get_referer();
@@ -358,6 +375,8 @@ class Bootstrap {
 				$module = 'intelligence';
 			} elseif ( strpos( $action, 'match' ) !== false || strpos( $action, 'integrity' ) !== false ) {
 				$module = 'matching';
+			} elseif ( strpos( $action, 'location' ) !== false ) {
+				$module = 'locations';
 			}
 
 			// 3. Construct target URL
@@ -825,12 +844,23 @@ class Bootstrap {
 		}
 
 		$url = sanitize_url( $_POST['location_url'] );
+		
+		if ( defined('WP_DEBUG') && WP_DEBUG ) {
+			error_log("Charts Location Import: URL received: $url");
+		}
+
 		$importer = new \Charts\Services\YouTubeChartsLocationImporter();
 		$result = $importer->import_by_url( $url );
 
 		if ( is_wp_error( $result ) ) {
+			if ( defined('WP_DEBUG') && WP_DEBUG ) {
+				error_log("Charts Location Import Error: " . $result->get_error_message());
+			}
 			add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
 		} else {
+			if ( defined('WP_DEBUG') && WP_DEBUG ) {
+				error_log("Charts Location Import Success: " . $result['name'] . " (" . $result['status'] . ")");
+			}
 			$msg = sprintf( 
 				__( 'Successfully %1$s location <strong>%2$s</strong> from YouTube Charts. Found %3$d artists and %4$d songs.', 'charts' ), 
 				$result['status'], 

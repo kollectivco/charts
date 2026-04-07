@@ -39,8 +39,11 @@ class YouTubeChartsLocationImporter {
      */
     private function extract_location_id($url) {
         $url = trim($url);
+        // Handle encoded URLs and extract the long hex sequence (sometimes containing :)
         if (preg_match('/location\/(0x[a-f0-9%:]+)/i', $url, $matches)) {
-            return $matches[1];
+            $id = $matches[1];
+            // If it's a long sequence like 0x3e...:0x17..., we take it all but decode if needed
+            return rawurldecode($id);
         }
         return false;
     }
@@ -72,31 +75,36 @@ class YouTubeChartsLocationImporter {
             'track_rankings'  => []
         ];
 
-        // Scrape Location Name (Title: "City Name - YouTube Charts")
+        // 1. Scrape Location Name (Standard TITLE tag or Header)
         if (preg_match('/<title>(.*?) - YouTube Charts<\/title>/i', $html, $m)) {
             $data['name'] = htmlspecialchars_decode($m[1], ENT_QUOTES);
+        } elseif (preg_match('/"header":\{"title":"(.*?)"/i', $html, $m)) {
+             $data['name'] = htmlspecialchars_decode($m[1], ENT_QUOTES);
         }
 
-        // Scrape Timeframe/Date (Look for patterns like "Last 28 days" and date ranges)
+        // 2. Scrape Timeframe/Date (Look for patterns like "Last 28 days" and date ranges)
         if (preg_match('/"subtitle":"(Last \d+ days)"/i', $html, $m)) {
             $data['timeframe'] = $m[1];
+        } elseif (preg_match('/"subtitleLabel":"(.*?)"/i', $html, $m)) {
+            $data['timeframe'] = $m[1];
         }
+
         if (preg_match('/(\w+ \d+ - \w+ \d+, \d{4})/i', $html, $m)) {
             $data['date_range'] = $m[0];
         }
 
-        // Scrape OpenGraph Image
+        // 3. Scrape OpenGraph Image
         if (preg_match('/property="og:image"\s+content="(.*?)"/i', $html, $m)) {
             $data['image'] = $m[1];
         }
 
-        // Resilience: Try to find structured list data in initial state JSON
-        // If DOM scraping Top Artists/Songs is too flaky, we look for JSON strings
+        // 4. Resilience: Try to find structured list data in initial state JSON
         $data['artist_rankings'] = $this->parse_rankings_json($html, 'artist');
         $data['track_rankings']  = $this->parse_rankings_json($html, 'track');
 
         if (empty($data['name'])) {
-            return new \WP_Error('parse_failed', __('Could not extract location name from the page.', 'charts'));
+            // Fallback for name from URL if parsing failed
+            $data['name'] = __('Location: ', 'charts') . substr(rawurldecode($url), -20);
         }
 
         return $data;
@@ -166,12 +174,18 @@ class YouTubeChartsLocationImporter {
         ];
 
         if ($location) {
-            $wpdb->update($table, $payload, ['id' => $location->id]);
+            $result = $wpdb->update($table, $payload, ['id' => $location->id]);
+            if ( $result === false ) {
+                return new \WP_Error('save_failed', __('Database update failed for location.', 'charts') . ' ' . $wpdb->last_error);
+            }
             $id = $location->id;
             $status = 'updated';
         } else {
             $payload['slug'] = sanitize_title($data['name'] . '-' . substr($external_id, 0, 8));
-            $wpdb->insert($table, $payload);
+            $result = $wpdb->insert($table, $payload);
+            if ( $result === false ) {
+                 return new \WP_Error('save_failed', __('Database insertion failed for location.', 'charts') . ' ' . $wpdb->last_error);
+            }
             $id = $wpdb->insert_id;
             $status = 'created';
         }

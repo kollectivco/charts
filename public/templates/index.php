@@ -202,4 +202,6 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 
 	</div>
 </div>
+
+<script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
 <?php \Charts\Core\PublicIntegration::get_footer(); ?>

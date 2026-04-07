@@ -359,6 +359,7 @@ class BillboardEngine {
         if (this.timer) clearInterval(this.timer);
     }
 }
+window.BillboardEngine = BillboardEngine;
 
 /**
  * Premium Slider Engine
@@ -412,7 +413,8 @@ class PremiumSliderEngine {
 
         if (this.config.autoplay) {
             this.stopTimer();
-            this.startTimer();
+            // Add a small delay before restarting to prevent rapid race conditions
+            setTimeout(() => this.startTimer(), 150);
         }
     }
 
@@ -428,3 +430,4 @@ class PremiumSliderEngine {
         if (this.timer) clearInterval(this.timer);
     }
 }
+window.PremiumSliderEngine = PremiumSliderEngine;
