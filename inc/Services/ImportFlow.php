@@ -184,7 +184,8 @@ class ImportFlow {
 		// Resolve canonical slug if missing
 		$item_slug = $flat['item_slug'] ?? null;
 		if ( ! $item_slug && $item_id ) {
-			$entity_table = $wpdb->prefix . 'charts_' . ( $item_type === 'video' ? 'videos' : ($item_type === 'artist' ? 'artists' : 'tracks') );
+			$entity_type_key = ($item_type === 'video' ? 'videos' : ($item_type === 'artist' ? 'artists' : 'tracks'));
+			$entity_table = $wpdb->prefix . 'charts_' . $entity_type_key;
 			$item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM $entity_table WHERE id = %d", $item_id ) );
 		}
 
@@ -328,7 +329,7 @@ class ImportFlow {
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
 			'youtube_id'        => $youtube_id,
-			'cover_image'       => $image,
+			'thumbnail'         => $image,
 			'created_at'        => current_time( 'mysql' ),
 			'updated_at'        => current_time( 'mysql' ),
 		) );

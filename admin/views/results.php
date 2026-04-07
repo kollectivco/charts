@@ -1,6 +1,6 @@
 <?php
 /**
- * Import Runs View
+ * Import Runs View (History & Audit Pipeline)
  */
 global $wpdb;
 $runs_table   = $wpdb->prefix . 'charts_import_runs';
@@ -33,7 +33,7 @@ $runs = $wpdb->get_results( "
 			<header class="table-header">
 				<h2 class="table-title"><?php _e( 'Audit Pipeline History', 'charts' ); ?></h2>
 				<div style="font-size:11px; color:var(--charts-text-dim); font-weight:700;">
-					<?php _e( 'Real-time ingestion logs', 'charts' ); ?>
+					<?php _e( 'Real-time ingestion logs and efficiency analytics', 'charts' ); ?>
 				</div>
 			</header>
 			<?php if ( empty( $runs ) ) : ?>
@@ -51,12 +51,13 @@ $runs = $wpdb->get_results( "
 							<th><?php _e( 'Status', 'charts' ); ?></th>
 							<th><?php _e( 'Volume', 'charts' ); ?></th>
 							<th><?php _e( 'Efficiency', 'charts' ); ?></th>
-							<th><?php _e( 'Terminal Timestamp', 'charts' ); ?></th>
+							<th><?php _e( 'Timeline', 'charts' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $runs as $run ) :
 							$status_class = ( $run->status === 'completed' ) ? 'status-success' : ( ( $run->status === 'failed' ) ? 'status-error' : 'status-pending' );
+                            $is_processing = ($run->status === 'processing');
 						?>
 							<tr>
 								<td>
@@ -78,26 +79,36 @@ $runs = $wpdb->get_results( "
 										<?php echo number_format( $run->created_items ?? 0 ); ?> <?php _e( 'created', 'charts' ); ?>
 									</div>
 									<?php if ( ! empty( $run->error_message ) ) : ?>
-										<div style="font-size: 9px; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.03); border-left: 2px solid var(--charts-primary); color: var(--charts-text-dim); display: inline-block;">
+										<div style="font-size: 9px; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.03); border-left: 2px solid <?php echo ($run->status === 'failed' ? 'var(--charts-error)' : 'var(--charts-accent)'); ?>; color: var(--charts-text-dim); display: block; max-width:250px; line-height:1.3;">
 											<?php echo esc_html( $run->error_message ); ?>
 										</div>
 									<?php endif; ?>
 								</td>
 								<td>
-									<div style="color: var(--charts-text-dim); font-size:12px; font-weight:600;">
-										<?php 
-										if ($run->status === 'completed' && $run->started_at && $run->finished_at) {
-											$diff = strtotime($run->finished_at) - strtotime($run->started_at);
-											echo sprintf( __( '%.2fs', 'charts' ), $diff );
-										} else {
-											echo '—';
-										}
-										?>
-									</div>
+									<?php 
+                                        $match_count = intval($run->matched_items ?? 0) + intval($run->created_items ?? 0);
+                                        $total_rows  = intval($run->parsed_rows ?? 0);
+                                        $efficiency  = ($total_rows > 0) ? round(($match_count / $total_rows) * 100) : 0;
+                                    ?>
+                                    <div style="font-size:14px; font-weight:900; color:<?php echo $efficiency > 80 ? '#10b981' : ($efficiency > 40 ? '#f59e0b' : '#ef4444'); ?>;">
+                                        <?php echo $efficiency; ?>%
+                                    </div>
+                                    <div style="font-size:10px; color:var(--charts-text-dim); font-weight:600; text-transform:uppercase;">Intelligence</div>
 								</td>
 								<td>
 									<div style="color: var(--charts-primary); font-weight:700; font-size:13px;"><?php echo $run->started_at ? date( 'M j, H:i', strtotime( $run->started_at ) ) : '–'; ?></div>
-									<div style="font-size:10px; color:var(--charts-text-dim);"><?php echo date( 'Y', strtotime( $run->started_at ) ); ?></div>
+									<div style="font-size:10px; color:var(--charts-text-dim);">
+                                        <?php 
+                                        if ( ! empty($run->finished_at) && $run->finished_at !== '0000-00-00 00:00:00' ) {
+                                            $diff = strtotime($run->finished_at) - strtotime($run->started_at);
+                                            echo sprintf( __('%ds duration', 'charts'), $diff );
+                                        } elseif ($is_processing) {
+                                            echo '<span style="color:var(--charts-accent); animation: pulse 1s infinite;">Active...</span>';
+                                        } else {
+                                            echo '–';
+                                        }
+                                        ?>
+                                    </div>
 								</td>
 							</tr>
 						<?php endforeach; ?>
@@ -107,3 +118,6 @@ $runs = $wpdb->get_results( "
 		</div>
 	</div>
 </div>
+<style>
+@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+</style>

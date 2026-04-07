@@ -25,17 +25,17 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     $btn.text('Success!').css('background', '#10b981');
-                    alert(response.data.message || 'Import successful!');
+                    window.ChartsToast.show('success', response.data.message || 'Import successful!', 'Import Nexus');
                     setTimeout(() => {
                         location.reload();
-                    }, 500);
+                    }, 800);
                 } else {
-                    alert('Error: ' + (response.data.message || response.data || 'Unknown error'));
+                    window.ChartsToast.show('error', response.data.message || response.data || 'Unknown error', 'Sync Failure');
                     $btn.removeClass('is-loading').prop('disabled', false).text('Fetch Now');
                 }
             },
             error: function() {
-                alert('Server error occurred.');
+                window.ChartsToast.show('error', 'Server error occurred during fetch.', 'Critical Failure');
                 $btn.removeClass('is-loading').prop('disabled', false).text('Fetch Now');
             }
         });
@@ -69,6 +69,38 @@ jQuery(document).ready(function($) {
         $('#cover_preview').attr('src', '').removeClass('has-image');
     });
 
+    // Import Center Enhancements
+    const $fileInput = $('#import_file');
+    const uploadContent = $('.upload-content');
+    const filePreview = $('.file-preview');
+    const removeBtn = $('#remove-file');
+
+    if ($fileInput.length) {
+        $fileInput.on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadContent.hide();
+                filePreview.css('display', 'inline-flex');
+                filePreview.find('.filename').text(file.name);
+                window.ChartsToast.show('info', 'File staged for sync: ' + file.name, 'Intelligence Detection');
+            }
+        });
+
+        removeBtn.on('click', function() {
+            $fileInput.val('');
+            filePreview.hide();
+            uploadContent.show();
+            window.ChartsToast.show('warning', 'File removed from staging.', 'Nexus Reset');
+        });
+
+        $('#unified-import-form').on('submit', function() {
+            const $btn = $('#run-import-btn');
+            $btn.addClass('processing').find('span').text('Processing Data...');
+            $btn.find('.spinner-loader').show();
+            window.ChartsToast.show('info', 'Contacting platform API and parsing dataset...', 'Sync Pipeline Engaged');
+        });
+    }
+
     /**
      * Visual Slide Builder Engine
      */
@@ -79,7 +111,6 @@ jQuery(document).ready(function($) {
             const $json = $wrap.find('.kb-json-textarea');
             const data  = kcharts_builder_data || { charts: [], artists: [], tracks: [] };
 
-            // 1. Initial Load
             const loadFromJSON = () => {
                 $list.empty();
                 try {
@@ -202,7 +233,6 @@ jQuery(document).ready(function($) {
                 return options;
             };
 
-            // Listeners
             $wrap.on('click', '.kb-add-slide', () => addSlide());
             $wrap.on('click', '.kb-slide-delete', function() {
                 if (confirm('Permanently remove this slide?')) {
@@ -276,12 +306,9 @@ jQuery(document).ready(function($) {
                 syncToJSON();
             });
 
-            // Media Picker
             $wrap.on('click', '.kb-builder-upload', function(e) {
                 const $btn = $(this);
                 const $input = $btn.siblings('input');
-                const $card = $btn.closest('.kb-slide-card');
-                
                 const frame = wp.media({
                     title: 'Select Slide Image',
                     button: { text: 'Use Image' },
@@ -294,18 +321,9 @@ jQuery(document).ready(function($) {
                 frame.open();
             });
 
-            // Sortable
             if ($.fn.sortable) {
-                $list.sortable({
-                    handle: '.kb-slide-head',
-                    update: () => syncToJSON()
-                });
+                $list.sortable({ handle: '.kb-slide-head', update: () => syncToJSON() });
             }
-
-            // Sync from Raw JSON changes
-            $json.on('input', function() {
-                // Throttle this or use focusout
-            });
 
             loadFromJSON();
         });
@@ -314,4 +332,54 @@ jQuery(document).ready(function($) {
     if ($('.kb-visual-builder').length) {
         initVisualBuilder();
     }
+
+    /**
+     * Toast Engine
+     */
+    window.ChartsToast = {
+        container: null,
+        init() {
+            if (!$('#charts-toast-container').length) {
+                $('body').append('<div id="charts-toast-container"></div>');
+            }
+            this.container = $('#charts-toast-container');
+            if (window.kcharts_toasts && Array.isArray(window.kcharts_toasts)) {
+                window.kcharts_toasts.forEach(t => {
+                    setTimeout(() => this.show(t.type, t.message, t.title), 200);
+                });
+            }
+        },
+        show(type = 'success', message = '', title = '') {
+            if (!this.container) this.init();
+            const icons = {
+                success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+                error: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+                warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+                info: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+            };
+            const $toast = $(`
+                <div class="charts-toast is-${type}">
+                    <div class="toast-icon"><i>${icons[type]}</i></div>
+                    <div class="toast-content">
+                        ${title ? `<span class="toast-title">${title}</span>` : ''}
+                        <span class="toast-msg">${message}</span>
+                    </div>
+                    <button type="button" class="toast-close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+                </div>
+            `);
+            this.container.append($toast);
+            const timer = setTimeout(() => this.dismiss($toast), 5000);
+            $toast.find('.toast-close').on('click', () => {
+                clearTimeout(timer);
+                this.dismiss($toast);
+            });
+        },
+        dismiss($toast) {
+            $toast.addClass('is-leaving');
+            setTimeout(() => $toast.remove(), 400);
+        }
+    };
+
+    ChartsToast.init();
 });
