@@ -740,6 +740,7 @@ class Bootstrap {
 			'period_date' => sanitize_text_field( $_POST['period_date'] ?? '' ),
 			'source_name' => sanitize_text_field( $_POST['source_name'] ?? '' ),
 			'item_type'   => sanitize_text_field( $_POST['item_type'] ?? 'track' ),
+			'filename'    => sanitize_text_field( $_FILES['youtube_csv']['name'] ?? '' ),
 		);
 
 		$csv_content = file_get_contents( $_FILES['youtube_csv']['tmp_name'] );

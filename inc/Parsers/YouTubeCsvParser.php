@@ -49,7 +49,7 @@ class YouTubeCsvParser {
 	 * Parse CSV content into normalized rows.
 	 * @return array|\WP_Error
 	 */
-	public function parse( $csv_content ) {
+	public function parse( $csv_content, $filename = '' ) {
 		$this->warnings = array();
 		$this->stats = array(
 			'with_id'      => 0,
@@ -171,8 +171,8 @@ class YouTubeCsvParser {
 			return new \WP_Error( 'no_rows', __( 'CSV parsed but contained no valid data rows.', 'charts' ) );
 		}
 
-		// Detect chart logic/mode from headers
-		$detected_mode = $this->detect_mode( $headers );
+		// Detect chart logic/mode from headers + filename
+		$detected_mode = $this->detect_mode( $headers, $filename );
 
 		// Add summary warnings if needed
 		if ( $this->stats['missing_both'] > 0 ) {
@@ -194,27 +194,29 @@ class YouTubeCsvParser {
 	/**
 	 * Detect if the CSV looks like a Songs, Videos, or Artists chart.
 	 */
-	private function detect_mode( $headers ) {
-		$has_track_keys = array_intersect($headers, array('track_name', 'song', 'title', 'item_title', 'track'));
+	private function detect_mode( $headers, $filename = '' ) {
+		$has_track_keys   = array_intersect($headers, array('track_name', 'song', 'title', 'item_title', 'track'));
 		$has_artist_names = array_intersect($headers, array('artist_names', 'artist_name', 'artist', 'performer'));
-		$has_video_keys = array_intersect($headers, array('video_title', 'video_id', 'clip', 'mv', 'music_video', 'video_name'));
+		$has_video_keys   = array_intersect($headers, array('video_title', 'video_id', 'clip', 'mv', 'music_video', 'video_name', 'youtube_url', 'video_url'));
 
-		// 1. YouTube Artist Chart
+		$is_video_filename = !empty($filename) && (stripos($filename, 'video') !== false);
+
+		// 1. YouTube Music Video Chart (Strong Detection)
+		// If filename matches, OR we see specific Video/URL keys, this is likely a video chart
+		if ( $is_video_filename || ! empty($has_video_keys) ) {
+			return 'top-videos';
+		}
+
+		// 2. YouTube Artist Chart
 		// Usually contains Artist Name (singular) and NO track/video specific titles
-		if ( (in_array('artist_name', $headers) || in_array('artist', $headers)) && empty($has_track_keys) && empty($has_video_keys) ) {
+		if ( (in_array('artist_name', $headers) || in_array('artist', $headers)) && empty($has_track_keys) ) {
 			return 'top-artists';
 		}
 
-		// 2. YouTube Track Chart (Song Chart)
+		// 3. YouTube Track Chart (Song Chart)
 		// Usually contains Track Name AND Artist Names (plural)
 		if ( ! empty($has_track_keys) && (in_array('artist_names', $headers) || in_array('artist', $headers)) ) {
 			return 'top-songs';
-		}
-
-		// 3. YouTube Music Video Chart
-		// Contains Video Title or specific video keys
-		if ( ! empty($has_video_keys) ) {
-			return 'top-videos';
 		}
 
 		// 4. Broad fallbacks based on dominant column counts

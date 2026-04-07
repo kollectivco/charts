@@ -34,7 +34,7 @@ class YouTubeCsvImporter {
 		global $wpdb;
 
 		// 1. Parse
-		$parse_res = $this->csv_parser->parse( $csv_content );
+		$parse_res = $this->csv_parser->parse( $csv_content, $meta['filename'] ?? '' );
 		if ( is_wp_error( $parse_res ) ) return $parse_res;
 
 		$rows          = array_values( (array) $parse_res['rows'] );
@@ -131,29 +131,30 @@ class YouTubeCsvImporter {
 			//  Entity Type Resolution (Precedence: User Selection > Detection)
 			// ─────────────────────────────────────────────
 			
-			// A. User-defined Preference (from the source's intended logic)
-			$manual_mode = $chart_type; // the source's fixed mode (top-songs, top-artists, top-videos)
+			// A. Explicit User Preference (item_type from the form meta)
+			$manual_item_type = $meta['item_type'] ?? 'unknown';
 			
-			// B. Structural Detection (what the CSV looks like)
+			// B. Intended Source Mode (from the chart definition)
+			$manual_mode = $chart_type; // top-songs, top-artists, top-videos
+			
+			// C. Structural Detection (what the CSV looks like)
 			$detected_type = 'unknown';
 			if ( $detected_mode === 'top-songs' )   $detected_type = 'track';
 			if ( $detected_mode === 'top-artists' ) $detected_type = 'artist';
 			if ( $detected_mode === 'top-videos' )  $detected_type = 'video';
 
-			// C. Final Decision
-			// We prioritize the manual_mode because a YouTube "Top Videos" chart might still use "Track Name" header, 
-			// leading structural detection to think it's a song chart.
-			if ( $manual_mode === 'top-videos' ) {
+			// D. Final Decision Path
+			if ( $manual_item_type === 'video' || $manual_mode === 'top-videos' ) {
 				$item_type   = 'video';
 				$final_logic = 'top-videos';
-			} elseif ( $manual_mode === 'top-artists' ) {
+			} elseif ( $manual_item_type === 'artist' || $manual_mode === 'top-artists' ) {
 				$item_type   = 'artist';
 				$final_logic = 'top-artists';
-			} elseif ( $manual_mode === 'top-songs' ) {
+			} elseif ( $manual_item_type === 'track' || $manual_mode === 'top-songs' ) {
 				$item_type   = 'track';
 				$final_logic = 'top-songs';
 			} else {
-				// Fallback to detection if manual mode is generic or unknown
+				// Fallback to structural detection if no explicit choice
 				$item_type   = ( $detected_type !== 'unknown' ) ? $detected_type : 'track';
 				$final_logic = ( $detected_mode !== 'unknown' ) ? $detected_mode : $chart_type;
 			}
