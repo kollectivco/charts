@@ -320,27 +320,7 @@ class Schema {
 				KEY `trend` (`trend_status`)
 			) $charset_collate;",
 
-			// 15. Locations
-			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_locations` (
-				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-				`name` VARCHAR(255) NOT NULL,
-				`slug` VARCHAR(255) NOT NULL,
-				`image` TEXT DEFAULT NULL,
-				`source_platform` VARCHAR(50) DEFAULT 'youtube_charts',
-				`source_url` TEXT DEFAULT NULL,
-				`external_id` VARCHAR(255) DEFAULT NULL,
-				`timeframe_label` VARCHAR(100) DEFAULT NULL,
-				`date_range` VARCHAR(255) DEFAULT NULL,
-				`artist_rankings_json` LONGTEXT DEFAULT NULL,
-				`track_rankings_json` LONGTEXT DEFAULT NULL,
-				`metadata_json` LONGTEXT DEFAULT NULL,
-				`last_scraped_at` DATETIME DEFAULT NULL,
-				`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-				PRIMARY KEY (`id`),
-				UNIQUE KEY `external_id` (`external_id`),
-				UNIQUE KEY `slug` (`slug`)
-			) $charset_collate;",
+
 		);
 
 		foreach ( $queries as $sql ) {

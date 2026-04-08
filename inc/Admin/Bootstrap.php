@@ -75,15 +75,7 @@ class Bootstrap {
 			}
 		}
 
-		// Pull any persistent errors from transients
-		$transient_key = 'kc_admin_errors_' . get_current_user_id();
-		$stored_errors = get_transient($transient_key);
-		if ( is_array($stored_errors) ) {
-			foreach($stored_errors as $e) {
-				add_settings_error($e['setting'], $e['code'], $e['message'], $e['type']);
-			}
-			delete_transient($transient_key);
-		}
+		$processed = false;
 
 		$processed = false;
 
@@ -94,7 +86,7 @@ class Bootstrap {
 
 				if ( isset( $_POST['kc_opt'] ) && is_array( $_POST['kc_opt'] ) ) {
 					\Charts\Core\Settings::update_all( $_POST['kc_opt'] );
-					add_settings_error( 'charts', 'settings_saved', __( 'Settings nexus synchronized successfully.', 'charts' ), 'success' );
+					\Charts\Core\Notify::success( __( 'Global settings nexus synchronized successfully.', 'charts' ), __( 'Configuration Saved', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -153,6 +145,7 @@ class Bootstrap {
 					
 					if ( !empty($settings_to_update) ) {
 						\Charts\Core\Settings::update_all($settings_to_update);
+						\Charts\Core\Notify::success( __( 'Dynamic configuration segments synchronized successfully.', 'charts' ), __( 'Settings Updated', 'charts' ) );
 					}
 				}
 				$processed = true;
@@ -161,7 +154,7 @@ class Bootstrap {
 			case 'run_integrity_check':
 			case 'run_integrity_check_v2':
 				\Charts\Core\Integrity::recalculate_entity_links();
-				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
+				\Charts\Core\Notify::success( __( 'Data integrity check complete. Unmatched entities have been reconciled with canonical records.', 'charts' ), __( 'Integrity Restored', 'charts' ) );
 				$processed = true;
 				break;
 
@@ -175,17 +168,17 @@ class Bootstrap {
 					$results['artists']['updated'], $results['artists']['processed'],
 					$results['videos']['updated'], $results['videos']['processed']
 				);
-				add_settings_error( 'charts', 'backfill_success', $summary, 'success' );
+				\Charts\Core\Notify::success( $summary, __( 'Asset Backfill Complete', 'charts' ) );
 				$processed = true;
 				break;
 
 			case 'reset_plugin_v2':
 				if ( $_POST['confirm_reset'] !== 'RESET CHARTS' ) {
-					add_settings_error( 'charts', 'reset_failed', __( 'Confirmation failed. Please type exactly: RESET CHARTS', 'charts' ), 'error' );
+					\Charts\Core\Notify::error( __( 'Confirmation failed. Please type exactly: RESET CHARTS', 'charts' ), __( 'Security Access Denied', 'charts' ) );
 				} else {
 					$wipe_settings = isset( $_POST['wipe_settings'] ) ? (bool)$_POST['wipe_settings'] : false;
 					self::wipe_all_data( $wipe_settings );
-					add_settings_error( 'charts', 'reset_success', __( 'Plugin has been successfully reset. All data purged.', 'charts' ), 'success' );
+					\Charts\Core\Notify::success( __( 'Plugin has been successfully reset. All data purged from the nexus.', 'charts' ), __( 'Plugin Reset', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -194,9 +187,9 @@ class Bootstrap {
 				$manager = new SourceManager();
 				$result = $manager->save_source( $_POST );
 				if ( $result ) {
-					add_settings_error( 'charts', 'source_saved', __( 'Source saved successfully.', 'charts' ), 'success' );
+					\Charts\Core\Notify::success( __( 'Data source successfully synchronized.', 'charts' ), __( 'Source Saved', 'charts' ) );
 				} else {
-					add_settings_error( 'charts', 'source_error', __( 'Failed to save source.', 'charts' ), 'error' );
+					\Charts\Core\Notify::error( __( 'Failed to save data source configuration.', 'charts' ), __( 'Configuration Error', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -205,7 +198,7 @@ class Bootstrap {
 				$manager = new SourceManager();
 				$id = intval( $_POST['id'] );
 				$manager->delete_source( $id );
-				add_settings_error( 'charts', 'source_deleted', __( 'Source deleted.', 'charts' ), 'success' );
+				\Charts\Core\Notify::success( __( 'Data source removed from the nexus.', 'charts' ), __( 'Source Deleted', 'charts' ) );
 				$processed = true;
 				break;
 
@@ -219,19 +212,12 @@ class Bootstrap {
 				$processed = true;
 				break;
 			
-			case 'import_artist_url':
-				self::process_artist_url_import();
-				$processed = true;
-				break;
-			
-			case 'import_location_url':
-				self::process_location_url_import();
-				$processed = true;
-				break;
+
 			
 			case 'unified_import':
 				$run_id = self::process_unified_import();
 				if ( is_numeric($run_id) ) {
+					\Charts\Core\Notify::success( __( 'Unified segment ingest complete. Live signals are being calibrated in the nexus.', 'charts' ), __( 'Nexus Sync Complete', 'charts' ) );
 					wp_redirect( admin_url( 'admin.php?page=charts-import&sync_complete=1&run_id=' . $run_id ) );
 					exit;
 				}
@@ -242,9 +228,9 @@ class Bootstrap {
 				$manager = new SourceManager();
 				$result = $manager->save_definition( $_POST );
 				if ( $result ) {
-					add_settings_error( 'charts', 'def_saved', __( 'Chart definition saved.', 'charts' ), 'success' );
+					\Charts\Core\Notify::success( __( 'Chart definition saved successfully.', 'charts' ), __( 'Definition Updated', 'charts' ) );
 				} else {
-					add_settings_error( 'charts', 'def_error', __( 'Failed to save chart definition.', 'charts' ), 'error' );
+					\Charts\Core\Notify::error( __( 'Failed to save chart definition.', 'charts' ), __( 'Definition Error', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -253,7 +239,7 @@ class Bootstrap {
 				$manager = new SourceManager();
 				$id = intval( $_POST['id'] );
 				$manager->delete_definition( $id );
-				add_settings_error( 'charts', 'def_deleted', __( 'Chart definition deleted.', 'charts' ), 'success' );
+				\Charts\Core\Notify::success( __( 'Chart definition purged from systems.', 'charts' ), __( 'Definition Purged', 'charts' ) );
 				$processed = true;
 				break;
 
@@ -262,7 +248,7 @@ class Bootstrap {
 				$id    = intval( $_POST['id'] );
 				$type  = sanitize_text_field( $_POST['type'] );
 				self::delete_single_entity( $id, $type );
-				add_settings_error( 'charts', 'entity_deleted', __( 'Entity deleted and relationships unlinked.', 'charts' ), 'success' );
+				\Charts\Core\Notify::success( __( 'Canonical entity deleted and all historical relationships unlinked.', 'charts' ), __( 'Entity Decoupled', 'charts' ) );
 				$processed = true;
 				break;
 
@@ -273,29 +259,18 @@ class Bootstrap {
 				$type   = sanitize_text_field( $_POST['entity_type'] );
 
 				if ( empty( $ids ) ) {
-					add_settings_error( 'charts', 'no_ids', __( 'No items selected.', 'charts' ), 'error' );
+					\Charts\Core\Notify::warning( __( 'No items were selected for the bulk operation.', 'charts' ), __( 'Selection Empty', 'charts' ) );
 				} else if ( $action_type === 'delete' ) {
 					foreach ( $ids as $id ) {
 						self::delete_single_entity( $id, $type );
 					}
-					add_settings_error( 'charts', 'bulk_deleted', sprintf( __( '%d entities deleted successfully.', 'charts' ), count( $ids ) ), 'success' );
+					\Charts\Core\Notify::success( sprintf( __( '%d entities successfully purged from the system.', 'charts' ), count( $ids ) ), __( 'Bulk Purge Complete', 'charts' ) );
 				}
 				$processed = true;
 				break;
 
-			case 'delete_location':
-				global $wpdb;
-				$id = intval( $_POST['id'] );
-				$wpdb->delete( $wpdb->prefix . 'charts_locations', array( 'id' => $id ) );
-				add_settings_error( 'charts', 'location_deleted', __( 'Location intelligence deleted.', 'charts' ), 'success' );
-				$processed = true;
-				break;
+
 				
-			case 'run_integrity_check':
-				\Charts\Core\Integrity::recalculate_entity_links();
-				add_settings_error( 'charts', 'integrity_ran', __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' ), 'success' );
-				$processed = true;
-				break;
 
 			case 'test_spotify_api':
 				$client = new \Charts\Services\SpotifyApiClient();
@@ -303,9 +278,9 @@ class Bootstrap {
 				
 				if ( is_wp_error( $result ) ) {
 					$msg = sprintf( __( 'Spotify API Test Failed: %s (%s)', 'charts' ), $result->get_error_message(), $result->get_error_code() );
-					add_settings_error( 'charts', 'spotify_test_error', $msg, 'error' );
+					\Charts\Core\Notify::error( $msg, __( 'API Connection Failure', 'charts' ) );
 				} else {
-					add_settings_error( 'charts', 'spotify_test_success', __( 'Spotify API Connection Successful! Token generated and metadata retrieved.', 'charts' ), 'success' );
+					\Charts\Core\Notify::success( __( 'Spotify API Connection Successful! Token generated and metadata retrieved.', 'charts' ), __( 'API Handshake Success', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -316,45 +291,24 @@ class Bootstrap {
 
 				if ( is_wp_error( $result ) ) {
 					$msg = sprintf( __( 'YouTube API Test Failed: %s (%s)', 'charts' ), $result->get_error_message(), $result->get_error_code() );
-					add_settings_error( 'charts', 'youtube_test_error', $msg, 'error' );
+					\Charts\Core\Notify::error( $msg, __( 'API Connection Failure', 'charts' ) );
 				} else {
-					add_settings_error( 'charts', 'youtube_test_success', __( 'YouTube API Connection Successful! Metadata retrieved from video jNQXAC9IVRw.', 'charts' ), 'success' );
+					\Charts\Core\Notify::success( __( 'YouTube API Connection Successful! Metadata retrieved from video jNQXAC9IVRw.', 'charts' ), __( 'API Handshake Success', 'charts' ) );
 				}
 				$processed = true;
 				break;
 
-			case 'backfill_media':
-				$manager = new \Charts\Services\AssetManager();
-				$results = $manager->backfill_all();
-				
-				$summary = sprintf( 
-					__( 'Media backfill complete. Tracks: %d/%d updated. Artists: %d/%d updated. Videos: %d/%d updated.', 'charts' ),
-					$results['tracks']['updated'], $results['tracks']['processed'],
-					$results['artists']['updated'], $results['artists']['processed'],
-					$results['videos']['updated'], $results['videos']['processed']
-				);
-				
-				add_settings_error( 'charts', 'backfill_success', $summary, 'success' );
-				$processed = true;
-				break;
 
 			case 'reset_plugin':
 				$wipe_settings = isset( $_POST['wipe_settings'] ) ? (bool)$_POST['wipe_settings'] : false;
 				self::wipe_all_data( $wipe_settings );
-
-				add_settings_error( 'charts', 'reset_success', __( 'Plugin has been successfully reset to zero. All data has been purged.', 'charts' ), 'success' );
+				\Charts\Core\Notify::success( __( 'Plugin has been successfully reset. All records cleared.', 'charts' ), __( 'System Reset', 'charts' ) );
 				$processed = true;
 				break;
 		}
 
 		if ( $processed ) {
 			self::clear_frontend_caches();
-			
-			// Persist settings errors across redirect
-			global $wp_settings_errors;
-			if ( !empty($wp_settings_errors) ) {
-				set_transient('kc_admin_errors_' . get_current_user_id(), $wp_settings_errors, 60);
-			}
 
 			// 1. Detect origin surface (admin vs external)
 			// At 'init' hook, get_query_var isn't ready, so we check the URI or referer
@@ -567,14 +521,7 @@ class Bootstrap {
 			array( self::class, 'render_settings' )
 		);
 
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Locations', 'charts' ),
-			__( 'Locations', 'charts' ),
-			'manage_options',
-			'charts-locations',
-			array( self::class, 'render_locations' )
-		);
+
 	}
 
 	/**
@@ -596,6 +543,9 @@ class Bootstrap {
 			'ajax_url' => admin_url( 'admin-ajax.php' ),
 			'nonce'    => wp_create_nonce( 'charts_admin_action' ),
 		) );
+
+		// Synchronize persistent flash notifications with the JS engine
+		wp_localize_script( 'charts-admin', 'kcharts_toasts', \Charts\Core\Notify::get_and_clear() );
 
 		wp_localize_script( 'charts-admin', 'kcharts_theme_options', \Charts\Core\Settings::get_defaults() );
 	}
@@ -638,18 +588,11 @@ class Bootstrap {
 		exit;
 	}
 
-	public static function render_youtube_import() {
-		wp_redirect( admin_url( 'admin.php?page=charts-import&source=youtube' ) );
-		exit;
-	}
 
 	public static function render_import_center() {
 		self::render_view( 'import-center' );
 	}
 
-	public static function render_locations() {
-		self::render_view( 'locations' );
-	}
 
 	/**
 	 * Process Unified Import.
@@ -659,7 +602,7 @@ class Bootstrap {
 		$platform = sanitize_text_field( $_POST['platform'] ?? 'spotify' );
 		
 		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {
-			add_settings_error( 'charts', 'no_file', __( 'Please select a data file to upload.', 'charts' ), 'error' );
+			\Charts\Core\Notify::warning( __( 'No valid segment file was detected for the unified import stream.', 'charts' ), __( 'Upload Required', 'charts' ) );
 			return false;
 		}
 
@@ -678,7 +621,7 @@ class Bootstrap {
 	 */
 	private static function process_spotify_csv_upload() {
 		if ( empty( $_FILES['spotify_csv']['tmp_name'] ) ) {
-			add_settings_error( 'charts', 'no_file', __( 'Please select a CSV file.', 'charts' ), 'error' );
+			\Charts\Core\Notify::error( __( 'The Spotify CSV segment is missing or corrupt in the upload buffer.', 'charts' ), __( 'Input Failure', 'charts' ) );
 			return;
 		}
 
@@ -693,7 +636,7 @@ class Bootstrap {
 
 		$csv_content = file_get_contents( $_FILES['spotify_csv']['tmp_name'] );
 		if ( ! $csv_content ) {
-			add_settings_error( 'charts', 'read_error', __( 'Failed to read CSV file.', 'charts' ), 'error' );
+			\Charts\Core\Notify::error( __( 'Failed to read the uploaded CSV stream. The segment may be corrupted or blocked by the server filesystem.', 'charts' ), __( 'Critical I/O Failure', 'charts' ) );
 			return;
 		}
 
@@ -701,22 +644,22 @@ class Bootstrap {
 			$importer = new \Charts\Services\SpotifyCsvImporter();
 			$result   = $importer->run( $csv_content, $meta );
 			if ( is_wp_error( $result ) ) {
-				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+				\Charts\Core\Notify::error( $result->get_error_message(), __( 'Import Pipeline Failure', 'charts' ) );
 				return false;
 			} elseif ( is_array( $result ) ) {
 				// Recalculate Intelligence
 				\Charts\Core\Intelligence::recalculate_all();
 
 				$chart_url = home_url( '/charts/spotify/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
-				$msg = sprintf( __( 'Import complete: %1$d entries saved from %2$d rows. Source ID: %3$d, Period ID: %4$d. %5$d skipped. <a href="%6$s" target="_blank">View Chart</a>', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
-				add_settings_error( 'charts', 'import_success', $msg, 'success' );
+				$msg = sprintf( __( 'Spotify segment ingested: %1$d entries crystallized from %2$d raw rows. %5$d items skipped due to existing matches or integrity rules.', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
+				\Charts\Core\Notify::success( $msg, __( 'Sync Sequence Complete', 'charts' ) );
 				return $result['run_id'] ?? true;
 			} else {
-				add_settings_error( 'charts', 'import_success', sprintf( __( 'Import complete: %d entries.', 'charts' ), intval( $result ) ), 'success' );
+				\Charts\Core\Notify::success( sprintf( __( 'Segment imported: %d entries merged into the nexus.', 'charts' ), intval( $result ) ), __( 'Partial Sync Successful', 'charts' ) );
 				return true;
 			}
 		} catch ( \Exception $e ) {
-			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
+			\Charts\Core\Notify::error( $e->getMessage(), __( 'Internal Engine Exception', 'charts' ) );
 			return false;
 		}
 	}
@@ -729,7 +672,7 @@ class Bootstrap {
 		check_admin_referer( 'charts_admin_action' );
 
 		if ( empty( $_FILES['youtube_csv']['tmp_name'] ) ) {
-			add_settings_error( 'charts', 'no_file', __( 'Please select a CSV file to upload.', 'charts' ), 'error' );
+			\Charts\Core\Notify::warning( __( 'No file detected for YouTube ingestion. Please source a valid CSV segment.', 'charts' ), __( 'Input Required', 'charts' ) );
 			return;
 		}
 
@@ -745,7 +688,7 @@ class Bootstrap {
 
 		$csv_content = file_get_contents( $_FILES['youtube_csv']['tmp_name'] );
 		if ( ! $csv_content ) {
-			add_settings_error( 'charts', 'read_error', __( 'Failed to read CSV file.', 'charts' ), 'error' );
+			\Charts\Core\Notify::error( __( 'Failed to read the YouTube segment stream from temp storage.', 'charts' ), __( 'Critical I/O Failure', 'charts' ) );
 			return;
 		}
 
@@ -754,7 +697,7 @@ class Bootstrap {
 			$result   = $importer->run( $csv_content, $meta );
 
 			if ( is_wp_error( $result ) ) {
-				add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
+				\Charts\Core\Notify::error( $result->get_error_message(), __( 'Import Pipeline Failure', 'charts' ) );
 			} elseif ( is_array( $result ) ) {
 				// Recalculate Intelligence
 				\Charts\Core\Intelligence::recalculate_all();
@@ -786,99 +729,32 @@ class Bootstrap {
 				}
 
 				if ( ! empty( $result['skipped'] ) ) {
-					$msg .= ' ' . sprintf( __( '%d rows skipped due to errors.', 'charts' ), $result['skipped'] );
+					$msg .= ' ' . sprintf( __( '%d items excluded by filters.', 'charts' ), $result['skipped'] );
 				}
 
-				$msg .= sprintf( ' <a href="%s" target="_blank">%s &rarr;</a>', esc_url( $chart_url ), __( 'View Charts', 'charts' ) );
+				$msg .= sprintf( ' <a href="%s" target="_blank">%s &rarr;</a>', esc_url( $chart_url ), __( 'View Nexus', 'charts' ) );
 
-				add_settings_error( 'charts', 'import_success', $msg, 'success' );
+				\Charts\Core\Notify::success( $msg, __( 'YouTube Sync Successful', 'charts' ) );
 
 				if ( ! empty( $result['warnings'] ) ) {
 					foreach ( $result['warnings'] as $warn ) {
-						add_settings_error( 'charts', 'import_warning', $warn, 'warning' );
+						\Charts\Core\Notify::warning( $warn, __( 'Pipeline Warning', 'charts' ) );
 					}
 				}
 				return $result['run_id'] ?? true;
 			}
 			return false;
 		} catch ( \Exception $e ) {
-			add_settings_error( 'charts', 'exception', $e->getMessage(), 'error' );
+			\Charts\Core\Notify::error( $e->getMessage(), __( 'Internal Engine Exception', 'charts' ) );
 			return false;
 		}
 	}
 
-	/**
-	 * Process Import Artist by URL.
-	 */
-	private static function process_artist_url_import() {
-		if ( empty( $_POST['artist_url'] ) ) {
-			add_settings_error( 'charts', 'no_url', __( 'Please provide a YouTube Charts artist URL.', 'charts' ), 'error' );
-			return;
-		}
 
-		$url = sanitize_url( $_POST['artist_url'] );
-		$importer = new \Charts\Services\YouTubeChartsArtistImporter();
-		$result = $importer->import_by_url( $url );
 
-		if ( is_wp_error( $result ) ) {
-			add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
-		} else {
-			$msg = sprintf( 
-				__( 'Successfully %1$s artist <strong>%2$s</strong> from YouTube Charts.', 'charts' ), 
-				$result['status'], 
-				esc_html( $result['name'] ) 
-			);
-			if ( !empty($result['image']) ) {
-				$msg .= ' ' . __( 'Image resolved successfully.', 'charts' );
-			}
-			add_settings_error( 'charts', 'import_success', $msg, 'success' );
-		}
-	}
 
-	/**
-	 * Process Import Location by URL.
-	 */
-	private static function process_location_url_import() {
-		if ( empty( $_POST['location_url'] ) ) {
-			add_settings_error( 'charts', 'no_url', __( 'Please provide a YouTube Charts location URL.', 'charts' ), 'error' );
-			return;
-		}
 
-		$url = sanitize_url( $_POST['location_url'] );
-		
-		if ( defined('WP_DEBUG') && WP_DEBUG ) {
-			error_log("Charts Location Import: URL received: $url");
-		}
 
-		$importer = new \Charts\Services\YouTubeChartsLocationImporter();
-		$result = $importer->import_by_url( $url );
-
-		if ( is_wp_error( $result ) ) {
-			if ( defined('WP_DEBUG') && WP_DEBUG ) {
-				error_log("Charts Location Import Error: " . $result->get_error_message());
-			}
-			add_settings_error( 'charts', 'import_error', $result->get_error_message(), 'error' );
-		} else {
-			if ( defined('WP_DEBUG') && WP_DEBUG ) {
-				error_log("Charts Location Import Success: " . $result['name'] . " (" . $result['status'] . ")");
-			}
-			$msg = sprintf( 
-				__( 'Successfully %1$s location <strong>%2$s</strong> from YouTube Charts. Found %3$d artists and %4$d songs.', 'charts' ), 
-				$result['status'], 
-				esc_html( $result['name'] ),
-				$result['artist_count'],
-				$result['track_count']
-			);
-			add_settings_error( 'charts', 'import_success', $msg, 'success' );
-		}
-	}
-
-	/**
-	 * Render the Import Runs.
-	 */
-	public static function render_imports() {
-		self::render_view( 'results' );
-	}
 
 	public static function render_entities() {
 		if ( isset( $_GET['action'] ) && $_GET['action'] === 'edit' ) {
@@ -930,10 +806,17 @@ class Bootstrap {
 
 			self::clear_frontend_caches();
 
-			wp_send_json_success( array( 
-				'message' => sprintf( __( 'Successfully imported %d entries.', 'charts' ), $result ),
-				'count'   => $result
-			) );
+			if ($result > 0) {
+				wp_send_json_success( array( 
+					'message' => sprintf( __( 'Pipeline sync complete: %d segments crystallized in the nexus.', 'charts' ), $result ),
+					'count'   => $result
+				) );
+			} else {
+				wp_send_json_success( array( 
+					'message' => __( 'Sync window complete: No new segments required matching or creation.', 'charts' ),
+					'count'   => 0
+				) );
+			}
 
 		} catch ( \Exception $e ) {
 			error_log( 'Charts Import Error: ' . $e->getMessage() );

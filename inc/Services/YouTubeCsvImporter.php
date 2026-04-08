@@ -39,20 +39,10 @@ class YouTubeCsvImporter {
 
 		$rows          = array_values( (array) $parse_res['rows'] );
 		$detected_mode = $parse_res['detected_mode'] ?? 'unknown';
+		$chart_type    = strtolower( trim( $meta['chart_type'] ?? 'top-songs' ) );
 		
 		if ( empty( $rows ) ) {
 			return new \WP_Error( 'empty_csv', __( 'CSV parsed but contained no valid data rows.', 'charts' ) );
-		}
-
-		$chart_type = strtolower( trim( $meta['chart_type'] ?? 'top-songs' ) );
-
-		// 2. Enrich from YouTube API 
-		$enriched_count = 0;
-		if ( $this->enrichment->is_configured() ) {
-			$rows = $this->enrichment->enrich_batch( $rows, $chart_type );
-			foreach ( $rows as $r ) {
-				if ( ! empty( $r['api_meta'] ) ) $enriched_count++;
-			}
 		}
 
 		// 3. Source
@@ -61,13 +51,19 @@ class YouTubeCsvImporter {
 			return new \WP_Error( 'source_failed', __( 'Could not create or find a YouTube source.', 'charts' ) );
 		}
 
-		// 4. Run record (Atomic entry)
+		// 4. Start Run record EARLY
 		$run_id = $this->start_run( $source_id, count( $rows ) );
 		if ( ! $run_id ) {
 			return new \WP_Error( 'run_failed', 'Could not initialize import run track.' );
 		}
 
 		try {
+			// 5. Enrichment (Now inside the run tracking)
+			$this->log_to_run( $run_id, "Enriching rows via YouTube API..." );
+			if ( $this->enrichment->is_configured() ) {
+				$rows = $this->enrichment->enrich_batch( $rows, $chart_type );
+			}
+
 			// 5. Period
 			$period_id = $this->import_flow->ensure_period(
 				strtolower( trim( $meta['frequency'] ?? 'weekly' ) ),
@@ -94,12 +90,12 @@ class YouTubeCsvImporter {
 			foreach ( $rows as $row ) {
 				$current_row++;
 				
-				// Keep run from timing out
-				if ( $current_row % 50 === 0 ) {
+				// Keep run from timing out & show progress
+				if ( $current_row % 10 === 0 ) {
 					$wpdb->update( $wpdb->prefix . 'charts_import_runs', array(
 						'matched_items' => $matched_entities,
 						'created_items' => $created_entities,
-						'error_message' => "Processing row {$current_row}...",
+						'error_message' => sprintf( "Processing row %d/%d...", $current_row, count($rows) ),
 					), array( 'id' => $run_id ) );
 				}
 
@@ -166,6 +162,10 @@ class YouTubeCsvImporter {
 						$row['source_url'] ?? null 
 					);
 					
+					if ( ! $item_id && ! empty( $wpdb->last_error ) ) {
+						$row_errors[] = "Video DB Error: " . $wpdb->last_error;
+					}
+					
 					$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
 					foreach ( $all_artists as $a_name ) {
 						$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
@@ -224,7 +224,7 @@ class YouTubeCsvImporter {
 					'rank_change'    => ( ! empty( $row['growth'] ) ) ? $row['growth'] : null,
 					'peak_rank'      => $row['peak_rank'] ?? $row['rank'],
 					'weeks_on_chart' => $row['weeks_on_chart'] ?? 1,
-					'dreams'         => 0,
+					'streams'        => $row['streams'] ?? 0,
 					'views_count'    => $row['views_count'] ?? 0,
 					'source_url'     => $row['source_url'] ?? null,
 				);
@@ -249,7 +249,6 @@ class YouTubeCsvImporter {
 			$wpdb->update( $wpdb->prefix . 'charts_import_runs', array(
 				'status'           => 'completed',
 				'parsed_rows'      => count($rows),
-				'saved_entries'    => $saved,
 				'matched_items'    => $matched_entities,
 				'created_items'    => $created_entities,
 				'error_message'    => $final_msg,
@@ -298,19 +297,27 @@ class YouTubeCsvImporter {
 			return $id;
 		}
 		$franko = Normalizer::to_franko( $display_name );
-		$slug = $this->unique_slug( $table, sanitize_title( $display_name ) );
+		$slug = sanitize_title( $display_name );
+		if ( empty( $slug ) ) {
+			$slug = sanitize_title( $franko );
+		}
+		if ( empty( $slug ) ) {
+			$slug = 'artist-' . wp_generate_password( 8, false );
+		}
+		$slug = $this->unique_slug( $table, $slug );
+
 		$wpdb->insert( $table, array(
-			'display_name'       => $display_name,
+			'display_name'        => $display_name,
 			'display_name_franko' => $franko !== $display_name ? $franko : null,
-			'normalized_name'    => $normalized,
-			'slug'               => $slug,
-			'image'              => $image,
-			'created_at'         => current_time( 'mysql' ),
+			'normalized_name'     => $normalized,
+			'slug'                => $slug,
+			'image'               => $image,
+			'created_at'          => current_time( 'mysql' ),
 		) );
 		return $wpdb->insert_id;
 	}
 
-	private function ensure_track( $title, $artist_id, $youtube_id = null, $image = null ) {
+	private function ensure_track( $title, $artist_id, $youtube_id = null, $cover_image = null, $spotify_id = null ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_tracks';
 		$normalized = mb_strtolower( $this->import_flow->normalize_title( trim( $title ) ) );
@@ -321,11 +328,19 @@ class YouTubeCsvImporter {
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
 		if ( $id ) {
 			if ( $youtube_id ) $wpdb->update( $table, array( 'youtube_id' => $youtube_id ), array( 'id' => $id ) );
-			if ( $image ) $wpdb->update( $table, array( 'cover_image' => $image ), array( 'id' => $id ) );
+			if ( $cover_image ) $wpdb->update( $table, array( 'cover_image' => $cover_image ), array( 'id' => $id ) );
 			return $id;
 		}
 		$franko = Normalizer::to_franko( $title );
-		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
+		$slug = sanitize_title( $title . '-' . $artist_id );
+		if ( empty( $slug ) ) {
+			$slug = sanitize_title( $franko . '-' . $artist_id );
+		}
+		if ( empty( $slug ) ) {
+			$slug = 'track-' . wp_generate_password( 8, false );
+		}
+		$slug = $this->unique_slug( $table, $slug );
+
 		$wpdb->insert( $table, array(
 			'title'             => $title,
 			'title_franko'      => $franko !== $title ? $franko : null,
@@ -333,7 +348,8 @@ class YouTubeCsvImporter {
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
 			'youtube_id'        => $youtube_id,
-			'cover_image'       => $image,
+			'spotify_id'        => $spotify_id,
+			'cover_image'       => $cover_image,
 			'created_at'        => current_time( 'mysql' ),
 		) );
 		return $wpdb->insert_id;

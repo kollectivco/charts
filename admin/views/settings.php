@@ -266,7 +266,6 @@ function kc_render_bento_field( $field ) {
             </div>
         </div>
 
-        <?php settings_errors( 'charts' ); ?>
 
         <div class="kc-settings-layout">
             <!-- Sidebar Nav -->

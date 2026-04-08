@@ -39,7 +39,6 @@ $total_unmatched = count($unmatched_candidates);
 		</div>
 	</header>
 
-	<?php settings_errors( 'charts' ); ?>
 
 	<?php if ( empty( $unmatched_candidates ) ) : ?>
 		<div class="charts-table-card" style="padding: 100px; text-align: center;">

@@ -20,7 +20,6 @@ $definitions = $manager->get_definitions();
 		</div>
 	</header>
 
-	<?php settings_errors( 'charts' ); ?>
 
 	<div class="charts-bento-grid">
 		<?php if ( empty( $definitions ) ) : ?>

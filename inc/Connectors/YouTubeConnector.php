@@ -57,6 +57,11 @@ class YouTubeConnector extends BaseConnector {
 
 			if ( empty( $rows ) ) {
 				$msg = __( 'No rows extracted. Structure might have changed or auth is required.', 'charts' );
+				
+				// Added detailed reason to diagnostic logs
+				$diagnostics['error_hint'] = 'Empty result from all parsing strategies';
+				$diagnostics['body_preview'] = substr($content, 0, 500); 
+				
 				$this->fail_run( $run_id, $msg, $diagnostics );
 				return new \WP_Error( 'no_rows', $msg );
 			}

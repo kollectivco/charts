@@ -195,15 +195,16 @@ class YouTubeCsvParser {
 	 * Detect if the CSV looks like a Songs, Videos, or Artists chart.
 	 */
 	private function detect_mode( $headers, $filename = '' ) {
+		$has_video_title  = in_array('video_title', $headers) || in_array('video_name', $headers);
+		$has_video_url    = in_array('youtube_url', $headers) || in_array('video_url', $headers);
 		$has_track_keys   = array_intersect($headers, array('track_name', 'song', 'title', 'item_title', 'track'));
 		$has_artist_names = array_intersect($headers, array('artist_names', 'artist_name', 'artist', 'performer'));
-		$has_video_keys   = array_intersect($headers, array('video_title', 'video_id', 'clip', 'mv', 'music_video', 'video_name', 'youtube_url', 'video_url'));
-
-		$is_video_filename = !empty($filename) && (stripos($filename, 'video') !== false);
+		
+		$is_video_filename = !empty($filename) && (stripos($filename, 'video') !== false || stripos($filename, 'clip') !== false);
 
 		// 1. YouTube Music Video Chart (Strong Detection)
-		// If filename matches, OR we see specific Video/URL keys, this is likely a video chart
-		if ( $is_video_filename || ! empty($has_video_keys) ) {
+		// If headers explicitly mention Video Title or Video URL, it's a video chart.
+		if ( $has_video_title || $has_video_url || $is_video_filename ) {
 			return 'top-videos';
 		}
 
@@ -221,10 +222,11 @@ class YouTubeCsvParser {
 
 		// 4. Broad fallbacks based on dominant column counts
 		if ( ! empty($has_track_keys) ) return 'top-songs';
-		if ( in_array('artist_name', $headers) || in_array('artist', $headers) || in_array('artist_names', $headers) ) return 'top-artists';
+		if ( ! empty($has_artist_names) ) return 'top-artists';
 
 		return 'unknown';
 	}
+
 
 	public function get_warnings() {
 		return $this->warnings;

@@ -69,36 +69,122 @@ jQuery(document).ready(function($) {
         $('#cover_preview').attr('src', '').removeClass('has-image');
     });
 
-    // Import Center Enhancements
+    // Import Center Enhancements - Intelligence Nexus Edition
     const $fileInput = $('#import_file');
-    const uploadContent = $('.upload-content');
-    const filePreview = $('.file-preview');
-    const removeBtn = $('#remove-file');
+    const $dropZone = $('#drop-zone');
+    const $nexusIdle = $('.nexus-idle');
+    const $nexusStaged = $('.nexus-staged');
+    const $removeBtn = $('#remove-file');
+    const $submitBtn = $('#run-import-btn');
+    const $form = $('#unified-import-form');
+    const $chartSelect = $('#chart_id');
 
     if ($fileInput.length) {
+        
+        // Helper to validate and stage file
+        const stageFile = (file) => {
+            if (!file) return;
+            
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                window.ChartsToast.show('error', 'Only CSV files are supported for intelligence sync.', 'Invalid Segment');
+                return;
+            }
+
+            $nexusIdle.hide();
+            $nexusStaged.show();
+            
+            const size = (file.size / 1024).toFixed(1) + ' KB';
+            $nexusStaged.find('.file-name').text(file.name);
+            $nexusStaged.find('.file-meta').text(`${size} • ${file.type || 'text/csv'}`);
+            
+            $dropZone.addClass('has-file');
+            window.ChartsToast.show('success', 'Intelligence layer staged: ' + file.name, 'Dataset Ready');
+            checkReadiness();
+        };
+
+        // Readiness Engine
+        const checkReadiness = () => {
+            const hasSource = $('[name="country"]').val() !== '';
+            const hasPlatform = $('[name="platform"]:checked').length > 0;
+            const hasFile = $fileInput[0].files.length > 0;
+            const hasTarget = $chartSelect.val() !== '';
+
+            if (hasSource && hasPlatform && hasFile && hasTarget) {
+                $submitBtn.prop('disabled', false);
+                $('#readiness-msg').text('Intelligence pipeline polarized. Ready for execution.').css('color', '#10b981');
+                $('.import-stage[data-step="4"]').addClass('active');
+            } else {
+                $submitBtn.prop('disabled', true);
+                $('#readiness-msg').text('Please complete all previous steps to begin sync.').css('color', '');
+                $('.import-stage[data-step="4"]').removeClass('active');
+            }
+
+            // Update active stages visually
+            if (hasSource && hasPlatform) $('.import-stage[data-step="2"]').addClass('active');
+            if (hasFile) $('.import-stage[data-step="3"]').addClass('active');
+        };
+
+        // Input Change
         $fileInput.on('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                uploadContent.hide();
-                filePreview.css('display', 'inline-flex');
-                filePreview.find('.filename').text(file.name);
-                window.ChartsToast.show('info', 'File staged for sync: ' + file.name, 'Intelligence Detection');
+            stageFile(e.target.files[0]);
+        });
+
+        // Drag & Drop Orchestration
+        $dropZone.on('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('is-dragover');
+        });
+
+        $dropZone.on('dragleave drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('is-dragover');
+            
+            if (e.type === 'drop') {
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length) {
+                    $fileInput[0].files = files;
+                    stageFile(files[0]);
+                }
             }
         });
 
-        removeBtn.on('click', function() {
+        // Reset
+        $removeBtn.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             $fileInput.val('');
-            filePreview.hide();
-            uploadContent.show();
-            window.ChartsToast.show('warning', 'File removed from staging.', 'Nexus Reset');
+            $nexusStaged.hide();
+            $nexusIdle.show();
+            $dropZone.removeClass('has-file');
+            window.ChartsToast.show('warning', 'Dataset purged from staging memory.', 'Nexus Reset');
+            checkReadiness();
         });
 
-        $('#unified-import-form').on('submit', function() {
-            const $btn = $('#run-import-btn');
-            $btn.addClass('processing').find('span').text('Processing Data...');
-            $btn.find('.spinner-loader').show();
-            window.ChartsToast.show('info', 'Contacting platform API and parsing dataset...', 'Sync Pipeline Engaged');
+        // Form Logic
+        $chartSelect.on('change', function() {
+            const $opt = $(this).find('option:selected');
+            if ($opt.val()) {
+                $('#item_type').val($opt.data('type'));
+                $('#frequency').val($opt.data('frequency'));
+                $('#hidden_chart_type').val($opt.data('chart-type'));
+                window.ChartsToast.show('info', 'Synchronized target parameters for ' + $opt.text().split('(')[0], 'Context Map');
+            }
+            checkReadiness();
         });
+
+        $('[name="country"], [name="platform"]').on('change', checkReadiness);
+
+        $form.on('submit', function() {
+            $submitBtn.addClass('processing').prop('disabled', true);
+            $submitBtn.find('span').text('Syncing Intelligence...');
+            $submitBtn.find('.spinner-loader').show();
+            window.ChartsToast.show('info', 'Executing sync pipeline. Please remain on this page.', 'Live Ingestion');
+        });
+
+        // Initial check
+        checkReadiness();
     }
 
     /**

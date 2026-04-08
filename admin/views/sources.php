@@ -27,7 +27,6 @@ $sources = $source_manager->get_sources();
 		</div>
 	</header>
 
-	<?php settings_errors( 'charts' ); ?>
 
 	<div class="charts-bento-grid" style="grid-template-columns: 1fr;">
 		<?php if ( $action === 'list' ) : ?>
