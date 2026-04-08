@@ -16,13 +16,13 @@ class Bootstrap {
 		add_action( 'init', array( self::class, 'process_admin_actions' ) );
 		
 		// Initialize temporary verification tools
-		Verification::init();
-		
-		// Initialize Meta Tags Reference
-		MetaTagsReference::init();
+		if ( is_admin() ) {
+			Verification::init();
+			PerformanceDiagnostics::init();
+			MetaTagsReference::init();
+		}
 
-		// Performance Diagnostics
-		PerformanceDiagnostics::init();
+		// Initialize Meta Tags Reference
 
 		// One-Time Migrations & Cleanup
 		self::run_one_time_migrations();
@@ -32,6 +32,23 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
+	}
+
+	/**
+	 * Heavy tasks that should only run in admin, and only on actual page loads.
+	 */
+	public static function init_heavy_tasks() {
+		// 1. Pending migrations (Still throttled)
+		if ( ! get_option( 'charts_migration_v3_fully_completed' ) ) {
+			if ( false === get_transient( 'charts_migration_throttle' ) ) {
+				$migration = new \Charts\Database\Migration();
+				$migration->run();
+				set_transient( 'charts_migration_throttle', '1', 300 );
+			}
+		}
+
+		// 2. Integrity scan
+		\Charts\Core\Integrity::init();
 	}
 
 	/**

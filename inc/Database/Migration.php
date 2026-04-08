@@ -231,6 +231,10 @@ class Migration {
 	}
 
 	private function is_migration_complete() {
+		$cache = get_transient( 'charts_migration_status_check' );
+		if ( $cache === 'complete' ) return true;
+		if ( $cache === 'in_progress' ) return false;
+
 		global $wpdb;
 		$types = array( 'charts_definitions' => 'chart', 'charts_artists' => 'artist', 'charts_tracks' => 'track', 'charts_videos' => 'video' );
 		
@@ -242,7 +246,10 @@ class Migration {
 					LEFT JOIN {$wpdb->postmeta} pm ON pm.meta_key = %s AND pm.meta_value = CAST(t.id AS CHAR)
 					WHERE pm.post_id IS NULL
 				", '_old_' . $post_type . '_id' ) );
-				if ( $unmigrated > 0 ) return false;
+				if ( $unmigrated > 0 ) {
+					set_transient( 'charts_migration_status_check', 'in_progress', HOUR_IN_SECONDS );
+					return false;
+				}
 			}
 		}
 
@@ -252,10 +259,14 @@ class Migration {
 			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) ) {
 				$total = $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
 				$offset = (int) get_option( "charts_migrated_rels_{$type}_offset", 0 );
-				if ( $offset < $total ) return false;
+				if ( $offset < $total ) {
+					set_transient( 'charts_migration_status_check', 'in_progress', HOUR_IN_SECONDS );
+					return false;
+				}
 			}
 		}
 
+		set_transient( 'charts_migration_status_check', 'complete', DAY_IN_SECONDS );
 		return true;
 	}
 

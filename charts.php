@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           6.0.2
+ * Version:           6.0.3
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '6.0.2' );
+define( 'CHARTS_VERSION', '6.0.3' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -185,30 +185,30 @@ final class Charts {
 	 * Initialize the plugin
 	 */
 	public function init() {
-		// Run versioned migrations
+		// Handle versioned migrations
 		$db_version = get_option( 'kcharts_db_version', '1.0.0' );
 		if ( version_compare( $db_version, CHARTS_VERSION, '<' ) ) {
 			$this->run_migrations();
-			
-			// Force flush rewrite rules on version update
 			\Charts\Core\Router::add_rewrite_rules();
 			flush_rewrite_rules();
 		}
+
+		// EMERGENCY KILL SWITCH / SAFE MODE
+		if ( defined( 'CHARTS_SAFE_MODE' ) && CHARTS_SAFE_MODE || isset( $_GET['charts_safe_mode'] ) ) {
+			\Charts\Core\Router::init(); // Keep routing for safety
+			return; 
+		}
+
+		// Standard Initialization
 		\Charts\Core\EntityManager::init();
 		\Charts\Core\Bootstrap::init();
 
-		// Run pending batched migrations (Admin-only, throttled to every 5 mins)
-		if ( is_admin() && ! get_option( 'charts_migration_v3_fully_completed' ) ) {
-			if ( false === get_transient( 'charts_migration_throttle' ) ) {
-				$migration = new \Charts\Database\Migration();
-				$migration->run();
-				set_transient( 'charts_migration_throttle', '1', 300 ); // 5-minute pause
-			}
-		}
-
-		// Handle installation integrity (Admin-only)
-		if ( is_admin() ) {
-			\Charts\Core\Integrity::init();
+		// STRICT SEPARATION: 
+		// Background Migration and Integrity checks now ONLY run in Admin context 
+		// AND only if NOT on a public request.
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			// All heavy logic moved to Admin\Bootstrap::init_heavy_tasks()
+			add_action( 'admin_init', array( \Charts\Admin\Bootstrap::class, 'init_heavy_tasks' ) );
 		}
 
 		// Initialize Update Checker (GitHub)
