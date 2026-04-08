@@ -21,6 +21,9 @@ class Bootstrap {
 		// Initialize Meta Tags Reference
 		MetaTagsReference::init();
 
+		// Performance Diagnostics
+		PerformanceDiagnostics::init();
+
 		// One-Time Migrations & Cleanup
 		self::run_one_time_migrations();
 		

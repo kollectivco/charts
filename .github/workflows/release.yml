@@ -22,6 +22,8 @@ jobs:
           cp -r languages build/kontentainment-charts/ 2>/dev/null || :
           cp charts.php build/kontentainment-charts/
           cp readme.txt build/kontentainment-charts/ 2>/dev/null || :
+          # Clean root zips if they leaked into build
+          rm -f build/kontentainment-charts/*.zip
           # Clean build from dev assets
           rm -rf build/kontentainment-charts/**/*.zip
           rm -rf build/kontentainment-charts/.git*
