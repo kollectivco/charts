@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           7.0.0
+ * Version:           1.0.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '7.0.0' );
+define( 'CHARTS_VERSION', '1.0.0' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -138,36 +138,40 @@ final class Charts {
 	}
 
 	/**
-	 * Activation hook - MINIMALIST
+	 * Activation hook
 	 */
 	public function activate() {
-		// Do NOT run schema or migrations here. They cause timeouts on large sites.
-		update_option( 'charts_just_activated', '1' );
+		$this->run_migrations();
 		
+		// Flush rewrite rules
 		\Charts\Core\Router::add_rewrite_rules();
 		flush_rewrite_rules();
 	}
 
 	/**
-	 * Database Migration & Versioning Logic - MANUAL TRIGGER ONLY
+	 * Database Migration & Versioning Logic
 	 */
 	public function run_migrations() {
-		if ( ! is_admin() ) return;
-
 		// 1. Ensure Table Structures are up to date
 		$schema = new \Charts\Database\Schema();
 		$schema->install();
 		
 		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
 
-		// 2. One-time Legacy Cleanup
+		// 2. Data Migration to CPTs (Migration v3 is now handled batched in init())
+		// We only trigger the structures here
+
+		// 3. One-time Legacy Cleanup (Force remove the hardcoded mocks once and for all)
 		if ( ! get_option( 'kcharts_mock_cleaned' ) ) {
 			$sources = new \Charts\Admin\SourceManager();
 			$sources->cleanup_mock_data();
 			update_option( 'kcharts_mock_cleaned', '1' );
 		}
 
-		update_option( 'kcharts_db_version', CHARTS_VERSION );
+		// 4. Update the stored DB version
+		if ( version_compare( $current_db_version, CHARTS_VERSION, '<' ) ) {
+			update_option( 'kcharts_db_version', CHARTS_VERSION );
+		}
 	}
 
 	/**
@@ -181,34 +185,26 @@ final class Charts {
 	 * Initialize the plugin
 	 */
 	public function init() {
-		// 1. Core Post Types & Routing - ALWAYS ACTIVE for structural stability
-		\Charts\Core\PostTypes::init();
-		\Charts\Core\Router::init();
-
-		// 2. Safe Boot Checks
-		$safe_mode = defined( 'CHARTS_SAFE_MODE' ) && CHARTS_SAFE_MODE;
-		$just_activated = get_option( 'charts_just_activated' );
-
-		if ( $safe_mode || $just_activated || isset( $_GET['charts_safe_mode'] ) ) {
-			if ( $just_activated && is_admin() ) {
-				add_action( 'admin_notices', function() {
-					echo '<div class="notice notice-warning"><p><strong>Charts Safe Activation:</strong> Database tables were NOT built automatically. Please visit the <a href="' . admin_url('admin.php?page=charts-performance') . '">Performance page</a> to run setup manually.</p></div>';
-				});
-			}
-			// Load minimal Admin UI for setup path
-			if ( is_admin() ) {
-				\Charts\Admin\Bootstrap::init(); 
-			}
-			return; 
+		// Run versioned migrations
+		$db_version = get_option( 'kcharts_db_version', '1.0.0' );
+		if ( version_compare( $db_version, CHARTS_VERSION, '<' ) ) {
+			$this->run_migrations();
+			
+			// Force flush rewrite rules on version update
+			\Charts\Core\Router::add_rewrite_rules();
+			flush_rewrite_rules();
 		}
-
-		// 3. Full Logic Initialization
 		\Charts\Core\EntityManager::init();
 		\Charts\Core\Bootstrap::init();
 
-		if ( is_admin() && ! wp_doing_ajax() ) {
-			add_action( 'admin_init', array( \Charts\Admin\Bootstrap::class, 'init_heavy_tasks' ) );
+		// Run pending batched migrations if they are not fully complete
+		if ( ! get_option( 'charts_migration_v3_fully_completed' ) ) {
+			$migration = new \Charts\Database\Migration();
+			$migration->run();
 		}
+
+		// Handle installation integrity (folder parity)
+		\Charts\Core\Integrity::init();
 
 		// Initialize Update Checker (GitHub)
 		if ( file_exists( CHARTS_PATH . 'inc/Integrations/plugin-update-checker/plugin-update-checker.php' ) ) {
