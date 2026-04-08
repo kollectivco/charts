@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           6.0.0
+ * Version:           6.0.1
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '6.0.0' );
+define( 'CHARTS_VERSION', '6.0.1' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -197,14 +197,19 @@ final class Charts {
 		\Charts\Core\EntityManager::init();
 		\Charts\Core\Bootstrap::init();
 
-		// Run pending batched migrations if they are not fully complete
-		if ( ! get_option( 'charts_migration_v3_fully_completed' ) ) {
-			$migration = new \Charts\Database\Migration();
-			$migration->run();
+		// Run pending batched migrations (Admin-only, throttled to every 5 mins)
+		if ( is_admin() && ! get_option( 'charts_migration_v3_fully_completed' ) ) {
+			if ( false === get_transient( 'charts_migration_throttle' ) ) {
+				$migration = new \Charts\Database\Migration();
+				$migration->run();
+				set_transient( 'charts_migration_throttle', '1', 300 ); // 5-minute pause
+			}
 		}
 
-		// Handle installation integrity (folder parity)
-		\Charts\Core\Integrity::init();
+		// Handle installation integrity (Admin-only)
+		if ( is_admin() ) {
+			\Charts\Core\Integrity::init();
+		}
 
 		// Initialize Update Checker (GitHub)
 		if ( file_exists( CHARTS_PATH . 'inc/Integrations/plugin-update-checker/plugin-update-checker.php' ) ) {

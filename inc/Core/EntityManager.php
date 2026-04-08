@@ -15,17 +15,28 @@ class EntityManager {
 		add_action( 'save_post', array( self::class, 'handle_post_sync' ), 20, 2 );
 	}
 
+	private static $is_syncing = false;
+
 	/**
 	 * Sync CPT updates back to custom tables.
 	 */
 	public static function handle_post_sync( $post_id, $post ) {
+		if ( self::$is_syncing ) return;
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
 		
 		$allowed_types = array( 'chart', 'artist', 'track', 'video' );
 		if ( ! in_array( $post->post_type, $allowed_types ) ) return;
 
-		// Perform sync
+		// Data Checksum to prevent redundant writes
+		$new_hash = md5( $post->post_title . $post->post_content . $post->post_name . $post->post_status . $post->menu_order );
+		$old_hash = get_post_meta( $post_id, '_last_sync_hash', true );
+
+		if ( $new_hash === $old_hash ) return;
+
+		self::$is_syncing = true;
 		self::sync_to_custom_table( $post->post_type, $post_id );
+		update_post_meta( $post_id, '_last_sync_hash', $new_hash );
+		self::$is_syncing = false;
 	}
 
 	/**

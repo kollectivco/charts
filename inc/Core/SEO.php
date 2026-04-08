@@ -90,16 +90,21 @@ class SEO {
 				$slug = get_query_var( 'charts_definition_slug' );
 				$chart = self::get_chart_definition( $slug );
 				if ( $chart ) {
-					// Get the top track for a more dynamic description
-					$top_track = $wpdb->get_var( $wpdb->prepare( "
-						SELECT track_name FROM {$wpdb->prefix}charts_entries e
-						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-						WHERE s.chart_type = %s AND s.country_code = %s AND e.rank_position = 1
-						ORDER BY e.created_at DESC LIMIT 1
-					", $chart->chart_type, $chart->country_code ) );
+					$cache_key = 'charts_top_track_desc_' . md5($chart->chart_type . $chart->country_code);
+					$top_track = get_transient( $cache_key );
+
+					if ( false === $top_track ) {
+						// Get the top track for a more dynamic description
+						$top_track = $wpdb->get_var( $wpdb->prepare( "
+							SELECT track_name FROM {$wpdb->prefix}charts_entries e
+							JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+							WHERE s.chart_type = %s AND s.country_code = %s AND e.rank_position = 1
+							ORDER BY e.created_at DESC LIMIT 1
+						", $chart->chart_type, $chart->country_code ) );
+						set_transient( $cache_key, $top_track, HOUR_IN_SECONDS );
+					}
 					
-					$extra = $top_track ? " featuring #1 track \"$top_track\"" : "";
-					return "Weekly intelligence report for the {$chart->title}{$extra}. View the full list of trending tracks, peaks, movements, and audience insights.";
+					return "Current verified rankings for " . $chart->title . " with #" . ($top_track ? "1 $top_track" : "1 trending tracks") . ". Explore historical insights, performance metrics, and global trajectory.";
 				}
 				break;
 			
