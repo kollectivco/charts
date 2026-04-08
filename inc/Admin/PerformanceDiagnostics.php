@@ -8,7 +8,28 @@ namespace Charts\Admin;
 class PerformanceDiagnostics {
 
 	public static function init() {
+		add_action( 'admin_init', array( self::class, 'handle_actions' ) );
 		add_action( 'admin_menu', array( self::class, 'add_menu' ), 30 );
+	}
+
+	public static function handle_actions() {
+		if ( ! is_admin() || ! isset( $_GET['page'] ) || $_GET['page'] !== 'charts-performance' ) return;
+		if ( ! isset( $_GET['kc_action'] ) ) return;
+
+		check_admin_referer( 'kc_performance_action' );
+
+		switch ( $_GET['kc_action'] ) {
+			case 'run_setup':
+				charts()->run_migrations();
+				delete_option( 'charts_just_activated' );
+				wp_redirect( add_query_arg( 'kc_success', 'setup', admin_url( 'admin.php?page=charts-performance' ) ) );
+				exit;
+			
+			case 'clear_safety':
+				delete_option( 'charts_just_activated' );
+				wp_redirect( add_query_arg( 'kc_success', 'safety', admin_url( 'admin.php?page=charts-performance' ) ) );
+				exit;
+		}
 	}
 
 	public static function add_menu() {
@@ -40,20 +61,40 @@ class PerformanceDiagnostics {
 
 		// 3. Measure Dashboard Stats (Uncached)
 		$start = microtime( true );
-		$stats_raw = array(
-			'charts'  => wp_count_posts( 'chart' )->publish,
-			'tracks'  => wp_count_posts( 'track' )->publish,
-			'artists' => wp_count_posts( 'artist' )->publish,
-			'videos'  => wp_count_posts( 'video' )->publish,
-		);
+		$stats_raw = array();
+		if ( ! get_option( 'charts_just_activated' ) ) {
+			$stats_raw = array(
+				'charts'  => wp_count_posts( 'chart' )->publish,
+				'tracks'  => wp_count_posts( 'track' )->publish,
+				'artists' => wp_count_posts( 'artist' )->publish,
+				'videos'  => wp_count_posts( 'video' )->publish,
+			);
+		}
 		$stats_overhead = ( microtime( true ) - $start ) * 1000;
+
+		$just_activated = get_option( 'charts_just_activated' );
 
 		?>
 		<div class="wrap kc-admin-page">
 			<div class="kc-page-header">
-				<h1><?php _e( 'Performance Stabilization Diagnostics', 'charts' ); ?></h1>
-				<p class="description"><?php _e( 'Verifying stabilization metrics for Version 6.0.1.', 'charts' ); ?></p>
+				<h1><?php _e( 'Performance & System Safety', 'charts' ); ?></h1>
+				<p class="description"><?php _e( 'Manage stabilization metrics and activation safety for Version 6.0.4.', 'charts' ); ?></p>
 			</div>
+
+			<?php if ( $just_activated ) : ?>
+				<div class="notice notice-warning" style="margin: 20px 0; padding: 15px; border-left-color: #f59e0b;">
+					<h3 style="margin-top: 0;"><?php _e( 'Safe-Boot Active', 'charts' ); ?></h3>
+					<p><?php _e( 'The plugin was just activated but heavy database setup was deferred to prevent a server hang.', 'charts' ); ?></p>
+					<p>
+						<a href="<?php echo wp_nonce_url( add_query_arg( 'kc_action', 'run_setup' ), 'kc_performance_action' ); ?>" class="button button-primary"><?php _e( 'Run System Setup Now', 'charts' ); ?></a>
+						<a href="<?php echo wp_nonce_url( add_query_arg( 'kc_action', 'clear_safety' ), 'kc_performance_action' ); ?>" class="button button-secondary"><?php _e( 'Exit Safe-Boot Only', 'charts' ); ?></a>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['kc_success'] ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php _e( 'System action completed successfully.', 'charts' ); ?></p></div>
+			<?php endif; ?>
 
 			<div class="kc-dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px;">
 				
