@@ -7,8 +7,16 @@
 global $wpdb;
 
 // 1. DATA LOOKUP
+// 1. DATA LOOKUP
 $definition_slug = get_query_var( 'charts_definition_slug' );
-$definition      = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE slug = %s", $definition_slug ) );
+$chart_posts = get_posts( array(
+	'post_type'      => 'chart',
+	'name'           => $definition_slug,
+	'posts_per_page' => 1,
+	'post_status'    => 'publish',
+) );
+
+$definition = ! empty( $chart_posts ) ? $chart_posts[0] : null;
 
 $page_state = 'not_found';
 $sources    = array();
@@ -17,7 +25,19 @@ $period     = null;
 
 if ( $definition ) {
 	$page_state = 'ready';
-	$sources    = $wpdb->get_results( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $definition->chart_type, $definition->country_code ) );
+	
+	// Map CPT properties to expected object structure for template compatibility
+	$def_obj = (object) array(
+		'title'          => $definition->post_title,
+		'title_ar'       => get_post_meta( $definition->ID, '_title_ar', true ),
+		'chart_summary'  => $definition->post_content,
+		'accent_color'   => get_post_meta( $definition->ID, '_accent_color', true ),
+		'chart_type'     => get_post_meta( $definition->ID, '_chart_type', true ),
+		'country_code'   => get_post_meta( $definition->ID, '_country_code', true ),
+	);
+	$definition = $def_obj;
+
+	$sources = $wpdb->get_results( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $definition->chart_type, $definition->country_code ) );
 
 	if ( empty( $sources ) ) {
 		$page_state = 'disconnected';
@@ -35,15 +55,25 @@ if ( $definition ) {
 		if ( $period ) {
 			$query_params = array_values( $source_ids );
 			$query_params[] = $period->id;
+			
+			// entries table still exists (historical data), but item_id now points to CPTs
 			$entries = $wpdb->get_results( $wpdb->prepare( "
-				SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
+				SELECT e.* 
 				FROM {$wpdb->prefix}charts_entries e
-				LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-				LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-				LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
 				WHERE e.source_id IN ($placeholders) AND e.period_id = %d
 				ORDER BY e.rank_position ASC
 			", ...$query_params ) );
+			
+			// Resolve images from CPTs
+			foreach($entries as &$e) {
+				$e->resolved_image = get_the_post_thumbnail_url($e->item_id, 'medium');
+				if ( ! $e->resolved_image ) {
+					if ( $e->item_type === 'track' ) $e->resolved_image = get_post_meta($e->item_id, '_cover_image_url', true);
+					elseif ( $e->item_type === 'video' ) $e->resolved_image = get_post_meta($e->item_id, '_thumbnail_url', true);
+					elseif ( $e->item_type === 'artist' ) $e->resolved_image = get_post_meta($e->item_id, '_artist_image_url', true);
+				}
+				if ( ! $e->resolved_image && ! empty($e->cover_image) ) $e->resolved_image = $e->cover_image;
+			}
 		} else {
 			$page_state = 'empty';
 		}

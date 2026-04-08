@@ -13,15 +13,31 @@ if ( ! in_array( $type, array( 'track', 'video' ) ) ) {
 	$type = 'track';
 }
 
-$table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix . 'charts_tracks';
-$item  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
+$item_posts = get_posts( array(
+	'post_type'      => $type,
+	'name'           => $slug,
+	'posts_per_page' => 1,
+	'post_status'    => 'publish',
+) );
 
-if ( ! $item ) {
+$item_post = ! empty( $item_posts ) ? $item_posts[0] : null;
+
+if ( ! $item_post ) {
 	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';
 	\Charts\Core\PublicIntegration::get_footer();
 	return;
 }
+
+// Map Post/Meta to object
+$item = (object) array(
+	'id'                => $item_post->ID,
+	'title'             => $item_post->post_title,
+	'title_franko'      => get_post_meta($item_post->ID, '_title_franko', true),
+	'cover_image'       => get_post_meta($item_post->ID, ( $type === 'video' ? '_thumbnail_url' : '_cover_image_url' ), true),
+	'release_date'      => get_post_meta($item_post->ID, '_release_date', true),
+	'primary_artist_id' => get_post_meta($item_post->ID, '_primary_artist_id', true),
+);
 
 // Fetch Appearances
 $entries_table = $wpdb->prefix . 'charts_entries';
@@ -29,21 +45,57 @@ $sources_table = $wpdb->prefix . 'charts_sources';
 $periods_table = $wpdb->prefix . 'charts_periods';
 
 $appearances = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, s.chart_type, s.source_name, p.period_start, d.title as definition_title, d.accent_color
+	SELECT e.*, s.chart_type, s.source_name, p.period_start
 	FROM $entries_table e
 	JOIN $sources_table s ON s.id = e.source_id
 	JOIN $periods_table p ON p.id = e.period_id
-	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
 	WHERE e.item_id = %d AND e.item_type = %s
 	ORDER BY p.period_start DESC
 ", $item->id, $type ) );
 
-// Fetch Artist info
-$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
+foreach($appearances as $app) {
+	$parent_chart = get_posts(array(
+		'post_type' => 'chart',
+		'meta_query' => array(
+			array('key' => '_chart_type', 'value' => $app->chart_type),
+			// Optimization: add country code if possible, but sources may vary
+		),
+		'posts_per_page' => 1
+	));
+	if (!empty($parent_chart)) {
+		$app->definition_title = $parent_chart[0]->post_title;
+		$app->accent_color = get_post_meta($parent_chart[0]->ID, '_accent_color', true);
+	}
+}
 
-// Fetch More by Artist (Simplified for now)
-$more_table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix . 'charts_tracks';
-$more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHERE primary_artist_id = %d AND id != %d LIMIT 2", $item->primary_artist_id, $item->id ) );
+// Fetch Artist info
+$artist_post = get_post($item->primary_artist_id);
+$artist = $artist_post ? (object) array(
+	'id'           => $artist_post->ID,
+	'display_name' => $artist_post->post_title,
+	'slug'         => $artist_post->post_name,
+	'image'        => get_post_meta($artist_post->ID, '_artist_image_url', true),
+) : null;
+
+// Fetch More by Artist
+$more_posts = get_posts( array(
+	'post_type'      => $type,
+	'posts_per_page' => 2,
+	'post__not_in'   => array( $item->id ),
+	'meta_query'     => array(
+		array( 'key' => '_primary_artist_id', 'value' => $item->primary_artist_id )
+	)
+) );
+
+$more_items = array();
+foreach($more_posts as $mp) {
+	$more_items[] = (object) array(
+		'id'          => $mp->ID,
+		'title'       => $mp->post_title,
+		'slug'        => $mp->post_name,
+		'cover_image' => get_post_meta($mp->ID, ( $type === 'video' ? '_thumbnail_url' : '_cover_image_url' ), true),
+	);
+}
 
 \Charts\Core\PublicIntegration::get_header();
 ?>
@@ -74,7 +126,7 @@ $more_items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $more_table WHE
 					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
 						<?php 
 						// Link all artists
-						$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM {$wpdb->prefix}charts_" . ( $type === 'video' ? 'video' : 'track' ) . "_artists WHERE " . ( $type === 'video' ? 'video' : 'track' ) . "_id = %d", $item->id ) );
+						$artist_ids = (array) get_post_meta($item->id, '_artist_ids', true);
 						if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
 						
 						foreach ( $artist_ids as $a_id ) :

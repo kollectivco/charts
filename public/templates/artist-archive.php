@@ -7,18 +7,27 @@ global $wpdb;
 
 // Fetch all artists with a count of their chart appearances
 $artists = $wpdb->get_results( "
-	SELECT a.*, 
+// Fetch all artists with a count of their chart appearances
+// Note: charts_entries and charts_intelligence now use Post IDs as entity_id/item_id
+$artists = $wpdb->get_results( "
+	SELECT p.ID as id, p.post_title as display_name, p.post_name as slug,
 	       i.total_streams, i.weeks_on_chart, i.momentum_score, i.trend_status,
 	       (SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries e 
-	        WHERE (e.item_id = a.id AND e.item_type = 'artist') 
-	           OR (e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = a.id))
+	        WHERE (e.item_id = p.ID AND e.item_type = 'artist') 
+	           OR (e.item_type = 'track' AND e.item_id IN (SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_artist_ids' AND meta_value = p.ID))
 	       ) as appearance_count,
-	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE (e.item_id = a.id AND e.item_type = 'artist') OR (e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = a.id))) as peak_rank
-	FROM {$wpdb->prefix}charts_artists a
-	LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = a.id AND i.entity_type = 'artist'
-	GROUP BY a.id
+	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE (e.item_id = p.ID AND e.item_type = 'artist') OR (e.item_type = 'track' AND e.item_id IN (SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_artist_ids' AND meta_value = p.ID))) as peak_rank
+	FROM {$wpdb->posts} p
+	LEFT JOIN {$wpdb->prefix}charts_intelligence i ON i.entity_id = p.ID AND i.entity_type = 'artist'
+	WHERE p.post_type = 'artist' AND p.post_status = 'publish'
+	GROUP BY p.ID
 	HAVING appearance_count > 0
-	ORDER BY appearance_count DESC, a.display_name ASC
+	ORDER BY appearance_count DESC, p.post_title ASC
+" );
+
+foreach($artists as &$artist) {
+	$artist->image = get_post_meta($artist->id, '_artist_image_url', true);
+}
 " );
 
 \Charts\Core\PublicIntegration::get_header();

@@ -301,18 +301,31 @@ class SEO {
 	// -------------------------------------------------------------------------
 
 	private static function get_chart_definition( $slug ) {
-		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE slug = %s", $slug ) );
+		$posts = get_posts( array( 'post_type' => 'chart', 'name' => $slug, 'posts_per_page' => 1 ) );
+		return ! empty($posts) ? (object) array(
+			'title'        => $posts[0]->post_title,
+			'chart_type'   => get_post_meta($posts[0]->ID, '_chart_type', true),
+			'country_code' => get_post_meta($posts[0]->ID, '_country_code', true),
+		) : null;
 	}
 
 	private static function get_artist_by_slug( $slug ) {
-		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
+		$posts = get_posts( array( 'post_type' => 'artist', 'name' => $slug, 'posts_per_page' => 1 ) );
+		return ! empty($posts) ? (object) array(
+			'display_name'  => $posts[0]->post_title,
+			'image'         => get_post_meta($posts[0]->ID, '_artist_image_url', true),
+			'metadata_json' => json_encode( array( 'bio' => get_post_meta($posts[0]->ID, '_artist_bio', true) ) )
+		) : null;
 	}
 
 	private static function get_item_by_slug( $type, $slug ) {
-		global $wpdb;
-		$table = ( $type === 'video' ) ? $wpdb->prefix . 'charts_videos' : $wpdb->prefix . 'charts_tracks';
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
+		$posts = get_posts( array( 'post_type' => $type, 'name' => $slug, 'posts_per_page' => 1 ) );
+		if ( empty($posts) ) return null;
+		
+		return (object) array(
+			'title'        => $posts[0]->post_title,
+			'cover_image'  => get_post_meta($posts[0]->ID, ( $type === 'video' ? '_thumbnail_url' : '_cover_image_url' ), true),
+			'artist_names' => get_post_meta($posts[0]->ID, '_artist_names_denormalized', true), // Denormalized field for SEO speed
+		);
 	}
 }

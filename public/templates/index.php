@@ -17,16 +17,28 @@ function kc_get_preview_entries($def) {
 	$entries = get_transient( $cache_key );
 	
 	if ( false === $entries ) {
+		$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $def->chart_type, $def->country_code));
+		if ( empty($sources) ) return array();
+
+		$source_ids = array_column($sources, 'id');
+		$placeholders = implode(',', array_fill(0, count($source_ids), '%d'));
+
 		$entries = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+			SELECT e.* FROM {$wpdb->prefix}charts_entries e
 			JOIN {$wpdb->prefix}charts_periods p ON p.id = e.period_id
-			LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-			LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-			LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
+			WHERE e.source_id IN ($placeholders)
 			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 4
-		", $def->chart_type, $def->country_code ), ARRAY_A );
+		", ...$source_ids ), ARRAY_A );
+
+		// Resolve images from CPTs
+		foreach($entries as &$e) {
+			$e['resolved_image'] = get_the_post_thumbnail_url($e['item_id'], 'medium');
+			if ( ! $e['resolved_image'] ) {
+				if ( $e['item_type'] === 'track' ) $e['resolved_image'] = get_post_meta($e['item_id'], '_cover_image_url', true);
+				elseif ( $e['item_type'] === 'video' ) $e['resolved_image'] = get_post_meta($e['item_id'], '_thumbnail_url', true);
+				elseif ( $e['item_type'] === 'artist' ) $e['resolved_image'] = get_post_meta($e['item_id'], '_artist_image_url', true);
+			}
+		}
 		
 		set_transient( $cache_key, $entries, HOUR_IN_SECONDS );
 	}
@@ -34,7 +46,7 @@ function kc_get_preview_entries($def) {
 	return array_map(function($e){ return (object)$e; }, (array)$entries);
 }
 
-// Helper to check if a chart is REALLY syncing (has an active/started run in the last 15 min)
+// Helper to check if a chart is REALLY syncing
 function kc_is_syncing_active($def) {
 	global $wpdb;
 	return (bool) $wpdb->get_var( $wpdb->prepare( "
@@ -54,13 +66,23 @@ foreach ($definitions as $def) {
         break;
     }
 }
-$featured_artists = $top_artists_chart ? $wpdb->get_results( $wpdb->prepare( "
-    SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), a.image) AS resolved_image FROM {$wpdb->prefix}charts_entries e
-    JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-    LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-    WHERE s.chart_type = 'top-artists' AND s.country_code = %s AND s.is_active = 1
-    ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 5
-", $top_artists_chart->country_code ) ) : array();
+$featured_artists = array();
+if ( $top_artists_chart ) {
+	$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = 'top-artists' AND country_code = %s AND is_active = 1", $top_artists_chart->country_code));
+	if ( ! empty($sources) ) {
+		$s_ids = array_column($sources, 'id');
+		$phs = implode(',', array_fill(0, count($s_ids), '%d'));
+		$featured_artists = $wpdb->get_results( $wpdb->prepare( "
+			SELECT e.* FROM {$wpdb->prefix}charts_entries e
+			WHERE e.source_id IN ($phs)
+			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 5
+		", ...$s_ids ) );
+		
+		foreach($featured_artists as &$art) {
+			$art->resolved_image = get_post_meta($art->item_id, '_artist_image_url', true);
+		}
+	}
+}
 
 use Charts\Core\Settings;
 \Charts\Core\PublicIntegration::get_header();

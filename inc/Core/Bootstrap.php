@@ -11,6 +11,9 @@ class Bootstrap {
 	 * Initialize the core module.
 	 */
 	public static function init() {
+		// Initialize Post Types
+		\Charts\Core\PostTypes::init();
+
 		// Initialize Public Routing
 		\Charts\Core\Router::init();
 

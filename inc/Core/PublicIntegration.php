@@ -145,29 +145,35 @@ class PublicIntegration {
 	 * Priorities: Enriched Canonical > Entry-level Metadata > Source-specific Thumbs > Placeholder
 	 */
 	public static function resolve_artwork( $item, $type = 'track' ) {
-		// 1. Check if we have an object with a direct resolved_image or cover_image or image
-		if ( ! empty( $item->resolved_image ) ) return $item->resolved_image;
-		
-		// 2. Try canonical table data based on type
-		if ( $type === 'track' && ! empty( $item->track_cover ) ) return $item->track_cover;
-		if ( $type === 'video' && ! empty( $item->video_thumb ) ) return $item->video_thumb;
-		
-		// Artist specific image field 'image' is common in artist table
-		if ( $type === 'artist' ) {
-			if ( ! empty( $item->artist_image ) ) return $item->artist_image;
-			if ( ! empty( $item->image ) ) return $item->image;
+		// 1. Check if we have a CPT Post ID or Post Object
+		if ( is_numeric( $item ) || ( $item instanceof \WP_Post ) ) {
+			$post_id = is_numeric( $item ) ? $item : $item->ID;
+			$type = is_numeric( $item ) ? get_post_type( $post_id ) : $item->post_type;
+			
+			$meta_key = '_cover_image_url';
+			if ( $type === 'artist' ) $meta_key = '_artist_image_url';
+			if ( $type === 'video' ) $meta_key = '_thumbnail_url';
+			
+			$img = get_post_meta( $post_id, $meta_key, true );
+			if ( ! empty( $img ) ) return $img;
+			
+			// Try featured image
+			$thumb = get_the_post_thumbnail_url( $post_id, 'large' );
+			if ( $thumb ) return $thumb;
 		}
 
-		// 3. Fallback to entry stored image or metadata-stored thumbnail
-		if ( ! empty( $item->cover_image ) ) return $item->cover_image;
-		
-		// Final JSON fallback if it exists as an object
+		// 2. Fallback to legacy object properties
+		if ( isset( $item->resolved_image ) && ! empty( $item->resolved_image ) ) return $item->resolved_image;
+		if ( isset( $item->cover_image ) && ! empty( $item->cover_image ) ) return $item->cover_image;
+		if ( isset( $item->image ) && ! empty( $item->image ) ) return $item->image;
+
+		// 3. Final JSON fallback if it exists
 		if ( isset($item->metadata_json) ) {
 			$meta = json_decode($item->metadata_json, true);
 			if ( !empty($meta['youtube_thumbnail']) ) return $meta['youtube_thumbnail'];
+			if ( !empty($meta['image']) ) return $meta['image'];
 		}
 
-		// 4. Default placeholder
 		return CHARTS_URL . 'public/assets/img/placeholder.png';
 	}
 }

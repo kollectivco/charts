@@ -6,18 +6,33 @@
 
 global $wpdb;
 
+// 1. DATA LOOKUP
 $slug = get_query_var( 'charts_artist_slug' );
-$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
+$artist_posts = get_posts( array(
+	'post_type'      => 'artist',
+	'name'           => $slug,
+	'posts_per_page' => 1,
+	'post_status'    => 'publish',
+) );
 
-if ( ! $artist ) {
+$artist_post = ! empty( $artist_posts ) ? $artist_posts[0] : null;
+
+if ( ! $artist_post ) {
 	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Artist Not Found</h1></div>';
 	\Charts\Core\PublicIntegration::get_footer();
 	return;
 }
 
-// Metadata decoding
-$metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+// Map Post/Meta to object for template compatibility
+$artist = (object) array(
+	'id'                  => $artist_post->ID,
+	'display_name'        => $artist_post->post_title,
+	'spotify_id'          => get_post_meta( $artist_post->ID, '_spotify_id', true ),
+	'image'               => get_post_meta( $artist_post->ID, '_artist_image_url', true ),
+	'display_name_franko' => get_post_meta( $artist_post->ID, '_display_name_franko', true ),
+);
+
 $debug_notes = array();
 $needs_sync = false;
 
@@ -28,70 +43,45 @@ if ( empty( $artist->spotify_id ) ) {
 		$debug_notes[] = 'spotify: api credentials missing';
 	} else {
 		$search = $sp_api->search_artist( $artist->display_name );
-		if ( is_wp_error($search) ) {
-			$debug_notes[] = 'spotify: search error - ' . $search->get_error_message();
-		} elseif ( empty($search) ) {
-			$debug_notes[] = 'spotify: no match found';
-		} else {
+		if ( ! is_wp_error($search) && ! empty($search) ) {
 			$best_match = null;
 			foreach ( $search as $res ) {
-				if ( strtolower($res['name']) === strtolower($artist->display_name) ) {
+				if ( strcasecmp($res['name'], $artist->display_name) === 0 ) {
 					$best_match = $res;
 					break;
 				}
 			}
-			if ( ! $best_match && !empty($search[0]) ) {
-				$best_match = $search[0];
-			}
+			if ( ! $best_match ) $best_match = $search[0];
 
 			if ( $best_match ) {
-				$wpdb->update( $wpdb->prefix . 'charts_artists', array('spotify_id' => $best_match['id']), array('id' => $artist->id) );
+				update_post_meta( $artist->id, '_spotify_id', $best_match['id'] );
 				$artist->spotify_id = $best_match['id'];
 				$debug_notes[] = 'spotify: resolved ' . $best_match['id'];
 				$needs_sync = true;
-			} else {
-				$debug_notes[] = 'spotify: low-confidence result rejected';
 			}
 		}
 	}
 }
 
 // 2. Resolve YouTube Channel ID if missing
-$youtube_channel_id = $metadata['youtube_channel_id'] ?? null;
+$youtube_channel_id = get_post_meta( $artist->id, '_artist_youtube_channel_id', true );
 if ( empty( $youtube_channel_id ) ) {
 	$yt_api = new \Charts\Services\YouTubeApiClient();
-	if ( ! $yt_api->is_configured() ) {
-		$debug_notes[] = 'youtube: api credentials missing';
-	} else {
+	if ( $yt_api->is_configured() ) {
 		$search = $yt_api->search_channels( $artist->display_name );
-		if ( is_wp_error($search) ) {
-			$debug_notes[] = 'youtube: search error - ' . $search->get_error_message();
-		} elseif ( empty($search) ) {
-			$debug_notes[] = 'youtube: no channel match found';
-		} else {
-			$best_match = $search[0];
-			$youtube_channel_id = $best_match['snippet']['channelId'];
-			
-			$metadata['youtube_channel_id'] = $youtube_channel_id;
-			$wpdb->update( $wpdb->prefix . 'charts_artists', array('metadata_json' => json_encode($metadata)), array('id' => $artist->id) );
+		if ( ! is_wp_error($search) && ! empty($search) ) {
+			$youtube_channel_id = $search[0]['snippet']['channelId'];
+			update_post_meta( $artist->id, '_artist_youtube_channel_id', $youtube_channel_id );
 			$debug_notes[] = 'youtube: resolved ' . $youtube_channel_id;
 			$needs_sync = true;
 		}
 	}
 }
 
-// 3. Stale sync strategy
-if ( ! empty( $artist->spotify_id ) ) {
-	$last_sync = $metadata['last_sync'] ?? '1970-01-01 00:00:00';
-	if ( empty($metadata['followers']) || ( time() - strtotime( $last_sync ) > HOUR_IN_SECONDS * 48 ) ) {
-		$needs_sync = true;
-	}
-}
-if ( ! empty( $youtube_channel_id ) ) {
-    $yt_last_sync = $metadata['youtube_last_sync'] ?? '1970-01-01 00:00:00';
-    if ( empty($metadata['youtube_subscribers']) || ( time() - strtotime( $yt_last_sync ) > HOUR_IN_SECONDS * 48 ) ) {
-        $needs_sync = true;
-    }
+// 3. Sync Strategy (Enrichment)
+$last_sync = get_post_meta( $artist->id, '_artist_last_sync', true ) ?: '1970-01-01 00:00:00';
+if ( ( time() - strtotime( $last_sync ) > HOUR_IN_SECONDS * 48 ) ) {
+	$needs_sync = true;
 }
 
 if ( $needs_sync ) {
@@ -101,69 +91,82 @@ if ( $needs_sync ) {
 	if ( ! empty( $youtube_channel_id ) ) {
 		( new \Charts\Services\YouTubeEnrichmentService() )->enrich_artist( $artist->id );
 	}
-	// Refresh object
-	$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist->id ) );
-	$metadata = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
 }
 
-$genres        = $metadata['genres'] ?? array();
-$followers     = $metadata['followers'] ?? 0;
-$popularity    = $metadata['popularity'] ?? 0;
-$sp_url        = $metadata['external_url'] ?? '';
-$yt_subscribers= $metadata['youtube_subscribers'] ?? 0;
-$yt_views      = $metadata['youtube_video_count'] ?? 0;
-$yt_url        = $metadata['youtube_url'] ?? '';
-$sp_top_tracks = $metadata['spotify_top_tracks'] ?? array();
+// Re-fetch meta keys
+$followers      = get_post_meta( $artist->id, '_artist_followers', true ) ?: 0;
+$popularity     = get_post_meta( $artist->id, '_artist_popularity', true ) ?: 0;
+$sp_url         = get_post_meta( $artist->id, '_artist_external_url', true ) ?: '';
+$yt_subscribers = get_post_meta( $artist->id, '_artist_youtube_subscribers', true ) ?: 0;
+$yt_views       = get_post_meta( $artist->id, '_artist_youtube_video_count', true ) ?: 0;
+$yt_url         = get_post_meta( $artist->id, '_artist_youtube_url', true ) ?: '';
+$genres         = (array) get_post_meta( $artist->id, '_artist_genres', true );
+$sp_top_tracks  = (array) get_post_meta( $artist->id, '_artist_spotify_top_tracks', true );
 
 // Centralized image resolution
 $display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist');
 
-// Charting tracks - Enriched with canonical data (including collaborations)
+// Charting tracks - Meta query for relationships
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, 
-	       COALESCE(t.cover_image, v.thumbnail) as canonical_image,
-	       t.cover_image as track_cover,
-	       v.thumbnail as video_thumb
+	SELECT e.* 
 	FROM {$wpdb->prefix}charts_entries e
-	LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-	LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-	WHERE e.item_type IN ('track', 'video') 
-	  AND (
-	  	(e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d))
-	  	OR 
-	  	(e.item_type = 'video' AND e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d))
-	  )
+	WHERE e.item_id IN (
+		SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_artist_ids' AND meta_value = %d
+	)
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 4
-", $artist->id, $artist->id ) );
+", $artist->id ) );
 
-// Popular tracks - Enriched with canonical data (including collaborations)
+// Resolve images for charting tracks
+foreach($charting_tracks as $ct) {
+	$ct->canonical_image = get_the_post_thumbnail_url($ct->item_id, 'medium');
+	if ( ! $ct->canonical_image ) {
+		if ( $ct->item_type === 'track' ) $ct->canonical_image = get_post_meta($ct->item_id, '_cover_image_url', true);
+		elseif ( $ct->item_type === 'video' ) $ct->canonical_image = get_post_meta($ct->item_id, '_thumbnail_url', true);
+	}
+}
+
+// Popular tracks (Similar logic)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, 
-	       t.cover_image as track_cover,
-	       v.thumbnail as video_thumb
+	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-	LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-	WHERE e.item_type IN ('track', 'video') 
-	  AND (
-	  	(e.item_type = 'track' AND e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d))
-	  	OR 
-	  	(e.item_type = 'video' AND e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d))
-	  )
+	WHERE e.item_id IN (
+		SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_artist_ids' AND meta_value = %d
+	)
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 5
-", $artist->id, $artist->id ) );
+", $artist->id ) );
+
+foreach($popular_tracks as $pt) {
+	$pt->canonical_image = get_the_post_thumbnail_url($pt->item_id, 'medium');
+	if ( ! $pt->canonical_image ) {
+		if ( $pt->item_type === 'track' ) $pt->canonical_image = get_post_meta($pt->item_id, '_cover_image_url', true);
+		elseif ( $pt->item_type === 'video' ) $pt->canonical_image = get_post_meta($pt->item_id, '_thumbnail_url', true);
+	}
+}
 
 // Chart Rankings
 $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, d.title as definition_title 
+	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-	LEFT JOIN {$wpdb->prefix}charts_definitions d ON d.chart_type = s.chart_type AND d.country_code = s.country_code
-	WHERE (e.item_id = %d AND e.item_type = 'artist')
+	WHERE e.item_id = %d AND e.item_type = 'artist'
 	ORDER BY e.rank_position ASC LIMIT 2
 ", $artist->id ) );
+
+foreach($chart_rankings as $cr) {
+	$source = $wpdb->get_row($wpdb->prepare("SELECT chart_type, country_code FROM {$wpdb->prefix}charts_sources WHERE id = %d", $cr->source_id));
+	if ($source) {
+		$parent_chart = get_posts(array(
+			'post_type' => 'chart',
+			'meta_query' => array(
+				array('key' => '_chart_type', 'value' => $source->chart_type),
+				array('key' => '_country_code', 'value' => $source->country_code),
+			),
+			'posts_per_page' => 1
+		));
+		$cr->definition_title = !empty($parent_chart) ? $parent_chart[0]->post_title : 'Top Artists';
+	}
+}
 
 \Charts\Core\PublicIntegration::get_header();
 ?>
@@ -346,21 +349,32 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 			
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
-				foreach ( $mdefs as $mdef ) : 
-					$mentries = $wpdb->get_results( $wpdb->prepare( "
-						SELECT e.*, 
-						       t.cover_image as track_cover,
-						       v.thumbnail as video_thumb,
-						       a.image as artist_image
-						FROM {$wpdb->prefix}charts_entries e 
-						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id 
-						LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-						LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-						LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-						WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
-					, $mdef->chart_type, $mdef->country_code ) );
+				$mdefs_posts = get_posts( array(
+					'post_type'      => 'chart',
+					'posts_per_page' => 4,
+					'post_status'    => 'publish',
+				) );
+				foreach ( $mdefs_posts as $mpost ) : 
+					$mdef = (object) array(
+						'title'        => $mpost->post_title,
+						'slug'         => $mpost->post_name,
+						'accent_color' => get_post_meta($mpost->ID, '_accent_color', true),
+						'chart_type'   => get_post_meta($mpost->ID, '_chart_type', true),
+						'country_code' => get_post_meta($mpost->ID, '_country_code', true),
+					);
+					
+					$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $mdef->chart_type, $mdef->country_code));
+					$mentries = array();
+					if ( ! empty($sources) ) {
+						$s_ids = array_column($sources, 'id');
+						$phs = implode(',', array_fill(0, count($s_ids), '%d'));
+						$mentries = $wpdb->get_results($wpdb->prepare("
+							SELECT e.* 
+							FROM {$wpdb->prefix}charts_entries e 
+							WHERE e.source_id IN ($phs)
+							ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
+						, ...$s_ids));
+					}
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $mdef->accent_color ?: '#fe025b'; ?>;"></div>

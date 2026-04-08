@@ -48,7 +48,7 @@ class ImportFlow {
 			$artists = $row['artists'] ?? array();
 			$primary_artist = isset( $artists[0] ) ? $artists[0] : 'Unknown Artist';
 			
-			$artist_id = $this->quick_artist( $this->normalize_title( $primary_artist ) );
+			$artist_id = \Charts\Core\EntityManager::ensure_artist( $this->normalize_title( $primary_artist ) );
 
 			$item_type = $source->chart_type === 'top-artists' ? 'artist'
 				: ( $source->chart_type === 'top-videos' ? 'video' : 'track' );
@@ -56,24 +56,33 @@ class ImportFlow {
 			if ( $item_type === 'artist' ) {
 				$item_id = $artist_id;
 			} elseif ( $item_type === 'video' ) {
-				$item_id = $this->quick_video( $this->normalize_title( $title ), $artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
+				$item_id = \Charts\Core\EntityManager::ensure_video( $this->normalize_title( $title ), $artist_id, array(
+					'youtube_id' => $row['youtube_id'] ?? null,
+					'thumbnail' => $row['image'] ?? null
+				) );
 				// Link all artists for video
 				$all_yt_artists = \Charts\Services\Normalizer::split_artists( implode( ', ', $row['artists'] ?? array() ) );
+				$a_ids = array();
 				foreach ( $all_yt_artists as $a_name ) {
-					$a_id = $this->quick_artist( $a_name );
-					if ( $item_id && $a_id ) {
-						$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}charts_video_artists (video_id, artist_id) VALUES (%d, %d)", $item_id, $a_id ) );
-					}
+					$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name );
+					if ( $a_id ) $a_ids[] = $a_id;
+				}
+				if ( $item_id && ! empty( $a_ids ) ) {
+					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids );
 				}
 			} else {
-				$item_id = $this->quick_track( $this->normalize_title( $title ), $artist_id, $row['image'] ?? null );
+				$item_id = \Charts\Core\EntityManager::ensure_track( $this->normalize_title( $title ), $artist_id, array(
+					'cover_image' => $row['image'] ?? null
+				) );
 				// Link all artists for track
 				$all_yt_artists = \Charts\Services\Normalizer::split_artists( implode( ', ', $row['artists'] ?? array() ) );
+				$a_ids = array();
 				foreach ( $all_yt_artists as $a_name ) {
-					$a_id = $this->quick_artist( $a_name );
-					if ( $item_id && $a_id ) {
-						$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}charts_track_artists (track_id, artist_id) VALUES (%d, %d)", $item_id, $a_id ) );
-					}
+					$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name );
+					if ( $a_id ) $a_ids[] = $a_id;
+				}
+				if ( $item_id && ! empty( $a_ids ) ) {
+					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids );
 				}
 			}
 
@@ -184,9 +193,7 @@ class ImportFlow {
 		// Resolve canonical slug if missing
 		$item_slug = $flat['item_slug'] ?? null;
 		if ( ! $item_slug && $item_id ) {
-			$entity_type_key = ($item_type === 'video' ? 'videos' : ($item_type === 'artist' ? 'artists' : 'tracks'));
-			$entity_table = $wpdb->prefix . 'charts_' . $entity_type_key;
-			$item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM $entity_table WHERE id = %d", $item_id ) );
+			$item_slug = get_post_field( 'post_name', $item_id );
 		}
 
 		$existing_id = $wpdb->get_var( $wpdb->prepare(
@@ -261,88 +268,5 @@ class ImportFlow {
 		return mb_strtolower( $this->normalize_title( $str ) );
 	}
 
-	// -------------------------------------------------------------------------
-	// Quick entity helpers (for YouTube rows — no enrichment)
-	// -------------------------------------------------------------------------
-
-	private function quick_artist( $display_name ) {
-		global $wpdb;
-		$table      = $wpdb->prefix . 'charts_artists';
-		$normalized = mb_strtolower( $this->normalize_title( trim( $display_name ) ) );
-		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
-		if ( $id ) return $id;
-
-		$franko = Normalizer::to_franko( $display_name );
-		$slug = $this->unique_slug( $table, sanitize_title( $display_name ) );
-		$wpdb->insert( $table, array(
-			'display_name'    => $display_name,
-			'display_name_franko' => $franko !== $display_name ? $franko : null,
-			'normalized_name' => $normalized,
-			'slug'            => $slug,
-			'created_at'      => current_time( 'mysql' ),
-			'updated_at'      => current_time( 'mysql' ),
-		) );
-		return $wpdb->insert_id;
-	}
-
-	private function quick_track( $title, $artist_id, $image = null ) {
-		global $wpdb;
-		$table      = $wpdb->prefix . 'charts_tracks';
-		$normalized = mb_strtolower( $this->normalize_title( trim( $title ) ) );
-		$id = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d",
-			$normalized, $artist_id
-		) );
-		if ( $id ) return $id;
-
-		$franko = Normalizer::to_franko( $title );
-		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
-		$wpdb->insert( $table, array(
-			'title'             => $title,
-			'title_franko'      => $franko !== $title ? $franko : null,
-			'normalized_title'  => $normalized,
-			'slug'              => $slug,
-			'primary_artist_id' => $artist_id,
-			'cover_image'       => $image,
-			'created_at'        => current_time( 'mysql' ),
-			'updated_at'        => current_time( 'mysql' ),
-		) );
-		return $wpdb->insert_id;
-	}
-
-	private function quick_video( $title, $artist_id, $youtube_id = null, $image = null ) {
-		global $wpdb;
-		$table      = $wpdb->prefix . 'charts_videos';
-		$normalized = mb_strtolower( $this->normalize_title( trim( $title ) ) );
-		$id = $wpdb->get_var( $wpdb->prepare(
-			"SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d",
-			$normalized, $artist_id
-		) );
-		if ( $id ) return $id;
-
-		$franko = Normalizer::to_franko( $title );
-		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
-		$wpdb->insert( $table, array(
-			'title'             => $title,
-			'title_franko'      => $franko !== $title ? $franko : null,
-			'normalized_title'  => $normalized,
-			'slug'              => $slug,
-			'primary_artist_id' => $artist_id,
-			'youtube_id'        => $youtube_id,
-			'thumbnail'         => $image,
-			'created_at'        => current_time( 'mysql' ),
-			'updated_at'        => current_time( 'mysql' ),
-		) );
-		return $wpdb->insert_id;
-	}
-
-	private function unique_slug( $table, $slug ) {
-		global $wpdb;
-		$orig = $slug;
-		$i    = 1;
-		while ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE slug = %s", $slug ) ) ) {
-			$slug = $orig . '-' . $i++;
-		}
-		return $slug;
-	}
+	/* Deprecated: using Core\EntityManager */
 }

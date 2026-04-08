@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           5.1.4
+ * Version:           6.0.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '5.1.4' );
+define( 'CHARTS_VERSION', '6.0.0' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -158,14 +158,17 @@ final class Charts {
 		
 		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
 
-		// 2. One-time Legacy Cleanup (Force remove the hardcoded mocks once and for all)
+		// 2. Data Migration to CPTs (Migration v3 is now handled batched in init())
+		// We only trigger the structures here
+
+		// 3. One-time Legacy Cleanup (Force remove the hardcoded mocks once and for all)
 		if ( ! get_option( 'kcharts_mock_cleaned' ) ) {
 			$sources = new \Charts\Admin\SourceManager();
 			$sources->cleanup_mock_data();
 			update_option( 'kcharts_mock_cleaned', '1' );
 		}
 
-		// 3. Update the stored DB version
+		// 4. Update the stored DB version
 		if ( version_compare( $current_db_version, CHARTS_VERSION, '<' ) ) {
 			update_option( 'kcharts_db_version', CHARTS_VERSION );
 		}
@@ -191,9 +194,14 @@ final class Charts {
 			\Charts\Core\Router::add_rewrite_rules();
 			flush_rewrite_rules();
 		}
-
-		// Initialize core components
+		\Charts\Core\EntityManager::init();
 		\Charts\Core\Bootstrap::init();
+
+		// Run pending batched migrations if they are not fully complete
+		if ( ! get_option( 'charts_migration_v3_fully_completed' ) ) {
+			$migration = new \Charts\Database\Migration();
+			$migration->run();
+		}
 
 		// Handle installation integrity (folder parity)
 		\Charts\Core\Integrity::init();

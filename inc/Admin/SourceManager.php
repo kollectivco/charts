@@ -103,58 +103,149 @@ class SourceManager {
 	// ─────────────────────────────────────────────
 
 	public function get_definitions( $only_active = false ) {
-		global $wpdb;
-		$sql = "SELECT * FROM {$wpdb->prefix}charts_definitions";
-		if ( $only_active ) $sql .= " WHERE is_public = 1";
-		$sql .= " ORDER BY menu_order ASC, title ASC";
-		return $wpdb->get_results( $sql );
+		$args = array(
+			'post_type'      => 'chart',
+			'posts_per_page' => -1,
+			'orderby'        => 'menu_order',
+			'order'          => 'ASC',
+			'post_status'    => $only_active ? 'publish' : array( 'publish', 'draft', 'pending', 'private' ),
+		);
+
+		$posts = get_posts( $args );
+		$results = array();
+
+		foreach ( $posts as $post ) {
+			$results[] = $this->map_post_to_definition( $post );
+		}
+
+		return $results;
 	}
 
 	public function get_definition( $id ) {
-		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE id = %d", $id ) );
+		$post = get_post( $id );
+		if ( ! $post || $post->post_type !== 'chart' ) return null;
+		return $this->map_post_to_definition( $post );
 	}
 
 	public function get_definition_by_slug( $slug ) {
-		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE slug = %s", $slug ) );
+		$posts = get_posts( array(
+			'post_type'  => 'chart',
+			'name'       => $slug,
+			'posts_per_page' => 1,
+			'post_status' => 'any'
+		) );
+		if ( empty( $posts ) ) return null;
+		return $this->map_post_to_definition( $posts[0] );
 	}
 
 	public function delete_definition( $id ) {
 		global $wpdb;
+		// Delete from CPT
+		wp_delete_post( $id, true );
+		// Legacy cleanup
 		return $wpdb->delete( "{$wpdb->prefix}charts_definitions", array( 'id' => $id ) );
 	}
 
 	public function save_definition( $data ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'charts_definitions';
+		$id = ! empty( $data['id'] ) ? intval( $data['id'] ) : 0;
 
-		$fields = array(
-			'title'           => sanitize_text_field( $data['title'] ),
-			'title_ar'        => sanitize_text_field( $data['title_ar'] ?? '' ),
-			'slug'            => sanitize_title( $data['slug'] ),
-			'chart_summary'   => sanitize_textarea_field( $data['chart_summary'] ),
-			'chart_type'      => sanitize_text_field( $data['chart_type'] ),
-			'item_type'       => sanitize_text_field( $data['item_type'] ),
-			'country_code'    => strtolower( sanitize_text_field( $data['country_code'] ) ),
-			'frequency'       => sanitize_text_field( $data['frequency'] ),
-			'platform'        => sanitize_text_field( $data['platform'] ?? 'all' ),
-			'cover_image_url' => esc_url_raw( $data['cover_image_url'] ?? '' ),
-			'accent_color'    => !empty($data['accent_color']) ? (strpos($data['accent_color'], '#') === 0 ? sanitize_text_field($data['accent_color']) : '#' . sanitize_text_field($data['accent_color'])) : '#6366f1',
-			'is_public'       => isset( $data['is_public'] ) ? (int) $data['is_public'] : 1,
-			'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
-			'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,
-			'menu_order'      => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
+		$post_data = array(
+			'ID'           => $id,
+			'post_title'   => sanitize_text_field( $data['title'] ),
+			'post_name'    => sanitize_title( $data['slug'] ),
+			'post_content' => sanitize_textarea_field( $data['chart_summary'] ),
+			'post_type'    => 'chart',
+			'post_status'  => isset( $data['is_public'] ) && $data['is_public'] ? 'publish' : 'draft',
+			'menu_order'   => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
 		);
 
-		if ( ! empty( $data['id'] ) ) {
-			$id = intval( $data['id'] );
-			$wpdb->update( $table, $fields, array( 'id' => $id ) );
-			return $id;
+		if ( $id ) {
+			wp_update_post( $post_data );
+		} else {
+			$id = wp_insert_post( $post_data );
 		}
 
-		$wpdb->insert( $table, $fields );
-		return $wpdb->insert_id;
+		if ( $id ) {
+			update_post_meta( $id, '_title_ar', sanitize_text_field( $data['title_ar'] ?? '' ) );
+			update_post_meta( $id, '_chart_type', sanitize_text_field( $data['chart_type'] ) );
+			update_post_meta( $id, '_item_type', sanitize_text_field( $data['item_type'] ) );
+			update_post_meta( $id, '_country_code', strtolower( sanitize_text_field( $data['country_code'] ) ) );
+			update_post_meta( $id, '_frequency', sanitize_text_field( $data['frequency'] ) );
+			update_post_meta( $id, '_platform', sanitize_text_field( $data['platform'] ?? 'all' ) );
+			update_post_meta( $id, '_cover_image_url', esc_url_raw( $data['cover_image_url'] ?? '' ) );
+			
+			$color = !empty($data['accent_color']) ? (strpos($data['accent_color'], '#') === 0 ? sanitize_text_field($data['accent_color']) : '#' . sanitize_text_field($data['accent_color'])) : '#6366f1';
+			update_post_meta( $id, '_accent_color', $color );
+			
+			update_post_meta( $id, '_is_featured', isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0 );
+			update_post_meta( $id, '_archive_enabled', isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1 );
+
+			// Legacy sync
+			$this->sync_definition_to_table( $id );
+		}
+
+		return $id;
+	}
+
+	/**
+	 * Map a post object to a standard definition object for compatibility.
+	 */
+	private function map_post_to_definition( $post ) {
+		if ( ! $post ) return null;
+		
+		$obj = new \stdClass();
+		$obj->id              = $post->ID;
+		$obj->title           = $post->post_title;
+		$obj->title_ar        = get_post_meta( $post->ID, '_title_ar', true );
+		$obj->slug            = $post->post_name;
+		$obj->chart_summary   = $post->post_content;
+		$obj->chart_type      = get_post_meta( $post->ID, '_chart_type', true );
+		$obj->item_type       = get_post_meta( $post->ID, '_item_type', true );
+		$obj->country_code    = get_post_meta( $post->ID, '_country_code', true );
+		$obj->frequency       = get_post_meta( $post->ID, '_frequency', true );
+		$obj->platform        = get_post_meta( $post->ID, '_platform', true );
+		$obj->cover_image_url = get_post_meta( $post->ID, '_cover_image_url', true );
+		$obj->accent_color    = get_post_meta( $post->ID, '_accent_color', true );
+		$obj->is_public       = $post->post_status === 'publish' ? 1 : 0;
+		$obj->is_featured     = (int) get_post_meta( $post->ID, '_is_featured', true );
+		$obj->archive_enabled = (int) get_post_meta( $post->ID, '_archive_enabled', true );
+		$obj->menu_order      = $post->menu_order;
+		$obj->created_at      = $post->post_date;
+		$obj->updated_at      = $post->post_modified;
+
+		return $obj;
+	}
+
+	/**
+	 * Sync CPT data back to custom table for compatibility.
+	 */
+	private function sync_definition_to_table( $post_id ) {
+		global $wpdb;
+		$def = $this->map_post_to_definition( get_post( $post_id ) );
+		if ( ! $def ) return;
+
+		$table = $wpdb->prefix . 'charts_definitions';
+		$wpdb->replace( $table, array(
+			'id'              => $def->id,
+			'title'           => $def->title,
+			'title_ar'        => $def->title_ar,
+			'slug'            => $def->slug,
+			'chart_summary'   => $def->chart_summary,
+			'chart_type'      => $def->chart_type,
+			'item_type'       => $def->item_type,
+			'country_code'    => $def->country_code,
+			'frequency'       => $def->frequency,
+			'platform'        => $def->platform,
+			'cover_image_url' => $def->cover_image_url,
+			'accent_color'    => $def->accent_color,
+			'is_public'       => $def->is_public,
+			'is_featured'     => $def->is_featured,
+			'archive_enabled' => $def->archive_enabled,
+			'menu_order'      => $def->menu_order,
+			'created_at'      => $def->created_at,
+			'updated_at'      => $def->updated_at,
+		) );
 	}
 	/**
 	 * Safely remove legacy seeded records that match known demo signatures.

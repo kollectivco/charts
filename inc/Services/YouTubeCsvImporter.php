@@ -167,9 +167,13 @@ class YouTubeCsvImporter {
 					}
 					
 					$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
+					$artist_ids = array();
 					foreach ( $all_artists as $a_name ) {
 						$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
-						if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
+						if ( $a_id ) $artist_ids[] = $a_id;
+					}
+					if ( $item_id && ! empty( $artist_ids ) ) {
+						\Charts\Core\EntityManager::link_artists( $item_id, $artist_ids );
 					}
 				} elseif ( $item_type === 'artist' ) {
 					$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
@@ -194,9 +198,13 @@ class YouTubeCsvImporter {
 					$item_id   = $this->ensure_track( $this->import_flow->normalize_title( $title ), $primary_artist_id, $row['youtube_id'] ?? null, $row['image'] ?? null );
 
 					$all_artists = ! empty( $artist_arr ) ? $artist_arr : array($primary_name);
+					$artist_ids = array();
 					foreach ( $all_artists as $a_name ) {
 						$a_id = $this->ensure_artist( $this->import_flow->normalize_title( trim($a_name) ) );
-						if ( $item_id && $a_id ) $this->link_track_artist( $item_id, $a_id );
+						if ( $a_id ) $artist_ids[] = $a_id;
+					}
+					if ( $item_id && ! empty( $artist_ids ) ) {
+						\Charts\Core\EntityManager::link_artists( $item_id, $artist_ids );
 					}
 				}
 

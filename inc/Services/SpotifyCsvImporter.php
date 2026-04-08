@@ -80,10 +80,10 @@ class SpotifyCsvImporter {
 				}
 
 				// Resolve / create primary artist
-				$primary_artist_id = $this->ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
+				$primary_artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
 
 				// Link ALL artists
-				$all_artists = ! empty( $artists_arr ) ? $artists_arr : \Charts\Services\Normalizer::split_artists( $artist_raw );
+				$all_artists = ! empty( $all_artists ) ? $all_artists : \Charts\Services\Normalizer::split_artists( $artist_raw );
 				if ( empty( $all_artists ) && ! empty( $primary_name ) ) $all_artists = array( $primary_name );
 
 				// Resolve / create track
@@ -93,33 +93,41 @@ class SpotifyCsvImporter {
 				$official_name = ! empty( $enrichment['official_name'] ) ? $enrichment['official_name'] : $track_name;
 				$official_name = $this->import_flow->normalize_title( $official_name );
 
-				$track_id = $this->ensure_track( $official_name, $primary_artist_id, $spotify_id, $cover_image );
+				$track_id = \Charts\Core\EntityManager::ensure_track( $official_name, $primary_artist_id, array(
+					'spotify_id' => $spotify_id,
+					'cover_image' => $cover_image
+				) );
 
 				if ( ! $track_id ) {
 					$parse_errors++;
 					continue;
 				}
 
+				$artist_ids = array();
 				foreach ( $all_artists as $a_name ) {
 					$a_name = trim($a_name);
 					if ( empty($a_name) ) continue;
-					$a_id = $this->ensure_artist( $a_name );
-					if ( $track_id && $a_id ) $this->link_track_artist( $track_id, $a_id );
+					$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name );
+					if ( $a_id ) $artist_ids[] = $a_id;
 				}
 
 				$item_type = $meta['item_type'] ?? 'track';
 
 				if ( $item_type === 'artist' ) {
 					$item_id = $primary_artist_id;
-					$flat['track_name'] = $primary_name;
 				} elseif ( $item_type === 'video' ) {
-					$item_id = $this->ensure_video( $official_name, $primary_artist_id, $row['youtube_id'] ?? null, $cover_image );
-					foreach ( $all_artists as $a_name ) {
-						$a_id = $this->ensure_artist( trim($a_name) );
-						if ( $item_id && $a_id ) $this->link_video_artist( $item_id, $a_id );
+					$item_id = \Charts\Core\EntityManager::ensure_video( $official_name, $primary_artist_id, array(
+						'youtube_id' => $row['youtube_id'] ?? null,
+						'thumbnail' => $cover_image
+					) );
+					if ( $item_id && ! empty( $artist_ids ) ) {
+						\Charts\Core\EntityManager::link_artists( $item_id, $artist_ids );
 					}
 				} else {
 					$item_id = $track_id;
+					if ( $item_id && ! empty( $artist_ids ) ) {
+						\Charts\Core\EntityManager::link_artists( $item_id, $artist_ids );
+					}
 				}
 
 				$flat = array(
@@ -174,63 +182,7 @@ class SpotifyCsvImporter {
 		}
 	}
 
-	private function ensure_artist( $display_name, $enrichment_data = null ) {
-		global $wpdb;
-		$table = $wpdb->prefix . 'charts_artists';
-		if ( ! empty( $enrichment_data['spotify_id'] ) ) {
-			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE spotify_id = %s", $enrichment_data['spotify_id'] ) );
-			if ( $id ) return $id;
-		}
-		$normalized = mb_strtolower( $this->import_flow->normalize_title( $display_name ) );
-		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
-		if ( $id ) {
-			if ( ! empty( $enrichment_data['spotify_id'] ) ) {
-				$wpdb->update( $table, array( 'spotify_id' => $enrichment_data['spotify_id'], 'image' => $enrichment_data['image'] ?? $enrichment_data['images'][0]['url'] ?? null ), array( 'id' => $id ) );
-			}
-			return $id;
-		}
-		$franko = Normalizer::to_franko( $display_name );
-		$slug = $this->unique_slug( $table, sanitize_title( $display_name ) );
-		$wpdb->insert( $table, array( 'display_name' => $display_name, 'display_name_franko' => $franko !== $display_name ? $franko : null, 'normalized_name' => $normalized, 'slug' => $slug, 'spotify_id' => $enrichment_data['spotify_id'] ?? null, 'image' => $enrichment_data['image'] ?? $enrichment_data['images'][0]['url'] ?? null, 'created_at' => current_time( 'mysql' ) ) );
-		return $wpdb->insert_id;
-	}
-
-	private function ensure_track( $title, $artist_id, $spotify_id = null, $cover_image = null ) {
-		global $wpdb;
-		$table = $wpdb->prefix . 'charts_tracks';
-		if ( $spotify_id ) {
-			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE spotify_id = %s", $spotify_id ) );
-			if ( $id ) {
-				if ( $cover_image ) $wpdb->update( $table, array( 'cover_image' => $cover_image ), array( 'id' => $id ) );
-				return $id;
-			}
-		}
-		$normalized = mb_strtolower( $this->import_flow->normalize_title( $title ) );
-		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
-		if ( $id ) {
-			if ( $spotify_id ) $wpdb->update( $table, array( 'spotify_id' => $spotify_id ), array( 'id' => $id ) );
-			if ( $cover_image ) $wpdb->update( $table, array( 'cover_image' => $cover_image ), array( 'id' => $id ) );
-			return $id;
-		}
-		$franko = Normalizer::to_franko( $title );
-		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
-		$wpdb->insert( $table, array( 'title' => $title, 'title_franko' => $franko !== $title ? $franko : null, 'normalized_title' => $normalized, 'slug' => $slug, 'primary_artist_id' => $artist_id, 'spotify_id' => $spotify_id, 'cover_image' => $cover_image, 'created_at' => current_time( 'mysql' ) ) );
-		return $wpdb->insert_id;
-	}
-
-	private function ensure_video( $title, $artist_id, $youtube_id = null, $cover_image = null ) {
-		global $wpdb;
-		$table = $wpdb->prefix . 'charts_videos';
-		$normalized = mb_strtolower( $this->import_flow->normalize_title( $title ) );
-		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
-		if ( $id ) {
-			if ( $cover_image ) $wpdb->update( $table, array( 'thumbnail' => $cover_image ), array( 'id' => $id ) );
-			return $id;
-		}
-		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
-		$wpdb->insert( $table, array( 'title' => $title, 'normalized_title' => $normalized, 'slug' => $slug, 'primary_artist_id' => $artist_id, 'youtube_id' => $youtube_id, 'thumbnail' => $cover_image, 'created_at' => current_time( 'mysql' ) ) );
-		return $wpdb->insert_id;
-	}
+	/* Deprecated: using Core\EntityManager */
 
 	private function ensure_source( $meta ) {
 		global $wpdb;

@@ -7,17 +7,29 @@ global $wpdb;
 
 // Fetch all tracks with their chart appearance counts
 $tracks = $wpdb->get_results( "
-	SELECT t.*, a.display_name as artist_name, a.slug as artist_slug,
+// Fetch all tracks with their chart appearance counts
+$tracks = $wpdb->get_results( "
+	SELECT p.ID as id, p.post_title as title, p.post_name as slug,
 	       (SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries e 
-	        WHERE e.item_id = t.id AND e.item_type = 'track') as appearance_count,
+	        WHERE e.item_id = p.ID AND e.item_type = 'track') as appearance_count,
 	       (SELECT MAX(weeks_on_chart) FROM {$wpdb->prefix}charts_entries e 
-	        WHERE e.item_id = t.id AND e.item_type = 'track') as weeks_on_chart,
-	       (SELECT MIN(period_id) FROM {$wpdb->prefix}charts_entries e WHERE e.item_id = t.id AND e.item_type = 'track') as first_period_id,
-	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE e.item_id = t.id AND e.item_type = 'track') as peak_rank
-	FROM {$wpdb->prefix}charts_tracks t
-	LEFT JOIN {$wpdb->prefix}charts_artists a ON a.id = t.primary_artist_id
-	ORDER BY appearance_count DESC, t.title ASC
+	        WHERE e.item_id = p.ID AND e.item_type = 'track') as weeks_on_chart,
+	       (SELECT MIN(period_id) FROM {$wpdb->prefix}charts_entries e WHERE e.item_id = p.ID AND e.item_type = 'track') as first_period_id,
+	       (SELECT MIN(rank_position) FROM {$wpdb->prefix}charts_entries e WHERE e.item_id = p.ID AND e.item_type = 'track') as peak_rank
+	FROM {$wpdb->posts} p
+	WHERE p.post_type = 'track' AND p.post_status = 'publish'
+	GROUP BY p.ID
+	ORDER BY appearance_count DESC, p.post_title ASC
 	LIMIT 100
+" );
+
+foreach($tracks as &$track) {
+	$track->cover_image = get_post_meta($track->id, '_cover_image_url', true);
+	$primary_artist_id = get_post_meta($track->id, '_primary_artist_id', true);
+	$artist_post = get_post($primary_artist_id);
+	$track->artist_name = $artist_post ? $artist_post->post_title : '';
+	$track->artist_slug = $artist_post ? $artist_post->post_name : '';
+}
 " );
 
 \Charts\Core\PublicIntegration::get_header();
