@@ -453,163 +453,33 @@ class Bootstrap {
 			3
 		);
 
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Overview', 'charts' ),
-			__( 'Overview', 'charts' ),
-			'manage_options',
-			'charts-dashboard',
-			array( self::class, 'render_dashboard' )
+		$menus = array(
+			array( 'title' => 'Overview', 'slug' => 'charts-dashboard', 'callback' => 'render_dashboard' ),
+			array( 'title' => 'Charts', 'slug' => 'charts-definitions', 'callback' => 'render_definitions' ),
+			array( 'title' => 'Artists', 'slug' => 'charts-artists', 'callback' => 'render_entities' ),
+			array( 'title' => 'Tracks', 'slug' => 'charts-tracks', 'callback' => 'render_entities' ),
+			array( 'title' => 'Clips', 'slug' => 'charts-clips', 'callback' => 'render_entities' ),
+			array( 'title' => 'Sources', 'slug' => 'charts-sources', 'callback' => 'render_sources' ),
+			array( 'title' => 'Import Center', 'slug' => 'charts-import', 'callback' => 'render_import_center' ),
+			array( 'title' => 'Import Runs', 'slug' => 'charts-imports', 'callback' => 'render_imports' ),
+			array( 'title' => 'Matching Center', 'slug' => 'charts-matching', 'callback' => 'render_matching' ),
+			array( 'title' => 'Intelligence', 'slug' => 'charts-intelligence', 'callback' => 'render_intelligence' ),
+			array( 'title' => 'Insights', 'slug' => 'charts-insights', 'callback' => 'render_insights' ),
+			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
+			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
 		);
 
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Manage Charts', 'charts' ),
-			__( 'Manage Charts', 'charts' ),
-			'manage_options',
-			'charts-definitions',
-			array( self::class, 'render_definitions' )
-		);
-		
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Native Layouts (CPT)', 'charts' ),
-			__( 'Native Layouts', 'charts' ),
-			'manage_options',
-			'edit.php?post_type=chart'
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Native Artists (CPT)', 'charts' ),
-			__( 'Native Artists', 'charts' ),
-			'manage_options',
-			'edit.php?post_type=artist'
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Native Tracks (CPT)', 'charts' ),
-			__( 'Native Tracks', 'charts' ),
-			'manage_options',
-			'edit.php?post_type=track'
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Native Clips (CPT)', 'charts' ),
-			__( 'Native Clips', 'charts' ),
-			'manage_options',
-			'edit.php?post_type=video'
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Sources', 'charts' ),
-			__( 'Sources', 'charts' ),
-			'manage_options',
-			'charts-sources',
-			array( self::class, 'render_sources' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Import Center', 'charts' ),
-			__( 'Import Center', 'charts' ),
-			'manage_options',
-			'charts-import',
-			array( self::class, 'render_import_center' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Import Runs', 'charts' ),
-			__( 'Import Runs', 'charts' ),
-			'manage_options',
-			'charts-imports',
-			array( self::class, 'render_imports' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Matching Center', 'charts' ),
-			__( 'Matching Center', 'charts' ),
-			'manage_options',
-			'charts-matching',
-			array( self::class, 'render_matching' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Artists', 'charts' ),
-			__( 'Artists', 'charts' ),
-			'manage_options',
-			'charts-artists',
-			array( self::class, 'render_entities' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Tracks', 'charts' ),
-			__( 'Tracks', 'charts' ),
-			'manage_options',
-			'charts-tracks',
-			array( self::class, 'render_entities' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Clips', 'charts' ),
-			__( 'Clips', 'charts' ),
-			'manage_options',
-			'charts-clips',
-			array( self::class, 'render_entities' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Metadata Center', 'charts' ),
-			__( 'Advanced Entities', 'charts' ),
-			'manage_options',
-			'charts-entities',
-			array( self::class, 'render_entities' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Intelligence', 'charts' ),
-			__( 'Intelligence', 'charts' ),
-			'manage_options',
-			'charts-intelligence',
-			array( self::class, 'render_intelligence' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Insights', 'charts' ),
-			__( 'Insights', 'charts' ),
-			'manage_options',
-			'charts-insights',
-			array( self::class, 'render_insights' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Performance & Migration', 'charts' ),
-			__( 'Performance', 'charts' ),
-			'manage_options',
-			'charts-performance',
-			array( self::class, 'render_performance' )
-		);
-
-		add_submenu_page(
-			'charts-dashboard',
-			__( 'Settings', 'charts' ),
-			__( 'Settings', 'charts' ),
-			'manage_options',
-			'charts-settings',
-			array( self::class, 'render_settings' )
-		);
+		foreach ( $menus as $m ) {
+			add_submenu_page(
+				'charts-dashboard',
+				__( $m['title'], 'charts' ),
+				__( $m['title'], 'charts' ),
+				'manage_options',
+				$m['slug'],
+				array( self::class, $m['callback'] )
+			);
+		}
+	}
 
 
 	}

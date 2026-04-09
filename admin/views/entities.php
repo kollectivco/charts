@@ -7,7 +7,7 @@
 global $wpdb;
 
 $page = $_GET['page'] ?? 'charts-entities';
-$type = ( $page === 'charts-artists' ) ? 'artist' : ( ( $page === 'charts-tracks' ) ? 'track' : ( ( $page === 'charts-clips' ) ? 'clip' : 'advanced' ) );
+$type = ( $page === 'charts-artists' ) ? 'artist' : ( ( $page === 'charts-tracks' ) ? 'track' : ( ( $page === 'charts-clips' ) ? 'video' : 'advanced' ) );
 
 $search = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
 
@@ -43,7 +43,7 @@ if ( $type === 'artist' ) {
 		array( 'label' => __( 'Spotify Ready', 'charts' ), 'value' => $stats['with_spotify'], 'icon' => 'dashicons-spotify', 'color' => '#1DB954' ),
 		array( 'label' => __( 'Chart Presence', 'charts' ), 'value' => $stats['active_items'], 'icon' => 'dashicons-chart-bar', 'color' => '#f59e0b' ),
 	);
-} elseif ( $type === 'clip' ) {
+} elseif ( $type === 'video' ) {
 	$stats['total']        = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table" );
 	$stats['with_thumb']    = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table WHERE thumbnail IS NOT NULL AND thumbnail != ''" );
 	$stats['with_youtube']  = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table WHERE youtube_id IS NOT NULL AND youtube_id != ''" );
@@ -101,7 +101,7 @@ if ( $type === 'artist' ) {
 	" );
 	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $tracks_table t {$where}" );
 	$title = __( 'Tracks', 'charts' );
-} elseif ( $type === 'clip' ) {
+} elseif ( $type === 'video' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
 		$where .= $wpdb->prepare( " AND (v.title LIKE %s OR v.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
@@ -271,7 +271,7 @@ $entity_type = $type;
 									</th>
 								<?php endif; ?>
 								<th style="<?php echo $type === 'advanced' ? 'padding-left: 24px;' : ''; ?>"><?php _e( 'Title / Name', 'charts' ); ?></th>
-								<?php if ( $type === 'track' || $type === 'clip' || $type === 'advanced' ) : ?>
+								<?php if ( $type === 'track' || $type === 'video' || $type === 'advanced' ) : ?>
 									<th><?php _e( 'Artist', 'charts' ); ?></th>
 								<?php endif; ?>
 								<?php if ( $type === 'advanced' ) : ?>
@@ -279,7 +279,7 @@ $entity_type = $type;
 									<th><?php _e( 'Longevity', 'charts' ); ?></th>
 								<?php else : ?>
 									<th><?php _e( 'Slug', 'charts' ); ?></th>
-									<th><?php echo $type === 'clip' ? __( 'Reference', 'charts' ) : __( 'Spotify ID', 'charts' ); ?></th>
+									<th><?php echo $type === 'video' ? __( 'Reference', 'charts' ) : __( 'Spotify ID', 'charts' ); ?></th>
 								<?php endif; ?>
 								<th style="text-align: right; padding-right: 24px;"><?php _e( 'Actions', 'charts' ); ?></th>
 							</tr>
@@ -295,7 +295,7 @@ $entity_type = $type;
 									<td style="<?php echo $type === 'advanced' ? 'padding-left: 24px;' : ''; ?>">
 										<div style="display: flex; align-items: center; gap: 10px;">
 											<?php 
-											$img = ( $type === 'artist' ) ? ($item->image ?? '') : ( ($type === 'clip') ? ($item->thumbnail ?? '') : ($item->cover_image ?? '') );
+											$img = ( $type === 'artist' ) ? ($item->image ?? '') : ( ($type === 'video') ? ($item->thumbnail ?? '') : ($item->cover_image ?? '') );
 											$label = ( $type === 'artist' ) ? $item->display_name : ($item->title ?? $item->track_name);
 											?>
 											<?php if ( $img ) : ?>
@@ -307,7 +307,7 @@ $entity_type = $type;
 										</div>
 									</td>
 
-									<?php if ( $type === 'track' || $type === 'clip' || $type === 'advanced' ) : ?>
+									<?php if ( $type === 'track' || $type === 'video' || $type === 'advanced' ) : ?>
 										<td><span style="font-size: 13px; color: #666;"><?php echo esc_html( $item->artist_name ?? $item->artist_names ?? '—' ); ?></span></td>
 									<?php endif; ?>
 
@@ -324,7 +324,7 @@ $entity_type = $type;
 											<?php if ( ! empty( $item->slug ) ) : ?>
 												<?php 
 												$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id );
-												$slug_path = ( $type === 'artist' ) ? 'artist' : ( ($type === 'clip') ? 'clip' : 'track' );
+												$slug_path = ( $type === 'artist' ) ? 'artist' : ( ($type === 'video') ? 'clip' : 'track' );
 												$view_url = home_url( '/charts/' . $slug_path . '/' . $item->slug );
 												?>
 												<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>

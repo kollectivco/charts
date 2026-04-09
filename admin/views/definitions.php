@@ -75,7 +75,14 @@ $definitions = $manager->get_definitions();
 					<div class="card-footer">
 						<div class="card-slug">/charts/<?php echo esc_html($def->slug); ?></div>
 						<div class="card-actions">
-							<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'definitions', array( 'action' => 'edit', 'id' => $def->id ) ); ?>" class="action-icon" title="<?php _e('Edit', 'charts'); ?>">
+							<?php 
+							$edit_url = \Charts\Core\Router::get_dashboard_url( 'definitions', array( 'action' => 'edit', 'id' => $def->id ) );
+							$native_id = (new \Charts\Admin\SourceManager())->get_post_id_by_definition_id($def->id);
+							if ($native_id) {
+								$edit_url = get_edit_post_link($native_id);
+							}
+							?>
+							<a href="<?php echo $edit_url; ?>" class="action-icon" title="<?php _e('Edit', 'charts'); ?>">
 								<span class="dashicons dashicons-edit"></span>
 							</a>
 							<form method="post" style="display:inline;" title="<?php _e('Promote to Native CPT', 'charts'); ?>">
