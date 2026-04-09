@@ -66,7 +66,13 @@ class Router {
 	public static function load_template( $template ) {
 		$route = get_query_var( 'charts_route' );
 
-		if ( ! $route ) return $template;
+		if ( ! $route ) {
+			// Phase 1: Support native CPT single view if requested directly
+			if ( is_singular( 'chart' ) ) {
+				return CHARTS_PATH . 'public/templates/single-chart.php';
+			}
+			return $template;
+		}
 
 		switch ( $route ) {
 			case 'index':

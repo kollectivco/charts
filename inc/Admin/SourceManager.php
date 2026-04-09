@@ -103,39 +103,65 @@ class SourceManager {
 	// ─────────────────────────────────────────────
 
 	public function get_definitions( $only_active = false ) {
-		$args = array(
-			'post_type'      => 'chart',
-			'posts_per_page' => -1,
-			'orderby'        => 'menu_order',
-			'order'          => 'ASC',
-			'post_status'    => $only_active ? 'publish' : array( 'publish', 'draft', 'pending', 'private' ),
-		);
-
-		$posts = get_posts( $args );
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_definitions';
+		$where = $only_active ? "WHERE is_public = 1" : "";
+		$rows = $wpdb->get_results( "SELECT * FROM $table $where ORDER BY menu_order ASC" );
+		
 		$results = array();
-
-		foreach ( $posts as $post ) {
-			$results[] = $this->map_post_to_definition( $post );
+		foreach ( $rows as $row ) {
+			// Resolve CPT if it exists for this legacy ID
+			$post_id = $this->get_post_id_by_definition_id( $row->id );
+			if ( $post_id ) {
+				$results[] = $this->map_post_to_definition( get_post( $post_id ) );
+			} else {
+				$results[] = $row;
+			}
 		}
 
 		return $results;
 	}
 
 	public function get_definition( $id ) {
+		global $wpdb;
+		// 1. Try CPT first if ID is likely a Post ID
 		$post = get_post( $id );
-		if ( ! $post || $post->post_type !== 'chart' ) return null;
-		return $this->map_post_to_definition( $post );
+		if ( $post && $post->post_type === 'chart' ) {
+			return $this->map_post_to_definition( $post );
+		}
+
+		// 2. Fallback to SQL Table
+		$table = $wpdb->prefix . 'charts_definitions';
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
 	}
 
 	public function get_definition_by_slug( $slug ) {
+		global $wpdb;
+		// 1. Try SQL Table first to get the DEFINITION ID
+		$table = $wpdb->prefix . 'charts_definitions';
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
+		
+		if ( $row ) {
+			// Check if promoted
+			$post_id = $this->get_post_id_by_definition_id( $row->id );
+			if ( $post_id ) {
+				return $this->map_post_to_definition( get_post( $post_id ) );
+			}
+			return $row;
+		}
+
+		// 2. Try CPT directly (for native layouts that might not exist in table yet)
 		$posts = get_posts( array(
 			'post_type'  => 'chart',
 			'name'       => $slug,
 			'posts_per_page' => 1,
 			'post_status' => 'any'
 		) );
-		if ( empty( $posts ) ) return null;
-		return $this->map_post_to_definition( $posts[0] );
+		if ( ! empty( $posts ) ) {
+			return $this->map_post_to_definition( $posts[0] );
+		}
+
+		return null;
 	}
 
 	public function delete_definition( $id ) {
@@ -149,24 +175,27 @@ class SourceManager {
 	public function save_definition( $data ) {
 		global $wpdb;
 		$id = ! empty( $data['id'] ) ? intval( $data['id'] ) : 0;
-
-		$post_data = array(
-			'ID'           => $id,
-			'post_title'   => sanitize_text_field( $data['title'] ),
-			'post_name'    => sanitize_title( $data['slug'] ),
-			'post_content' => sanitize_textarea_field( $data['chart_summary'] ),
-			'post_type'    => 'chart',
-			'post_status'  => isset( $data['is_public'] ) && $data['is_public'] ? 'publish' : 'draft',
-			'menu_order'   => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
-		);
+		$is_cpt = false;
 
 		if ( $id ) {
-			wp_update_post( $post_data );
-		} else {
-			$id = wp_insert_post( $post_data );
+			$post = get_post( $id );
+			if ( $post && $post->post_type === 'chart' ) {
+				$is_cpt = true;
+			}
 		}
 
-		if ( $id ) {
+		if ( $is_cpt ) {
+			// 1. Update CPT Master
+			$post_data = array(
+				'ID'           => $id,
+				'post_title'   => sanitize_text_field( $data['title'] ),
+				'post_name'    => sanitize_title( $data['slug'] ),
+				'post_content' => sanitize_textarea_field( $data['chart_summary'] ),
+				'post_status'  => isset( $data['is_public'] ) && $data['is_public'] ? 'publish' : 'draft',
+				'menu_order'   => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
+			);
+			wp_update_post( $post_data );
+
 			update_post_meta( $id, '_title_ar', sanitize_text_field( $data['title_ar'] ?? '' ) );
 			update_post_meta( $id, '_chart_type', sanitize_text_field( $data['chart_type'] ) );
 			update_post_meta( $id, '_item_type', sanitize_text_field( $data['item_type'] ) );
@@ -181,11 +210,40 @@ class SourceManager {
 			update_post_meta( $id, '_is_featured', isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0 );
 			update_post_meta( $id, '_archive_enabled', isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1 );
 
-			// Legacy sync
+			// Sync to SQL
 			$this->sync_definition_to_table( $id );
-		}
+			return $id;
+		} else {
+			// 2. Update SQL Table Master (Legacy)
+			$table = $wpdb->prefix . 'charts_definitions';
+			$fields = array(
+				'title'           => sanitize_text_field( $data['title'] ),
+				'title_ar'        => sanitize_text_field( $data['title_ar'] ?? '' ),
+				'slug'            => sanitize_title( $data['slug'] ),
+				'chart_summary'   => sanitize_textarea_field( $data['chart_summary'] ),
+				'chart_type'      => sanitize_text_field( $data['chart_type'] ),
+				'item_type'       => sanitize_text_field( $data['item_type'] ),
+				'country_code'    => strtolower( sanitize_text_field( $data['country_code'] ) ),
+				'frequency'       => sanitize_text_field( $data['frequency'] ),
+				'platform'        => sanitize_text_field( $data['platform'] ?? 'all' ),
+				'cover_image_url' => esc_url_raw( $data['cover_image_url'] ?? '' ),
+				'accent_color'    => !empty($data['accent_color']) ? (strpos($data['accent_color'], '#') === 0 ? sanitize_text_field($data['accent_color']) : '#' . sanitize_text_field($data['accent_color'])) : '#6366f1',
+				'is_public'       => isset( $data['is_public'] ) && $data['is_public'] ? 1 : 0,
+				'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
+				'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,
+				'menu_order'      => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
+				'updated_at'      => current_time( 'mysql' ),
+			);
 
-		return $id;
+			if ( $id ) {
+				$wpdb->update( $table, $fields, array( 'id' => $id ) );
+				return $id;
+			} else {
+				$fields['created_at'] = current_time( 'mysql' );
+				$wpdb->insert( $table, $fields );
+				return $wpdb->insert_id;
+			}
+		}
 	}
 
 	/**
@@ -218,16 +276,77 @@ class SourceManager {
 	}
 
 	/**
+	 * Create a Chart CPT post from a legacy table record.
+	 */
+	public function promote_to_native( $def_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_definitions';
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $def_id ) );
+		
+		if ( ! $row ) return false;
+
+		// Check if already promoted
+		$existing_post_id = $this->get_post_id_by_definition_id( $def_id );
+		if ( $existing_post_id ) return $existing_post_id;
+
+		$post_data = array(
+			'post_title'   => $row->title,
+			'post_name'    => $row->slug,
+			'post_content' => $row->chart_summary,
+			'post_type'    => 'chart',
+			'post_status'  => $row->is_public ? 'publish' : 'draft',
+			'menu_order'   => $row->menu_order,
+		);
+
+		$post_id = wp_insert_post( $post_data );
+		
+		if ( $post_id ) {
+			update_post_meta( $post_id, '_kcharts_definition_id', $def_id );
+			update_post_meta( $post_id, '_title_ar', $row->title_ar );
+			update_post_meta( $post_id, '_chart_type', $row->chart_type );
+			update_post_meta( $post_id, '_item_type', $row->item_type );
+			update_post_meta( $post_id, '_country_code', $row->country_code );
+			update_post_meta( $post_id, '_frequency', $row->frequency );
+			update_post_meta( $post_id, '_platform', $row->platform );
+			update_post_meta( $post_id, '_cover_image_url', $row->cover_image_url );
+			update_post_meta( $post_id, '_accent_color', $row->accent_color );
+			update_post_meta( $post_id, '_is_featured', $row->is_featured );
+			update_post_meta( $post_id, '_archive_enabled', $row->archive_enabled );
+			
+			// Optional: Try to set featured image from URL if possible (AssetManager can do this later)
+		}
+
+		return $post_id;
+	}
+
+	/**
+	 * Helper to find CPT post ID linked to a legacy definition ID.
+	 */
+	public function get_post_id_by_definition_id( $def_id ) {
+		$posts = get_posts( array(
+			'post_type'  => 'chart',
+			'meta_key'   => '_kcharts_definition_id',
+			'meta_value' => $def_id,
+			'posts_per_page' => 1,
+			'post_status' => 'any',
+			'fields'      => 'ids'
+		) );
+		return ! empty( $posts ) ? $posts[0] : false;
+	}
+
+	/**
 	 * Sync CPT data back to custom table for compatibility.
 	 */
 	private function sync_definition_to_table( $post_id ) {
 		global $wpdb;
-		$def = $this->map_post_to_definition( get_post( $post_id ) );
+		$post = get_post( $post_id );
+		$def = $this->map_post_to_definition( $post );
 		if ( ! $def ) return;
 
+		$def_id = get_post_meta( $post_id, '_kcharts_definition_id', true );
+		
 		$table = $wpdb->prefix . 'charts_definitions';
-		$wpdb->replace( $table, array(
-			'id'              => $def->id,
+		$data = array(
 			'title'           => $def->title,
 			'title_ar'        => $def->title_ar,
 			'slug'            => $def->slug,
@@ -245,7 +364,14 @@ class SourceManager {
 			'menu_order'      => $def->menu_order,
 			'created_at'      => $def->created_at,
 			'updated_at'      => $def->updated_at,
-		) );
+		);
+
+		if ( $def_id ) {
+			$wpdb->update( $table, $data, array( 'id' => $def_id ) );
+		} else {
+			$wpdb->insert( $table, $data );
+			update_post_meta( $post_id, '_kcharts_definition_id', $wpdb->insert_id );
+		}
 	}
 	/**
 	 * Safely remove legacy seeded records that match known demo signatures.

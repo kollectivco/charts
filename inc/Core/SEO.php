@@ -301,8 +301,8 @@ class SEO {
 	// -------------------------------------------------------------------------
 
 	private static function get_chart_definition( $slug ) {
-		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( "SELECT title, chart_type, country_code FROM {$wpdb->prefix}charts_definitions WHERE slug = %s", $slug ) );
+		$manager = new \Charts\Admin\SourceManager();
+		return $manager->get_definition_by_slug( $slug );
 	}
 
 	private static function get_artist_by_slug( $slug ) {

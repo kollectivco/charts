@@ -7,9 +7,9 @@
 global $wpdb;
 
 // 1. DATA LOOKUP
-// 1. DATA LOOKUP
 $definition_slug = get_query_var( 'charts_definition_slug' );
-$definition = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE slug = %s", $definition_slug ) );
+$manager = new \Charts\Admin\SourceManager();
+$definition = $manager->get_definition_by_slug( $definition_slug );
 
 $page_state = 'not_found';
 $sources    = array();

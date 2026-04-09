@@ -44,6 +44,13 @@ $definitions = $manager->get_definitions();
 						<?php if ($def->is_featured) : ?>
 							<span class="badge badge-featured"><?php _e( 'Featured', 'charts' ); ?></span>
 						<?php endif; ?>
+						<?php 
+						$post_id = (new \Charts\Admin\SourceManager())->get_post_id_by_definition_id($def->id);
+						if ($post_id || (isset($def->post_type) && $def->post_type === 'chart')) : ?>
+							<span class="badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2);"><?php _e( 'Native', 'charts' ); ?></span>
+						<?php else : ?>
+							<span class="badge" style="background:rgba(100,116,139,0.1); color:#64748b; border:1px solid rgba(100,116,139,0.2);"><?php _e( 'Legacy', 'charts' ); ?></span>
+						<?php endif; ?>
 					</div>
 
 					<div class="card-body">
@@ -71,6 +78,14 @@ $definitions = $manager->get_definitions();
 							<a href="<?php echo \Charts\Core\Router::get_dashboard_url( 'definitions', array( 'action' => 'edit', 'id' => $def->id ) ); ?>" class="action-icon" title="<?php _e('Edit', 'charts'); ?>">
 								<span class="dashicons dashicons-edit"></span>
 							</a>
+							<form method="post" style="display:inline;" title="<?php _e('Promote to Native CPT', 'charts'); ?>">
+								<?php wp_nonce_field( 'kcharts_save_v2' ); ?>
+								<input type="hidden" name="charts_action" value="promote_chart">
+								<input type="hidden" name="id" value="<?php echo $def->id; ?>">
+								<button type="submit" class="action-icon promote" style="color:#6366f1;">
+									<span class="dashicons dashicons-upload"></span>
+								</button>
+							</form>
 							<form method="post" style="display:inline;" onsubmit="return confirm('<?php _e('Are you sure you want to delete this chart?', 'charts'); ?>');">
 								<?php wp_nonce_field( 'charts_admin_action' ); ?>
 								<input type="hidden" name="charts_action" value="delete_definition">

@@ -248,6 +248,18 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'promote_chart':
+				$manager = new SourceManager();
+				$id = intval( $_POST['id'] );
+				$post_id = $manager->promote_to_native( $id );
+				if ( $post_id ) {
+					\Charts\Core\Notify::success( __( 'Chart localized into native CPT nexus. You can now use Elementor or native templates to customize this layout.', 'charts' ), __( 'Promotion Successful', 'charts' ) );
+				} else {
+					\Charts\Core\Notify::error( __( 'Failed to localize chart. The entity may already be native or the ID is invalid.', 'charts' ), __( 'Promotion Failure', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
 			case 'delete_entity':
 				global $wpdb;
 				$id    = intval( $_POST['id'] );
@@ -425,6 +437,14 @@ class Bootstrap {
 			'manage_options',
 			'charts-definitions',
 			array( self::class, 'render_definitions' )
+		);
+		
+		add_submenu_page(
+			'charts-dashboard',
+			__( 'Native Layouts', 'charts' ),
+			__( 'Native Layouts (CPT)', 'charts' ),
+			'manage_options',
+			'edit.php?post_type=chart'
 		);
 
 		add_submenu_page(
