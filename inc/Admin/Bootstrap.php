@@ -14,6 +14,7 @@ class Bootstrap {
 		add_action( 'admin_menu', array( self::class, 'register_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue_assets' ) );
 		add_action( 'init', array( self::class, 'process_admin_actions' ) );
+		add_action( 'admin_notices', array( \Charts\Core\Notify::class, 'display_admin_notices' ) );
 		
 		// One-Time Migrations & Cleanup
 		self::run_one_time_migrations();
@@ -58,21 +59,19 @@ class Bootstrap {
 		$nonce = $_POST['_wpnonce'] ?? ($_REQUEST['_wpnonce'] ?? '');
 		$action = $_POST['charts_action'] ?? '';
 
-		// Log diagnostics for emergencies (view via error_log)
-		if ( defined('WP_DEBUG') && WP_DEBUG ) {
-			error_log("Charts Setting Sync Initialized: Action=$action, HasNonce=" . (!empty($nonce)?'YES':'NO'));
-		}
+		// Verify Nonce against expected contexts
+		$is_valid_v2 = wp_verify_nonce( $nonce, 'kcharts_save_v2' );
+		$is_valid_v1 = wp_verify_nonce( $nonce, 'charts_admin_action' );
 
-		if ( $action === 'save_settings_v2' ) {
-			if ( ! wp_verify_nonce( $nonce, 'kcharts_save_v2' ) ) {
-				if ( defined('WP_DEBUG') && WP_DEBUG ) error_log("Charts Sync Failure: Invalid Nonce for save_settings_v2");
-				return;
+		if ( ! $is_valid_v1 && ! $is_valid_v2 ) {
+			if ( defined('WP_DEBUG') && WP_DEBUG ) {
+				error_log("Charts Sync Failure: Invalid Nonce for action=$action. Provided Nonce=$nonce");
 			}
-		} else {
-			if ( ! wp_verify_nonce( $nonce, 'charts_admin_action' ) ) {
-				if ( defined('WP_DEBUG') && WP_DEBUG ) error_log("Charts Sync Failure: Invalid Nonce for action=$action");
-				return;
+			// Don't just return silently if we were expecting an action
+			if ( ! empty( $action ) ) {
+				\Charts\Core\Notify::error( __( 'Action security verification failed (Nonce mismatch). Please refresh the page.', 'charts' ), __( 'Security Failure', 'charts' ) );
 			}
+			return;
 		}
 
 		$processed = false;
@@ -177,8 +176,14 @@ class Bootstrap {
 					\Charts\Core\Notify::error( __( 'Confirmation failed. Please type exactly: RESET CHARTS', 'charts' ), __( 'Security Access Denied', 'charts' ) );
 				} else {
 					$wipe_settings = isset( $_POST['wipe_settings'] ) ? (bool)$_POST['wipe_settings'] : false;
-					self::wipe_all_data( $wipe_settings );
-					\Charts\Core\Notify::success( __( 'Plugin has been successfully reset. All data purged from the nexus.', 'charts' ), __( 'Plugin Reset', 'charts' ) );
+					$report = self::wipe_all_data( $wipe_settings );
+					
+					$summary = sprintf( 
+						__( 'Plugin reset successful. Purged: %d entries, %d tracks, %d artists, %d definitions. %s', 'charts' ),
+						$report['entries'], $report['tracks'], $report['artists'], $report['definitions'],
+						$wipe_settings ? __( 'Interface configuration logic also purged.', 'charts' ) : ''
+					);
+					\Charts\Core\Notify::success( $summary, __( 'Nexus Data Purge Complete', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -1044,6 +1049,13 @@ class Bootstrap {
 	private static function wipe_all_data( $wipe_settings = false ) {
 		global $wpdb;
 
+		$report = [
+			'entries'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries" ),
+			'tracks'      => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_tracks" ),
+			'artists'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_artists" ),
+			'definitions' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions" ),
+		];
+
 		// 1. Tables to truncate
 		$tables = array(
 			'charts_sources',
@@ -1147,6 +1159,8 @@ class Bootstrap {
 
 		// Ensure we trigger a re-setup if needed
 		delete_option( 'charts_setup_complete' );
+
+		return $report;
 	}
 
 	/**

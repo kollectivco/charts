@@ -95,4 +95,28 @@ class Notify {
 		return "kcharts_flash_notices_{$user_id}";
 	}
 
+	/**
+	 * Render notifications as native WordPress admin notices.
+	 * Used as a fallback or for non-JS environments.
+	 */
+	public static function display_admin_notices() {
+		$msgs = self::get_all();
+		if ( empty( $msgs ) ) return;
+
+		foreach ( $msgs as $m ) {
+			$type = $m['type'] === 'error' ? 'error' : ( $m['type'] === 'warning' ? 'warning' : 'success' );
+			$title = ! empty( $m['title'] ) ? '<strong>' . esc_html( $m['title'] ) . ':</strong> ' : '';
+			printf( 
+				'<div class="notice notice-%s is-dismissible" data-kcharts-notice="1"><p>%s%s</p></div>',
+				$type,
+				$title,
+				esc_html( $m['message'] )
+			);
+		}
+		
+		// Note: We don't clear here because JS might still want to consume them.
+		// However, to avoid double display, we usually either use JS OR PHP.
+		// We'll let JS clear them via get_and_clear.
+	}
+
 }

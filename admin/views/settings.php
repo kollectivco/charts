@@ -254,15 +254,13 @@ function kc_render_bento_field( $field ) {
 <div class="wrap kc-settings-wrap premium-bento">
     <form method="post" action="" id="kc-main-settings-form">
         <?php wp_nonce_field( 'kcharts_save_v2' ); ?>
-        <input type="hidden" name="charts_action" value="save_settings_v2">
-
         <div class="kc-settings-header">
             <div class="kc-branding">
                 <h1 class="kc-title"><?php _e( 'Settings Nexus', 'charts' ); ?></h1>
                 <p class="kc-subtitle"><?php _e( 'Product Logic & Experience Orchestration', 'charts' ); ?></p>
             </div>
             <div class="kc-header-actions">
-                <button type="submit" class="kb-btn kb-btn-primary"><?php _e( 'Synchronize Changes', 'charts' ); ?></button>
+                <button type="submit" name="charts_action" value="save_settings_v2" class="kb-btn kb-btn-primary"><?php _e( 'Synchronize Changes', 'charts' ); ?></button>
             </div>
         </div>
 

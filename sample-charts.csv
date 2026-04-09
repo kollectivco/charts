@@ -1,4 +1,0 @@
-rank,uri,artist_names,track_name,source,peak_rank,previous_rank,weeks_on_chart,streams
-1,spotify:track:7yNf9YjeO5JXUE3JEBgnYc,"Artist 1, Artist 2",Sample Track,Record Label,1,1,10,123456
-2,spotify:track:3n3Pp3Y7HdS7ov6T6MTGLQ,Another Artist,Second Track,Indie Label,2,3,5,98765
-3,spotify:track:1KdtpghRCDhW4atHqasC7Y,Third Artist,Third Track,Major Label,1,2,20,54321

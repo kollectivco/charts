@@ -429,7 +429,10 @@ jQuery(document).ready(function($) {
                 $('body').append('<div id="charts-toast-container"></div>');
             }
             this.container = $('#charts-toast-container');
-            if (window.kcharts_toasts && Array.isArray(window.kcharts_toasts)) {
+            if (window.kcharts_toasts && Array.isArray(window.kcharts_toasts) && window.kcharts_toasts.length > 0) {
+                // Hide native fallback notices if we are about to show toasts
+                $('.notice[data-kcharts-notice]').remove();
+                
                 window.kcharts_toasts.forEach(t => {
                     setTimeout(() => this.show(t.type, t.message, t.title), 200);
                 });
