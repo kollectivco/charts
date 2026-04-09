@@ -30,13 +30,14 @@ function kc_get_preview_entries($def) {
 			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 4
 		", ...$source_ids ), ARRAY_A );
 
-		// Resolve images from CPTs
+		// Resolve images from custom tables
 		foreach($entries as &$e) {
-			$e['resolved_image'] = get_the_post_thumbnail_url($e['item_id'], 'medium');
-			if ( ! $e['resolved_image'] ) {
-				if ( $e['item_type'] === 'track' ) $e['resolved_image'] = get_post_meta($e['item_id'], '_cover_image_url', true);
-				elseif ( $e['item_type'] === 'video' ) $e['resolved_image'] = get_post_meta($e['item_id'], '_thumbnail_url', true);
-				elseif ( $e['item_type'] === 'artist' ) $e['resolved_image'] = get_post_meta($e['item_id'], '_artist_image_url', true);
+			if ( ! empty($e['cover_image']) ) {
+				$e['resolved_image'] = $e['cover_image'];
+			} else {
+				$table = ( $e['item_type'] === 'artist' ) ? 'artists' : ( ( $e['item_type'] === 'video' ) ? 'videos' : 'tracks' );
+				$col   = ( $e['item_type'] === 'artist' ) ? 'image' : ( ( $e['item_type'] === 'video' ) ? 'thumbnail' : 'cover_image' );
+				$e['resolved_image'] = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e['item_id'] ) );
 			}
 		}
 		
@@ -79,7 +80,7 @@ if ( $top_artists_chart ) {
 		", ...$s_ids ) );
 		
 		foreach($featured_artists as &$art) {
-			$art->resolved_image = get_post_meta($art->item_id, '_artist_image_url', true);
+			$art->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT image FROM {$wpdb->prefix}charts_artists WHERE id = %d", $art->item_id));
 		}
 	}
 }

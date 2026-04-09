@@ -13,31 +13,20 @@ if ( ! in_array( $type, array( 'track', 'video' ) ) ) {
 	$type = 'track';
 }
 
-$item_posts = get_posts( array(
-	'post_type'      => $type,
-	'name'           => $slug,
-	'posts_per_page' => 1,
-	'post_status'    => 'publish',
-) );
+$table = ( $type === 'video' ) ? "{$wpdb->prefix}charts_videos" : "{$wpdb->prefix}charts_tracks";
+$item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
 
-$item_post = ! empty( $item_posts ) ? $item_posts[0] : null;
-
-if ( ! $item_post ) {
+if ( ! $item ) {
 	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';
 	\Charts\Core\PublicIntegration::get_footer();
 	return;
 }
 
-// Map Post/Meta to object
-$item = (object) array(
-	'id'                => $item_post->ID,
-	'title'             => $item_post->post_title,
-	'title_franko'      => get_post_meta($item_post->ID, '_title_franko', true),
-	'cover_image'       => get_post_meta($item_post->ID, ( $type === 'video' ? '_thumbnail_url' : '_cover_image_url' ), true),
-	'release_date'      => get_post_meta($item_post->ID, '_release_date', true),
-	'primary_artist_id' => get_post_meta($item_post->ID, '_primary_artist_id', true),
-);
+// Map SQL to object for template compatibility
+if ( $type === 'video' ) {
+	$item->cover_image = $item->thumbnail;
+}
 
 // Fetch Appearances
 $entries_table = $wpdb->prefix . 'charts_entries';
@@ -45,7 +34,7 @@ $sources_table = $wpdb->prefix . 'charts_sources';
 $periods_table = $wpdb->prefix . 'charts_periods';
 
 $appearances = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.*, s.chart_type, s.source_name, p.period_start
+	SELECT e.*, s.chart_type, s.country_code, s.source_name, p.period_start
 	FROM $entries_table e
 	JOIN $sources_table s ON s.id = e.source_id
 	JOIN $periods_table p ON p.id = e.period_id
@@ -54,47 +43,27 @@ $appearances = $wpdb->get_results( $wpdb->prepare( "
 ", $item->id, $type ) );
 
 foreach($appearances as $app) {
-	$parent_chart = get_posts(array(
-		'post_type' => 'chart',
-		'meta_query' => array(
-			array('key' => '_chart_type', 'value' => $app->chart_type),
-			// Optimization: add country code if possible, but sources may vary
-		),
-		'posts_per_page' => 1
-	));
-	if (!empty($parent_chart)) {
-		$app->definition_title = $parent_chart[0]->post_title;
-		$app->accent_color = get_post_meta($parent_chart[0]->ID, '_accent_color', true);
+	$def = $wpdb->get_row($wpdb->prepare("SELECT title, accent_color FROM {$wpdb->prefix}charts_definitions WHERE chart_type = %s AND country_code = %s", $app->chart_type, $app->country_code));
+	if ($def) {
+		$app->definition_title = $def->title;
+		$app->accent_color = $def->accent_color;
 	}
 }
 
 // Fetch Artist info
-$artist_post = get_post($item->primary_artist_id);
-$artist = $artist_post ? (object) array(
-	'id'           => $artist_post->ID,
-	'display_name' => $artist_post->post_title,
-	'slug'         => $artist_post->post_name,
-	'image'        => get_post_meta($artist_post->ID, '_artist_image_url', true),
-) : null;
+$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
 
 // Fetch More by Artist
-$more_posts = get_posts( array(
-	'post_type'      => $type,
-	'posts_per_page' => 2,
-	'post__not_in'   => array( $item->id ),
-	'meta_query'     => array(
-		array( 'key' => '_primary_artist_id', 'value' => $item->primary_artist_id )
-	)
-) );
+$more_items = $wpdb->get_results( $wpdb->prepare( "
+	SELECT * FROM $table 
+	WHERE primary_artist_id = %d AND id != %d 
+	LIMIT 2
+", $item->primary_artist_id, $item->id ) );
 
-$more_items = array();
-foreach($more_posts as $mp) {
-	$more_items[] = (object) array(
-		'id'          => $mp->ID,
-		'title'       => $mp->post_title,
-		'slug'        => $mp->post_name,
-		'cover_image' => get_post_meta($mp->ID, ( $type === 'video' ? '_thumbnail_url' : '_cover_image_url' ), true),
-	);
+foreach ( $more_items as $mi ) {
+	if ( $type === 'video' ) {
+		$mi->cover_image = $mi->thumbnail;
+	}
 }
 
 \Charts\Core\PublicIntegration::get_header();
@@ -123,10 +92,12 @@ foreach($more_posts as $mp) {
 						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-dim); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em;"><?php echo esc_html($item->title_franko); ?></div>
 					<?php endif; ?>
 					
-					<div style="display: flex; align-items: center; gap: 24px; margin-top: 32px;">
 						<?php 
-						// Link all artists
-						$artist_ids = (array) get_post_meta($item->id, '_artist_ids', true);
+						// Link all artists using legacy junction tables
+						$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
+						$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
+						$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
+						
 						if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
 						
 						foreach ( $artist_ids as $a_id ) :

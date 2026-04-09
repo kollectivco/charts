@@ -145,21 +145,14 @@ class PublicIntegration {
 	 * Priorities: Enriched Canonical > Entry-level Metadata > Source-specific Thumbs > Placeholder
 	 */
 	public static function resolve_artwork( $item, $type = 'track' ) {
-		// 1. Check if we have a CPT Post ID or Post Object
-		if ( is_numeric( $item ) || ( $item instanceof \WP_Post ) ) {
-			$post_id = is_numeric( $item ) ? $item : $item->ID;
-			$type = is_numeric( $item ) ? get_post_type( $post_id ) : $item->post_type;
-			
-			$meta_key = '_cover_image_url';
-			if ( $type === 'artist' ) $meta_key = '_artist_image_url';
-			if ( $type === 'video' ) $meta_key = '_thumbnail_url';
-			
-			$img = get_post_meta( $post_id, $meta_key, true );
+		global $wpdb;
+
+		// 1. If we have a numeric ID, it's a SQL ID now. Detect type and fetch.
+		if ( is_numeric( $item ) ) {
+			$table = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'video' ) ? 'videos' : 'tracks' );
+			$col   = ( $type === 'artist' ) ? 'image' : ( ( $type === 'video' ) ? 'thumbnail' : 'cover_image' );
+			$img = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $item ) );
 			if ( ! empty( $img ) ) return $img;
-			
-			// Try featured image
-			$thumb = get_the_post_thumbnail_url( $post_id, 'large' );
-			if ( $thumb ) return $thumb;
 		}
 
 		// 2. Fallback to legacy object properties

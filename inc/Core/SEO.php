@@ -90,21 +90,16 @@ class SEO {
 				$slug = get_query_var( 'charts_definition_slug' );
 				$chart = self::get_chart_definition( $slug );
 				if ( $chart ) {
-					$cache_key = 'charts_top_track_desc_' . md5($chart->chart_type . $chart->country_code);
-					$top_track = get_transient( $cache_key );
-
-					if ( false === $top_track ) {
-						// Get the top track for a more dynamic description
-						$top_track = $wpdb->get_var( $wpdb->prepare( "
-							SELECT track_name FROM {$wpdb->prefix}charts_entries e
-							JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-							WHERE s.chart_type = %s AND s.country_code = %s AND e.rank_position = 1
-							ORDER BY e.created_at DESC LIMIT 1
-						", $chart->chart_type, $chart->country_code ) );
-						set_transient( $cache_key, $top_track, HOUR_IN_SECONDS );
-					}
+					// Get the top track for a more dynamic description
+					$top_track = $wpdb->get_var( $wpdb->prepare( "
+						SELECT track_name FROM {$wpdb->prefix}charts_entries e
+						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
+						WHERE s.chart_type = %s AND s.country_code = %s AND e.rank_position = 1
+						ORDER BY e.created_at DESC LIMIT 1
+					", $chart->chart_type, $chart->country_code ) );
 					
-					return "Current verified rankings for " . $chart->title . " with #" . ($top_track ? "1 $top_track" : "1 trending tracks") . ". Explore historical insights, performance metrics, and global trajectory.";
+					$extra = $top_track ? " featuring #1 track \"$top_track\"" : "";
+					return "Weekly intelligence report for the {$chart->title}{$extra}. View the full list of trending tracks, peaks, movements, and audience insights.";
 				}
 				break;
 			
@@ -306,31 +301,24 @@ class SEO {
 	// -------------------------------------------------------------------------
 
 	private static function get_chart_definition( $slug ) {
-		$posts = get_posts( array( 'post_type' => 'chart', 'name' => $slug, 'posts_per_page' => 1 ) );
-		return ! empty($posts) ? (object) array(
-			'title'        => $posts[0]->post_title,
-			'chart_type'   => get_post_meta($posts[0]->ID, '_chart_type', true),
-			'country_code' => get_post_meta($posts[0]->ID, '_country_code', true),
-		) : null;
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( "SELECT title, chart_type, country_code FROM {$wpdb->prefix}charts_definitions WHERE slug = %s", $slug ) );
 	}
 
 	private static function get_artist_by_slug( $slug ) {
-		$posts = get_posts( array( 'post_type' => 'artist', 'name' => $slug, 'posts_per_page' => 1 ) );
-		return ! empty($posts) ? (object) array(
-			'display_name'  => $posts[0]->post_title,
-			'image'         => get_post_meta($posts[0]->ID, '_artist_image_url', true),
-			'metadata_json' => json_encode( array( 'bio' => get_post_meta($posts[0]->ID, '_artist_bio', true) ) )
-		) : null;
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( "SELECT display_name, image, metadata_json FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
 	}
 
 	private static function get_item_by_slug( $type, $slug ) {
-		$posts = get_posts( array( 'post_type' => $type, 'name' => $slug, 'posts_per_page' => 1 ) );
-		if ( empty($posts) ) return null;
-		
-		return (object) array(
-			'title'        => $posts[0]->post_title,
-			'cover_image'  => get_post_meta($posts[0]->ID, ( $type === 'video' ? '_thumbnail_url' : '_cover_image_url' ), true),
-			'artist_names' => get_post_meta($posts[0]->ID, '_artist_names_denormalized', true), // Denormalized field for SEO speed
-		);
+		global $wpdb;
+		$table  = ( $type === 'video' ) ? "{$wpdb->prefix}charts_videos" : "{$wpdb->prefix}charts_tracks";
+		$img_col = ( $type === 'video' ) ? 'i.thumbnail' : 'i.cover_image';
+		return $wpdb->get_row( $wpdb->prepare( "
+			SELECT i.title, $img_col as cover_image, a.display_name as artist_names 
+			FROM $table i 
+			LEFT JOIN {$wpdb->prefix}charts_artists a ON a.id = i.primary_artist_id
+			WHERE i.slug = %s
+		", $slug ) );
 	}
 }

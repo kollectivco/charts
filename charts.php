@@ -158,8 +158,7 @@ final class Charts {
 		
 		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
 
-		// 2. Data Migration to CPTs (Migration v3 is now handled batched in init())
-		// We only trigger the structures here
+		// 2. Data Migration (Historical)
 
 		// 3. One-time Legacy Cleanup (Force remove the hardcoded mocks once and for all)
 		if ( ! get_option( 'kcharts_mock_cleaned' ) ) {
@@ -194,14 +193,8 @@ final class Charts {
 			\Charts\Core\Router::add_rewrite_rules();
 			flush_rewrite_rules();
 		}
-		\Charts\Core\EntityManager::init();
 		\Charts\Core\Bootstrap::init();
 
-		// Run pending batched migrations if they are not fully complete
-		if ( ! get_option( 'charts_migration_v3_fully_completed' ) ) {
-			$migration = new \Charts\Database\Migration();
-			$migration->run();
-		}
 
 		// Handle installation integrity (folder parity)
 		\Charts\Core\Integrity::init();

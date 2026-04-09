@@ -11,14 +11,17 @@ class Bootstrap {
 	 * Initialize the core module.
 	 */
 	public static function init() {
+		// Initialize Post Types
+		\Charts\Core\PostTypes::init();
+
+		// Initialize Public Routing
+		\Charts\Core\Router::init();
+
 		// Initialize Public Integration system
 		\Charts\Core\PublicIntegration::init();
 
 		// Initialize SEO module
 		\Charts\Core\SEO::init();
-		
-		// Initialize Meta Tags system
-		\Charts\Core\MetaTags::init();
 
 		// Register any core hooks
 		add_action( 'init', array( self::class, 'register_cron' ) );

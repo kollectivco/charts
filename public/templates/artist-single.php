@@ -7,32 +7,19 @@
 global $wpdb;
 
 // 1. DATA LOOKUP
+// 1. DATA LOOKUP
 $slug = get_query_var( 'charts_artist_slug' );
-$artist_posts = get_posts( array(
-	'post_type'      => 'artist',
-	'name'           => $slug,
-	'posts_per_page' => 1,
-	'post_status'    => 'publish',
-) );
+$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
 
-$artist_post = ! empty( $artist_posts ) ? $artist_posts[0] : null;
-
-if ( ! $artist_post ) {
+if ( ! $artist ) {
 	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Artist Not Found</h1></div>';
 	\Charts\Core\PublicIntegration::get_footer();
 	return;
 }
 
-// Map Post/Meta to object for template compatibility
-$artist = (object) array(
-	'id'                  => $artist_post->ID,
-	'display_name'        => $artist_post->post_title,
-	'spotify_id'          => get_post_meta( $artist_post->ID, '_spotify_id', true ),
-	'image'               => get_post_meta( $artist_post->ID, '_artist_image_url', true ),
-	'display_name_franko' => get_post_meta( $artist_post->ID, '_display_name_franko', true ),
-);
-
+$artist->id = (int) $artist->id;
+$metadata = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : array();
 $debug_notes = array();
 $needs_sync = false;
 
@@ -106,43 +93,35 @@ $sp_top_tracks  = (array) get_post_meta( $artist->id, '_artist_spotify_top_track
 // Centralized image resolution
 $display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist');
 
-// Charting tracks - Meta query for relationships
+// Charting tracks
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.* 
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE e.item_id IN (
-		SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_artist_ids' AND meta_value = %d
-	)
+	WHERE (e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
+	   OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 4
-", $artist->id ) );
+", $artist->id, $artist->id ) );
 
 // Resolve images for charting tracks
 foreach($charting_tracks as $ct) {
-	$ct->canonical_image = get_the_post_thumbnail_url($ct->item_id, 'medium');
-	if ( ! $ct->canonical_image ) {
-		if ( $ct->item_type === 'track' ) $ct->canonical_image = get_post_meta($ct->item_id, '_cover_image_url', true);
-		elseif ( $ct->item_type === 'video' ) $ct->canonical_image = get_post_meta($ct->item_id, '_thumbnail_url', true);
-	}
+	$table = ($ct->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
+	$ct->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT " . ($ct->item_type === 'video' ? 'thumbnail' : 'cover_image') . " FROM {$wpdb->prefix}{$table} WHERE id = %d", $ct->item_id));
 }
 
-// Popular tracks (Similar logic)
+// Popular tracks 
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE e.item_id IN (
-		SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_artist_ids' AND meta_value = %d
-	)
+	WHERE (e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
+	   OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 5
-", $artist->id ) );
+", $artist->id, $artist->id ) );
 
 foreach($popular_tracks as $pt) {
-	$pt->canonical_image = get_the_post_thumbnail_url($pt->item_id, 'medium');
-	if ( ! $pt->canonical_image ) {
-		if ( $pt->item_type === 'track' ) $pt->canonical_image = get_post_meta($pt->item_id, '_cover_image_url', true);
-		elseif ( $pt->item_type === 'video' ) $pt->canonical_image = get_post_meta($pt->item_id, '_thumbnail_url', true);
-	}
+	$table = ($pt->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
+	$pt->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT " . ($pt->item_type === 'video' ? 'thumbnail' : 'cover_image') . " FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
 }
 
 // Chart Rankings
@@ -154,18 +133,8 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 ", $artist->id ) );
 
 foreach($chart_rankings as $cr) {
-	$source = $wpdb->get_row($wpdb->prepare("SELECT chart_type, country_code FROM {$wpdb->prefix}charts_sources WHERE id = %d", $cr->source_id));
-	if ($source) {
-		$parent_chart = get_posts(array(
-			'post_type' => 'chart',
-			'meta_query' => array(
-				array('key' => '_chart_type', 'value' => $source->chart_type),
-				array('key' => '_country_code', 'value' => $source->country_code),
-			),
-			'posts_per_page' => 1
-		));
-		$cr->definition_title = !empty($parent_chart) ? $parent_chart[0]->post_title : 'Top Artists';
-	}
+	$row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON s.chart_type = d.chart_type AND s.country_code = d.country_code WHERE s.id = %d", $cr->source_id));
+	$cr->definition_title = $row ? $row->title : 'Top Artists';
 }
 
 \Charts\Core\PublicIntegration::get_header();
@@ -349,19 +318,9 @@ foreach($chart_rankings as $cr) {
 			
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				$mdefs_posts = get_posts( array(
-					'post_type'      => 'chart',
-					'posts_per_page' => 4,
-					'post_status'    => 'publish',
-				) );
-				foreach ( $mdefs_posts as $mpost ) : 
-					$mdef = (object) array(
-						'title'        => $mpost->post_title,
-						'slug'         => $mpost->post_name,
-						'accent_color' => get_post_meta($mpost->ID, '_accent_color', true),
-						'chart_type'   => get_post_meta($mpost->ID, '_chart_type', true),
-						'country_code' => get_post_meta($mpost->ID, '_country_code', true),
-					);
+				<?php 
+				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
+				foreach ( $mdefs as $mdef ) : 
 					
 					$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $mdef->chart_type, $mdef->country_code));
 					$mentries = array();

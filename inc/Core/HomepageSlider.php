@@ -183,6 +183,6 @@ class HomepageSlider {
 
     private static function get_latest_chart_ids($count) {
         global $wpdb;
-        return $wpdb->get_col("SELECT id FROM {$wpdb->prefix}charts_definitions WHERE is_active = 1 ORDER BY id DESC LIMIT $count");
+        return $wpdb->get_col("SELECT id FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 ORDER BY id DESC LIMIT $count");
     }
 }

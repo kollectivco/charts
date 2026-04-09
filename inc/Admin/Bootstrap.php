@@ -15,15 +15,6 @@ class Bootstrap {
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue_assets' ) );
 		add_action( 'init', array( self::class, 'process_admin_actions' ) );
 		
-		// Initialize temporary verification tools
-		if ( is_admin() ) {
-			Verification::init();
-			PerformanceDiagnostics::init();
-			MetaTagsReference::init();
-		}
-
-		// Initialize Meta Tags Reference
-
 		// One-Time Migrations & Cleanup
 		self::run_one_time_migrations();
 		
@@ -32,23 +23,6 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
-	}
-
-	/**
-	 * Heavy tasks that should only run in admin, and only on actual page loads.
-	 */
-	public static function init_heavy_tasks() {
-		// 1. Pending migrations (Still throttled)
-		if ( ! get_option( 'charts_migration_v3_fully_completed' ) ) {
-			if ( false === get_transient( 'charts_migration_throttle' ) ) {
-				$migration = new \Charts\Database\Migration();
-				$migration->run();
-				set_transient( 'charts_migration_throttle', '1', 300 );
-			}
-		}
-
-		// 2. Integrity scan
-		\Charts\Core\Integrity::init();
 	}
 
 	/**
@@ -582,21 +556,17 @@ class Bootstrap {
 	public static function render_dashboard() {
 		global $wpdb;
 
-		$stats = get_transient( 'charts_dashboard_stats' );
-		if ( false === $stats ) {
-			$stats = array(
-				'charts_total'     => wp_count_posts( 'chart' )->publish + wp_count_posts( 'chart' )->draft,
-				'charts_published' => wp_count_posts( 'chart' )->publish,
-				'charts_draft'     => wp_count_posts( 'chart' )->draft,
-				'tracks'           => wp_count_posts( 'track' )->publish,
-				'artists'          => wp_count_posts( 'artist' )->publish,
-				'clips'            => wp_count_posts( 'video' )->publish,
-				'sources_active'   => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_sources WHERE is_active = 1" ),
-				'pending'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries WHERE item_id = 0" ),
-				'imports'          => $wpdb->get_results( "SELECT i.*, s.source_name FROM {$wpdb->prefix}charts_import_runs i JOIN {$wpdb->prefix}charts_sources s ON s.id = i.source_id ORDER BY i.started_at DESC LIMIT 5" ),
-			);
-			set_transient( 'charts_dashboard_stats', $stats, HOUR_IN_SECONDS );
-		}
+		$stats = array(
+			'charts_total'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions" ),
+			'charts_published' => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1" ),
+			'charts_draft'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_definitions WHERE is_public = 0" ),
+			'tracks'           => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_tracks" ),
+			'artists'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_artists" ),
+			'clips'            => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_videos" ),
+			'sources_active'   => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_sources WHERE is_active = 1" ),
+			'pending'          => $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}charts_entries WHERE item_id = 0" ),
+			'imports'          => $wpdb->get_results( "SELECT i.*, s.source_name FROM {$wpdb->prefix}charts_import_runs i JOIN {$wpdb->prefix}charts_sources s ON s.id = i.source_id ORDER BY i.started_at DESC LIMIT 5" ),
+		);
 
 		self::render_view( 'dashboard', $stats );
 	}

@@ -68,7 +68,7 @@ class ImportFlow {
 					if ( $a_id ) $a_ids[] = $a_id;
 				}
 				if ( $item_id && ! empty( $a_ids ) ) {
-					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids );
+					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids, 'video' );
 				}
 			} else {
 				$item_id = \Charts\Core\EntityManager::ensure_track( $this->normalize_title( $title ), $artist_id, array(
@@ -82,7 +82,7 @@ class ImportFlow {
 					if ( $a_id ) $a_ids[] = $a_id;
 				}
 				if ( $item_id && ! empty( $a_ids ) ) {
-					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids );
+					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids, 'track' );
 				}
 			}
 
@@ -193,7 +193,8 @@ class ImportFlow {
 		// Resolve canonical slug if missing
 		$item_slug = $flat['item_slug'] ?? null;
 		if ( ! $item_slug && $item_id ) {
-			$item_slug = get_post_field( 'post_name', $item_id );
+			$suffix = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'track' ) ? 'tracks' : 'videos' );
+			$item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$suffix} WHERE id = %d", $item_id ) );
 		}
 
 		$existing_id = $wpdb->get_var( $wpdb->prepare(
