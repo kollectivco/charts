@@ -24,6 +24,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
+		add_action( 'wp_ajax_charts_migration_step', array( self::class, 'handle_migration_step' ) );
 	}
 
 	/**
@@ -260,6 +261,31 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'promote_entity':
+				$id   = intval( $_POST['id'] );
+				$type = sanitize_text_field( $_POST['type'] );
+				$post_id = \Charts\Core\EntityManager::promote_to_native( $type, $id );
+				if ( $post_id ) {
+					\Charts\Core\Notify::success( sprintf( __( '%s localized into native CPT nexus.', 'charts' ), ucfirst($type) ), __( 'Promotion Successful', 'charts' ) );
+				} else {
+					\Charts\Core\Notify::error( __( 'Failed to localize entity.', 'charts' ), __( 'Promotion Failure', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
+			case 'bulk_promote':
+				$ids  = array_map( 'intval', (array)($_POST['item_ids'] ?? array()) );
+				$type = sanitize_text_field( $_POST['type'] ?? 'artist' );
+				$count = 0;
+				if ( ! empty( $ids ) ) {
+					foreach ( $ids as $id ) {
+						if ( \Charts\Core\EntityManager::promote_to_native( $type, $id ) ) $count++;
+					}
+					\Charts\Core\Notify::success( sprintf( __( 'Bulk localization complete. %d %s entities migrated to native production model.', 'charts' ), $count, $type ), __( 'Nexus Migration Success', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
 			case 'delete_entity':
 				global $wpdb;
 				$id    = intval( $_POST['id'] );
@@ -282,6 +308,12 @@ class Bootstrap {
 						self::delete_single_entity( $id, $type );
 					}
 					\Charts\Core\Notify::success( sprintf( __( '%d entities successfully purged from the system.', 'charts' ), count( $ids ) ), __( 'Bulk Purge Complete', 'charts' ) );
+				} else if ( $action_type === 'bulk_promote' ) {
+					$count = 0;
+					foreach ( $ids as $id ) {
+						if ( \Charts\Core\EntityManager::promote_to_native( $type, $id ) ) $count++;
+					}
+					\Charts\Core\Notify::success( sprintf( __( '%d entities reached native production maturity.', 'charts' ), $count ), __( 'Migration Success', 'charts' ) );
 				}
 				$processed = true;
 				break;
@@ -441,10 +473,34 @@ class Bootstrap {
 		
 		add_submenu_page(
 			'charts-dashboard',
-			__( 'Native Layouts', 'charts' ),
 			__( 'Native Layouts (CPT)', 'charts' ),
+			__( 'Native Layouts', 'charts' ),
 			'manage_options',
 			'edit.php?post_type=chart'
+		);
+
+		add_submenu_page(
+			'charts-dashboard',
+			__( 'Native Artists (CPT)', 'charts' ),
+			__( 'Native Artists', 'charts' ),
+			'manage_options',
+			'edit.php?post_type=artist'
+		);
+
+		add_submenu_page(
+			'charts-dashboard',
+			__( 'Native Tracks (CPT)', 'charts' ),
+			__( 'Native Tracks', 'charts' ),
+			'manage_options',
+			'edit.php?post_type=track'
+		);
+
+		add_submenu_page(
+			'charts-dashboard',
+			__( 'Native Clips (CPT)', 'charts' ),
+			__( 'Native Clips', 'charts' ),
+			'manage_options',
+			'edit.php?post_type=video'
 		);
 
 		add_submenu_page(
@@ -539,6 +595,15 @@ class Bootstrap {
 
 		add_submenu_page(
 			'charts-dashboard',
+			__( 'Performance & Migration', 'charts' ),
+			__( 'Performance', 'charts' ),
+			'manage_options',
+			'charts-performance',
+			array( self::class, 'render_performance' )
+		);
+
+		add_submenu_page(
+			'charts-dashboard',
 			__( 'Settings', 'charts' ),
 			__( 'Settings', 'charts' ),
 			'manage_options',
@@ -573,6 +638,13 @@ class Bootstrap {
 		wp_localize_script( 'charts-admin', 'kcharts_toasts', \Charts\Core\Notify::get_and_clear() );
 
 		wp_localize_script( 'charts-admin', 'kcharts_theme_options', \Charts\Core\Settings::get_defaults() );
+	}
+
+	/**
+	 * Render the Performance & Migration view.
+	 */
+	public static function render_performance() {
+		include CHARTS_PATH . 'admin/views/performance.php';
 	}
 
 	/**
@@ -1199,5 +1271,23 @@ class Bootstrap {
 		}
 
 		include $file;
+	}
+
+	/**
+	 * AJAX: Handle background migration steps.
+	 */
+	public static function handle_migration_step() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+
+		$action = sanitize_text_field( $_POST['migration_action'] );
+		$type   = sanitize_text_field( $_POST['entity_type'] );
+		$count  = 0;
+
+		if ( $action === 'promote' ) {
+			$count = \Charts\Core\Migrator::promote_batch( $type );
+		}
+
+		wp_send_json_success( array( 'count' => $count ) );
 	}
 }

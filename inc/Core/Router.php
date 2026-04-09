@@ -67,9 +67,12 @@ class Router {
 		$route = get_query_var( 'charts_route' );
 
 		if ( ! $route ) {
-			// Phase 1: Support native CPT single view if requested directly
-			if ( is_singular( 'chart' ) ) {
-				return CHARTS_PATH . 'public/templates/single-chart.php';
+			// Phase 2: Support native CPT single view if requested directly
+			if ( is_singular( 'chart' ) || is_singular( 'artist' ) || is_singular( 'track' ) ) {
+				$post_type = get_post_type();
+				if ( file_exists( CHARTS_PATH . "public/templates/single-{$post_type}.php" ) ) {
+					return CHARTS_PATH . "public/templates/single-{$post_type}.php";
+				}
 			}
 			return $template;
 		}

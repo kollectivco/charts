@@ -6,15 +6,10 @@
 
 global $wpdb;
 
-$type = get_query_var( 'charts_item_type' );
+$type = get_query_var( 'charts_item_type' ) ?: 'track';
 $slug = get_query_var( 'charts_item_slug' );
 
-if ( ! in_array( $type, array( 'track', 'video' ) ) ) {
-	$type = 'track';
-}
-
-$table = ( $type === 'video' ) ? "{$wpdb->prefix}charts_videos" : "{$wpdb->prefix}charts_tracks";
-$item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
+$item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
 
 if ( ! $item ) {
 	\Charts\Core\PublicIntegration::get_header();

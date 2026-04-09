@@ -7,9 +7,8 @@
 global $wpdb;
 
 // 1. DATA LOOKUP
-// 1. DATA LOOKUP
 $slug = get_query_var( 'charts_artist_slug' );
-$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
+$artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
 
 if ( ! $artist ) {
 	\Charts\Core\PublicIntegration::get_header();

@@ -306,19 +306,16 @@ class SEO {
 	}
 
 	private static function get_artist_by_slug( $slug ) {
-		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( "SELECT display_name, image, metadata_json FROM {$wpdb->prefix}charts_artists WHERE slug = %s", $slug ) );
+		return \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
 	}
 
 	private static function get_item_by_slug( $type, $slug ) {
-		global $wpdb;
-		$table  = ( $type === 'video' ) ? "{$wpdb->prefix}charts_videos" : "{$wpdb->prefix}charts_tracks";
-		$img_col = ( $type === 'video' ) ? 'i.thumbnail' : 'i.cover_image';
-		return $wpdb->get_row( $wpdb->prepare( "
-			SELECT i.title, $img_col as cover_image, a.display_name as artist_names 
-			FROM $table i 
-			LEFT JOIN {$wpdb->prefix}charts_artists a ON a.id = i.primary_artist_id
-			WHERE i.slug = %s
-		", $slug ) );
+		$item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
+		if ( $item && ! empty( $item->primary_artist_id ) ) {
+			global $wpdb;
+			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
+			$item->artist_names = $artist_name;
+		}
+		return $item;
 	}
 }

@@ -103,46 +103,57 @@ class SourceManager {
 	// ─────────────────────────────────────────────
 
 	public function get_definitions( $only_active = false ) {
+		// 1. Fetch all native CPTs
+		$posts = get_posts( array(
+			'post_type'      => 'chart',
+			'posts_per_page' => -1,
+			'post_status'    => $only_active ? 'publish' : 'any',
+			'orderby'        => 'menu_order',
+			'order'          => 'ASC',
+		) );
+
+		$results = array();
+		$native_legacy_ids = array();
+
+		foreach ( $posts as $post ) {
+			$def = $this->map_post_to_definition( $post );
+			$results[] = $def;
+			if ( ! empty( $def->legacy_id ) ) {
+				$native_legacy_ids[] = (int) $def->legacy_id;
+			}
+		}
+
+		// 2. Fetch unpromoted legacy records as fallback
 		global $wpdb;
 		$table = $wpdb->prefix . 'charts_definitions';
-		$where = $only_active ? "WHERE is_public = 1" : "";
-		$rows = $wpdb->get_results( "SELECT * FROM $table $where ORDER BY menu_order ASC" );
+		$where = $only_active ? "WHERE is_public = 1" : "WHERE 1=1";
 		
-		$results = array();
+		if ( ! empty( $native_legacy_ids ) ) {
+			$where .= " AND id NOT IN (" . implode( ',', $native_legacy_ids ) . ")";
+		}
+
+		$rows = $wpdb->get_results( "SELECT * FROM $table $where ORDER BY menu_order ASC" );
 		foreach ( $rows as $row ) {
-			// Resolve CPT if it exists for this legacy ID
-			$post_id = $this->get_post_id_by_definition_id( $row->id );
-			if ( $post_id ) {
-				$results[] = $this->map_post_to_definition( get_post( $post_id ) );
-			} else {
-				$results[] = $row;
-			}
+			$results[] = $row;
 		}
 
 		return $results;
 	}
 
 	public function get_definition( $id ) {
-		global $wpdb;
-		// 1. Try CPT first if ID is likely a Post ID
+		// 1. Try CPT lookup by ID (Post ID)
 		$post = get_post( $id );
 		if ( $post && $post->post_type === 'chart' ) {
 			return $this->map_post_to_definition( $post );
 		}
 
-		// 2. Fallback to SQL Table
-		$table = $wpdb->prefix . 'charts_definitions';
-		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
-	}
-
-	public function get_definition_by_slug( $slug ) {
+		// 2. Try Table lookup (Legacy ID fallback)
 		global $wpdb;
-		// 1. Try SQL Table first to get the DEFINITION ID
 		$table = $wpdb->prefix . 'charts_definitions';
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
 		
 		if ( $row ) {
-			// Check if promoted
+			// Check if it has a native shadow
 			$post_id = $this->get_post_id_by_definition_id( $row->id );
 			if ( $post_id ) {
 				return $this->map_post_to_definition( get_post( $post_id ) );
@@ -150,7 +161,11 @@ class SourceManager {
 			return $row;
 		}
 
-		// 2. Try CPT directly (for native layouts that might not exist in table yet)
+		return null;
+	}
+
+	public function get_definition_by_slug( $slug ) {
+		// 1. Try CPT lookup by name
 		$posts = get_posts( array(
 			'post_type'  => 'chart',
 			'name'       => $slug,
@@ -159,6 +174,19 @@ class SourceManager {
 		) );
 		if ( ! empty( $posts ) ) {
 			return $this->map_post_to_definition( $posts[0] );
+		}
+
+		// 2. Fallback to SQL Table
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_definitions';
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
+		
+		if ( $row ) {
+			$post_id = $this->get_post_id_by_definition_id( $row->id );
+			if ( $post_id ) {
+				return $this->map_post_to_definition( get_post( $post_id ) );
+			}
+			return $row;
 		}
 
 		return null;
@@ -271,6 +299,7 @@ class SourceManager {
 		$obj->menu_order      = $post->menu_order;
 		$obj->created_at      = $post->post_date;
 		$obj->updated_at      = $post->post_modified;
+		$obj->legacy_id       = get_post_meta( $post->ID, '_kcharts_legacy_id', true );
 
 		return $obj;
 	}
