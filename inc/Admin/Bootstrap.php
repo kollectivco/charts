@@ -481,9 +481,6 @@ class Bootstrap {
 		}
 	}
 
-
-	}
-
 	/**
 	 * Enqueue admin-specific assets.
 	 */
