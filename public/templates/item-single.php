@@ -6,10 +6,16 @@
 
 global $wpdb;
 
-$type = get_query_var( 'charts_item_type' ) ?: 'track';
-$slug = get_query_var( 'charts_item_slug' );
-
-$item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
+if ( get_query_var( 'charts_item_slug' ) ) {
+	$type = get_query_var( 'charts_item_type' ) ?: 'track';
+	$slug = get_query_var( 'charts_item_slug' );
+	$item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
+} else {
+	// Native CPT Fallback
+	global $post;
+	$item = \Charts\Core\EntityManager::map_post_to_entity( $post );
+	$type = $post ? $post->post_type : 'track';
+}
 
 if ( ! $item ) {
 	\Charts\Core\PublicIntegration::get_header();

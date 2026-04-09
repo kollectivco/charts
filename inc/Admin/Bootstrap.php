@@ -370,7 +370,17 @@ class Bootstrap {
 				$module = 'settings';
 			} elseif ( strpos( $action, 'source' ) !== false ) {
 				$module = 'sources';
-			} elseif ( strpos( $action, 'definition' ) !== false || strpos( $action, 'entity' ) !== false ) {
+			} elseif ( in_array( $action, array( 'promote_entity', 'bulk_promote', 'delete_entity' ) ) ) {
+				// Route back to the correct entity screen based on submitted type
+				$entity_type = sanitize_text_field( $_POST['type'] ?? '' );
+				if ( $entity_type === 'track' ) {
+					$module = 'tracks';
+				} elseif ( $entity_type === 'video' ) {
+					$module = 'clips';
+				} else {
+					$module = 'artists';
+				}
+			} elseif ( strpos( $action, 'definition' ) !== false ) {
 				$module = 'definitions';
 			} elseif ( strpos( $action, 'import' ) !== false || strpos( $action, 'run' ) !== false ) {
 				$module = 'import';

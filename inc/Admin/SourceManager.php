@@ -103,65 +103,39 @@ class SourceManager {
 	// ─────────────────────────────────────────────
 
 	public function get_definitions( $only_active = false ) {
-		// 1. Fetch all native CPTs
-		$posts = get_posts( array(
-			'post_type'      => 'chart',
-			'posts_per_page' => -1,
-			'post_status'    => $only_active ? 'publish' : 'any',
-			'orderby'        => 'menu_order',
-			'order'          => 'ASC',
-		) );
-
-		$results = array();
-		$native_legacy_ids = array();
-
-		foreach ( $posts as $post ) {
-			$def = $this->map_post_to_definition( $post );
-			$results[] = $def;
-			if ( ! empty( $def->legacy_id ) ) {
-				$native_legacy_ids[] = (int) $def->legacy_id;
-			}
-		}
-
-		// 2. Fetch unpromoted legacy records as fallback
 		global $wpdb;
 		$table = $wpdb->prefix . 'charts_definitions';
 		$where = $only_active ? "WHERE is_public = 1" : "WHERE 1=1";
 		
-		if ( ! empty( $native_legacy_ids ) ) {
-			$where .= " AND id NOT IN (" . implode( ',', $native_legacy_ids ) . ")";
-		}
-
+		// Phase 1 Baseline: SQL First
 		$rows = $wpdb->get_results( "SELECT * FROM $table $where ORDER BY menu_order ASC" );
+		
 		foreach ( $rows as $row ) {
-			$results[] = $row;
+			// Find native bridge
+			$row->native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $row->id );
 		}
 
-		return $results;
+		return $rows;
 	}
 
 	public function get_definition( $id ) {
-		// 1. Try CPT lookup by ID (Post ID)
-		$post = get_post( $id );
-		if ( $post && $post->post_type === 'chart' ) {
-			return $this->map_post_to_definition( $post );
-		}
-
-		// 2. Try Table lookup (Legacy ID fallback)
 		global $wpdb;
 		$table = $wpdb->prefix . 'charts_definitions';
+		
+		// Phase 1 Baseline: SQL id (Legacy ID) is the identifier
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
 		
-		if ( $row ) {
-			// Check if it has a native shadow
-			$post_id = $this->get_post_id_by_definition_id( $row->id );
-			if ( $post_id ) {
-				return $this->map_post_to_definition( get_post( $post_id ) );
+		if ( ! $row ) {
+			// Check if $id was actually a Post ID for a native chart
+			$post = get_post( $id );
+			if ( $post && $post->post_type === 'chart' ) {
+				return $this->map_post_to_definition( $post );
 			}
-			return $row;
+			return null;
 		}
 
-		return null;
+		$row->native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $row->id );
+		return $row;
 	}
 
 	public function get_definition_by_slug( $slug ) {

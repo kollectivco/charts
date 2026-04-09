@@ -320,37 +320,34 @@ $entity_type = $type;
 									<?php endif; ?>
 
 									<td style="text-align: right; padding-right: 24px;">
-										<div style="display: flex; gap: 5px; justify-content: flex-end;">
-											<?php if ( ! empty( $item->slug ) ) : ?>
-												<?php 
-												$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id );
-												$slug_path = ( $type === 'artist' ) ? 'artist' : ( ($type === 'video') ? 'clip' : 'track' );
-												$view_url = home_url( '/charts/' . $slug_path . '/' . $item->slug );
-												?>
-												<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
-												
-												<?php if ( $native_post_id ) : ?>
-													<a href="<?php echo get_edit_post_link( $native_post_id ); ?>" class="charts-badge charts-badge-primary" style="text-decoration: none;"><?php _e( 'Edit', 'charts' ); ?></a>
-												<?php endif; ?>
-											<?php endif; ?>
+									<?php
+									// Compute once per row — avoids double postmeta query
+									$native_post_id = ! empty( $item->slug ) ? \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id ) : 0;
+									$slug_path = ( $type === 'artist' ) ? 'artist' : ( ($type === 'video') ? 'clip' : 'track' );
+									$view_url  = home_url( '/charts/' . $slug_path . '/' . $item->slug );
+									?>
+									<div style="display: flex; gap: 5px; justify-content: flex-end; align-items: center;">
 
-											<?php if ( $type !== 'advanced' ) : ?>
-												<?php 
-												$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id );
-												if ( $native_post_id ) : ?>
-													<a href="<?php echo get_edit_post_link( $native_post_id ); ?>" class="charts-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration: none;"><?php _e( 'Native', 'charts' ); ?></a>
-												<?php else : ?>
-													<button type="button" class="charts-badge charts-badge-neutral" style="border: none; cursor: pointer; background: #f3f4f6; color: #6b7280;" onclick="if(confirm('Promote this entity to a native WordPress CPT?')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
-														<span class="dashicons dashicons-upload" style="font-size: 14px; width: 14px; height: 14px; margin-top: -2px;"></span>
-													</button>
-												<?php endif; ?>
+										<?php if ( ! empty( $item->slug ) ) : ?>
+											<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
+										<?php endif; ?>
 
-												<button type="button" class="charts-badge charts-badge-danger" style="border: none; cursor: pointer;" onclick="if(confirm('Really delete entity?')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
-													<?php _e( 'Delete', 'charts' ); ?>
+										<?php if ( $type !== 'advanced' ) : ?>
+											<?php if ( $native_post_id ) : ?>
+												<a href="<?php echo esc_url( get_edit_post_link( $native_post_id ) ); ?>" class="charts-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration:none;" title="<?php esc_attr_e( 'Edit native WordPress profile', 'charts' ); ?>"><?php _e( 'Native ✎', 'charts' ); ?></a>
+											<?php else : ?>
+												<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php esc_js_e( 'Promote this entity to a native WordPress CPT?', 'charts' ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
+													<span class="dashicons dashicons-upload" style="font-size:14px; width:14px; height:14px; margin-top:-2px;"></span> <?php _e( 'Promote', 'charts' ); ?>
 												</button>
 											<?php endif; ?>
-										</div>
-									</td>
+
+											<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+												<?php _e( 'Delete', 'charts' ); ?>
+											</button>
+										<?php endif; ?>
+
+									</div>
+								</td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>

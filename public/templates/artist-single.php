@@ -7,8 +7,14 @@
 global $wpdb;
 
 // 1. DATA LOOKUP
-$slug = get_query_var( 'charts_artist_slug' );
-$artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
+if ( get_query_var( 'charts_artist_slug' ) ) {
+	$slug = get_query_var( 'charts_artist_slug' );
+	$artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
+} else {
+	// Native CPT Fallback
+	global $post;
+	$artist = \Charts\Core\EntityManager::map_post_to_entity( $post );
+}
 
 if ( ! $artist ) {
 	\Charts\Core\PublicIntegration::get_header();
