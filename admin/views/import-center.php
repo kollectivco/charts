@@ -27,14 +27,15 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 		global $wpdb;
 		$run_id = intval( $_GET['run_id'] );
 		$run = $wpdb->get_row( $wpdb->prepare( "
-			SELECT r.*, s.source_name, s.platform
+			SELECT r.*, s.source_name, s.platform, d.slug as chart_slug
 			FROM {$wpdb->prefix}charts_import_runs r
 			JOIN {$wpdb->prefix}charts_sources s ON s.id = r.source_id
+			LEFT JOIN {$wpdb->prefix}charts_definitions d ON (d.chart_type = s.chart_type AND d.country_code = s.country_code)
 			WHERE r.id = %d
 		", $run_id ) );
 		
 		if ( $run ) :
-			$chart_url = ( $run->platform === 'youtube' ) ? home_url('/charts/') : home_url('/charts/spotify/');
+			$chart_url = !empty($run->chart_slug) ? home_url('/charts/' . $run->chart_slug . '/') : admin_url('admin.php?page=charts-definitions');
 	?>
 		<?php 
 			$is_success = ($run->status === 'completed' && ($run->matched_items > 0 || $run->created_items > 0));
@@ -293,6 +294,69 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 
 <style>
 /* Modern Import Journey Styles */
+/* Results Card */
+.result-summary-card {
+	background: #fff;
+	border: 1px solid var(--charts-border);
+	border-radius: 20px;
+	margin-bottom: 40px;
+	padding: 32px;
+	box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+.result-summary-card.is-success { border-top: 4px solid var(--charts-success); }
+.result-summary-card.is-error { border-top: 4px solid var(--charts-error); }
+
+.result-header {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	margin-bottom: 32px;
+	position: relative;
+}
+.result-badge {
+	width: 56px;
+	height: 56px;
+	border-radius: 16px;
+	background: #f0fdf4;
+	color: #10b981;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.is-error .result-badge { background: #fef2f2; color: #ef4444; }
+.result-badge .dashicons { font-size: 28px; width: 28px; height: 28px; }
+
+.result-meta { flex-grow: 1; }
+.result-meta h2 { margin: 0; font-size: 22px; font-weight: 850; letter-spacing: -0.02em; }
+.result-meta p { margin: 4px 0 0; font-size: 14px; color: var(--charts-text-dim); font-weight: 500; }
+
+.result-actions { 
+	display: flex; 
+	gap: 12px; 
+}
+
+.result-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 24px;
+	padding-top: 24px;
+	border-top: 1px solid var(--charts-border);
+}
+
+.res-stat { display: flex; flex-direction: column; gap: 4px; }
+.stat-val { font-size: 24px; font-weight: 900; color: var(--charts-primary); }
+.stat-lab { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--charts-text-dim); }
+
+.result-diagnosis {
+	margin-top: 24px;
+	padding: 16px 20px;
+	background: #f8fafc;
+	border-radius: 12px;
+	font-size: 13px;
+}
+.result-diagnosis strong { display: block; margin-bottom: 4px; font-weight: 800; }
+.result-diagnosis code { background: transparent; padding: 0; color: #475569; }
+
 .import-journey-wrap {
 	max-width: 900px;
 	margin: 0 auto;
