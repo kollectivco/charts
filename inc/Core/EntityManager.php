@@ -225,9 +225,9 @@ class EntityManager {
 
 	/**
 	 * Link multiple artists to a single item (batch alias used by ImportFlow).
-	 * Signature: link_artists( $item_id, $artist_ids_array, $type )
+	 * Signature: link_artists( $item_id, $artist_ids_array, $type = 'track' )
 	 */
-	public static function link_artists( $item_id, array $artist_ids, $type ) {
+	public static function link_artists( $item_id, array $artist_ids, $type = 'track' ) {
 		foreach ( $artist_ids as $artist_id ) {
 			self::link_artist_to_item( $type, (int) $item_id, (int) $artist_id );
 		}

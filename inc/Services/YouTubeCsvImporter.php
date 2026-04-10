@@ -173,7 +173,7 @@ class YouTubeCsvImporter {
 						if ( $a_id ) $artist_ids[] = $a_id;
 					}
 					if ( $item_id && ! empty( $artist_ids ) ) {
-						\Charts\Core\EntityManager::link_artists( $item_id, $artist_ids );
+						\Charts\Core\EntityManager::link_artists( $item_id, $artist_ids, 'video' );
 					}
 				} elseif ( $item_type === 'artist' ) {
 					$artist_name = ! empty( $artist_str ) && $artist_str !== 'Unknown Artist' ? $artist_str : $title;
