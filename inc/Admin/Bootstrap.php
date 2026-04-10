@@ -471,7 +471,7 @@ class Bootstrap {
 			array( 'title' => 'Clips', 'slug' => 'charts-clips', 'callback' => 'render_entities' ),
 			array( 'title' => 'Sources', 'slug' => 'charts-sources', 'callback' => 'render_sources' ),
 			array( 'title' => 'Import Center', 'slug' => 'charts-import', 'callback' => 'render_import_center' ),
-			array( 'title' => 'Import Runs', 'slug' => 'charts-imports', 'callback' => 'render_imports' ),
+			array( 'title' => 'Import Runs', 'slug' => 'charts-imports', 'callback' => 'render_results_history' ),
 			array( 'title' => 'Matching Center', 'slug' => 'charts-matching', 'callback' => 'render_matching' ),
 			array( 'title' => 'Intelligence', 'slug' => 'charts-intelligence', 'callback' => 'render_intelligence' ),
 			array( 'title' => 'Insights', 'slug' => 'charts-insights', 'callback' => 'render_insights' ),
@@ -565,6 +565,10 @@ class Bootstrap {
 
 	public static function render_import_center() {
 		self::render_view( 'import-center' );
+	}
+
+	public static function render_results_history() {
+		self::render_view( 'results' );
 	}
 
 

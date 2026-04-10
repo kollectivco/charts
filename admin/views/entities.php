@@ -286,7 +286,8 @@ $entity_type = $type;
 						</thead>
 						<tbody>
 							<?php foreach ( $items as $item ) : ?>
-								<tr>
+								<?php try { ?>
+									<tr>
 									<?php if ( $type !== 'advanced' ) : ?>
 										<td style="padding-left: 24px;">
 											<input type="checkbox" name="item_ids[]" value="<?php echo (int) $item->id; ?>" class="entity-checkbox">
@@ -294,10 +295,10 @@ $entity_type = $type;
 									<?php endif; ?>
 									<td style="<?php echo $type === 'advanced' ? 'padding-left: 24px;' : ''; ?>">
 										<div style="display: flex; align-items: center; gap: 10px;">
-											<?php 
-											$img = ( $type === 'artist' ) ? ($item->image ?? '') : ( ($type === 'video') ? ($item->thumbnail ?? '') : ($item->cover_image ?? '') );
-											$label = ( $type === 'artist' ) ? $item->display_name : ($item->title ?? $item->track_name);
-											?>
+												<?php 
+												$img = ( $type === 'artist' ) ? ($item->image ?? '') : ( ($type === 'video') ? ($item->thumbnail ?? '') : ($item->cover_image ?? '') );
+												$label = ( $type === 'artist' ) ? ($item->display_name ?? '—') : ($item->title ?? $item->track_name ?? '—');
+												?>
 											<?php if ( $img ) : ?>
 												<img src="<?php echo esc_url( $img ); ?>" style="width: 32px; height: 32px; border-radius: <?php echo $type === 'artist' ? '50%' : '4px'; ?>; object-fit: cover;">
 											<?php else : ?>
@@ -311,21 +312,21 @@ $entity_type = $type;
 										<td><span style="font-size: 13px; color: #666;"><?php echo esc_html( $item->artist_name ?? $item->artist_names ?? '—' ); ?></span></td>
 									<?php endif; ?>
 
-									<?php if ( $type === 'advanced' ) : ?>
-										<td>#<?php echo (int) $item->best_rank; ?></td>
-										<td><?php echo (int) $item->max_weeks; ?>W / <?php echo (int) $item->appearances; ?> Re</td>
-									<?php else : ?>
-										<td><code><?php echo esc_html( $item->slug ); ?></code></td>
-										<td><span style="font-size: 11px; color: #9ca3af;"><?php echo esc_html( $item->spotify_id ?? $item->youtube_id ?? '—' ); ?></span></td>
-									<?php endif; ?>
+										<?php if ( $type === 'advanced' ) : ?>
+											<td>#<?php echo (int) ($item->best_rank ?? 0); ?></td>
+											<td><?php echo (int) ($item->max_weeks ?? 0); ?>W / <?php echo (int) ($item->appearances ?? 0); ?> Re</td>
+										<?php else : ?>
+											<td><code><?php echo esc_html( urldecode( $item->slug ?? '—' ) ); ?></code></td>
+											<td><span style="font-size: 11px; color: #9ca3af;"><?php echo esc_html( $item->spotify_id ?? $item->youtube_id ?? '—' ); ?></span></td>
+										<?php endif; ?>
 
-									<td style="text-align: right; padding-right: 24px;">
 									<?php
 									// Compute once per row — avoids double postmeta query
-									$native_post_id = ! empty( $item->slug ) ? \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id ) : 0;
+									$native_post_id = ( ! empty( $item->slug ) && isset($item->id) ) ? \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id ) : 0;
 									$slug_path = ( $type === 'artist' ) ? 'artist' : ( ($type === 'video') ? 'clip' : 'track' );
-									$view_url  = home_url( '/charts/' . $slug_path . '/' . $item->slug );
+									$view_url  = ( ! empty( $item->slug ) ) ? home_url( '/charts/' . $slug_path . '/' . $item->slug ) : '#';
 									?>
+									<td style="text-align: right; padding-right: 24px;">
 										<?php if ( $type === 'chart' || $type === 'advanced' ) : ?>
 											<?php if ( ! empty( $item->slug ) ) : ?>
 												<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
@@ -341,23 +342,30 @@ $entity_type = $type;
 												<?php endif; ?>
 											<?php endif; ?>
 
-											<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
-												<?php _e( 'Delete', 'charts' ); ?>
-											</button>
+											<?php if ( isset($item->id) ) : ?>
+												<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+													<?php _e( 'Delete', 'charts' ); ?>
+												</button>
+											<?php endif; ?>
 										<?php else : ?>
 											<?php if ( ! empty( $item->slug ) ) : ?>
 												<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
 											<?php endif; ?>
-											<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
-												<?php _e( 'Delete', 'charts' ); ?>
-											</button>
+											<?php if ( isset($item->id) ) : ?>
+												<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+													<?php _e( 'Delete', 'charts' ); ?>
+												</button>
+											<?php endif; ?>
 										<?php endif; ?>
-
-									</div>
-								</td>
+									</td>
 								</tr>
-							<?php endforeach; ?>
-						</tbody>
+							<?php } catch ( \Throwable $e ) { 
+								error_log( 'Charts Row Render Failure: ' . $e->getMessage() );
+							?>
+								<tr><td colspan="7" style="padding: 10px; font-size: 11px; background: #fff5f5; color: #ef4444;"><?php printf( __( 'Data ingestion failure on row %s. Technical logs recorded.', 'charts' ), esc_html( $item->slug ?? 'unknown' ) ); ?></td></tr>
+							<?php } ?>
+						<?php endforeach; ?>
+					</tbody>
 					</table>
 				<?php endif; ?>
 			</form>
