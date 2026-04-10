@@ -199,13 +199,23 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 											<div style="padding: 24px; font-size: 12px; font-weight: 600; color: var(--k-text-muted); opacity: 0.5;">No entry data available yet.</div>
 										<?php endif; ?>
 									<?php else : ?>
-										<?php foreach ( $entries as $e ) : ?>
+										<?php foreach ( $entries as $e ) : 
+											$is_art_entry = ($e->item_type === 'artist' || $def->chart_type === 'top-artists');
+											$e_title = $is_art_entry ? ($e->artist_names ?: $e->track_name) : $e->track_name;
+											
+											// Healing
+											if ( $e_title === 'Unknown YouTube Item' && ! empty($e->artist_names) ) {
+												$e_title = $e->artist_names;
+											}
+										?>
 											<div class="kc-card-entry">
 												<span class="kc-entry-rank"><?php echo $e->rank_position; ?></span>
 												<img class="kc-entry-art" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 												<div class="kc-entry-info">
-													<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class($e->track_name); ?>"><?php echo esc_html($e->track_name); ?></span>
-													<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
+													<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class($e_title); ?>"><?php echo esc_html($e_title); ?></span>
+													<?php if ( ! $is_art_entry && ! empty($e->artist_names) && strtolower($e_title) !== strtolower($e->artist_names) ) : ?>
+														<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
+													<?php endif; ?>
 												</div>
 											</div>
 										<?php endforeach; ?>

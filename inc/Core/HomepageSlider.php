@@ -89,15 +89,16 @@ class HomepageSlider {
                 ", $def->chart_type, $def->country_code));
 
                 if ($row) {
+                    $is_artist = ( $row->item_type === 'artist' );
                     $slides[] = [
-                        'title'     => $row->track_name,
-                        'desc'      => $row->artist_names,
+                        'title'     => ( $is_artist && ! empty($row->artist_names) ) ? $row->artist_names : $row->track_name,
+                        'desc'      => $is_artist ? '' : $row->artist_names, // Clear subtitle for artists
                         'badge'     => '',
                         'image_url' => $row->resolved_thumb ?: $def->cover_image_url,
                         'btn1_text' => 'View Chart',
                         'btn1_link' => home_url('/charts/' . $def->slug . '/'),
                         'btn2_text' => 'Play Song',
-                        'btn2_link' => '#', 
+                        'btn2_link' => '#',
                     ];
                     continue;
                 }
@@ -127,7 +128,7 @@ class HomepageSlider {
         foreach ($artists as $a) {
             $slides[] = [
                 'title'     => $a->display_name,
-                'desc'      => 'Trending Artist Profile',
+                'desc'      => '', // Clear "Trending Artist Profile" subtitle per new rules
                 'badge'     => '',
                 'image_url' => $a->image ?: CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => 'View Profile',

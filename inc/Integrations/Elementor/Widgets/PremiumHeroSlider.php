@@ -259,15 +259,15 @@ class PremiumHeroSlider extends Widget_Base {
 		if ( $settings['source_mode'] === 'auto' ) {
 			// Auto fetch logic using existing HomepageSlider helper
 			$count = intval($settings['slide_count'] ?? 5);
-			$slides_data = \Charts\Core\HomepageSlider::get_slides_data([], $count);
+			$slides_data = \Charts\Core\HomepageSlider::get_slides_data($count);
 			foreach ( $slides_data as $s ) {
 				$slides[] = [
 					'title' => $s['title'],
 					'badge' => __( '#1 TRENDING', 'charts' ),
-					'desc' => $s['subtitle'] ?: __( 'Top performing tracks and videos on the global stage.', 'charts' ),
-					'image_url' => $s['image'],
-					'btn1_text' => __( 'View Chart', 'charts' ),
-					'btn1_link' => $s['url'],
+					'desc' => ! empty($s['desc']) ? $s['desc'] : ( (stripos($s['title'], 'chart') !== false) ? __( 'Top performing tracks and videos on the global stage.', 'charts' ) : '' ),
+					'image_url' => $s['image_url'] ?? CHARTS_URL . 'public/assets/img/placeholder.png',
+					'btn1_text' => $s['btn1_text'] ?? __( 'View Chart', 'charts' ),
+					'btn1_link' => $s['btn1_link'] ?? '#',
 					'btn2_text' => __( 'Add to Library', 'charts' ),
 					'btn2_link' => '#',
 				];
