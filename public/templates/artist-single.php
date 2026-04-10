@@ -96,14 +96,14 @@ $display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artis
 // Safe Escaping for SQL
 $artist_name_escaped = '%' . $wpdb->esc_like( $artist->display_name ) . '%';
 
-// Charting tracks (Improved with string fallback)
+// Charting tracks (Improved with string fallback & type enforcement)
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.* 
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE (
+	WHERE e.item_type != 'artist' AND (
 		(e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
 		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
-		OR (e.artist_names LIKE %s)
+		OR (e.artist_names LIKE %s AND e.item_type IN ('track', 'video'))
 	)
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 4
@@ -113,17 +113,17 @@ $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 foreach($charting_tracks as $ct) {
 	$table = ($ct->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
 	$col   = ($ct->item_type === 'video') ? 'thumbnail' : 'cover_image';
-	$ct->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $ct->item_id));
+	$ct->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $ct->item_id));
 }
 
-// Popular tracks (Improved with string fallback)
+// Popular tracks (Improved with string fallback & type enforcement)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE (
+	WHERE e.item_type != 'artist' AND (
 		(e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
 		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
-		OR (e.artist_names LIKE %s)
+		OR (e.artist_names LIKE %s AND e.item_type IN ('track', 'video'))
 	)
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 5
@@ -132,7 +132,7 @@ $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 foreach($popular_tracks as $pt) {
 	$table = ($pt->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
 	$col   = ($pt->item_type === 'video') ? 'thumbnail' : 'cover_image';
-	$pt->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
+	$pt->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
 }
 
 // Chart Rankings for the Artist Profile itself

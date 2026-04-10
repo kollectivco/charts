@@ -156,24 +156,37 @@ class PublicIntegration {
 	public static function resolve_artwork( $item, $type = 'track' ) {
 		global $wpdb;
 
+		// Utility to detect and skip placeholders
+		$is_placeholder = function($url) {
+			if ( empty($url) ) return true;
+			if ( strpos($url, 'placeholder.png') !== false ) return true;
+			if ( $url === 'Placeholder' || $url === 'N/A' ) return true;
+			return false;
+		};
+
 		// 1. If we have a numeric ID, it's a SQL ID now. Detect type and fetch.
 		if ( is_numeric( $item ) ) {
 			$table = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'video' ) ? 'videos' : 'tracks' );
 			$col   = ( $type === 'artist' ) ? 'image' : ( ( $type === 'video' ) ? 'thumbnail' : 'cover_image' );
 			$img = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $item ) );
-			if ( ! empty( $img ) ) return $img;
+			if ( ! $is_placeholder($img) ) return $img;
 		}
 
 		// 2. Fallback to legacy object properties
-		if ( isset( $item->resolved_image ) && ! empty( $item->resolved_image ) ) return $item->resolved_image;
-		if ( isset( $item->cover_image ) && ! empty( $item->cover_image ) ) return $item->cover_image;
-		if ( isset( $item->image ) && ! empty( $item->image ) ) return $item->image;
+		if ( isset( $item->resolved_image ) && ! $is_placeholder($item->resolved_image) ) return $item->resolved_image;
+		if ( isset( $item->cover_image ) && ! $is_placeholder($item->cover_image) ) return $item->cover_image;
+		if ( isset( $item->image ) && ! $is_placeholder($item->image) ) return $item->image;
 
 		// 3. Final JSON fallback if it exists
-		if ( isset($item->metadata_json) ) {
-			$meta = json_decode($item->metadata_json, true);
-			if ( !empty($meta['youtube_thumbnail']) ) return $meta['youtube_thumbnail'];
-			if ( !empty($meta['image']) ) return $meta['image'];
+		if ( isset($item->metadata_json) && ! empty($item->metadata_json) ) {
+			$meta = ! is_array($item->metadata_json) ? json_decode($item->metadata_json, true) : $item->metadata_json;
+			if ( ! empty($meta) ) {
+				if ( ! empty($meta['spotify_image']) && ! $is_placeholder($meta['spotify_image']) ) return $meta['spotify_image'];
+				if ( ! empty($meta['youtube_thumbnail']) && ! $is_placeholder($meta['youtube_thumbnail']) ) return $meta['youtube_thumbnail'];
+				if ( ! empty($meta['image']) && ! $is_placeholder($meta['image']) ) return $meta['image'];
+				if ( ! empty($meta['artwork_url']) && ! $is_placeholder($meta['artwork_url']) ) return $meta['artwork_url'];
+				if ( ! empty($meta['cover_url']) && ! $is_placeholder($meta['cover_url']) ) return $meta['cover_url'];
+			}
 		}
 
 		return CHARTS_URL . 'public/assets/img/placeholder.png';
