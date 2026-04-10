@@ -321,48 +321,66 @@ $entity_type = $type;
 										<?php endif; ?>
 
 									<?php
-									// Compute once per row — avoids double postmeta query
+									// 5. Compute status & resolution
+									$meta = ! empty( $item->metadata_json ) ? json_decode( $item->metadata_json, true ) : array();
+									$sync_status = $meta['sync_status'] ?? 'pending';
+									$status_labels = array(
+										'synced'             => array( 'label' => __( 'Synced', 'charts' ), 'color' => '#22c55e', 'bg' => '#f0fdf4' ),
+										'pending'            => array( 'label' => __( 'Pending Sync', 'charts' ), 'color' => '#64748b', 'bg' => '#f8fafc' ),
+										'missing_spotify_id' => array( 'label' => __( 'Missing ID', 'charts' ), 'color' => '#f59e0b', 'bg' => '#fffbeb' ),
+										'spotify_not_found'  => array( 'label' => __( 'Spotify 404', 'charts' ), 'color' => '#ef4444', 'bg' => '#fef2f2' ),
+										'api_error'          => array( 'label' => __( 'API Error', 'charts' ), 'color' => '#ef4444', 'bg' => '#fef2f2' ),
+									);
+									$s_cfg = $status_labels[ $sync_status ] ?? $status_labels['pending'];
+
+									// Resolution helpers
 									$native_post_id = ( ! empty( $item->slug ) && isset($item->id) ) ? \Charts\Core\EntityManager::get_post_id_by_legacy_id( $type, $item->id ) : 0;
 									$slug_path = ( $type === 'artist' ) ? 'artist' : ( ($type === 'video') ? 'clip' : 'track' );
 									$view_url  = ( ! empty( $item->slug ) ) ? home_url( '/charts/' . $slug_path . '/' . $item->slug ) : '#';
 									?>
 									<td style="text-align: right; padding-right: 24px;">
-										<?php if ( $type === 'chart' || $type === 'advanced' ) : ?>
-											<?php if ( ! empty( $item->slug ) ) : ?>
-												<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
-											<?php endif; ?>
+										<div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+											<span class="charts-badge" style="background: <?php echo $s_cfg['bg']; ?>; color: <?php echo $s_cfg['color']; ?>; border: 1px solid <?php echo $s_cfg['color']; ?>30; font-size: 10px; padding: 2px 8px; font-weight: 700;" title="<?php echo esc_attr($meta['sync_error'] ?? ''); ?>">
+												<?php echo esc_html( $s_cfg['label'] ); ?>
+											</span>
 
-											<?php if ( $type === 'chart' ) : ?>
-												<?php if ( $native_post_id ) : ?>
-													<a href="<?php echo esc_url( get_edit_post_link( $native_post_id ) ); ?>" class="charts-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration:none;" title="<?php esc_attr_e( 'Edit native WordPress profile', 'charts' ); ?>"><?php _e( 'Native ✎', 'charts' ); ?></a>
-												<?php else : ?>
-													<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php esc_js_e( 'Promote this entity to a native WordPress CPT?', 'charts' ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
-														<span class="dashicons dashicons-upload" style="font-size:14px; width:14px; height:14px; margin-top:-2px;"></span> <?php _e( 'Promote', 'charts' ); ?>
+											<?php if ( $type === 'chart' || $type === 'advanced' ) : ?>
+												<?php if ( ! empty( $item->slug ) ) : ?>
+													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
+												<?php endif; ?>
+
+												<?php if ( $type === 'chart' ) : ?>
+													<?php if ( $native_post_id ) : ?>
+														<a href="<?php echo esc_url( get_edit_post_link( $native_post_id ) ); ?>" class="charts-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration:none;" title="<?php esc_attr_e( 'Edit native WordPress profile', 'charts' ); ?>"><?php _e( 'Native ✎', 'charts' ); ?></a>
+													<?php else : ?>
+														<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php esc_js_e( 'Promote this entity to a native WordPress CPT?', 'charts' ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
+															<span class="dashicons dashicons-upload" style="font-size:14px; width:14px; height:14px; margin-top:-2px;"></span> <?php _e( 'Promote', 'charts' ); ?>
+														</button>
+													<?php endif; ?>
+												<?php endif; ?>
+
+												<?php if ( isset($item->id) ) : ?>
+													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+														<?php _e( 'Delete', 'charts' ); ?>
+													</button>
+												<?php endif; ?>
+											<?php else : ?>
+												<?php if ( ! empty( $item->slug ) ) : ?>
+													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
+												<?php endif; ?>
+												<?php if ( isset($item->id) ) : ?>
+													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+														<?php _e( 'Delete', 'charts' ); ?>
 													</button>
 												<?php endif; ?>
 											<?php endif; ?>
-
-											<?php if ( isset($item->id) ) : ?>
-												<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
-													<?php _e( 'Delete', 'charts' ); ?>
-												</button>
-											<?php endif; ?>
-										<?php else : ?>
-											<?php if ( ! empty( $item->slug ) ) : ?>
-												<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
-											<?php endif; ?>
-											<?php if ( isset($item->id) ) : ?>
-												<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
-													<?php _e( 'Delete', 'charts' ); ?>
-												</button>
-											<?php endif; ?>
-										<?php endif; ?>
+										</div>
 									</td>
 								</tr>
 							<?php } catch ( \Throwable $e ) { 
 								error_log( 'Charts Row Render Failure: ' . $e->getMessage() );
 							?>
-								<tr><td colspan="7" style="padding: 10px; font-size: 11px; background: #fff5f5; color: #ef4444;"><?php printf( __( 'Data ingestion failure on row %s. Technical logs recorded.', 'charts' ), esc_html( $item->slug ?? 'unknown' ) ); ?></td></tr>
+								<tr><td colspan="7" style="padding: 10px; font-size: 11px; background: #fff5f5; color: #ef4444;"><?php printf( __( 'Row resolution failure for %s: %s', 'charts' ), esc_html( $item->slug ?? 'unknown' ), esc_html( $e->getMessage() ) ); ?></td></tr>
 							<?php } ?>
 						<?php endforeach; ?>
 					</tbody>

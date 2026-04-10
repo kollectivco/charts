@@ -827,95 +827,90 @@ class Bootstrap {
 		}
 		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( array( 'message' => 'Unauthorized' ) );
 
-		$limit = 20;
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_artists';
+
+		$limit  = 20;
 		$offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
 		$mode   = $_POST['mode'] ?? 'missing';
 		$ids    = isset($_POST['ids']) ? array_map('intval', explode(',', $_POST['ids'])) : [];
 
-		$args = array(
-			'post_type'      => 'artist',
-			'posts_per_page' => $limit,
-			'offset'         => $offset,
-			'post_status'    => 'publish',
-		);
-		
-		if ( $mode === 'selected' && !empty($ids) ) {
-			$args['post__in'] = $ids;
+		if ( $mode === 'selected' && ! empty( $ids ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			$artists = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table WHERE id IN ($placeholders) LIMIT $limit", ...$ids ) );
 		} elseif ( $mode === 'missing' ) {
-			$args['meta_query'] = array(
-				'relation' => 'OR',
-				array( 'key' => '_spotify_id', 'value' => '', 'compare' => '=' ),
-				array( 'key' => '_spotify_id', 'compare' => 'NOT EXISTS' ),
-				array( 'key' => '_artist_image_url', 'value' => '', 'compare' => '=' ),
-				array( 'key' => '_artist_image_url', 'compare' => 'NOT EXISTS' ),
-			);
+			$artists = $wpdb->get_results( "SELECT * FROM $table WHERE (spotify_id IS NULL OR spotify_id = '') OR (image IS NULL OR image = '') ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		} else {
+			$artists = $wpdb->get_results( "SELECT * FROM $table ORDER BY id ASC LIMIT $limit OFFSET $offset" );
 		}
 
-		$artists_query = new \WP_Query( $args );
-		$artists = $artists_query->posts;
-		
-		if ( empty($artists) ) {
+		if ( empty( $artists ) ) {
 			wp_send_json_success( array( 'complete' => true, 'processed' => 0 ) );
 		}
 
 		$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
-		$spotify_client = new \Charts\Services\SpotifyApiClient();
+		$spotify_client  = new \Charts\Services\SpotifyApiClient();
 		$youtube_service = new \Charts\Services\YouTubeEnrichmentService();
-		$youtube_client = new \Charts\Services\YouTubeApiClient();
+		$youtube_client  = new \Charts\Services\YouTubeApiClient();
 
-		$updated = 0;
-		$spotify_linked = 0;
-		$youtube_linked = 0;
+		$updated         = 0;
+		$spotify_linked  = 0;
+		$youtube_linked  = 0;
 
 		foreach ( $artists as $artist ) {
 			$has_update = false;
-			$spotify_id = get_post_meta( $artist->ID, '_spotify_id', true );
+			$s_id       = $artist->spotify_id;
 
-			// 1. Spotify Logic
-			if ( empty($spotify_id) ) {
-				$results = $spotify_client->search_artist($artist->post_title, 1);
-				if ( !empty($results) && !is_wp_error($results) ) {
-					update_post_meta( $artist->ID, '_spotify_id', $results[0]['id'] );
-					$spotify_id = $results[0]['id'];
+			// 1. Spotify Resolution
+			if ( empty( $s_id ) ) {
+				$results = $spotify_client->search_artist( $artist->display_name, 1 );
+				if ( ! empty( $results ) && ! is_wp_error( $results ) ) {
+					$s_id = $results[0]['id'];
+					$wpdb->update( $table, array( 'spotify_id' => $s_id ), array( 'id' => $artist->id ) );
 					$spotify_linked++;
 					$has_update = true;
 				}
 			}
 
-			if ( !empty($spotify_id) ) {
-				$spotify_service->enrich_artist($artist->ID);
-				$has_update = true;
+			// 2. Spotify Enrichment
+			if ( ! empty( $s_id ) ) {
+				$res = $spotify_service->enrich_artist( $artist->id );
+				if ( ! is_wp_error( $res ) && $res ) {
+					$has_update = true;
+				}
 			}
 
-			// 2. YouTube Logic
-			$channel_id = get_post_meta( $artist->ID, '_artist_youtube_channel_id', true );
-			if ( empty($channel_id) ) {
-				$results = $youtube_client->search_channels($artist->post_title, 1);
-				if ( !empty($results) && !is_wp_error($results) ) {
-					$channel_id = $results[0]['id']['channelId'] ?? null;
-					if ( $channel_id ) {
-						update_post_meta( $artist->ID, '_artist_youtube_channel_id', $channel_id );
+			// 3. YouTube Resolution (Optional but helpful)
+			$meta = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+			$y_id = $meta['youtube_channel_id'] ?? null;
+			if ( empty( $y_id ) ) {
+				$yt_results = $youtube_client->search_channels( $artist->display_name, 1 );
+				if ( ! empty( $yt_results ) && ! is_wp_error( $yt_results ) ) {
+					$y_id = $yt_results[0]['id']['channelId'] ?? null;
+					if ( $y_id ) {
+						$meta['youtube_channel_id'] = $y_id;
+						$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $artist->id ) );
 						$youtube_linked++;
 						$has_update = true;
 					}
 				}
 			}
 
-			if ( !empty($channel_id) ) {
-				$youtube_service->enrich_artist($artist->ID);
+			if ( ! empty( $y_id ) ) {
+				$youtube_service->enrich_artist( $artist->id );
 				$has_update = true;
 			}
 
-			if ($has_update) $updated++;
+			if ( $has_update ) $updated++;
 		}
 
 		wp_send_json_success( array(
-			'complete' => false,
-			'processed' => count($artists),
-			'updated' => $updated,
+			'complete'       => false,
+			'processed'      => count( $artists ),
+			'updated'        => $updated,
 			'spotify_linked' => $spotify_linked,
 			'youtube_linked' => $youtube_linked,
-			'next_offset' => $offset + count($artists)
+			'next_offset'    => $offset + count( $artists )
 		) );
 	}
 
@@ -925,79 +920,71 @@ class Bootstrap {
 		}
 		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( array( 'message' => 'Unauthorized' ) );
 
-		$limit = 20;
+		global $wpdb;
+		$table         = $wpdb->prefix . 'charts_tracks';
+		$artists_table = $wpdb->prefix . 'charts_artists';
+
+		$limit  = 20;
 		$offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
 		$mode   = $_POST['mode'] ?? 'missing';
 		$ids    = isset($_POST['ids']) ? array_map('intval', explode(',', $_POST['ids'])) : [];
 
-		$args = array(
-			'post_type'      => 'track',
-			'posts_per_page' => $limit,
-			'offset'         => $offset,
-			'post_status'    => 'publish',
-		);
-		
-		if ( $mode === 'selected' && !empty($ids) ) {
-			$args['post__in'] = $ids;
+		if ( $mode === 'selected' && ! empty( $ids ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			$tracks = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table WHERE id IN ($placeholders) LIMIT $limit", ...$ids ) );
 		} elseif ( $mode === 'missing' ) {
-			$args['meta_query'] = array(
-				'relation' => 'OR',
-				array( 'key' => '_spotify_id', 'value' => '', 'compare' => '=' ),
-				array( 'key' => '_spotify_id', 'compare' => 'NOT EXISTS' ),
-				array( 'key' => '_cover_image_url', 'value' => '', 'compare' => '=' ),
-				array( 'key' => '_cover_image_url', 'compare' => 'NOT EXISTS' ),
-			);
+			$tracks = $wpdb->get_results( "SELECT * FROM $table WHERE (spotify_id IS NULL OR spotify_id = '') OR (cover_image IS NULL OR cover_image = '') ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		} else {
+			$tracks = $wpdb->get_results( "SELECT * FROM $table ORDER BY id ASC LIMIT $limit OFFSET $offset" );
 		}
-		
-		$tracks_query = new \WP_Query( $args );
-		$tracks = $tracks_query->posts;
-		
-		if ( empty($tracks) ) {
+
+		if ( empty( $tracks ) ) {
 			wp_send_json_success( array( 'complete' => true, 'processed' => 0 ) );
 		}
 
 		$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
-		$spotify_client = new \Charts\Services\SpotifyApiClient();
+		$spotify_client  = new \Charts\Services\SpotifyApiClient();
 
-		$updated = 0;
-		$spotify_linked = 0;
-		$covers_updated = 0;
+		$updated         = 0;
+		$spotify_linked  = 0;
+		$covers_updated  = 0;
 
 		foreach ( $tracks as $track ) {
 			$has_update = false;
-			$spotify_id = get_post_meta( $track->ID, '_spotify_id', true );
+			$s_id       = $track->spotify_id;
 
-			// 1. Spotify Logic
-			if ( empty($spotify_id) ) {
-				$primary_artist_id = get_post_meta( $track->ID, '_primary_artist_id', true );
-				$artist_name = $primary_artist_id ? get_the_title( $primary_artist_id ) : '';
-				
-				$query = $track->post_title . ' ' . $artist_name;
-				$results = $spotify_client->search_track($query, 1);
-				if ( !empty($results) && !is_wp_error($results) ) {
-					update_post_meta( $track->ID, '_spotify_id', $results[0]['id'] );
-					$spotify_id = $results[0]['id'];
+			// 1. Spotify Resolution
+			if ( empty( $s_id ) ) {
+				$art_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM $artists_table WHERE id = %d", $track->primary_artist_id ) );
+				$query    = $track->title . ' ' . ($art_name ?? '');
+				$results  = $spotify_client->search_track( $query, 1 );
+				if ( ! empty( $results ) && ! is_wp_error( $results ) ) {
+					$s_id = $results[0]['id'];
+					$wpdb->update( $table, array( 'spotify_id' => $s_id ), array( 'id' => $track->id ) );
 					$spotify_linked++;
 					$has_update = true;
 				}
 			}
 
-			if ( !empty($spotify_id) ) {
-				$spotify_service->enrich_track($track->ID);
-				$has_update = true;
-				$covers_updated++;
+			// 2. Spotify Enrichment
+			if ( ! empty( $s_id ) ) {
+				$res = $spotify_service->enrich_track( $track->id );
+				if ( ! is_wp_error( $res ) && $res ) {
+					$has_update = true;
+					$covers_updated++;
+				}
 			}
 
-			if ($has_update) $updated++;
+			if ( $has_update ) $updated++;
 		}
 
 		wp_send_json_success( array(
-			'complete' => false,
-			'processed' => count($tracks),
-			'updated' => $updated,
+			'complete'       => false,
+			'processed'      => count( $tracks ),
+			'updated'        => $updated,
 			'spotify_linked' => $spotify_linked,
 			'covers_updated' => $covers_updated,
-			'next_offset' => $offset + count($tracks)
+			'next_offset'    => $offset + count( $tracks )
 		) );
 	}
 

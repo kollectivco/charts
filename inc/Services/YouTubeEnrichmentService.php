@@ -117,7 +117,11 @@ class YouTubeEnrichmentService {
 		if ( empty( $channel_id ) ) return false;
 
 		$channels = $this->api_client->get_channels( array( $channel_id ) );
-		if ( is_wp_error( $channels ) || empty( $channels ) ) return false;
+		if ( is_wp_error( $channels ) || empty( $channels ) ) {
+			$meta['sync_status'] = 'youtube_not_found';
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $artist_id ) );
+			return false;
+		}
 
 		$channel = $channels[0];
 		
@@ -129,6 +133,7 @@ class YouTubeEnrichmentService {
 		$meta['youtube_thumbnail']   = $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['medium']['url'] ?? null;
 		$meta['youtube_url']         = 'https://www.youtube.com/channel/' . $channel_id;
 		$meta['youtube_last_sync']   = current_time( 'mysql' );
+		$meta['sync_status']         = 'synced'; // Success categorization
 		
 		$update = array( 'metadata_json' => json_encode( $meta ) );
 		if ( empty($artist->image) && !empty($meta['youtube_thumbnail']) ) {

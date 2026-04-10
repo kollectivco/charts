@@ -95,10 +95,24 @@ class SpotifyEnrichmentService {
 		$table = $wpdb->prefix . 'charts_artists';
 		
 		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $artist_id ) );
-		if ( ! $artist || empty( $artist->spotify_id ) ) return false;
+		if ( ! $artist ) return false;
+
+		$meta = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
+
+		if ( empty( $artist->spotify_id ) ) {
+			$meta['sync_status'] = 'missing_spotify_id';
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $artist_id ) );
+			return false;
+		}
 
 		$data = $this->api->get_artist( $artist->spotify_id );
-		if ( is_wp_error( $data ) ) return $data;
+		if ( is_wp_error( $data ) ) {
+			$code = $data->get_error_code();
+			$meta['sync_status'] = ( strpos($code, '404') !== false ) ? 'spotify_not_found' : 'api_error';
+			$meta['sync_error']  = $data->get_error_message();
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $artist_id ) );
+			return $data;
+		}
 
 		$top_tracks_data = $this->api->get_artist_top_tracks( $artist->spotify_id, 'US' );
 		$top_tracks = array();
@@ -113,7 +127,6 @@ class SpotifyEnrichmentService {
 			}
 		}
 
-		$meta = ! empty( $artist->metadata_json ) ? json_decode( $artist->metadata_json, true ) : array();
 		$meta['genres']       = $data['genres'] ?? array();
 		$meta['followers']    = $data['followers']['total'] ?? 0;
 		$meta['popularity']   = $data['popularity'] ?? 0;
@@ -121,6 +134,7 @@ class SpotifyEnrichmentService {
 		$meta['spotify_top_tracks'] = $top_tracks;
 		$meta['spotify_id']   = $artist->spotify_id;
 		$meta['last_sync']    = current_time( 'mysql' );
+		$meta['sync_status']  = 'synced'; // Success categorization
 
 		$update = array(
 			'metadata_json' => json_encode( $meta ),
@@ -133,7 +147,8 @@ class SpotifyEnrichmentService {
 			$update['metadata_json'] = json_encode( $meta );
 		}
 
-		return $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
+		$result = $wpdb->update( $table, $update, array( 'id' => $artist_id ) );
+		return $result !== false;
 	}
 
 	/**
@@ -144,18 +159,34 @@ class SpotifyEnrichmentService {
 		$table = $wpdb->prefix . 'charts_tracks';
 		
 		$track = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $track_id ) );
-		if ( ! $track || empty( $track->spotify_id ) ) return false;
+		if ( ! $track ) return false;
+
+		$meta = ! empty( $track->metadata_json ) ? json_decode( $track->metadata_json, true ) : array();
+
+		if ( empty( $track->spotify_id ) ) {
+			$meta['sync_status'] = 'missing_spotify_id';
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $track_id ) );
+			return false;
+		}
 
 		$data = $this->api->get_track( $track->spotify_id );
-		if ( is_wp_error( $data ) ) return $data;
+		if ( is_wp_error( $data ) ) {
+			$code = $data->get_error_code();
+			$meta['sync_status'] = ( strpos($code, '404') !== false ) ? 'spotify_not_found' : 'api_error';
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $track_id ) );
+			return $data;
+		}
 
 		$transformed = $this->transform_metadata( $data );
+		$meta['sync_status'] = 'synced';
 		
 		$update = array(
-			'cover_image' => $transformed['album']['cover_image'] ?? $track->cover_image,
-			'updated_at'  => current_time( 'mysql' )
+			'cover_image'   => $transformed['album']['cover_image'] ?? $track->cover_image,
+			'metadata_json' => json_encode( $meta ),
+			'updated_at'    => current_time( 'mysql' )
 		);
 
-		return $wpdb->update( $table, $update, array( 'id' => $track_id ) );
+		$result = $wpdb->update( $table, $update, array( 'id' => $track_id ) );
+		return $result !== false;
 	}
 }
