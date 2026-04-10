@@ -87,59 +87,72 @@ $yt_subscribers = get_post_meta( $artist->id, '_artist_youtube_subscribers', tru
 $yt_views       = get_post_meta( $artist->id, '_artist_youtube_video_count', true ) ?: 0;
 $yt_url         = get_post_meta( $artist->id, '_artist_youtube_url', true ) ?: '';
 $genres         = (array) get_post_meta( $artist->id, '_artist_genres', true );
-$sp_top_tracks  = (array) get_post_meta( $artist->id, '_artist_spotify_top_tracks', true );
+$sp_top_tracks  = get_post_meta( $artist->id, '_artist_spotify_top_tracks', true );
+if ( ! is_array($sp_top_tracks) ) $sp_top_tracks = array();
 
 // Centralized image resolution
 $display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist');
 
-// Charting tracks
+// Safe Escaping for SQL
+$artist_name_escaped = '%' . $wpdb->esc_like( $artist->display_name ) . '%';
+
+// Charting tracks (Improved with string fallback)
 $charting_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.* 
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE (e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
-	   OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
+	WHERE (
+		(e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
+		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
+		OR (e.artist_names LIKE %s)
+	)
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 4
-", $artist->id, $artist->id ) );
+", $artist->id, $artist->id, $artist_name_escaped ) );
 
 // Resolve images for charting tracks
 foreach($charting_tracks as $ct) {
 	$table = ($ct->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
-	$ct->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT " . ($ct->item_type === 'video' ? 'thumbnail' : 'cover_image') . " FROM {$wpdb->prefix}{$table} WHERE id = %d", $ct->item_id));
+	$col   = ($ct->item_type === 'video') ? 'thumbnail' : 'cover_image';
+	$ct->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $ct->item_id));
 }
 
-// Popular tracks 
+// Popular tracks (Improved with string fallback)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE (e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
-	   OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
+	WHERE (
+		(e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
+		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
+		OR (e.artist_names LIKE %s)
+	)
 	GROUP BY e.item_type, e.item_id
 	ORDER BY e.rank_position ASC LIMIT 5
-", $artist->id, $artist->id ) );
+", $artist->id, $artist->id, $artist_name_escaped ) );
 
 foreach($popular_tracks as $pt) {
 	$table = ($pt->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
-	$pt->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT " . ($pt->item_type === 'video' ? 'thumbnail' : 'cover_image') . " FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
+	$col   = ($pt->item_type === 'video') ? 'thumbnail' : 'cover_image';
+	$pt->canonical_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
 }
 
-// Chart Rankings
+// Chart Rankings for the Artist Profile itself
 $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE e.item_id = %d AND e.item_type = 'artist'
-	ORDER BY e.rank_position ASC LIMIT 2
-", $artist->id ) );
+	WHERE (e.item_id = %d AND e.item_type = 'artist')
+	   OR (e.artist_names LIKE %s AND e.item_type = 'artist')
+	ORDER BY e.rank_position ASC LIMIT 4
+", $artist->id, $artist_name_escaped ) );
 
 foreach($chart_rankings as $cr) {
-	$row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON s.chart_type = d.chart_type AND s.country_code = d.country_code WHERE s.id = %d", $cr->source_id));
+	$row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON s.chart_type = d.chart_type AND s.country_code = d.country_code WHERE s.id = %d LIMIT 1", $cr->source_id));
 	$cr->definition_title = $row ? $row->title : 'Top Artists';
 }
 
 \Charts\Core\PublicIntegration::get_header();
 ?>
 
-<div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
+<div class="kc-root kc-artist-profile-root" style="background: var(--k-bg); color: var(--k-text);">
 	<div class="kc-container">
 		
 		<!-- ARTIST HEADER -->
@@ -191,7 +204,9 @@ foreach($chart_rankings as $cr) {
 						<?php if ( empty($charting_tracks) ) : ?>
 							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No current charting tracks.</p>
 						<?php else : ?>
-							<?php foreach ( $charting_tracks as $ct ) : ?>
+							<?php foreach ( $charting_tracks as $ct ) : 
+								if ( empty($ct->item_slug) || empty($ct->track_name) ) continue;
+							?>
 								<a href="<?php echo home_url('/charts/' . ($ct->item_type === 'video' ? 'clip' : 'track') . '/' . $ct->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $ct->rank_position; ?></span>
@@ -220,7 +235,9 @@ foreach($chart_rankings as $cr) {
 					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">Popular Tracks</h3>
 					<div style="display: flex; flex-direction: column; gap: 12px;">
 						<?php if ( !empty($popular_tracks) ) : ?>
-							<?php foreach ( $popular_tracks as $pt ) : ?>
+							<?php foreach ( $popular_tracks as $pt ) : 
+								if ( empty($pt->item_slug) || empty($pt->track_name) ) continue;
+							?>
 								<a href="<?php echo home_url('/charts/' . ($pt->item_type === 'video' ? 'clip' : 'track') . '/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $pt->rank_position; ?></span>
@@ -239,11 +256,13 @@ foreach($chart_rankings as $cr) {
 								</a>
 							<?php endforeach; ?>
 						<?php elseif ( !empty($sp_top_tracks) ) : ?>
-							<?php $rk=1; foreach ( array_slice($sp_top_tracks, 0, 3) as $spt ) : ?>
+							<?php $rk=1; foreach ( array_slice($sp_top_tracks, 0, 3) as $spt ) : 
+								if ( ! is_array($spt) || empty($spt['name']) ) continue;
+							?>
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $rk++; ?></span>
-										<img src="<?php echo esc_url($spt['image'] ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
+										<img src="<?php echo esc_url(($spt['image'] ?? '') ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($spt['name']); ?></span>
 											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>

@@ -21,9 +21,18 @@ class PublicIntegration {
 	 * Add specific body classes to aid styling within themes.
 	 */
 	public static function add_body_classes( $classes ) {
-		if ( self::is_charts_page() ) {
+		$route = get_query_var( 'charts_route' );
+		if ( $route ) {
 			$classes[] = 'kc-charts-route';
+			$classes[] = 'kc-route-' . $route;
 		}
+
+		if ( is_singular( 'artist' ) || is_singular( 'chart' ) || is_singular( 'track' ) || is_singular( 'video' ) ) {
+			$classes[] = 'kc-charts-route';
+			$classes[] = 'kc-route-singular';
+			$classes[] = 'kc-route-' . get_post_type() . '-single';
+		}
+
 		return $classes;
 	}
 

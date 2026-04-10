@@ -77,8 +77,38 @@
 	padding: 0 40px;
 }
 
+/* Force Layout Overrides for Charts Routes */
+.kc-charts-route .container,
+.kc-charts-route .content-area,
+.kc-charts-route #primary,
+.kc-charts-route .site-main,
+.kc-charts-route .entry-content {
+	max-width: 100% !important;
+	width: 100% !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+.kc-artist-profile-root {
+	padding-bottom: 120px;
+}
+
 @media (max-width: 768px) {
 	.kc-container { padding: 0 20px; }
+}
+
+.kc-artist-grid {
+	display: grid;
+	grid-template-columns: 1.8fr 1fr;
+	gap: 60px;
+}
+
+@media (max-width: 1200px) {
+    .kc-artist-grid { grid-template-columns: 1.5fr 1fr; gap: 40px; }
+}
+
+@media (max-width: 1024px) {
+	.kc-artist-grid { grid-template-columns: 1fr; gap: 40px; }
 }
 
 /* Header Navigation Shell Removed */
@@ -487,15 +517,6 @@
 	}
 }
 
-.kc-artist-grid {
-	display: grid;
-	grid-template-columns: 1.8fr 1fr;
-	gap: 60px;
-}
-
-@media (max-width: 1024px) {
-	.kc-artist-grid { grid-template-columns: 1fr; gap: 40px; }
-}
 
 .kc-top-artists-grid {
 	display: grid;
