@@ -413,6 +413,22 @@ class YouTubeCsvImporter {
 		if ( $chart_id > 0 ) {
 			$lookup_type = "cid-{$chart_id}";
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE platform = 'youtube' AND chart_type = %s AND frequency = %s", $lookup_type, $frequency ) );
+			
+			// If no specific binding exists, attempt to RECLAIM a legacy generic source
+			if ( ! $id ) {
+				$legacy_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE platform = 'youtube' AND country_code = %s AND chart_type = %s AND frequency = %s", $country, $chart_type, $frequency ) );
+				if ( $legacy_id ) {
+					// Identify the definition for a clean name
+					$def = $wpdb->get_row( $wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions WHERE id = %d", $chart_id) );
+					$clean_name = $def ? "YouTube → " . $def->title : "YouTube " . strtoupper( $chart_type ) . " (Locked)";
+
+					$wpdb->update( $table, array( 
+						'chart_type'  => $lookup_type,
+						'source_name' => $clean_name
+					), array( 'id' => $legacy_id ) );
+					$id = $legacy_id;
+				}
+			}
 		} else {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE platform = 'youtube' AND country_code = %s AND chart_type = %s AND frequency = %s", $country, $chart_type, $frequency ) );
 		}
