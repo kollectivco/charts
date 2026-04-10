@@ -610,6 +610,7 @@ class Bootstrap {
 		}
 
 		$meta = array(
+			'chart_id'    => intval( $_POST['chart_id'] ?? 0 ),
 			'country'     => sanitize_text_field( $_POST['country'] ?? 'eg' ),
 			'chart_type'  => sanitize_text_field( $_POST['chart_type'] ?? 'top-songs' ),
 			'frequency'   => sanitize_text_field( $_POST['frequency'] ?? 'weekly' ),
@@ -661,6 +662,7 @@ class Bootstrap {
 		}
 
 		$meta = array(
+			'chart_id'    => intval( $_POST['chart_id'] ?? 0 ),
 			'country'     => sanitize_text_field( $_POST['country'] ?? 'eg' ),
 			'chart_type'  => sanitize_text_field( $_POST['chart_type'] ?? 'top-songs' ),
 			'frequency'   => sanitize_text_field( $_POST['frequency'] ?? 'weekly' ),

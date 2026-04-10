@@ -190,10 +190,38 @@ class SpotifyCsvImporter {
 		$country    = strtolower( trim( $meta['country'] ?? 'eg' ) );
 		$chart_type = strtolower( trim( $meta['chart_type'] ?? 'top-songs' ) );
 		$frequency  = strtolower( trim( $meta['frequency'] ?? 'weekly' ) );
-		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE platform = 'spotify' AND country_code = %s AND chart_type = %s AND frequency = %s", $country, $chart_type, $frequency ) );
+		$chart_id   = intval( $meta['chart_id'] ?? 0 );
+
+		// Strict Binding: Use the chart_id as the primary identifier if available
+		if ( $chart_id > 0 ) {
+			$lookup_type = "cid-{$chart_id}";
+			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE platform = 'spotify' AND chart_type = %s AND frequency = %s", $lookup_type, $frequency ) );
+		} else {
+			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE platform = 'spotify' AND country_code = %s AND chart_type = %s AND frequency = %s", $country, $chart_type, $frequency ) );
+		}
+
 		if ( ! $id ) {
 			$name = ! empty( $meta['source_name'] ) ? sanitize_text_field( $meta['source_name'] ) : "Spotify " . strtoupper( $chart_type ) . " · " . strtoupper( $country );
-			$wpdb->insert( $table, array( 'source_name' => $name, 'platform' => 'spotify', 'source_type' => 'manual_import', 'country_code' => $country, 'chart_type' => $chart_type, 'frequency' => $frequency, 'source_url' => 'manual', 'parser_key' => 'spotify-csv', 'is_active' => 1, 'created_at' => current_time( 'mysql' ) ) );
+			
+			// If we have a chart_id, append it to the name for clarity and use cid- binding
+			if ( $chart_id > 0 ) {
+				$chart_type = "cid-{$chart_id}";
+				$def = $wpdb->get_row( $wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions WHERE id = %d", $chart_id) );
+				if ( $def ) $name = "Spotify → " . $def->title;
+			}
+
+			$wpdb->insert( $table, array( 
+				'source_name' => $name, 
+				'platform' => 'spotify', 
+				'source_type' => 'manual_import', 
+				'country_code' => $country, 
+				'chart_type' => $chart_type, 
+				'frequency' => $frequency, 
+				'source_url' => 'manual', 
+				'parser_key' => 'spotify-csv', 
+				'is_active' => 1, 
+				'created_at' => current_time( 'mysql' ) 
+			) );
 			$id = $wpdb->insert_id;
 		}
 		return $id;
