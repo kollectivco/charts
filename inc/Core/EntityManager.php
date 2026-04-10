@@ -25,8 +25,8 @@ class EntityManager {
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE slug = %s", $slug ) );
 		
 		if ( $row ) {
-			// Find native bridge but don't force resolution through it yet.
-			$row->native_post_id = self::get_post_id_by_legacy_id( $type, $row->id );
+			// Find native bridge but only for Charts (other CPTs are rolled back)
+			$row->native_post_id = ( $type === 'chart' ) ? self::get_post_id_by_legacy_id( $type, $row->id ) : 0;
 			return $row;
 		}
 

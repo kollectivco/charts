@@ -41,60 +41,6 @@ class PostTypes {
 			'menu_icon'           => 'dashicons-chart-bar',
 			'rewrite'             => array( 'slug' => 'chart-native' ), // Avoid conflict with legacy /charts/ route
 		) );
-
-		register_post_type( 'artist', array(
-			'labels' => array(
-				'name'          => __( 'Artists (Native)', 'charts' ),
-				'singular_name' => __( 'Artist', 'charts' ),
-				'add_new'       => __( 'Add New Artist', 'charts' ),
-				'edit_item'     => __( 'Edit Artist', 'charts' ),
-				'view_item'     => __( 'View Artist', 'charts' ),
-				'search_items'  => __( 'Search Artists', 'charts' ),
-			),
-			'public'       => true,
-			'show_in_menu' => false, // Unified menu only
-			'show_in_rest' => true,
-			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
-			'rewrite'      => array( 'slug' => 'artist' ),
-			'has_archive'  => true,
-			'menu_icon'    => 'dashicons-admin-users',
-		) );
-
-		register_post_type( 'track', array(
-			'labels' => array(
-				'name'          => __( 'Tracks (Native)', 'charts' ),
-				'singular_name' => __( 'Track', 'charts' ),
-				'add_new'       => __( 'Add New Track', 'charts' ),
-				'edit_item'     => __( 'Edit Track', 'charts' ),
-				'view_item'     => __( 'View Track', 'charts' ),
-				'search_items'  => __( 'Search Tracks', 'charts' ),
-			),
-			'public'       => true,
-			'show_in_menu' => false,
-			'show_in_rest' => true,
-			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
-			'rewrite'      => array( 'slug' => 'track' ),
-			'has_archive'  => true,
-			'menu_icon'    => 'dashicons-format-audio',
-		) );
-
-		register_post_type( 'video', array(
-			'labels' => array(
-				'name'          => __( 'Clips (Native)', 'charts' ),
-				'singular_name' => __( 'Clip', 'charts' ),
-				'add_new'       => __( 'Add New Clip', 'charts' ),
-				'edit_item'     => __( 'Edit Clip', 'charts' ),
-				'view_item'     => __( 'View Clip', 'charts' ),
-				'search_items'  => __( 'Search Clips', 'charts' ),
-			),
-			'public'       => true,
-			'show_in_menu' => false,
-			'show_in_rest' => true,
-			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
-			'rewrite'      => array( 'slug' => 'clip' ),
-			'has_archive'  => true,
-			'menu_icon'    => 'dashicons-video-alt3',
-		) );
 	}
 }
 
