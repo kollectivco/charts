@@ -353,14 +353,14 @@ $entity_type = $type;
 													<?php if ( $native_post_id ) : ?>
 														<a href="<?php echo esc_url( get_edit_post_link( $native_post_id ) ); ?>" class="charts-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration:none;" title="<?php esc_attr_e( 'Edit native WordPress profile', 'charts' ); ?>"><?php _e( 'Native ✎', 'charts' ); ?></a>
 													<?php else : ?>
-														<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php esc_js_e( 'Promote this entity to a native WordPress CPT?', 'charts' ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
+														<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php echo esc_js( __( 'Promote this entity to a native WordPress CPT?', 'charts' ) ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
 															<span class="dashicons dashicons-upload" style="font-size:14px; width:14px; height:14px; margin-top:-2px;"></span> <?php _e( 'Promote', 'charts' ); ?>
 														</button>
 													<?php endif; ?>
 												<?php endif; ?>
 
 												<?php if ( isset($item->id) ) : ?>
-													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
 														<?php _e( 'Delete', 'charts' ); ?>
 													</button>
 												<?php endif; ?>
@@ -369,7 +369,7 @@ $entity_type = $type;
 													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
 												<?php endif; ?>
 												<?php if ( isset($item->id) ) : ?>
-													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php esc_js_e( 'Really delete this entity?', 'charts' ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
 														<?php _e( 'Delete', 'charts' ); ?>
 													</button>
 												<?php endif; ?>
