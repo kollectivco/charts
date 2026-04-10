@@ -111,11 +111,6 @@ class YouTubeCsvImporter {
 					if ( ! empty( $row['api_meta']['api_title'] ) ) $title = $row['api_meta']['api_title'];
 				}
 
-				if ( empty( $title ) ) {
-					$missing_titles++;
-					$title = 'Unknown YouTube Item';
-				}
-
 				// Entity Type Resolution
 				$manual_item_type = $meta['item_type'] ?? 'unknown';
 				$manual_mode      = $chart_type; 
@@ -136,6 +131,16 @@ class YouTubeCsvImporter {
 				} else {
 					$item_type   = ( $detected_type !== 'unknown' ) ? $detected_type : 'track';
 					$final_logic = ( $detected_mode !== 'unknown' ) ? $detected_mode : $chart_type;
+				}
+
+				// Special Handling for Artist Charts: If title is empty or generic but we are in artist mode, use artist name
+				if ( ( $item_type === 'artist' || $final_logic === 'top-artists' ) && ( empty( $title ) || $title === 'Unknown YouTube Item' ) ) {
+					$title = $primary_name;
+				}
+
+				if ( empty( $title ) ) {
+					$missing_titles++;
+					$title = 'Unknown YouTube Item';
 				}
 
 				$item_id = null;

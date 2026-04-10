@@ -102,7 +102,9 @@ if ( $definition ) {
 								<?php endif; ?>
 							</div>
 							<h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($top->track_name); ?>"><?php echo esc_html($top->track_name); ?></h2>
-							<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top->artist_names); ?>"><?php echo esc_html($top->artist_names); ?></h3>
+							<?php if ( $top->item_type !== 'artist' && ! empty($top->artist_names) && strtolower($top->track_name) !== strtolower($top->artist_names) ) : ?>
+								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top->artist_names); ?>"><?php echo esc_html($top->artist_names); ?></h3>
+							<?php endif; ?>
 							
 							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
 								<span>Peak #<?php echo intval($top->peak_rank ?: 1); ?></span>
@@ -156,7 +158,9 @@ if ( $definition ) {
 										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($e->track_name); ?>"><?php echo esc_html($e->track_name); ?></span>
-											<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
+											<?php if ( $e->item_type !== 'artist' && ! empty($e->artist_names) && strtolower($e->track_name) !== strtolower($e->artist_names) ) : ?>
+												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
+											<?php endif; ?>
 										</div>
 									</div>
 								</td>

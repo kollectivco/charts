@@ -210,7 +210,9 @@ class YouTubeCsvParser {
 
 		// 2. YouTube Artist Chart
 		// Usually contains Artist Name (singular) and NO track/video specific titles
-		if ( (in_array('artist_name', $headers) || in_array('artist', $headers)) && empty($has_track_keys) ) {
+		// We use a stricter check here: if it has artist_name/performer but NO track_keys, it's an artist chart.
+		$has_artist_id_key = in_array('artist_name', $headers) || in_array('performer', $headers) || in_array('channel_name', $headers);
+		if ( $has_artist_id_key && empty($has_track_keys) && !$has_video_title ) {
 			return 'top-artists';
 		}
 
