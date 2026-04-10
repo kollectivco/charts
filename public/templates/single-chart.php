@@ -45,7 +45,7 @@ if ( $definition ) {
 				ORDER BY e.rank_position ASC
 			", ...$query_params ) );
 			
-			// Resolve images from custom tables
+			// Resolve images and slugs from custom tables
 			foreach($entries as &$e) {
 				if ( ! empty($e->cover_image) ) {
 					$e->resolved_image = $e->cover_image;
@@ -54,6 +54,12 @@ if ( $definition ) {
 					$col = ($e->item_type === 'artist') ? 'image' : (($e->item_type === 'video') ? 'thumbnail' : 'cover_image');
 					$e->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id));
 				}
+
+                // Healing: If slug is generic or missing, resolve from relational table
+                if ( empty($e->item_slug) || $e->item_slug === 'unknown-youtube-item' ) {
+                    $table = ($e->item_type === 'artist') ? 'artists' : (($e->item_type === 'video') ? 'videos' : 'tracks');
+                    $e->item_slug = $wpdb->get_var($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id));
+                }
 			}
 		} else {
 			$page_state = 'empty';
@@ -101,8 +107,12 @@ if ( $definition ) {
 									<span style="font-size: 14px; font-weight: 800; color: #2ecc71;">+<?php echo intval($top->movement_value); ?></span>
 								<?php endif; ?>
 							</div>
-							<h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($top->track_name); ?>"><?php echo esc_html($top->track_name); ?></h2>
-							<?php if ( $top->item_type !== 'artist' && ! empty($top->artist_names) && strtolower($top->track_name) !== strtolower($top->artist_names) ) : ?>
+							<?php 
+                                // Auto-healing for stale "Unknown" data
+                                $display_title = ( $top->track_name === 'Unknown YouTube Item' && ! empty($top->artist_names) ) ? $top->artist_names : $top->track_name;
+                            ?>
+                            <h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($display_title); ?>"><?php echo esc_html($display_title); ?></h2>
+							<?php if ( $top->item_type !== 'artist' && ! empty($top->artist_names) && strtolower($display_title) !== strtolower($top->artist_names) ) : ?>
 								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top->artist_names); ?>"><?php echo esc_html($top->artist_names); ?></h3>
 							<?php endif; ?>
 							
@@ -157,8 +167,12 @@ if ( $definition ) {
 										<div style="display: flex; align-items: center; gap: 16px;">
 										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
 										<div>
-											<span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($e->track_name); ?>"><?php echo esc_html($e->track_name); ?></span>
-											<?php if ( $e->item_type !== 'artist' && ! empty($e->artist_names) && strtolower($e->track_name) !== strtolower($e->artist_names) ) : ?>
+											<?php 
+                                                // Auto-healing for stale "Unknown" data
+                                                $row_title = ( $e->track_name === 'Unknown YouTube Item' && ! empty($e->artist_names) ) ? $e->artist_names : $e->track_name;
+                                            ?>
+                                            <span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($row_title); ?>"><?php echo esc_html($row_title); ?></span>
+											<?php if ( $e->item_type !== 'artist' && ! empty($e->artist_names) && strtolower($row_title) !== strtolower($e->artist_names) ) : ?>
 												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
 											<?php endif; ?>
 										</div>

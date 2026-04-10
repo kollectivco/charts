@@ -179,6 +179,11 @@ class ImportFlow {
 		$rank         = intval( $row['rank'] ?? $row['rank_position'] ?? 0 );
 		$track_name   = $this->normalize_title( $flat['track_name'] ?? $row['track_name'] ?? $row['item_title'] ?? $row['title'] ?? '' );
 		$artist_names = $this->normalize_title( $flat['artist_names'] ?? $row['artist_names_raw'] ?? $row['artist_names'] ?? ( isset( $row['artists'] ) ? ( is_array( $row['artists'] ) ? implode( ', ', $row['artists'] ) : $row['artists'] ) : '' ) );
+
+		// FORCE FIX: If this is an artist chart item, the track title MUST be the artist name if it's currently generic.
+		if ( $item_type === 'artist' && ( empty( $track_name ) || $track_name === 'Unknown YouTube Item' || $track_name === 'Unknown' ) ) {
+			$track_name = $artist_names;
+		}
 		$cover_image  = esc_url_raw( $flat['cover_image'] ?? $row['image'] ?? '' );
 		$spotify_id   = sanitize_text_field( $flat['spotify_id'] ?? $row['spotify_track_id'] ?? '' );
 		$youtube_id   = sanitize_text_field( $flat['youtube_id'] ?? $row['youtube_id'] ?? '' );

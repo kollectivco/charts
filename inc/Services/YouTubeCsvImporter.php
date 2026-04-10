@@ -104,6 +104,11 @@ class YouTubeCsvImporter {
 				$artist_arr  = $row['artist_arr'] ?? array();
 				$primary_name = ! empty( $artist_arr[0] ) ? $artist_arr[0] : ( $artist_str !== '' ? $artist_str : 'Unknown Artist' );
 
+				// FORCE PROMOTE: If title is generic/missing but we have an artist name, use it.
+				if ( ( empty( $title ) || $title === 'Unknown YouTube Item' ) && ! empty( $primary_name ) && $primary_name !== 'Unknown Artist' ) {
+					$title = $primary_name;
+				}
+
 				if ( ! empty( $row['thumbnail_generated'] ) ) $generated_thumbs++;
 				if ( empty( $row['raw_payload']['youtube_id'] ) && ! empty( $row['youtube_id'] ) ) $extracted_ids++;
 
@@ -133,7 +138,7 @@ class YouTubeCsvImporter {
 					$final_logic = ( $detected_mode !== 'unknown' ) ? $detected_mode : $chart_type;
 				}
 
-				// Special Handling for Artist Charts: If title is empty or generic but we are in artist mode, use artist name
+				// Final check — ensures Top Artists charts never show the generic fallback
 				if ( ( $item_type === 'artist' || $final_logic === 'top-artists' ) && ( empty( $title ) || $title === 'Unknown YouTube Item' ) ) {
 					$title = $primary_name;
 				}
