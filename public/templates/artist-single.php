@@ -317,7 +317,6 @@ foreach($chart_rankings as $cr) {
 			
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				<?php 
 				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
 				foreach ( $mdefs as $mdef ) : 
 					
