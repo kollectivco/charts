@@ -355,7 +355,7 @@ foreach($chart_rankings as $cr) {
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $mdef->accent_color ?: '#fe025b'; ?>;"></div>
 						<div class="kc-card-header">
-							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($mentries[0], $mentries[0]->item_type)); ?>">
+							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($mdef, $mentries)); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">Weekly Chart</span>
 							<h3 class="kc-card-title"><?php echo esc_html($mdef->title); ?></h3>

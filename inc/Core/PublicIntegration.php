@@ -191,4 +191,25 @@ class PublicIntegration {
 
 		return CHARTS_URL . 'public/assets/img/placeholder.png';
 	}
+
+	/**
+	 * Centralized resolver for chart card images.
+	 * Priorities: Chart-level cover > First item artwork > Placeholder
+	 */
+	public static function resolve_chart_image( $def, $entries = array() ) {
+		// 1. Chart-level explicit cover
+		if ( ! empty( $def->cover_image_url ) ) {
+			return $def->cover_image_url;
+		}
+
+		// 2. First preview entry's artwork
+		if ( ! empty( $entries ) ) {
+			$first = is_array( $entries ) ? $entries[0] : null;
+			if ( $first ) {
+				return self::resolve_artwork( $first, $first->item_type ?? 'track' );
+			}
+		}
+
+		return CHARTS_URL . 'public/assets/img/placeholder.png';
+	}
 }

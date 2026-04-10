@@ -247,7 +247,7 @@ foreach ( $more_items as $mi ) {
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $odef->accent_color ?: '#fe025b'; ?>;"></div>
 						<div class="kc-card-header">
-							<img src="<?php echo esc_url($oentries[0]->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
+							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($odef, $oentries)); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">Weekly Chart</span>
 							<h3 class="kc-card-title"><?php echo esc_html($odef->title); ?></h3>

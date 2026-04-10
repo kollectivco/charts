@@ -182,7 +182,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 							<article class="kc-chart-card">
 								<div class="kc-card-accent-dot" style="background: <?php echo $accent; ?>;"></div>
 								<div class="kc-card-header">
-									<img src="<?php echo esc_url(!empty($def->cover_image_url) ? $def->cover_image_url : (!empty($entries[0]->resolved_image) ? $entries[0]->resolved_image : CHARTS_URL . 'public/assets/img/placeholder.png')); ?>">
+									<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($def, $entries)); ?>">
 									<div class="kc-card-header-overlay" style="background: linear-gradient(to top, <?php echo $accent; ?>dd, transparent);"></div>
 									<span class="kc-card-label">Weekly Chart</span>
 									<h3 class="kc-card-title"><?php echo \Charts\Core\Typography::apply($def->title); ?></h3>
