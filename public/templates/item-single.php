@@ -110,7 +110,6 @@ foreach ( $more_items as $mi ) {
 						<?php if ( ! empty($item->release_date) ) : ?>
 							<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);"><?php echo esc_html($item->release_date); ?></span>
 						<?php endif; ?>
-					</div>
 				</div>
 			</div>
 		</section>
