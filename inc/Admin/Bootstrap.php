@@ -151,10 +151,16 @@ class Bootstrap {
 				$processed = true;
 				break;
 
-			case 'run_integrity_check':
 			case 'run_integrity_check_v2':
 				\Charts\Core\Integrity::recalculate_entity_links();
-				\Charts\Core\Notify::success( __( 'Data integrity check complete. Unmatched entities have been reconciled with canonical records.', 'charts' ), __( 'Integrity Restored', 'charts' ) );
+				$redundant = \Charts\Core\Integrity::detect_redundant_sources();
+				
+				$msg = __( 'Data integrity check complete. Unmatched entities have been reconciled.', 'charts' );
+				if ( ! empty( $redundant ) ) {
+					$msg .= ' ' . sprintf( __( 'WARNING: %d redundant active sources detected (IDs: %s). These may cause duplicate ranking rows on front-facing charts.', 'charts' ), count($redundant), implode(', ', array_column($redundant, 'source_ids')) );
+				}
+				
+				\Charts\Core\Notify::success( $msg, __( 'Integrity Restored', 'charts' ) );
 				$processed = true;
 				break;
 

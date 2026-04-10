@@ -19,7 +19,8 @@ $period     = null;
 if ( $definition ) {
 	$page_state = 'ready';
 	
-	$sources = $wpdb->get_results( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $definition->chart_type, $definition->country_code ) );
+	$platform_filter = (!empty($definition->platform) && $definition->platform !== 'all') ? $wpdb->prepare(" AND platform = %s", $definition->platform) : "";
+	$sources = $wpdb->get_results( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1 $platform_filter", $definition->chart_type, $definition->country_code ) );
 
 	if ( empty( $sources ) ) {
 		$page_state = 'disconnected';
@@ -41,7 +42,12 @@ if ( $definition ) {
 			$entries = $wpdb->get_results( $wpdb->prepare( "
 				SELECT e.* 
 				FROM {$wpdb->prefix}charts_entries e
-				WHERE e.source_id IN ($placeholders) AND e.period_id = %d
+				INNER JOIN (
+					SELECT MAX(id) as max_id, rank_position
+					FROM {$wpdb->prefix}charts_entries
+					WHERE source_id IN ($placeholders) AND period_id = %d
+					GROUP BY rank_position
+				) dedup ON dedup.max_id = e.id
 				ORDER BY e.rank_position ASC
 			", ...$query_params ) );
 			

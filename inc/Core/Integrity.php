@@ -138,4 +138,22 @@ class Integrity {
 			}
 		}
 	}
+
+	/**
+	 * Scans for multiple active sources targeting the same chart context.
+	 */
+	public static function detect_redundant_sources() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_sources';
+		
+		$results = $wpdb->get_results("
+			SELECT chart_type, country_code, platform, frequency, COUNT(*) as source_count, GROUP_CONCAT(id) as source_ids
+			FROM $table
+			WHERE is_active = 1
+			GROUP BY chart_type, country_code, platform, frequency
+			HAVING COUNT(*) > 1
+		");
+
+		return $results;
+	}
 }
