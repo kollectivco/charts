@@ -21,19 +21,11 @@ if ( $definition ) {
 	
 	$platform_filter = (!empty($definition->platform) && $definition->platform !== 'all') ? $wpdb->prepare(" AND platform = %s", $definition->platform) : "";
 	
-	// 1. Tiered Lookup: Favor Specific Binding (cid-ID) over generic Role Matching
+	// 1. Strict Lookup: Require Specific Binding (cid-ID)
 	$sources = $wpdb->get_results( $wpdb->prepare( "
 		SELECT id FROM {$wpdb->prefix}charts_sources 
 		WHERE chart_type = %s AND is_active = 1 $platform_filter
 	", "cid-{$definition->id}" ) );
-
-	if ( empty($sources) ) {
-		// Fallback to legacy generic matching
-		$sources = $wpdb->get_results( $wpdb->prepare( "
-			SELECT id FROM {$wpdb->prefix}charts_sources 
-			WHERE chart_type = %s AND country_code = %s AND is_active = 1 $platform_filter
-		", $definition->chart_type, $definition->country_code ) );
-	}
 
 	if ( empty( $sources ) ) {
 		$page_state = 'disconnected';

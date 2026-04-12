@@ -84,7 +84,7 @@ $menu_order      = $def ? (int)$def->menu_order : 0;
 					<span class="input-helper">Core data model (e.g. Song vs Artist).</span>
 				</div>
 				<div class="form-group">
-					<label for="chart_type">Ranking Logic <span class="required">*</span></label>
+					<label for="chart_type">Content Category <span class="required">*</span></label>
 					<select name="chart_type" id="chart_type" class="form-control">
 						<optgroup label="Audio Logics" data-entity="track">
 							<option value="top-songs" <?php selected($chart_type, 'top-songs'); ?>>Top Songs (Official)</option>
@@ -97,7 +97,7 @@ $menu_order      = $def ? (int)$def->menu_order : 0;
 							<option value="top-artists" <?php selected($chart_type, 'top-artists'); ?>>Top Artists</option>
 						</optgroup>
 					</select>
-					<span class="input-helper">The specific ranking channel to filter from sources.</span>
+					<span class="input-helper">Assigns the appropriate display template for this chart.</span>
 				</div>
 
 				<!-- Row 3: Meta Configuration -->

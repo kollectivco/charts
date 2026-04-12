@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           1.27.0
+ * Version:           1.28.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.27.0' );
+define( 'CHARTS_VERSION', '1.28.0' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -167,7 +167,24 @@ final class Charts {
 			update_option( 'kcharts_mock_cleaned', '1' );
 		}
 
-		// 4. Update the stored DB version
+		// 4. Reclaim legacy sources for all existing definitions (Structural Isolation migration)
+		if ( version_compare( $current_db_version, '1.28.0', '<' ) ) {
+			global $wpdb;
+			$defs = $wpdb->get_results( "SELECT id, chart_type, country_code FROM {$wpdb->prefix}charts_definitions" );
+			foreach ( $defs as $def ) {
+				$lookup_type = "cid-{$def->id}";
+				$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s", $lookup_type ) );
+				if ( ! $exists ) {
+					// Find first matching generic source and claim it
+					$legacy_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s LIMIT 1", $def->chart_type, $def->country_code ) );
+					if ( $legacy_id ) {
+						$wpdb->update( "{$wpdb->prefix}charts_sources", array( 'chart_type' => $lookup_type ), array( 'id' => $legacy_id ) );
+					}
+				}
+			}
+		}
+
+		// 5. Update the stored DB version
 		if ( version_compare( $current_db_version, CHARTS_VERSION, '<' ) ) {
 			update_option( 'kcharts_db_version', CHARTS_VERSION );
 		}

@@ -171,14 +171,9 @@ class Intelligence {
 		$charts = $wpdb->get_results("SELECT id, chart_type, country_code FROM $def_table");
 
 		foreach ($charts as $chart) {
-			// Tiered Source Selection: Favor Specific Binding (cid-ID)
+			// Strict Source Selection: Use ONLY specific binding (cid-ID)
 			$sources = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s", "cid-{$chart->id}"));
 			
-			if (empty($sources)) {
-				// Fallback to legacy generic matching
-				$sources = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s", $chart->chart_type, $chart->country_code));
-			}
-
 			if (empty($sources)) continue;
 
 			$source_ids = implode(',', array_map('intval', $sources));
