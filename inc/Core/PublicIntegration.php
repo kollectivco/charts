@@ -164,11 +164,14 @@ class PublicIntegration {
 			return false;
 		};
 
-		// 1. If we have a numeric ID, it's a SQL ID now. Detect type and fetch.
-		if ( is_numeric( $item ) ) {
-			$table = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'video' ) ? 'videos' : 'tracks' );
-			$col   = ( $type === 'artist' ) ? 'image' : ( ( $type === 'video' ) ? 'thumbnail' : 'cover_image' );
-			$img = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $item ) );
+		// 1. Relational Lookup (If numeric ID OR entry object with item_id)
+		$target_id   = is_numeric( $item ) ? $item : ( isset($item->item_id) ? $item->item_id : null );
+		$target_type = is_numeric( $item ) ? $type : ( isset($item->item_type) ? $item->item_type : $type );
+
+		if ( ! empty($target_id) ) {
+			$table = ( $target_type === 'artist' ) ? 'artists' : ( ( $target_type === 'video' ) ? 'videos' : 'tracks' );
+			$col   = ( $target_type === 'artist' ) ? 'image' : ( ( $target_type === 'video' ) ? 'thumbnail' : 'cover_image' );
+			$img = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $target_id ) );
 			if ( ! $is_placeholder($img) ) return $img;
 		}
 
