@@ -19,6 +19,10 @@ class ChartCarousel extends Widget_Base {
 		return [ 'kc-public' ];
 	}
 
+	public function get_style_depends() {
+		return [ 'kc-public-style' ];
+	}
+
 	protected function register_controls() {
 		// 1. Display Strategy
 		$this->start_controls_section( 'section_display', [ 'label' => __( 'Display Strategy', 'charts' ) ] );

@@ -232,20 +232,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const carousels = document.querySelectorAll('.kc-widget-carousel-wrap');
         
         carousels.forEach(wrap => {
-            if (wrap.dataset.initialized) return;
+            // Unbind existing to prevent duplication
+            if (wrap.dataset.initialized === "1") return;
             wrap.dataset.initialized = "1";
 
-            const container = wrap.querySelector('.swiper-container');
             const wrapper = wrap.querySelector('.swiper-wrapper');
             const slides = wrap.querySelectorAll('.swiper-slide');
             const nextBtn = wrap.querySelector('.kc-next');
             const prevBtn = wrap.querySelector('.kc-prev');
-            if (!slides.length) return;
+            if (!slides || !slides.length) return;
 
             const config = JSON.parse(wrap.getAttribute('data-carousel-config') || '{}');
             let currentIdx = 0;
             const total = slides.length;
-            let timer = null;
             
             const getSlidesPerView = () => {
                 const w = window.innerWidth;
@@ -271,37 +270,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 wrapper.style.transform = `translateX(-${offset}%)`;
             };
 
-            if (nextBtn) nextBtn.addEventListener('click', () => {
-                update(currentIdx + 1);
-                resetTimer();
-            });
-            if (prevBtn) prevBtn.addEventListener('click', () => {
-                update(currentIdx - 1);
-                resetTimer();
-            });
-
-            const startTimer = () => {
-                if (config.autoplay && !timer) {
-                    timer = setInterval(() => update(currentIdx + 1), 5000);
-                }
-            };
-            const stopTimer = () => {
-                if (timer) {
-                    clearInterval(timer);
-                    timer = null;
-                }
-            };
-            const resetTimer = () => {
-                stopTimer();
-                startTimer();
+            const startAutoplay = () => {
+                if (!config.autoplay) return;
+                stopAutoplay();
+                wrap._autoplayInterval = setInterval(() => {
+                    update(currentIdx + 1);
+                }, 5000);
             };
 
-            wrap.addEventListener('mouseenter', stopTimer);
-            wrap.addEventListener('mouseleave', startTimer);
+            const stopAutoplay = () => {
+                if (wrap._autoplayInterval) {
+                    clearInterval(wrap._autoplayInterval);
+                    delete wrap._autoplayInterval;
+                }
+            };
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    update(currentIdx + 1);
+                    stopAutoplay();
+                    startAutoplay();
+                });
+            }
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    update(currentIdx - 1);
+                    stopAutoplay();
+                    startAutoplay();
+                });
+            }
+
+            wrap.addEventListener('mouseenter', stopAutoplay);
+            wrap.addEventListener('mouseleave', startAutoplay);
 
             // Initial alignment
             update(0);
-            startTimer();
+            startAutoplay();
             
             window.addEventListener('resize', () => update(currentIdx));
         });

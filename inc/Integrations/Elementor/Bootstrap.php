@@ -16,8 +16,29 @@ class Bootstrap {
 			return;
 		}
 
+		add_action( 'elementor/frontend/after_register_scripts', array( self::class, 'register_frontend_assets' ) );
 		add_action( 'elementor/elements/categories_registered', array( self::class, 'register_category' ) );
 		add_action( 'elementor/widgets/register', array( self::class, 'register_widgets' ) );
+	}
+
+	/**
+	 * Register specialized frontend assets for Elementor.
+	 */
+	public static function register_frontend_assets() {
+		wp_register_script( 
+			'kc-public', 
+			CHARTS_URL . 'public/assets/js/public.js', 
+			array( 'jquery' ), 
+			CHARTS_VERSION, 
+			true 
+		);
+		
+		wp_register_style( 
+			'kc-public-style', 
+			CHARTS_URL . 'public/assets/css/public.css', 
+			array(), 
+			CHARTS_VERSION 
+		);
 	}
 
 	/**
@@ -43,6 +64,7 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/FeaturedChart.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartTable.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartLeader.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartList.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/PremiumHeroSlider.php';
 		
 		// Register widget instances
@@ -51,6 +73,7 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\FeaturedChart() );
 		$widgets_manager->register( new Widgets\ChartTable() );
 		$widgets_manager->register( new Widgets\ChartLeader() );
+		$widgets_manager->register( new Widgets\ChartList() );
 		$widgets_manager->register( new Widgets\PremiumHeroSlider() );
 	}
 }
