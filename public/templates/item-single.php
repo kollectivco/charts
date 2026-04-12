@@ -200,7 +200,7 @@ foreach ( $more_items as $mi ) {
 
 		<!-- MORE BY ARTIST -->
 		<?php if ( ! empty($more_items) ) : ?>
-		<section class="kc-section" style="padding: 100px 0 60px;">
+		<section class="kc-section" style="padding: 100px 0 80px;">
 			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">More by <?php echo esc_html($artist->display_name); ?></h3>
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php foreach ( $more_items as $mi ) : ?>
@@ -222,7 +222,7 @@ foreach ( $more_items as $mi ) {
 
 		<!-- ARTIST PROMO BAR -->
 		<?php if ( $artist ) : ?>
-			<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin-bottom: 80px; height: 120px;">
+			<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin-top: 60px; margin-bottom: 120px; height: 120px;">
 				<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1;">
 				<div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.95), transparent);"></div>
 				<div style="position: relative; z-index: 10; display: flex; align-items: center; height: 100%; padding: 0 40px; justify-content: space-between;">
