@@ -210,6 +210,8 @@ class SourceManager {
 			update_post_meta( $id, '_accent_color', $color );
 			
 			update_post_meta( $id, '_is_featured', isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0 );
+			update_post_meta( $id, '_ordering_mode', sanitize_text_field( $data['ordering_mode'] ?? 'import' ) );
+			update_post_meta( $id, '_max_rows', intval( $data['max_rows'] ?? 100 ) );
 			update_post_meta( $id, '_archive_enabled', isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1 );
 
 			// Sync to SQL
@@ -232,6 +234,8 @@ class SourceManager {
 				'accent_color'    => !empty($data['accent_color']) ? (strpos($data['accent_color'], '#') === 0 ? sanitize_text_field($data['accent_color']) : '#' . sanitize_text_field($data['accent_color'])) : '#6366f1',
 				'is_public'       => isset( $data['is_public'] ) && $data['is_public'] ? 1 : 0,
 				'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
+				'ordering_mode'   => sanitize_text_field( $data['ordering_mode'] ?? 'import' ),
+				'max_rows'        => intval( $data['max_rows'] ?? 100 ),
 				'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,
 				'menu_order'      => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
 				'updated_at'      => current_time( 'mysql' ),
@@ -269,6 +273,8 @@ class SourceManager {
 		$obj->accent_color    = get_post_meta( $post->ID, '_accent_color', true );
 		$obj->is_public       = $post->post_status === 'publish' ? 1 : 0;
 		$obj->is_featured     = (int) get_post_meta( $post->ID, '_is_featured', true );
+		$obj->ordering_mode   = get_post_meta( $post->ID, '_ordering_mode', true ) ?: 'import';
+		$obj->max_rows        = (int) get_post_meta( $post->ID, '_max_rows', true ) ?: 100;
 		$obj->archive_enabled = (int) get_post_meta( $post->ID, '_archive_enabled', true );
 		$obj->menu_order      = $post->menu_order;
 		$obj->created_at      = $post->post_date;
@@ -314,6 +320,8 @@ class SourceManager {
 			update_post_meta( $post_id, '_cover_image_url', $row->cover_image_url );
 			update_post_meta( $post_id, '_accent_color', $row->accent_color );
 			update_post_meta( $post_id, '_is_featured', $row->is_featured );
+			update_post_meta( $post_id, '_ordering_mode', $row->ordering_mode ?: 'import' );
+			update_post_meta( $post_id, '_max_rows', $row->max_rows ?: 100 );
 			update_post_meta( $post_id, '_archive_enabled', $row->archive_enabled );
 			
 			// Optional: Try to set featured image from URL if possible (AssetManager can do this later)
@@ -361,6 +369,8 @@ class SourceManager {
 			'platform'        => $def->platform,
 			'cover_image_url' => $def->cover_image_url,
 			'accent_color'    => $def->accent_color,
+			'ordering_mode'   => $def->ordering_mode,
+			'max_rows'        => $def->max_rows,
 			'is_public'       => $def->is_public,
 			'is_featured'     => $def->is_featured,
 			'archive_enabled' => $def->archive_enabled,
@@ -377,9 +387,100 @@ class SourceManager {
 		}
 	}
 	/**
-	 * Safely remove legacy seeded records that match known demo signatures.
-	 * This protects user-created charts while cleaning up the DP 'Egypt' presets.
+	 * Fetch manual entries assigned to this chart.
 	 */
+	public function get_manual_entries( $chart_id ) {
+		global $wpdb;
+		$definition = $this->get_definition( $chart_id );
+		if ( ! $definition ) return array();
+
+		// Use PublicIntegration to fetch current entries for this chart's cid- source
+		$entries = \Charts\Core\PublicIntegration::get_preview_entries( $definition, $definition->max_rows );
+		return $entries;
+	}
+
+	/**
+	 * Save manual entry list to a chart.
+	 * Replaces existing ranking data with the provided manual set.
+	 */
+	public function save_manual_entries( $chart_id, $entries_data ) {
+		global $wpdb;
+		$definition = $this->get_definition( $chart_id );
+		if ( ! $definition ) return false;
+
+		// 1. Ensure Source
+		$lookup_type = "cid-{$chart_id}";
+		$source_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s", $lookup_type ) );
+		
+		if ( ! $source_id ) {
+			$wpdb->insert( "{$wpdb->prefix}charts_sources", array(
+				'source_name'  => "Manual Curator → " . $definition->title,
+				'platform'     => 'all',
+				'source_type'  => 'manual_import',
+				'country_code' => $definition->country_code,
+				'chart_type'   => $lookup_type,
+				'frequency'    => $definition->frequency,
+				'source_url'   => 'manual',
+				'parser_key'   => 'manual',
+				'is_active'    => 1,
+				'created_at'   => current_time( 'mysql' )
+			) );
+			$source_id = $wpdb->insert_id;
+		}
+
+		// 2. Ensure "Master" Period for Manual Charts
+		// We use a fixed date far in the future or a specific key to represent "Current Manual"
+		$period_start = '2099-01-01'; 
+		$period_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_periods WHERE frequency = %s AND period_start = %s", $definition->frequency, $period_start ) );
+		
+		if ( ! $period_id ) {
+			$wpdb->insert( "{$wpdb->prefix}charts_periods", array(
+				'frequency'    => $definition->frequency,
+				'period_start' => $period_start,
+				'period_end'   => '2099-12-31',
+				'label'        => 'Manual Curation (Master)',
+				'created_at'   => current_time( 'mysql' )
+			) );
+			$period_id = $wpdb->insert_id;
+		}
+
+		// 3. Purge existing entries for THIS specific source/period
+		$wpdb->delete( "{$wpdb->prefix}charts_entries", array( 'source_id' => $source_id, 'period_id' => $period_id ) );
+
+		// 4. Batch Insert new entries
+		$saved = 0;
+		foreach ( $entries_data as $idx => $item ) {
+			$rank = $idx + 1;
+			$item_id = intval( $item['id'] );
+			$item_type = sanitize_text_field( $item['type'] ?? $definition->item_type );
+
+			// Fetch metadata for flat record
+			$table = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'video' ) ? 'videos' : 'tracks' );
+			$meta = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $item_id ) );
+			
+			if ( ! $meta ) continue;
+
+			$wpdb->insert( "{$wpdb->prefix}charts_entries", array(
+				'source_id'     => $source_id,
+				'period_id'     => $period_id,
+				'item_type'     => $item_type,
+				'item_id'       => $item_id,
+				'rank_position' => $rank,
+				'is_new_entry'  => 0,
+				'track_name'    => $meta->title ?? ( $meta->display_name ?? '' ),
+				'artist_names'  => $meta->display_name ?? '',
+				'item_slug'     => $meta->slug,
+				'cover_image'   => $meta->cover_image ?? ( $meta->thumbnail ?? ( $meta->image ?? '' ) ),
+				'created_at'    => current_time( 'mysql' )
+			) );
+			$saved++;
+		}
+
+		return $saved;
+	}
+
+	/**
+	 * Safely remove legacy seeded records...
 	public function cleanup_mock_data() {
 		global $wpdb;
 

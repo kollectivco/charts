@@ -44,6 +44,9 @@ if ( $definition ) {
 			$query_params = array_values( $source_ids );
 			$query_params[] = $period->id;
 			
+			$max_depth = !empty($definition->max_rows) ? intval($definition->max_rows) : 100;
+			$query_params[] = $max_depth;
+			
 			$entries = $wpdb->get_results( $wpdb->prepare( "
 				SELECT e.* 
 				FROM {$wpdb->prefix}charts_entries e
@@ -54,6 +57,7 @@ if ( $definition ) {
 					GROUP BY rank_position
 				) dedup ON dedup.max_id = e.id
 				ORDER BY e.rank_position ASC
+				LIMIT %d
 			", ...$query_params ) );
 			
 			// Resolve images and slugs from custom tables

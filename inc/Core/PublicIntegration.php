@@ -257,10 +257,14 @@ class PublicIntegration {
 
 		if ( ! $period_id ) return array();
 
+		// 2. Resolve Max Depth (Priority: Definition Max Rows > Limit)
+		$max_depth = !empty($definition->max_rows) ? intval($definition->max_rows) : 100;
+		$final_limit = min($limit, $max_depth);
+
 		// 2. Fetch deduped entries for this period
 		$query_params = array_values( $source_ids );
 		$query_params[] = $period_id;
-		$query_params[] = $limit;
+		$query_params[] = $final_limit;
 
 		$entries = $wpdb->get_results( $wpdb->prepare( "
 			SELECT e.* 

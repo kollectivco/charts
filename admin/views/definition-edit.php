@@ -23,6 +23,8 @@ $is_public       = $def ? (int)$def->is_public : 1;
 $is_featured     = $def ? (int)$def->is_featured : 0;
 $archive_enabled = $def ? (int)$def->archive_enabled : 1;
 $menu_order      = $def ? (int)$def->menu_order : 0;
+$ordering_mode   = $def ? $def->ordering_mode : 'import';
+$max_rows        = $def ? (int)$def->max_rows : 100;
 ?>
 
 <div class="charts-admin-wrap premium-light">
@@ -159,6 +161,45 @@ $menu_order      = $def ? (int)$def->menu_order : 0;
 						<span class="input-helper">Position in rankings and grids (lower = first).</span>
 					</div>
 				</div>
+
+				<!-- Row 6: Structural Sovereignty -->
+				<div class="form-group form-group-full" style="padding-top: 32px; border-top: 1px solid var(--charts-border);">
+					<label style="font-size: 14px; font-weight: 800; color: var(--charts-text-dim); margin-bottom: 24px; display: block;">Ranking Model & Independent Control</label>
+					
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+						<div class="form-group">
+							<label for="ordering_mode">Ordering Model <span class="required">*</span></label>
+							<select name="ordering_mode" id="ordering_mode" class="form-control">
+								<option value="import" <?php selected($ordering_mode, 'import'); ?>>Automatic (Import Center & API)</option>
+								<option value="manual" <?php selected($ordering_mode, 'manual'); ?>>Manual (Hand-picked & Custom Sort)</option>
+							</select>
+							<span class="input-helper">Determine if this chart is fed by automated systems or curated by hand.</span>
+						</div>
+						
+						<div class="form-group">
+							<label for="max_rows">Ranking Pipeline Depth</label>
+							<input type="number" id="max_rows" name="max_rows" value="<?php echo $max_rows; ?>" class="form-control" style="width: 140px;" min="1" max="500">
+							<span class="input-helper">The maximum number of items allowed in this ranking list.</span>
+						</div>
+					</div>
+				</div>
+
+				<?php if ( $def_id && $ordering_mode === 'manual' ) : ?>
+					<!-- Sub-section: Manual Entry Management (Placeholder logic for Phase 1.30) -->
+					<div class="form-group form-group-full" style="background: rgba(99, 102, 241, 0.03); padding: 32px; border-radius: 12px; border: 1px dashed var(--charts-accent);">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+							<h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--charts-text);">Independent Rows (Manual Control)</h3>
+							<button type="button" class="charts-btn-back" style="background: #fff;">+ Add Entity to Chart</button>
+						</div>
+						<p style="font-size: 13px; color: var(--charts-text-dim);">You are currently in <strong>Manual Mode</strong>. Use the "Add Entity" button above to populate this chart. You can then drag and drop items to define their exact ranking sovereignty.</p>
+						
+						<!-- Simplified placeholder list -->
+						<div style="margin-top:20px; border: 1px solid var(--charts-border); border-radius: 8px; background: #fff; text-align: center; padding: 40px;">
+							<span class="dashicons dashicons-list-view" style="font-size: 32px; width: 32px; height: 32px; color: var(--charts-accent); opacity: 0.5;"></span>
+							<p style="margin: 12px 0 0; font-size: 12px; font-weight: 700; color: var(--charts-text-dim);">No manual rows assigned yet.</p>
+						</div>
+					</div>
+				<?php endif; ?>
 
 				<!-- Row 5: Visibility Toggles -->
 				<div class="toggle-row">

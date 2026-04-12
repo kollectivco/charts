@@ -284,6 +284,8 @@ class Schema {
 				`platform` VARCHAR(50) DEFAULT 'all',
 				`cover_image_url` TEXT DEFAULT NULL,
 				`accent_color` VARCHAR(20) DEFAULT '#6366f1',
+				`ordering_mode` VARCHAR(20) NOT NULL DEFAULT 'import',
+				`max_rows` INT(11) DEFAULT 100,
 				`is_public` TINYINT(1) NOT NULL DEFAULT 1,
 				`is_featured` TINYINT(1) NOT NULL DEFAULT 0,
 				`archive_enabled` TINYINT(1) NOT NULL DEFAULT 1,
@@ -505,6 +507,8 @@ class Schema {
 			'title_ar'        => "VARCHAR(255) DEFAULT NULL",
 			'cover_image_url' => "TEXT DEFAULT NULL",
 			'accent_color'    => "VARCHAR(20) DEFAULT '#6366f1'",
+			'ordering_mode'   => "VARCHAR(20) NOT NULL DEFAULT 'import'",
+			'max_rows'        => "INT(11) DEFAULT 100",
 			'archive_enabled' => "TINYINT(1) NOT NULL DEFAULT 1",
 		);
 		foreach ( $def_needed as $col => $definition ) {
