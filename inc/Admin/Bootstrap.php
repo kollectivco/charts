@@ -25,6 +25,9 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
 		add_action( 'wp_ajax_charts_migration_step', array( self::class, 'handle_migration_step' ) );
+		
+		// Nav Menu Integration
+		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
 	}
 
 	/**
@@ -1176,5 +1179,53 @@ class Bootstrap {
 		}
 
 		wp_send_json_success( array( 'count' => $count ) );
+	}
+
+	/**
+	 * Register the custom Nav Menu metabox for active charts.
+	 */
+	public static function register_nav_menu_metabox() {
+		add_meta_box(
+			'charts-definitions-nav-box',
+			__( 'Active Charts', 'charts' ),
+			array( self::class, 'render_nav_menu_metabox' ),
+			'nav-menus',
+			'side',
+			'default'
+		);
+	}
+
+	/**
+	 * Render the custom Nav Menu metabox.
+	 */
+	public static function render_nav_menu_metabox() {
+		$definitions = \Charts\Core\PublicIntegration::get_eligible_definitions( 100 );
+		?>
+		<div id="charts-definitions-nav" class="posttypediv">
+			<div id="tabs-panel-charts-definitions-recent" class="tabs-panel tabs-panel-active">
+				<ul id="charts-definitions-checklist-recent" class="categorychecklist form-no-clear">
+					<?php foreach ( $definitions as $def ) : 
+						$url = home_url( '/charts/' . $def->slug . '/' );
+					?>
+						<li>
+							<label class="menu-item-title">
+								<input type="checkbox" class="menu-item-checkbox" name="menu-item[-1][menu-item-object-id]" value="<?php echo esc_attr( $def->id ); ?>"> <?php echo esc_html( $def->title ); ?>
+							</label>
+							<input type="hidden" class="menu-item-type" name="menu-item[-1][menu-item-type]" value="custom">
+							<input type="hidden" class="menu-item-title" name="menu-item[-1][menu-item-title]" value="<?php echo esc_attr( $def->title ); ?>">
+							<input type="hidden" class="menu-item-url" name="menu-item[-1][menu-item-url]" value="<?php echo esc_url( $url ); ?>">
+							<input type="hidden" class="menu-item-classes" name="menu-item[-1][menu-item-classes]" value="kc-nav-chart">
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+			<p class="button-controls">
+				<span class="add-to-menu">
+					<input type="submit" class="button-secondary submit-add-to-menu right" value="<?php esc_attr_e( 'Add to Menu' ); ?>" name="add-post-type-menu-item" id="submit-charts-definitions-nav">
+					<span class="spinner"></span>
+				</span>
+			</p>
+		</div>
+		<?php
 	}
 }

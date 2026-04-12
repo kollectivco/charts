@@ -35,6 +35,7 @@ class PostTypes {
 			'public'              => true,
 			'has_archive'         => true,
 			'show_in_menu'        => false, // Handled manually in Bootstrap to avoid duplication
+			'show_in_nav_menus'   => false, // Hide technical CPT from menu editor
 			'show_in_rest'        => true,  // Gutenberg & Elementor support
 			'supports'            => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
 			'hierarchical'        => false,
