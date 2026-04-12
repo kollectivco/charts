@@ -20,38 +20,89 @@ class ChartCarousel extends Widget_Base {
 	}
 
 	protected function register_controls() {
-		// 1. Query Config
-		\Charts\Integrations\Elementor\ControlHelper::add_query_controls( $this, false );
-
-		// 2. Carousel Layout Configuration
-		$this->start_controls_section(
-			'section_carousel_layout',
-			[ 'label' => __( 'Carousel Configuration', 'charts' ) ]
-		);
+		// 1. Display Strategy
+		$this->start_controls_section( 'section_display', [ 'label' => __( 'Display Strategy', 'charts' ) ] );
 
 		$this->add_control( 'style_variant', [
-			'label' => __( 'Card Style', 'charts' ),
+			'label' => __( 'Display Mode', 'charts' ),
 			'type' => Controls_Manager::SELECT,
 			'options' => [
-				'standard' => 'Standard Cards',
-				'overlay' => 'Premium Overlay',
-				'minimal' => 'Minimal / Compact',
-				'editorial' => 'Editorial Highlight'
+				'standard' => 'Cards Carousel (Data Rich)',
+				'overlay' => 'Overlay Carousel (Visual Bold)',
 			],
 			'default' => 'standard'
 		]);
 
+		$this->add_control( 'limit', [
+			'label' => __( 'Maximum Charts', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 6
+		] );
+
+		$this->add_control( 'chart_selection_mode', [
+			'label' => __( 'Selection Mode', 'charts' ),
+			'type' => Controls_Manager::SELECT,
+			'options' => [
+				'latest' => 'Automated: Latest Updated',
+				'manual' => 'Curated: Specific Selection',
+			],
+			'default' => 'latest'
+		]);
+
+		$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
+		$options = [];
+		foreach ( $definitions as $def ) { $options[$def->id] = $def->title; }
+
+		$this->add_control( 'selected_charts', [
+			'label' => __( 'Select Charts', 'charts' ),
+			'type' => Controls_Manager::SELECT2,
+			'multiple' => true,
+			'options' => $options,
+			'condition' => [ 'chart_selection_mode' => 'manual' ]
+		] );
+
+		$this->end_controls_section();
+
+		// 2. Content Controls
+		$this->start_controls_section( 'section_content', [ 'label' => __( 'Content Configuration', 'charts' ) ] );
+
+		$this->add_control( 'preview_rows', [
+			'label' => __( 'Preview Rows', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'min' => 0,
+			'max' => 4,
+			'default' => 3,
+			'condition' => [ 'style_variant' => 'standard' ]
+		]);
+
+		$this->add_control( 'show_label', [
+			'label' => __( 'Show Badge Label', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		]);
+
+		$this->add_control( 'show_cta', [
+			'label' => __( 'Show CTA Button', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		]);
+
+		$this->add_control( 'cta_text', [
+			'label' => __( 'CTA Text', 'charts' ),
+			'type' => Controls_Manager::TEXT,
+			'default' => 'EXPLORE CHART',
+			'condition' => [ 'show_cta' => 'yes' ]
+		]);
+
+		$this->end_controls_section();
+
+		// 3. Carousel Motion
+		$this->start_controls_section( 'section_carousel', [ 'label' => __( 'Carousel Motion', 'charts' ) ] );
+
 		$this->add_responsive_control( 'slides_to_show', [
 			'label' => __( 'Slides to Show', 'charts' ),
 			'type' => Controls_Manager::SELECT,
-			'options' => [
-				'1' => '1',
-				'2' => '2',
-				'3' => '3',
-				'4' => '4',
-				'5' => '5',
-			],
-			'devices' => [ 'desktop', 'tablet', 'mobile' ],
+			'options' => [ '1' => '1', '2' => '2', '3' => '3', '4' => '4', '5' => '5' ],
 			'desktop_default' => '3',
 			'tablet_default' => '2',
 			'mobile_default' => '1',
@@ -66,7 +117,7 @@ class ChartCarousel extends Widget_Base {
 		$this->add_control( 'autoplay', [
 			'label' => __( 'Autoplay', 'charts' ),
 			'type' => Controls_Manager::SWITCHER,
-			'default' => 'yes',
+			'default' => 'no',
 		]);
 
 		$this->add_control( 'loop', [
@@ -76,51 +127,79 @@ class ChartCarousel extends Widget_Base {
 		]);
 
 		$this->add_control( 'arrows', [
-			'label' => __( 'Show Navigation Arrows', 'charts' ),
+			'label' => __( 'Navigation Arrows', 'charts' ),
 			'type' => Controls_Manager::SWITCHER,
 			'default' => 'yes',
 		]);
 
 		$this->add_control( 'dots', [
-			'label' => __( 'Show Pagination Dots', 'charts' ),
+			'label' => __( 'Pagination Dots', 'charts' ),
 			'type' => Controls_Manager::SWITCHER,
 			'default' => 'yes',
 		]);
 
 		$this->end_controls_section();
 
-		// 3. Visibility Toggles
-		\Charts\Integrations\Elementor\ControlHelper::add_visibility_controls( $this );
+		// 4. Style Nexus
+		$this->start_controls_section( 'section_style', [ 'label' => __( 'Style Nexus', 'charts' ) ] );
 
-		// 4. Styling options
-		\Charts\Integrations\Elementor\ControlHelper::add_style_controls( $this );
+		$this->add_control( 'card_radius', [
+			'label' => __( 'Border Radius (px)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 24,
+		]);
+
+		$this->add_control( 'card_shadow', [
+			'label' => __( 'Shadow Depth', 'charts' ),
+			'type' => Controls_Manager::SELECT,
+			'options' => [
+				'none' => 'Flat',
+				'sm' => 'Subtle',
+				'md' => 'Medium Focus',
+				'lg' => 'Deep Editorial'
+			],
+			'default' => 'sm'
+		]);
+
+		$this->add_control( 'overlay_gradient', [
+			'label' => __( 'Overlay Strength (%)', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'size_units' => [ '%' ],
+			'range' => [ '%' => [ 'min' => 0, 'max' => 100 ] ],
+			'default' => [ 'unit' => '%', 'size' => 80 ],
+			'condition' => [ 'style_variant' => 'overlay' ]
+		]);
+
+		$this->add_control( 'accent_color', [
+			'label' => __( 'Override Accent Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+		]);
+
+		$this->end_controls_section();
 	}
 
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 		$manager = new \Charts\Admin\SourceManager();
-		$definitions = $manager->get_definitions( true );
-
-		// Apply Filters from Query Controls
-		if ( $settings['chart_type'] !== 'all' ) {
-			$definitions = array_filter( $definitions, function($d) use ($settings) {
-				return $d->chart_type === $settings['chart_type'];
-			});
+		
+		// Determine Definitions
+		if ( $settings['chart_selection_mode'] === 'manual' && !empty($settings['selected_charts']) ) {
+			$definitions = array();
+			foreach($settings['selected_charts'] as $cid) {
+				$def = $manager->get_definition($cid);
+				if($def) $definitions[] = $def;
+			}
+		} else {
+			$limit = !empty($settings['limit']) ? intval($settings['limit']) : 6;
+			$definitions = \Charts\Core\PublicIntegration::get_eligible_definitions($limit);
 		}
-		if ( !empty($settings['market_filter']) && $settings['market_filter'] !== 'all' ) {
-			$definitions = array_filter( $definitions, function($d) use ($settings) {
-				return $d->country_code === $settings['market_filter'];
-			});
-		}
-
-		$definitions = array_slice( $definitions, 0, $settings['limit'] );
 
 		if ( empty( $definitions ) ) {
-			echo '<div class="kc-empty">No charts found matching criteria.</div>';
+			echo '<div class="kc-empty">No active intelligence charts found.</div>';
 			return;
 		}
 
-		// Swiper (Carousel) Configuration Object
+		$instance_id = 'kc-carousel-' . $this->get_id();
 		$carousel_config = [
 			'slidesPerView' => [
 				'desktop' => intval($settings['slides_to_show'] ?: 3),
@@ -135,25 +214,28 @@ class ChartCarousel extends Widget_Base {
 		];
 
 		$style_variant = $settings['style_variant'] ?? 'standard';
+		$shadow_class = "kc-shadow-" . ($settings['card_shadow'] ?? 'sm');
 ?>
-		<div class="kc-root">
+		<div class="kc-root <?php echo esc_attr($instance_id); ?>">
 			<div class="kc-widget-carousel-wrap" data-carousel-config='<?php echo esc_attr(json_encode($carousel_config)); ?>'>
-				<div class="kc-widget-carousel swiper-container">
-					<div class="swiper-wrapper" style="display: flex; gap: <?php echo intval($settings['slides_spacing']); ?>px; overflow: hidden;">
+				<div class="kc-widget-carousel swiper-container" style="overflow: visible; position: relative;">
+					<div class="swiper-wrapper" style="display: flex; gap: <?php echo intval($settings['slides_spacing']); ?>px; transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);">
 						<?php foreach ( $definitions as $def ) : ?>
-							<div class="swiper-slide" style="flex-shrink: 0; width: calc( (100% / <?php echo $carousel_config['slidesPerView']['desktop']; ?>) - <?php echo $carousel_config['spaceBetween']; ?>px );">
-								<?php $this->render_card( $def, $settings ); ?>
+							<div class="swiper-slide" style="flex-shrink: 0; width: calc( (100% / <?php echo $carousel_config['slidesPerView']['desktop']; ?>) - <?php echo $carousel_config['spaceBetween'] * ($carousel_config['slidesPerView']['desktop'] - 1) / $carousel_config['slidesPerView']['desktop']; ?>px );">
+								<?php 
+									if ( $style_variant === 'overlay' ) {
+										$this->render_overlay_card( $def, $settings, $shadow_class );
+									} else {
+										$this->render_standard_card( $def, $settings, $shadow_class );
+									}
+								?>
 							</div>
 						<?php endforeach; ?>
 					</div>
 					
 					<?php if ( $settings['arrows'] === 'yes' ) : ?>
-						<div class="kc-carousel-nav kc-prev" style="position: absolute; top: 50%; left: -20px; z-index: 10; transform: translateY(-50%); cursor: pointer; background: var(--k-surface); border: 1px solid var(--k-border); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--k-shadow-md);">&larr;</div>
-						<div class="kc-carousel-nav kc-next" style="position: absolute; top: 50%; right: -20px; z-index: 10; transform: translateY(-50%); cursor: pointer; background: var(--k-surface); border: 1px solid var(--k-border); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--k-shadow-md);">&rarr;</div>
-					<?php endif; ?>
-
-					<?php if ( $settings['dots'] === 'yes' ) : ?>
-						<div class="kc-carousel-dots" style="display: flex; justify-content: center; gap: 8px; margin-top: 24px;"></div>
+						<button class="kc-carousel-nav kc-prev" style="position: absolute; top: 50%; left: -24px; z-index: 10; transform: translateY(-50%); border: none; background: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+						<button class="kc-carousel-nav kc-next" style="position: absolute; top: 50%; right: -24px; z-index: 10; transform: translateY(-50%); border: none; background: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -161,77 +243,77 @@ class ChartCarousel extends Widget_Base {
 <?php
 	}
 
-	private function render_card( $def, $settings ) {
-		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
-		", $def->chart_type, $def->country_code ) );
-
-		$style       = $settings['style_variant'];
-		$show_cover  = $settings['show_cover'] === 'yes';
-		$show_meta   = $settings['show_meta'] === 'yes';
-		$show_artist = $settings['show_artist'] === 'yes';
-		$show_cta    = $settings['show_cta'] === 'yes';
-		$accent      = !empty($def->accent_color) ? $def->accent_color : 'var(--k-accent)';
+	private function render_standard_card( $def, $settings, $shadow_class ) {
+		$rows_limit = !empty($settings['preview_rows']) ? intval($settings['preview_rows']) : 3;
+		$rows = \Charts\Core\PublicIntegration::get_preview_entries( $def, $rows_limit );
+		$accent = !empty($settings['accent_color']) ? $settings['accent_color'] : (!empty($def->accent_color) ? $def->accent_color : 'var(--k-accent)');
+		$radius = intval($settings['card_radius'] ?? 24);
 ?>
-		<article class="kc-chart-card kc-widget-card style-<?php echo esc_attr($style); ?>" style="display:flex; flex-direction:column; background:var(--k-surface); border:1px solid var(--k-border); border-radius:var(--k-radius-lg); overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; height: 100%;">
-			
-			<?php if ( $style === 'overlay' ) : ?>
-				<div class="kc-card-header" style="height:220px; background:var(--k-chart-bg); position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding: 24px;">
-					<img src="<?php echo esc_url($def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
-					<div class="kc-card-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);"></div>
-					<div style="position: relative; z-index: 2; color: #fff;">
-						<div class="kc-card-label kc-meta" style="font-size:8px; font-weight:850; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.7); margin-bottom:4px;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></div>
-						<div class="kc-card-title kc-title" style="font-size:18px; font-weight:900; letter-spacing:-0.01em; margin:0;"><?php echo esc_html($def->title); ?></div>
-					</div>
-				</div>
-			<?php else : ?>
-				<?php if ( $show_cover ) : ?>
-				<div class="kc-card-header" style="height:120px; background:<?php echo $accent; ?>; padding:24px; position: relative;">
-					<?php if ( !empty($def->cover_image_url) ) : ?>
-						<img src="<?php echo esc_url($def->cover_image_url); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.3;">
+		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="background: #fff; border: 1px solid var(--k-border); border-radius: <?php echo $radius; ?>px; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
+			<div class="kc-card-hero" style="position: relative; height: 180px; overflow: hidden; background: <?php echo $accent; ?>; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px;">
+				<img src="<?php echo esc_url($def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+				<div class="kc-hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%);"></div>
+				
+				<div style="position: relative; z-index: 2;">
+					<?php if ( $settings['show_label'] === 'yes' ) : ?>
+						<span style="display: block; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #fff; letter-spacing: 0.1em; opacity: 0.8; margin-bottom: 4px;">Weekly Intelligence</span>
 					<?php endif; ?>
-					<div class="kc-card-title kc-title" style="font-size:18px; font-weight:900; letter-spacing:-0.02em; margin:0; position:relative; z-index:2; color:#fff;"><?php echo esc_html($def->title); ?></div>
-					<?php if ( $show_meta ) : ?>
-						<div class="kc-card-label kc-meta" style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.8); margin-bottom:4px; position:relative; z-index:2;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></div>
-					<?php endif; ?>
+					<h3 style="margin: 0; font-size: 24px; font-weight: 950; color: #fff; letter-spacing: -0.02em; line-height: 1.1;"><?php echo esc_html($def->title); ?></h3>
 				</div>
-				<?php else : ?>
-				<div style="padding:24px 24px 0;">
-					<?php if ( $show_meta ) : ?>
-						<div class="kc-card-label kc-meta" style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--k-text-muted); margin-bottom:4px;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></div>
-					<?php endif; ?>
-					<div class="kc-card-title kc-title" style="font-size:18px; font-weight:900; letter-spacing:-0.02em; margin:0; color:var(--k-text);"><?php echo esc_html($def->title); ?></div>
-				</div>
-				<?php endif; ?>
-			<?php endif; ?>
+			</div>
 
-			<div class="kc-card-list" style="padding:12px 0; flex-grow:1;">
-				<?php if ( $style !== 'minimal' ) : ?>
+			<div class="kc-card-rows" style="padding: 12px 0; flex-grow: 1;">
 				<?php foreach ( $rows as $row ) : ?>
-					<div class="kc-card-entry" style="display:flex; align-items:center; gap:10px; padding:8px 20px; border-bottom:1px solid var(--k-divider);">
-						<div class="kc-entry-rank" style="font-size:11px; font-weight:900; width:12px; color: <?php echo $accent; ?>;"><?php echo $row->rank_position; ?></div>
-						<div class="kc-entry-info" style="min-width:0; flex-grow:1;">
-							<div class="kc-entry-name" style="font-size:12px; font-weight:750; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($row->track_name); ?></div>
-							<?php if ( $show_artist ) : ?>
-								<div class="kc-entry-artist" style="font-size:10px; font-weight:500; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($row->artist_names); ?></div>
-							<?php endif; ?>
+					<div class="kc-preview-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--k-divider);">
+						<span style="font-size: 12px; font-weight: 900; color: <?php echo $accent; ?>; width: 16px;"><?php echo $row->rank_position; ?></span>
+						<img src="<?php echo esc_url($row->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;">
+						<div style="overflow: hidden;">
+							<span style="display: block; font-size: 13px; font-weight: 800; color: var(--k-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($row->track_name); ?></span>
+							<span style="display: block; font-size: 10px; font-weight: 600; color: var(--k-text-muted);"><?php echo esc_html($row->artist_names); ?></span>
 						</div>
 					</div>
 				<?php endforeach; ?>
-				<?php endif; ?>
 			</div>
 
-			<?php if ( $show_cta ) : ?>
-			<div class="kc-card-footer" style="padding:16px 20px; border-top:1px solid var(--k-divider); display:flex; justify-content:center; align-items:center; margin-top:auto;">
-				<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-card-cta" style="font-size:10px; font-weight:900; color:var(--k-accent-purple); text-decoration:none; display:flex; align-items:center; gap:4px; letter-spacing: 0.05em;">
-					<?php echo strtoupper(esc_html($settings['card_cta_text'] ?? 'EXPLORE CHART')); ?> &rarr;
-				</a>
-			</div>
+			<?php if ( $settings['show_cta'] === 'yes' ) : ?>
+				<div style="padding: 20px 24px; border-top: 1px solid var(--k-divider); text-align: center;">
+					<a href="<?php echo home_url('/charts/' . $def->slug); ?>" style="font-size: 11px; font-weight: 900; color: <?php echo $accent; ?>; text-decoration: none; letter-spacing: 0.05em;"><?php echo strtoupper(esc_html($settings['cta_text'])); ?> &rarr;</a>
+				</div>
 			<?php endif; ?>
+		</article>
+<?php
+	}
+
+	private function render_overlay_card( $def, $settings, $shadow_class ) {
+		$top_rows = \Charts\Core\PublicIntegration::get_preview_entries( $def, 1 );
+		$top = !empty($top_rows) ? $top_rows[0] : null;
+		$accent = !empty($settings['accent_color']) ? $settings['accent_color'] : (!empty($def->accent_color) ? $def->accent_color : 'var(--k-accent)');
+		$radius = intval($settings['card_radius'] ?? 24);
+		$opacity = intval($settings['overlay_gradient']['size'] ?? 80) / 100;
+?>
+		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="position: relative; height: 420px; border-radius: <?php echo $radius; ?>px; overflow: hidden; background: #000; group;">
+			<img src="<?php echo esc_url($def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: transform 0.4s ease;">
+			<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,<?php echo $opacity; ?>) 0%, transparent 100%);"></div>
+
+			<div style="position: absolute; inset: 0; padding: 32px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 2;">
+				<?php if ( $settings['show_label'] === 'yes' ) : ?>
+					<span style="display: inline-block; padding: 4px 10px; background: <?php echo $accent; ?>; color: #fff; font-size: 8px; font-weight: 900; border-radius: 4px; text-transform: uppercase; margin-bottom: 12px; width: fit-content;"><?php echo strtoupper($def->chart_type); ?></span>
+				<?php endif; ?>
+				
+				<h3 style="margin: 0; color: #fff; font-size: 28px; font-weight: 950; letter-spacing: -0.04em; line-height: 1;"><?php echo esc_html($def->title); ?></h3>
+				
+				<?php if ( $top ) : ?>
+					<div style="margin-top: 16px; display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+						<span style="font-size: 16px; font-weight: 950; color: #fff; opacity: 0.6;">#1</span>
+						<div style="min-width: 0;">
+							<span style="display: block; font-size: 14px; font-weight: 850; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($top->track_name); ?></span>
+							<span style="display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.6);"><?php echo esc_html($top->artist_names); ?></span>
+						</div>
+					</div>
+				<?php endif; ?>
+
+				<a href="<?php echo home_url('/charts/' . $def->slug); ?>" style="margin-top: 24px; display: flex; align-items: center; gap: 8px; color: #fff; font-size: 11px; font-weight: 900; text-decoration: none; opacity: 0.8;"><?php echo strtoupper(esc_html($settings['cta_text'])); ?> &rarr;</a>
+			</div>
 		</article>
 <?php
 	}

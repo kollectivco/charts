@@ -232,6 +232,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const carousels = document.querySelectorAll('.kc-widget-carousel-wrap');
         
         carousels.forEach(wrap => {
+            if (wrap.dataset.initialized) return;
+            wrap.dataset.initialized = "1";
+
             const container = wrap.querySelector('.swiper-container');
             const wrapper = wrap.querySelector('.swiper-wrapper');
             const slides = wrap.querySelectorAll('.swiper-slide');
@@ -242,8 +245,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const config = JSON.parse(wrap.getAttribute('data-carousel-config') || '{}');
             let currentIdx = 0;
             const total = slides.length;
+            let timer = null;
             
-            // Basic responsive slides per view logic
             const getSlidesPerView = () => {
                 const w = window.innerWidth;
                 if (w < 768) return config.slidesPerView?.mobile || 1;
@@ -253,28 +256,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const update = (idx) => {
                 const spv = getSlidesPerView();
-                const maxIdx = Math.max(0, total - spv);
+                const maxIdx = config.loop ? total - 1 : Math.max(0, total - spv);
                 
-                if (config.loop) {
-                    if (idx < 0) idx = maxIdx;
-                    if (idx > maxIdx) idx = 0;
-                } else {
-                    idx = Math.max(0, Math.min(idx, maxIdx));
+                if (idx < 0) {
+                    idx = config.loop ? maxIdx : 0;
+                } else if (idx > maxIdx) {
+                    idx = config.loop ? 0 : maxIdx;
                 }
                 
                 currentIdx = idx;
-                const spacing = config.spaceBetween || 30;
-                const offset = currentIdx * (100 / spv);
+                const offset = (currentIdx * (100 / spv));
                 
-                wrapper.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+                wrapper.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
                 wrapper.style.transform = `translateX(-${offset}%)`;
             };
 
-            if (nextBtn) nextBtn.addEventListener('click', () => update(currentIdx + 1));
-            if (prevBtn) prevBtn.addEventListener('click', () => update(currentIdx - 1));
+            if (nextBtn) nextBtn.addEventListener('click', () => {
+                update(currentIdx + 1);
+                resetTimer();
+            });
+            if (prevBtn) prevBtn.addEventListener('click', () => {
+                update(currentIdx - 1);
+                resetTimer();
+            });
+
+            const startTimer = () => {
+                if (config.autoplay && !timer) {
+                    timer = setInterval(() => update(currentIdx + 1), 5000);
+                }
+            };
+            const stopTimer = () => {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            };
+            const resetTimer = () => {
+                stopTimer();
+                startTimer();
+            };
+
+            wrap.addEventListener('mouseenter', stopTimer);
+            wrap.addEventListener('mouseleave', startTimer);
 
             // Initial alignment
             update(0);
+            startTimer();
             
             window.addEventListener('resize', () => update(currentIdx));
         });
