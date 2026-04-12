@@ -60,12 +60,7 @@ class ChartTable extends Widget_Base {
 		global $wpdb;
 		$limit = !empty($settings['limit']) ? intval($settings['limit']) : 20;
 
-		$rows = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT %d
-		", $def->chart_type, $def->country_code, $limit ) );
+		$rows = \Charts\Core\PublicIntegration::get_preview_entries( $def, $limit );
 		
 		if ( empty($rows) ) return;
 

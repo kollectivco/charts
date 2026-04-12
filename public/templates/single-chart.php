@@ -75,6 +75,24 @@ if ( $definition ) {
 		} else {
 			$page_state = 'empty';
 		}
+
+		// 5. Ranking Integrity Guard
+		if ( ! empty($entries) ) {
+			$found_ranks = array_column( $entries, 'rank_position' );
+			$duplicates  = array_unique( array_diff_assoc( $found_ranks, array_unique( $found_ranks ) ) );
+			$expected    = range( 1, count( $entries ) );
+			$missing     = array_diff( $expected, $found_ranks );
+
+			if ( ! empty( $duplicates ) || ! empty( $missing ) ) {
+				error_log( sprintf( 
+					"Chart Integrity Alert [%s]: Found %d rows. Duplicates: %s | Missing: %s", 
+					$definition->slug, 
+					count( $entries ),
+					!empty($duplicates) ? implode(',', $duplicates) : 'None',
+					!empty($missing) ? implode(',', $missing) : 'None'
+				) );
+			}
+		}
 	}
 }
 

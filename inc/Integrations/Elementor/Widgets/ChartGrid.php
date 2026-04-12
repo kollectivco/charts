@@ -85,12 +85,7 @@ class ChartGrid extends Widget_Base {
 	private function render_card( $def, $settings ) {
 		global $wpdb;
 		// Fetch preview rows (top 3)
-		$rows = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 3
-		", $def->chart_type, $def->country_code ) );
+		$rows = \Charts\Core\PublicIntegration::get_preview_entries( $def, 3 );
 
 		$style = $settings['style_variant'];
 		$show_cover = $settings['show_cover'] === 'yes';
