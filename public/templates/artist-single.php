@@ -352,18 +352,7 @@ foreach($chart_rankings as $cr) {
 				<?php 
 				$mdefs = \Charts\Core\PublicIntegration::get_eligible_definitions( 4 );
 				foreach ( $mdefs as $mdef ) : 
-					$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($mdef);
-					$mentries = array();
-					if ( ! empty($sources) ) {
-						$s_ids = array_column($sources, 'id');
-						$phs = implode(',', array_fill(0, count($s_ids), '%d'));
-						$mentries = $wpdb->get_results($wpdb->prepare("
-							SELECT e.* 
-							FROM {$wpdb->prefix}charts_entries e 
-							WHERE e.source_id IN ($phs)
-							ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
-						, ...$s_ids));
-					}
+					$mentries = \Charts\Core\PublicIntegration::get_preview_entries( $mdef, 4 );
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $mdef->accent_color ?: '#fe025b'; ?>;"></div>

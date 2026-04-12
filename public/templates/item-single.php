@@ -248,21 +248,7 @@ foreach ( $more_items as $mi ) {
 				<?php 
 				$other_defs = \Charts\Core\PublicIntegration::get_eligible_definitions( 4 );
 				foreach ( $other_defs as $odef ) : 
-					$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($odef);
-					$oentries = array();
-					if ( ! empty($sources) ) {
-						$s_ids = array_column($sources, 'id');
-						$phs = implode(',', array_fill(0, count($s_ids), '%d'));
-						$oentries = $wpdb->get_results( $wpdb->prepare( "
-							SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
-							FROM {$wpdb->prefix}charts_entries e 
-							LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-							LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-							LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-							WHERE e.source_id IN ($phs)
-							ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
-						, ...$s_ids ) );
-					}
+					$oentries = \Charts\Core\PublicIntegration::get_preview_entries( $odef, 4 );
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $odef->accent_color ?: '#fe025b'; ?>;"></div>

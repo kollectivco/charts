@@ -231,6 +231,61 @@ class PublicIntegration {
 	}
 
 	/**
+	 * Fetch the latest N preview entries for a chart.
+	 * Matches the logic in single-chart.php to ensure consistency.
+	 */
+	public static function get_preview_entries( $definition, $limit = 4 ) {
+		global $wpdb;
+		if ( empty($definition) ) return array();
+
+		$sources = self::get_sources_for_chart( $definition );
+		if ( empty($sources) ) return array();
+
+		$source_ids = array_column( $sources, 'id' );
+		$placeholders = implode( ',', array_fill( 0, count( $source_ids ), '%d' ) );
+
+		// 1. Identify the LATEST period for these sources
+		$period_id = $wpdb->get_var( $wpdb->prepare( "
+			SELECT p.id FROM {$wpdb->prefix}charts_periods p
+			JOIN {$wpdb->prefix}charts_entries e ON e.period_id = p.id
+			WHERE e.source_id IN ($placeholders)
+			ORDER BY p.period_start DESC LIMIT 1
+		", ...$source_ids ) );
+
+		if ( ! $period_id ) return array();
+
+		// 2. Fetch deduped entries for this period
+		$query_params = array_values( $source_ids );
+		$query_params[] = $period_id;
+		$query_params[] = $limit;
+
+		$entries = $wpdb->get_results( $wpdb->prepare( "
+			SELECT e.* 
+			FROM {$wpdb->prefix}charts_entries e
+			INNER JOIN (
+				SELECT MAX(id) as max_id, rank_position
+				FROM {$wpdb->prefix}charts_entries
+				WHERE source_id IN ($placeholders) AND period_id = %d
+				GROUP BY rank_position
+			) dedup ON dedup.max_id = e.id
+			ORDER BY e.rank_position ASC LIMIT %d
+		", ...$query_params ) );
+
+		// 3. Resolve images and typography flags
+		foreach ( $entries as &$e ) {
+			$e->resolved_image = self::resolve_artwork( $e, $e->item_type );
+			
+			// Healing: Resolve missing slugs or titles
+			if ( empty($e->item_slug) || $e->item_slug === 'unknown-youtube-item' ) {
+				$table = ( $e->item_type === 'artist' ) ? 'artists' : ( ( $e->item_type === 'video' ) ? 'videos' : 'tracks' );
+				$e->item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id ) );
+			}
+		}
+
+		return $entries;
+	}
+
+	/**
 	 * Fetch ONLY definitions that are public AND have real entry data.
 	 * Excludes uninitialized or empty charts.
 	 */

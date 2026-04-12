@@ -10,42 +10,6 @@ global $wpdb;
 $manager     = new \Charts\Admin\SourceManager();
 $definitions = \Charts\Core\PublicIntegration::get_eligible_definitions( 12 ); 
 
-// Helper to fetch top 3 preview for a definition from the most recent period
-function kc_get_preview_entries($def) {
-	global $wpdb;
-	$cache_key = 'kc_preview_' . $def->id;
-	$entries = get_transient( $cache_key );
-	
-	if ( false === $entries ) {
-		$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($def);
-		if ( empty($sources) ) return array();
-
-		$source_ids = array_column($sources, 'id');
-		$placeholders = implode(',', array_fill(0, count($source_ids), '%d'));
-
-		$entries = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_periods p ON p.id = e.period_id
-			WHERE e.source_id IN ($placeholders)
-			ORDER BY p.period_start DESC, e.rank_position ASC LIMIT 4
-		", ...$source_ids ), ARRAY_A );
-
-		// Resolve images from custom tables
-		foreach($entries as &$e) {
-			if ( ! empty($e['cover_image']) ) {
-				$e['resolved_image'] = $e['cover_image'];
-			} else {
-				$table = ( $e['item_type'] === 'artist' ) ? 'artists' : ( ( $e['item_type'] === 'video' ) ? 'videos' : 'tracks' );
-				$col   = ( $e['item_type'] === 'artist' ) ? 'image' : ( ( $e['item_type'] === 'video' ) ? 'thumbnail' : 'cover_image' );
-				$e['resolved_image'] = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e['item_id'] ) );
-			}
-		}
-		
-		set_transient( $cache_key, $entries, HOUR_IN_SECONDS );
-	}
-	
-	return array_map(function($e){ return (object)$e; }, (array)$entries);
-}
 
 // Helper to check if a chart is REALLY syncing
 function kc_is_syncing_active($def) {
@@ -176,7 +140,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 						</div>
 					<?php else : ?>
 						<?php foreach ( $definitions as $def ) : 
-							$entries = kc_get_preview_entries($def);
+							$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 4);
 							$accent  = !empty($def->accent_color) ? $def->accent_color : '#fe025b';
 						?>
 							<article class="kc-chart-card">
