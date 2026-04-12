@@ -28,7 +28,7 @@ class Router {
 		// 2. Specific Entity Routes (highest specificity)
 		add_rewrite_rule( '^charts/artist/([^/]+)/?$', 'index.php?charts_route=artist-single&charts_artist_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^charts/track/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
-		add_rewrite_rule( '^charts/video/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=video&charts_item_slug=$matches[1]', 'top' );
+		add_rewrite_rule( '^charts/(video|clip)/([^/]+)/?$', 'index.php?charts_route=item-single&charts_item_type=video&charts_item_slug=$matches[2]', 'top' );
 
 		// 3. Static Archive Routes
 		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );

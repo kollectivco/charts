@@ -5,7 +5,7 @@
 global $wpdb;
 
 $type = get_query_var('charts_type', 'artist');
-if (!in_array($type, ['artist', 'track', 'clip'])) $type = 'artist';
+if (!in_array($type, ['artist', 'track', 'video'])) $type = 'artist';
 
 $search = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
 
@@ -21,7 +21,7 @@ $total = $wpdb->get_var("SELECT COUNT(*) FROM $table $where");
 
 $stats = [
     'total' => $wpdb->get_var("SELECT COUNT(*) FROM $table"),
-    'linked' => ($type === 'clip') ? $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE youtube_id != ''") : $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE spotify_id != ''"),
+    'linked' => ($type === 'video') ? $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE youtube_id != ''") : $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE spotify_id != ''"),
 ];
 ?>
 
@@ -33,7 +33,7 @@ $stats = [
             <div style="display:flex; background:var(--db-bg); padding:4px; border-radius:8px;">
                 <a href="?charts_type=artist" style="padding:6px 16px; border-radius:6px; font-size:12px; font-weight:800; text-decoration:none; <?php echo $type === 'artist' ? 'background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); color:var(--db-accent);' : 'color:var(--db-text-dim);'; ?>">Artists</a>
                 <a href="?charts_type=track" style="padding:6px 16px; border-radius:6px; font-size:12px; font-weight:800; text-decoration:none; <?php echo $type === 'track' ? 'background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); color:var(--db-accent);' : 'color:var(--db-text-dim);'; ?>">Tracks</a>
-                <a href="?charts_type=clip" style="padding:6px 16px; border-radius:6px; font-size:12px; font-weight:800; text-decoration:none; <?php echo $type === 'clip' ? 'background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); color:var(--db-accent);' : 'color:var(--db-text-dim);'; ?>">Clips</a>
+                <a href="?charts_type=video" style="padding:6px 16px; border-radius:6px; font-size:12px; font-weight:800; text-decoration:none; <?php echo $type === 'video' ? 'background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); color:var(--db-accent);' : 'color:var(--db-text-dim);'; ?>">Videos</a>
             </div>
         </div>
         <form method="get" action="" style="width:300px; position:relative;">
@@ -83,9 +83,9 @@ $stats = [
                         <?php else: ?>
                             <?php foreach($items as $item): 
                                 $label = ($type === 'artist') ? $item->display_name : ($item->title ?? '—');
-                                $ref = ($type === 'clip') ? ($item->youtube_id ?? '') : ($item->spotify_id ?? '');
-                                $image = ($type === 'artist') ? ($item->image ?? '') : (($type === 'clip') ? ($item->thumbnail ?? '') : ($item->cover_image ?? ''));
-                                $edit_slug = ($type === 'artist') ? 'artist' : (($type === 'clip') ? 'clip' : 'track');
+                                $ref = ($type === 'video') ? ($item->youtube_id ?? '') : ($item->spotify_id ?? '');
+                                $image = ($type === 'artist') ? ($item->image ?? '') : (($type === 'video') ? ($item->thumbnail ?? '') : ($item->cover_image ?? ''));
+                                $edit_slug = ($type === 'artist') ? 'artist' : (($type === 'video') ? 'video' : 'track');
                             ?>
                                 <tr>
                                     <td><input type="checkbox" name="item_ids[]" value="<?php echo (int) $item->id; ?>" class="entity-checkbox"></td>

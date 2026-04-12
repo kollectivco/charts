@@ -221,7 +221,7 @@ foreach($chart_rankings as $cr) {
 							<?php foreach ( $charting_tracks as $ct ) : 
 								if ( empty($ct->item_slug) || empty($ct->track_name) ) continue;
 							?>
-								<a href="<?php echo home_url('/charts/' . ($ct->item_type === 'video' ? 'clip' : 'track') . '/' . $ct->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
+								<a href="<?php echo home_url('/charts/' . ($ct->item_type === 'video' ? 'video' : 'track') . '/' . $ct->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $ct->rank_position; ?></span>
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($ct, $ct->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
@@ -252,7 +252,7 @@ foreach($chart_rankings as $cr) {
 							<?php foreach ( $popular_tracks as $pt ) : 
 								if ( empty($pt->item_slug) || empty($pt->track_name) ) continue;
 							?>
-								<a href="<?php echo home_url('/charts/' . ($pt->item_type === 'video' ? 'clip' : 'track') . '/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
+								<a href="<?php echo home_url('/charts/' . ($pt->item_type === 'video' ? 'video' : 'track') . '/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $pt->rank_position; ?></span>
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
