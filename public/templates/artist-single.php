@@ -145,7 +145,21 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 ", $artist->id, $artist_name_escaped ) );
 
 foreach($chart_rankings as $cr) {
-	$row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON s.chart_type = d.chart_type AND s.country_code = d.country_code WHERE s.id = %d LIMIT 1", $cr->source_id));
+	// Resolve parent chart title for this source.
+	$row = $wpdb->get_row($wpdb->prepare("
+		SELECT d.title FROM {$wpdb->prefix}charts_definitions d
+		JOIN {$wpdb->prefix}charts_sources s ON (s.chart_type = CONCAT('cid-', d.id))
+		WHERE s.id = %d LIMIT 1
+	", $cr->source_id));
+
+	if ( ! $row ) {
+		// Fallback for legacy generic sources
+		$row = $wpdb->get_row($wpdb->prepare("
+			SELECT d.title FROM {$wpdb->prefix}charts_definitions d
+			JOIN {$wpdb->prefix}charts_sources s ON (s.chart_type = d.chart_type AND s.country_code = d.country_code)
+			WHERE s.id = %d LIMIT 1
+		", $cr->source_id));
+	}
 	$cr->definition_title = $row ? $row->title : 'Top Artists';
 }
 
@@ -338,8 +352,7 @@ foreach($chart_rankings as $cr) {
 				<?php 
 				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
 				foreach ( $mdefs as $mdef ) : 
-					
-					$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $mdef->chart_type, $mdef->country_code));
+					$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($mdef);
 					$mentries = array();
 					if ( ! empty($sources) ) {
 						$s_ids = array_column($sources, 'id');

@@ -38,7 +38,13 @@ $appearances = $wpdb->get_results( $wpdb->prepare( "
 ", $item->id, $type ) );
 
 foreach($appearances as $app) {
-	$def = $wpdb->get_row($wpdb->prepare("SELECT title, accent_color FROM {$wpdb->prefix}charts_definitions WHERE chart_type = %s AND country_code = %s", $app->chart_type, $app->country_code));
+	if ( strpos($app->chart_type, 'cid-') === 0 ) {
+		$def_id = (int) str_replace('cid-', '', $app->chart_type);
+		$def = $wpdb->get_row($wpdb->prepare("SELECT title, accent_color FROM {$wpdb->prefix}charts_definitions WHERE id = %d", $def_id));
+	} else {
+		$def = $wpdb->get_row($wpdb->prepare("SELECT title, accent_color FROM {$wpdb->prefix}charts_definitions WHERE chart_type = %s AND country_code = %s", $app->chart_type, $app->country_code));
+	}
+	
 	if ($def) {
 		$app->definition_title = $def->title;
 		$app->accent_color = $def->accent_color;
@@ -233,16 +239,21 @@ foreach ( $more_items as $mi ) {
 				<?php 
 				$other_defs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
 				foreach ( $other_defs as $odef ) : 
-					$oentries = $wpdb->get_results( $wpdb->prepare( "
-						SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
-						FROM {$wpdb->prefix}charts_entries e 
-						JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id 
-						LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-						LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-						LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
-						WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-						ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
-					, $odef->chart_type, $odef->country_code ) );
+					$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($odef);
+					$oentries = array();
+					if ( ! empty($sources) ) {
+						$s_ids = array_column($sources, 'id');
+						$phs = implode(',', array_fill(0, count($s_ids), '%d'));
+						$oentries = $wpdb->get_results( $wpdb->prepare( "
+							SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) AS resolved_image 
+							FROM {$wpdb->prefix}charts_entries e 
+							LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+							LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
+							LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
+							WHERE e.source_id IN ($phs)
+							ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 4"
+						, ...$s_ids ) );
+					}
 				?>
 					<article class="kc-chart-card">
 						<div class="kc-card-accent-dot" style="background: <?php echo $odef->accent_color ?: '#fe025b'; ?>;"></div>

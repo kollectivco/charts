@@ -635,8 +635,13 @@ class Bootstrap {
 				// Recalculate Intelligence
 				\Charts\Core\Intelligence::recalculate_all();
 
-				$chart_url = home_url( '/charts/spotify/' . rawurlencode( $meta['country'] ) . '/' . rawurlencode( $meta['frequency'] ) . '/' . rawurlencode( $meta['chart_type'] ) . '/' );
-				$msg = sprintf( __( 'Spotify segment ingested: %1$d entries crystallized from %2$d raw rows. %5$d items skipped due to existing matches or integrity rules.', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
+				$chart_url = home_url( '/charts/' );
+				if ( ! empty($meta['chart_id']) ) {
+					$c_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_definitions WHERE id = %d", $meta['chart_id'] ) );
+					if ( $c_slug ) $chart_url = home_url( '/charts/' . $c_slug . '/' );
+				}
+
+				$msg = sprintf( __( 'Spotify segment ingested: %1$d entries crystallized from %2$d raw rows. [ <a href="%6$s" target="_blank">View Chart</a> ]', 'charts' ), $result['saved'], $result['parsed'], $result['source_id'], $result['period_id'], $result['skipped'], esc_url( $chart_url ) );
 				\Charts\Core\Notify::success( $msg, __( 'Sync Sequence Complete', 'charts' ) );
 				return $result['run_id'] ?? true;
 			} else {
@@ -689,6 +694,10 @@ class Bootstrap {
 				\Charts\Core\Intelligence::recalculate_all();
 
 				$chart_url = home_url( '/charts/' );
+				if ( ! empty($meta['chart_id']) ) {
+					$c_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_definitions WHERE id = %d", $meta['chart_id'] ) );
+					if ( $c_slug ) $chart_url = home_url( '/charts/' . $c_slug . '/' );
+				}
 				
 				$msg = sprintf(
 					__( 'YouTube import complete: <strong>%d entries saved</strong> from %d rows. (%d matched, %d created).', 'charts' ),

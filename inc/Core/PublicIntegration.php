@@ -212,4 +212,21 @@ class PublicIntegration {
 
 		return CHARTS_URL . 'public/assets/img/placeholder.png';
 	}
+
+	/**
+	 * Centralized resolver to fetch all sources belonging to a specific chart definition.
+	 * Enforces the strict 'cid-{id}' identity lock.
+	 */
+	public static function get_sources_for_chart( $definition ) {
+		global $wpdb;
+		if ( empty($definition) || empty($definition->id) ) return array();
+
+		// Use ONLY the strict Profile ID binding ('cid-').
+		$sources = $wpdb->get_results( $wpdb->prepare( "
+			SELECT * FROM {$wpdb->prefix}charts_sources 
+			WHERE chart_type = %s AND is_active = 1
+		", "cid-{$definition->id}" ) );
+
+		return (array) $sources;
+	}
 }

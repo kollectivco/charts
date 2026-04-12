@@ -17,7 +17,7 @@ function kc_get_preview_entries($def) {
 	$entries = get_transient( $cache_key );
 	
 	if ( false === $entries ) {
-		$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND country_code = %s AND is_active = 1", $def->chart_type, $def->country_code));
+		$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($def);
 		if ( empty($sources) ) return array();
 
 		$source_ids = array_column($sources, 'id');
@@ -53,10 +53,10 @@ function kc_is_syncing_active($def) {
 	return (bool) $wpdb->get_var( $wpdb->prepare( "
 		SELECT COUNT(*) FROM {$wpdb->prefix}charts_import_runs r
 		JOIN {$wpdb->prefix}charts_sources s ON s.id = r.source_id
-		WHERE s.chart_type = %s AND s.country_code = %s 
+		WHERE s.chart_type = %s 
 		AND r.status IN ('started', 'processing')
 		AND r.started_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
-	", $def->chart_type, $def->country_code ) );
+	", "cid-{$def->id}" ) );
 }
 
 // Fetch Top Artists for the hero row
@@ -69,7 +69,7 @@ foreach ($definitions as $def) {
 }
 $featured_artists = array();
 if ( $top_artists_chart ) {
-	$sources = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_sources WHERE chart_type = 'top-artists' AND country_code = %s AND is_active = 1", $top_artists_chart->country_code));
+	$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($top_artists_chart);
 	if ( ! empty($sources) ) {
 		$s_ids = array_column($sources, 'id');
 		$phs = implode(',', array_fill(0, count($s_ids), '%d'));
