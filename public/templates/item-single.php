@@ -28,14 +28,21 @@ $entries_table = $wpdb->prefix . 'charts_entries';
 $sources_table = $wpdb->prefix . 'charts_sources';
 $periods_table = $wpdb->prefix . 'charts_periods';
 
+$title_escaped = '%' . $wpdb->esc_like( $item->title ) . '%';
 $appearances = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*, s.chart_type, s.country_code, s.source_name, p.period_start
 	FROM $entries_table e
+	INNER JOIN (
+		SELECT MAX(e2.id) as max_id 
+		FROM $entries_table e2
+		WHERE (e2.item_id = %d AND e2.item_type = %s)
+		   OR (e2.track_name LIKE %s AND e2.item_type = %s)
+		GROUP BY e2.source_id
+	) latest ON latest.max_id = e.id
 	JOIN $sources_table s ON s.id = e.source_id
 	JOIN $periods_table p ON p.id = e.period_id
-	WHERE e.item_id = %d AND e.item_type = %s
 	ORDER BY p.period_start DESC
-", $item->id, $type ) );
+", $item->id, $type, $title_escaped, $type ) );
 
 foreach($appearances as $app) {
 	if ( strpos($app->chart_type, 'cid-') === 0 ) {
