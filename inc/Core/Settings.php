@@ -103,6 +103,7 @@ class Settings {
             'advanced' => [
                 'cache_previews'       => 1,
                 'enable_debug_logs'    => 0,
+                'github_access_token'  => '', // Added for authorized update checks
             ]
         ];
     }

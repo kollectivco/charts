@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           1.29.9
+ * Version:           1.29.10
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.29.9' );
+define( 'CHARTS_VERSION', '1.29.10' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -168,7 +168,8 @@ final class Charts {
 		}
 
 		// 4. Reclaim legacy sources for all existing definitions (Structural Isolation migration)
-		if ( version_compare( $current_db_version, '1.29.9', '<' ) ) {
+		// 4. Reclaim legacy sources for all existing definitions (Structural Isolation migration)
+		if ( version_compare( $current_db_version, '1.29.10', '<' ) ) {
 			global $wpdb;
 			$defs = $wpdb->get_results( "SELECT id, chart_type, country_code FROM {$wpdb->prefix}charts_definitions" );
 			foreach ( $defs as $def ) {
@@ -225,6 +226,13 @@ final class Charts {
 				CHARTS_PLUGIN_FILE,
 				CHARTS_PLUGIN_SLUG
 			);
+			
+			// Authorized Request Support (Fixes 403 Forbidden errors)
+			$token = \Charts\Core\Settings::get('advanced.github_access_token');
+			if ( ! empty($token) ) {
+				$update_checker->setAuthentication($token);
+			}
+
 			// Enable checking for release assets (zips)
 			$update_checker->getVcsApi()->enableReleaseAssets();
 		}

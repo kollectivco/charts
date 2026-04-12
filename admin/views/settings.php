@@ -127,6 +127,12 @@ $panel = [
                 'fields' => [
                     [ 'id' => 'api.youtube_api_key', 'type' => 'password', 'label' => 'Google Cloud API Key' ],
                 ]
+            ],
+            'github' => [
+                'title' => 'Update Authorization',
+                'fields' => [
+                    [ 'id' => 'advanced.github_access_token', 'type' => 'password', 'label' => 'GitHub Personal Access Token', 'desc' => 'Optional: Recommended for private repos or to avoid 403 API errors.' ],
+                ]
             ]
         ]
     ],
