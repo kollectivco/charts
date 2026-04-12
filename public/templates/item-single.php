@@ -100,26 +100,28 @@ foreach ( $more_items as $mi ) {
 						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-dim); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em;"><?php echo esc_html($item->title_franko); ?></div>
 					<?php endif; ?>
 					
-						<?php 
-						// Link all artists using legacy junction tables
-						$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
-						$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
-						$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
-						
-						if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
-						
-						foreach ( $artist_ids as $a_id ) :
-							$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
-							if ( $artist ) :
-						?>
-							<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;" class="<?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>">
-								<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-								<?php echo esc_html($artist->display_name); ?>
-							</a>
-						<?php 
-							endif;
-						endforeach; 
-						?>
+						<div style="display: flex; align-items: center; gap: 20px; margin-top: 28px; flex-wrap: wrap;">
+							<?php 
+							// Link all artists using legacy junction tables
+							$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
+							$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
+							$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
+							
+							if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
+							
+							foreach ( $artist_ids as $a_id ) :
+								$artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
+								if ( $artist_row ) :
+							?>
+								<a href="<?php echo home_url('/charts/artist/' . $artist_row->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;" class="<?php echo \Charts\Core\Typography::get_font_class($artist_row->display_name); ?>">
+									<img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+									<?php echo esc_html($artist_row->display_name); ?>
+								</a>
+							<?php 
+								endif;
+							endforeach; 
+							?>
+						</div>
 						<?php if ( ! empty($item->release_date) ) : ?>
 							<span style="font-size: 13px; font-weight: 700; color: var(--k-text-muted);"><?php echo esc_html($item->release_date); ?></span>
 						<?php endif; ?>
@@ -148,11 +150,11 @@ foreach ( $more_items as $mi ) {
 					<?php endif; ?>
 				</div>
 
-				<div class="kc-card" style="margin-top: 20px; display: flex; align-items: center; gap: 16px; padding: 16px 24px;">
-					<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 8px;">
+				<div class="kc-card" style="margin-top: 40px; display: flex; align-items: center; gap: 24px; padding: 24px 32px;">
+					<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
 					<div>
-						<span style="display: block; font-size: 9px; font-weight: 900; color: var(--k-text-muted); text-transform: uppercase;">From Artist</span>
-						<span style="font-size: 14px; font-weight: 800;"><?php echo esc_html($item->title); ?></span>
+						<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Primary Artist</span>
+						<span style="font-size: 16px; font-weight: 900; color: var(--k-text);"><?php echo esc_html($artist->display_name); ?></span>
 					</div>
 				</div>
 			</div>
