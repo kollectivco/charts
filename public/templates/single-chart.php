@@ -173,12 +173,6 @@ if ( $definition ) {
 
 			<!-- RANKINGS TABLE -->
 			<section class="kc-section" style="padding-top: 40px; padding-bottom: 120px;">
-				<div class="kc-section-header" style="justify-content: flex-start; gap: 12px; margin-bottom: 32px;">
-					<h2 class="kc-section-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted);">Full Rankings</h2>
-					<?php if ( $period ) : ?>
-						<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted); opacity: 0.4;">Week of <?php echo date('M j, Y', strtotime($period->period_start)); ?></span>
-					<?php endif; ?>
-				</div>
 
 				<table class="kc-rankings-table">
 					<thead class="kc-table-head">
