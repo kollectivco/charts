@@ -350,7 +350,7 @@ foreach($chart_rankings as $cr) {
 			
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				$mdefs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
+				$mdefs = \Charts\Core\PublicIntegration::get_eligible_definitions( 4 );
 				foreach ( $mdefs as $mdef ) : 
 					$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($mdef);
 					$mentries = array();

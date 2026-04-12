@@ -229,4 +229,28 @@ class PublicIntegration {
 
 		return (array) $sources;
 	}
+
+	/**
+	 * Fetch ONLY definitions that are public AND have real entry data.
+	 * Excludes uninitialized or empty charts.
+	 */
+	public static function get_eligible_definitions( $limit = 4 ) {
+		global $wpdb;
+		
+		$query = $wpdb->prepare( "
+			SELECT d.* FROM {$wpdb->prefix}charts_definitions d
+			WHERE d.is_public = 1
+			AND EXISTS (
+				SELECT 1 FROM {$wpdb->prefix}charts_sources s
+				JOIN {$wpdb->prefix}charts_entries e ON e.source_id = s.id
+				WHERE s.chart_type = CONCAT('cid-', d.id)
+				LIMIT 1
+			)
+			ORDER BY d.id DESC
+			LIMIT %d
+		", $limit );
+
+		$results = $wpdb->get_results( $query );
+		return (array) $results;
+	}
 }

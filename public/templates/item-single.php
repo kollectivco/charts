@@ -237,7 +237,7 @@ foreach ( $more_items as $mi ) {
 			</div>
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
-				$other_defs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions WHERE is_public = 1 LIMIT 4" );
+				$other_defs = \Charts\Core\PublicIntegration::get_eligible_definitions( 4 );
 				foreach ( $other_defs as $odef ) : 
 					$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($odef);
 					$oentries = array();

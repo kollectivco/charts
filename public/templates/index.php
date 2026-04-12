@@ -8,7 +8,7 @@ global $wpdb;
 
 // 1. DATA LOOKUP
 $manager     = new \Charts\Admin\SourceManager();
-$definitions = $manager->get_definitions( true ); // Only active/public charts
+$definitions = \Charts\Core\PublicIntegration::get_eligible_definitions( 12 ); 
 
 // Helper to fetch top 3 preview for a definition from the most recent period
 function kc_get_preview_entries($def) {
