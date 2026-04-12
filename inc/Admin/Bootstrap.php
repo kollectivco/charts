@@ -604,6 +604,7 @@ class Bootstrap {
 	 * Process Spotify CSV Upload.
 	 */
 	private static function process_spotify_csv_upload() {
+		global $wpdb;
 		if ( empty( $_FILES['spotify_csv']['tmp_name'] ) ) {
 			\Charts\Core\Notify::error( __( 'The Spotify CSV segment is missing or corrupt in the upload buffer.', 'charts' ), __( 'Input Failure', 'charts' ) );
 			return;
@@ -658,6 +659,7 @@ class Bootstrap {
 	 * Process YouTube CSV Upload.
 	 */
 	private static function process_youtube_csv_upload() {
+		global $wpdb;
 		if ( ! current_user_can( 'manage_options' ) ) return;
 		check_admin_referer( 'charts_admin_action' );
 
