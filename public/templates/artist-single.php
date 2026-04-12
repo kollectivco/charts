@@ -96,25 +96,6 @@ $display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artis
 // Safe Escaping for SQL
 $artist_name_escaped = '%' . $wpdb->esc_like( $artist->display_name ) . '%';
 
-// Charting tracks (Improved with string fallback & type enforcement)
-$charting_tracks = $wpdb->get_results( $wpdb->prepare( "
-	SELECT e.* 
-	FROM {$wpdb->prefix}charts_entries e
-	WHERE e.item_type != 'artist' AND (
-		(e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
-		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
-		OR (e.artist_names LIKE %s AND e.item_type IN ('track', 'video'))
-	)
-	GROUP BY e.item_type, e.item_id
-	ORDER BY e.rank_position ASC LIMIT 4
-", $artist->id, $artist->id, $artist_name_escaped ) );
-
-// Resolve images for charting tracks
-foreach($charting_tracks as $ct) {
-	$table = ($ct->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
-	$col   = ($ct->item_type === 'video') ? 'thumbnail' : 'cover_image';
-	$ct->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $ct->item_id));
-}
 
 // Popular tracks (Improved with string fallback & type enforcement)
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
@@ -211,38 +192,6 @@ foreach($chart_rankings as $cr) {
 			
 			<!-- COL 1 -->
 			<div>
-				<!-- CHARTING TRACKS -->
-				<section style="margin-bottom: 60px;">
-					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">Charting Tracks</h3>
-					<div style="display: flex; flex-direction: column; gap: 12px;">
-						<?php if ( empty($charting_tracks) ) : ?>
-							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No current charting tracks.</p>
-						<?php else : ?>
-							<?php foreach ( $charting_tracks as $ct ) : 
-								if ( empty($ct->item_slug) || empty($ct->track_name) ) continue;
-							?>
-								<a href="<?php echo home_url('/charts/' . ($ct->item_type === 'video' ? 'video' : 'track') . '/' . $ct->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
-									<div style="display: flex; align-items: center; gap: 20px;">
-										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $ct->rank_position; ?></span>
-										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($ct, $ct->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
-										<div>
-											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($ct->track_name); ?>"><?php echo esc_html($ct->track_name); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-dim);" class="<?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>"><?php echo esc_html($artist->display_name); ?></span>
-										</div>
-									</div>
-									<div style="display: flex; align-items: center; gap: 20px;">
-										<?php if ( ! empty($ct->peak_rank) ) : ?>
-										<div style="text-align: right;">
-											<span style="display: block; font-size: 9px; color: var(--k-text-muted);">Peak #<?php echo intval($ct->peak_rank); ?></span>
-										</div>
-										<?php endif; ?>
-										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-									</div>
-								</a>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</div>
-				</section>
 
 				<!-- POPULAR TRACKS -->
 				<section>
