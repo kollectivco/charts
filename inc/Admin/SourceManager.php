@@ -122,19 +122,22 @@ class SourceManager {
 		global $wpdb;
 		$table = $wpdb->prefix . 'charts_definitions';
 		
-		// Phase 1 Baseline: SQL id (Legacy ID) is the identifier
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
-		
-		if ( ! $row ) {
-			// Check if $id was actually a Post ID for a native chart
-			$post = get_post( $id );
-			if ( $post && $post->post_type === 'chart' ) {
-				return $this->map_post_to_definition( $post );
-			}
-			return null;
+		// 1. Direct Post ID check (Promoted charts)
+		$post = get_post( $id );
+		if ( $post && $post->post_type === 'chart' ) {
+			return $this->map_post_to_definition( $post );
 		}
 
-		$row->native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $row->id );
+		// 2. Legacy SQL Table lookup
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
+		if ( ! $row ) return null;
+
+		// 3. Bridge Check: If this SQL row has been promoted, return the Post-Master version
+		$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $row->id );
+		if ( $native_post_id ) {
+			return $this->get_definition( $native_post_id );
+		}
+
 		return $row;
 	}
 
@@ -241,14 +244,37 @@ class SourceManager {
 				'updated_at'      => current_time( 'mysql' ),
 			);
 
-			if ( $id ) {
-				$wpdb->update( $table, $fields, array( 'id' => $id ) );
-				return $id;
-			} else {
-				$fields['created_at'] = current_time( 'mysql' );
-				$wpdb->insert( $table, $fields );
-				return $wpdb->insert_id;
+		if ( $id ) {
+			// Update existing record
+			$wpdb->update( $table, $fields, array( 'id' => $id ) );
+
+			// CRITICAL: If this definition has been promoted, we MUST update the Post meta too 
+			// otherwise the next 'get_definition' (which prefers posts) will return stale data.
+			$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $id );
+			if ( $native_post_id ) {
+				update_post_meta( $native_post_id, '_ordering_mode', $fields['ordering_mode'] );
+				update_post_meta( $native_post_id, '_max_rows', $fields['max_rows'] );
+				update_post_meta( $native_post_id, '_item_type', $fields['item_type'] );
+				update_post_meta( $native_post_id, '_chart_type', $fields['chart_type'] );
+				update_post_meta( $native_post_id, '_platform', $fields['platform'] );
+				update_post_meta( $native_post_id, '_country_code', $fields['country_code'] );
+				update_post_meta( $native_post_id, '_frequency', $fields['frequency'] );
+				
+				// Sync back title/slug to post object
+				wp_update_post( array(
+					'ID'         => $native_post_id,
+					'post_title' => $fields['title'],
+					'post_name'  => $fields['slug'],
+					'post_status' => $fields['is_public'] ? 'publish' : 'draft',
+				) );
 			}
+
+			return $id;
+		} else {
+			$fields['created_at'] = current_time( 'mysql' );
+			$wpdb->insert( $table, $fields );
+			return $wpdb->insert_id;
+		}
 		}
 	}
 
