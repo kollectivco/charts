@@ -232,4 +232,37 @@ class EntityManager {
 			self::link_artist_to_item( $type, (int) $item_id, (int) $artist_id );
 		}
 	}
+
+	/**
+	 * Search entities for manual row management.
+	 */
+	public static function search_entities( $type, $query, $limit = 20 ) {
+		global $wpdb;
+		$suffix = ( $type === 'artist' ? 'artists' : ( ($type === 'video') ? 'videos' : 'tracks' ) );
+		$table  = $wpdb->prefix . 'charts_' . $suffix;
+		
+		$col    = ( $type === 'artist' ? 'display_name' : 'title' );
+		$search = '%' . $wpdb->esc_like( $query ) . '%';
+		
+		$results = $wpdb->get_results( $wpdb->prepare( "
+			SELECT id, $col as title, slug, " . ( $type === 'artist' ? "image" : "cover_image" ) . " as image 
+			FROM $table 
+			WHERE $col LIKE %s 
+			ORDER BY $col ASC
+			LIMIT %d
+		", $search, $limit ) );
+		
+		// If track or video, also try to find the artist name for subtitle
+		if ( $type !== 'artist' ) {
+			foreach ( $results as &$r ) {
+				$r->subtitle = $wpdb->get_var( $wpdb->prepare( "
+					SELECT a.display_name FROM {$wpdb->prefix}charts_artists a
+					JOIN {$wpdb->prefix}charts_" . $type . "_artists ja ON ja.artist_id = a.id
+					WHERE ja." . $type . "_id = %d LIMIT 1
+				", $r->id ) ) ?: '';
+			}
+		}
+		
+		return $results;
+	}
 }

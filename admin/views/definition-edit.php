@@ -184,19 +184,87 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 					</div>
 				</div>
 
-				<?php if ( $def_id && $ordering_mode === 'manual' ) : ?>
-					<!-- Sub-section: Manual Entry Management (Placeholder logic for Phase 1.30) -->
-					<div class="form-group form-group-full" style="background: rgba(99, 102, 241, 0.03); padding: 32px; border-radius: 12px; border: 1px dashed var(--charts-accent);">
-						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-							<h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--charts-text);">Independent Rows (Manual Control)</h3>
-							<button type="button" class="charts-btn-back" style="background: #fff;">+ Add Entity to Chart</button>
+				<?php if ( $def_id ) : 
+					$entries = $manager->get_manual_entries( $def_id );
+				?>
+					<!-- Sub-section: Live Ranking Management -->
+					<div class="form-group form-group-full" style="padding-top: 32px; border-top: 1px solid var(--charts-border);">
+						<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px;">
+							<div>
+								<h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--charts-text);">Chart Rows & Live Rankings</h3>
+								<p style="font-size: 13px; color: var(--charts-text-dim); margin-top: 4px;">
+									<?php if ( $ordering_mode === 'manual' ) : ?>
+										You are in <strong>Manual Mode</strong>. Drag rows to reorder or add new items via search.
+									<?php else : ?>
+										You are in <strong>Automatic Mode</strong>. Rankings are controlled by Import Center.
+									<?php endif; ?>
+								</p>
+							</div>
+							
+							<?php if ( $ordering_mode === 'manual' ) : ?>
+								<div class="manual-search-wrap" style="position: relative; width: 340px;">
+									<div style="position: relative;">
+										<span class="dashicons dashicons-search" style="position: absolute; left: 12px; top: 10px; color: var(--charts-text-dim); opacity: 0.5;"></span>
+										<input type="text" id="manual_row_search" class="form-control" style="padding-left: 36px;" placeholder="Search for <?php echo esc_attr($item_type); ?>s to add...">
+									</div>
+									<div id="search_results_bubble" style="display: none; position: absolute; top: 48px; left: 0; right: 0; background: #fff; border: 1px solid var(--charts-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 100; max-height: 400px; overflow-y: auto;">
+										<!-- Dynamic Results -->
+									</div>
+								</div>
+							<?php endif; ?>
 						</div>
-						<p style="font-size: 13px; color: var(--charts-text-dim);">You are currently in <strong>Manual Mode</strong>. Use the "Add Entity" button above to populate this chart. You can then drag and drop items to define their exact ranking sovereignty.</p>
-						
-						<!-- Simplified placeholder list -->
-						<div style="margin-top:20px; border: 1px solid var(--charts-border); border-radius: 8px; background: #fff; text-align: center; padding: 40px;">
-							<span class="dashicons dashicons-list-view" style="font-size: 32px; width: 32px; height: 32px; color: var(--charts-accent); opacity: 0.5;"></span>
-							<p style="margin: 12px 0 0; font-size: 12px; font-weight: 700; color: var(--charts-text-dim);">No manual rows assigned yet.</p>
+
+						<div id="chart_rows_table_wrap" style="border: 1px solid var(--charts-border); border-radius: 12px; overflow: hidden; background: #fff;">
+							<table class="charts-admin-table" style="width: 100%; border-collapse: collapse;">
+								<thead style="background: var(--charts-bg); border-bottom: 1px solid var(--charts-border);">
+									<tr>
+										<th style="width: 60px; text-align: center; padding: 12px;">#</th>
+										<th style="padding: 12px;">Entity</th>
+										<th style="padding: 12px; width: 140px;">ID / Slug</th>
+										<?php if ( $ordering_mode === 'manual' ) : ?>
+											<th style="padding: 12px; width: 80px;"></th>
+										<?php endif; ?>
+									</tr>
+								</thead>
+								<tbody id="chart_rows_sortable" data-chart-id="<?php echo $def_id; ?>" data-ordering-mode="<?php echo $ordering_mode; ?>">
+									<?php if ( ! empty($entries) ) : foreach ( $entries as $e ) : ?>
+										<tr class="chart-row-item" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>" style="border-bottom: 1px solid var(--charts-border);">
+											<td class="row-rank" style="text-align: center; font-weight: 800; color: var(--charts-accent); padding: 14px;"><?php echo $e->rank_position; ?></td>
+											<td style="padding: 14px;">
+												<div style="display: flex; align-items: center; gap: 12px;">
+													<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f8f8f8;">
+													<div>
+														<div style="font-weight: 700; color: var(--charts-text);"><?php echo esc_html($e->track_name ?: $e->artist_names); ?></div>
+														<?php if ( !empty($e->artist_names) && $e->item_type !== 'artist' ) : ?>
+															<div style="font-size: 11px; font-weight: 500; color: var(--charts-text-dim);"><?php echo esc_html($e->artist_names); ?></div>
+														<?php endif; ?>
+													</div>
+												</div>
+											</td>
+											<td style="padding: 14px; font-family: monospace; font-size: 11px; color: var(--charts-text-dim);">
+												<?php echo esc_html($e->item_slug); ?>
+											</td>
+											<?php if ( $ordering_mode === 'manual' ) : ?>
+												<td style="padding: 14px; text-align: right;">
+													<div style="display: flex; gap: 8px; justify-content: flex-end;">
+														<span class="dashicons dashicons-move row-handle" style="color: var(--charts-text-dim); cursor: grab; padding: 4px;"></span>
+														<span class="dashicons dashicons-dismiss row-delete" title="Remove from Chart" style="color: #ef4444; cursor: pointer; padding: 4px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
+													</div>
+												</td>
+											<?php endif; ?>
+										</tr>
+									<?php endforeach; else : ?>
+										<tr>
+											<td colspan="4" style="padding: 60px; text-align: center;">
+												<div style="opacity: 0.3; margin-bottom: 12px;">
+													<span class="dashicons dashicons-list-view" style="font-size: 32px; width: 32px; height: 32px;"></span>
+												</div>
+												<p style="margin: 0; font-size: 13px; font-weight: 700; color: var(--charts-text-dim);">No active rows found for this chart.</p>
+											</td>
+										</tr>
+									<?php endif; ?>
+								</tbody>
+							</table>
 						</div>
 					</div>
 				<?php endif; ?>
@@ -232,6 +300,9 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 
 	<script>
 	jQuery(document).ready(function($) {
+		const chart_id = $('#chart_rows_sortable').data('chart-id');
+		const item_type = $('#item_type').val();
+
 		// Sync color swatch
 		$('#accent_color').on('input', function() {
 			$('.color-swatch').css('background', $(this).val());
@@ -243,33 +314,161 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 			$('.input-helper').text('URL: /charts/' + slug);
 		});
 
-		// Intelligent Field Sync: Entity Type -> Ranking Logic
+		// Intelligent Field Sync
 		function syncRankingLogic() {
 			const entity = $('#item_type').val();
 			const $logicSelect = $('#chart_type');
-			
-			// 1. Filter optgroups
 			$logicSelect.find('optgroup').each(function() {
 				const groupEntity = $(this).data('entity');
-				if (groupEntity === entity) {
-					$(this).show().prop('disabled', false);
-				} else {
-					$(this).hide().prop('disabled', true);
-				}
+				if (groupEntity === entity) { $(this).show().prop('disabled', false); } 
+				else { $(this).hide().prop('disabled', true); }
 			});
-
-			// 2. Auto-select first visible option if current is hidden
 			const $currentOption = $logicSelect.find('option:selected');
 			if ($currentOption.parent().is(':disabled')) {
 				const $firstVisible = $logicSelect.find('optgroup:not(:disabled) option').first();
-				if ($firstVisible.length) {
-					$logicSelect.val($firstVisible.val());
-				}
+				if ($firstVisible.length) { $logicSelect.val($firstVisible.val()); }
 			}
 		}
-
 		$('#item_type').on('change', syncRankingLogic);
-		syncRankingLogic(); // Init on load
+		syncRankingLogic();
+
+		// Manual Management: DRAG & DROP
+		if ($('#ordering_mode').val() === 'manual') {
+			$("#chart_rows_sortable").sortable({
+				handle: ".row-handle",
+				placeholder: "ui-state-highlight",
+				helper: function(e, tr) {
+					var $originals = tr.children();
+					var $helper = tr.clone();
+					$helper.children().each(function(index) {
+						$(this).width($originals.eq(index).width());
+					});
+					return $helper;
+				},
+				update: function(event, ui) {
+					saveManualOrder();
+					updateRanksUI();
+				}
+			});
+		}
+
+		function updateRanksUI() {
+			$('#chart_rows_sortable tr').each(function(idx) {
+				$(this).find('.row-rank').text(idx + 1);
+			});
+		}
+
+		function saveManualOrder() {
+			const order = [];
+			$('#chart_rows_sortable tr.chart-row-item').each(function() {
+				order.push({ id: $(this).data('id'), type: $(this).data('type') });
+			});
+
+			$.post(charts_admin.ajax_url, {
+				action: 'charts_save_manual_order',
+				nonce: charts_admin.nonce,
+				chart_id: chart_id,
+				order: order
+			}, function(response) {
+				if (!response.success) alert(response.data.message || 'Failed to save order');
+			});
+		}
+
+		// Manual Management: SEARCH & ADD
+		let searchTimer;
+		$('#manual_row_search').on('input', function() {
+			clearTimeout(searchTimer);
+			const query = $(this).val().trim();
+			if (query.length < 2) { $('#search_results_bubble').hide(); return; }
+
+			searchTimer = setTimeout(function() {
+				$.post(charts_admin.ajax_url, {
+					action: 'charts_search_entities',
+					nonce: charts_admin.nonce,
+					type: item_type,
+					query: query
+				}, function(response) {
+					if (response.success) {
+						let html = '';
+						if (response.data.length === 0) {
+							html = '<div style="padding: 16px; text-align: center; font-size: 13px; color: #999;">No matches found.</div>';
+						} else {
+							response.data.forEach(function(item) {
+								html += `
+									<div class="search-result-row" data-id="${item.id}" data-type="${item_type}" style="padding: 12px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;">
+										<img src="${item.image || '<?php echo CHARTS_URL . "public/assets/img/placeholder.png"; ?>'}" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+										<div style="flex:1;">
+											<div style="font-weight: 700; font-size: 13px;">${item.title}</div>
+											<div style="font-size: 11px; color: #999;">${item.subtitle || item.slug}</div>
+										</div>
+										<span class="dashicons dashicons-plus" style="color: var(--charts-accent);"></span>
+									</div>
+								`;
+							});
+						}
+						$('#search_results_bubble').html(html).show();
+					}
+				});
+			}, 300);
+		});
+
+		$(document).on('click', '.search-result-row', function() {
+			const item_id = $(this).data('id');
+			const type = $(this).data('type');
+			
+			$.post(charts_admin.ajax_url, {
+				action: 'charts_manage_manual_row',
+				nonce: charts_admin.nonce,
+				chart_id: chart_id,
+				item_id: item_id,
+				type: type,
+				mode: 'add'
+			}, function(response) {
+				if (response.success) {
+					location.reload(); // Refresh to show new row and updated rank
+				} else {
+					alert(response.data.message || 'Failed to add row');
+				}
+			});
+		});
+
+		// Manual Management: DELETE
+		$(document).on('click', '.row-delete', function() {
+			if (!confirm('Remove this item from the chart?')) return;
+			const item_id = $(this).data('id');
+			const type = $(this).data('type');
+			const $row = $(this).closest('tr');
+
+			$.post(charts_admin.ajax_url, {
+				action: 'charts_manage_manual_row',
+				nonce: charts_admin.nonce,
+				chart_id: chart_id,
+				item_id: item_id,
+				type: type,
+				mode: 'delete'
+			}, function(response) {
+				if (response.success) {
+					$row.fadeOut(300, function() { 
+						$(this).remove(); 
+						updateRanksUI();
+					});
+				} else {
+					alert(response.data.message || 'Failed to remove row');
+				}
+			});
+		});
+
+		// Hide search bubble on outside click
+		$(document).on('click', function(e) {
+			if (!$(e.target).closest('.manual-search-wrap').length) {
+				$('#search_results_bubble').hide();
+			}
+		});
 	});
 	</script>
+	<style>
+		.search-result-row:hover { background: #f8f8fb; }
+		.ui-state-highlight { height: 60px; background: rgba(99, 102, 241, 0.05); border: 1px dashed var(--charts-accent); }
+		.charts-admin-table th { font-weight: 700; font-size: 12px; color: var(--charts-text-dim); text-transform: uppercase; letter-spacing: 0.03em; }
+	</style>
 </div>

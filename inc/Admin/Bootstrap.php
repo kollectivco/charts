@@ -25,6 +25,9 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
 		add_action( 'wp_ajax_charts_migration_step', array( self::class, 'handle_migration_step' ) );
+		add_action( 'wp_ajax_charts_search_entities', array( self::class, 'handle_search_entities' ) );
+		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
+		add_action( 'wp_ajax_charts_save_manual_order', array( self::class, 'handle_save_manual_order' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1148,6 +1151,83 @@ class Bootstrap {
 	/**
 	 * Helper to safely render an admin view.
 	 */
+	/**
+	 * AJAX logic to search for entities to add to manual charts.
+	 */
+	public static function handle_search_entities() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error();
+
+		$type  = sanitize_text_field( $_POST['type'] ?? 'track' );
+		$query = sanitize_text_field( $_POST['query'] ?? '' );
+
+		if ( strlen($query) < 2 ) wp_send_json_success( array() );
+
+		$results = \Charts\Core\EntityManager::search_entities( $type, $query );
+		wp_send_json_success( $results );
+	}
+
+	/**
+	 * AJAX logic to add or delete a row from a manual chart.
+	 */
+	public static function handle_manage_manual_row() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error();
+
+		$chart_id = intval( $_POST['chart_id'] );
+		$item_id  = intval( $_POST['item_id'] );
+		$type     = sanitize_text_field( $_POST['type'] );
+		$mode     = sanitize_text_field( $_POST['mode'] ); // 'add' or 'delete'
+
+		$manager = new SourceManager();
+		$entries = $manager->get_manual_entries( $chart_id );
+		
+		$new_entries = array();
+		foreach ( $entries as $e ) {
+			if ( $mode === 'delete' && (int)$e->item_id === $item_id && $e->item_type === $type ) continue;
+			$new_entries[] = array( 'id' => $e->item_id, 'type' => $e->item_type );
+		}
+
+		if ( $mode === 'add' ) {
+			// Check if already exists
+			$exists = false;
+			foreach ( $new_entries as $ne ) {
+				if ( (int)$ne['id'] === $item_id && $ne['type'] === $type ) { $exists = true; break; }
+			}
+			if ( ! $exists ) {
+				$new_entries[] = array( 'id' => $item_id, 'type' => $type );
+			}
+		}
+
+		$result = $manager->save_manual_entries( $chart_id, $new_entries );
+		
+		if ( $result !== false ) {
+			wp_send_json_success( array( 'count' => $result ) );
+		} else {
+			wp_send_json_error( array( 'message' => 'Failed to synchronize manual entries.' ) );
+		}
+	}
+
+	/**
+	 * AJAX logic to save a new manual sort order.
+	 */
+	public static function handle_save_manual_order() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error();
+
+		$chart_id = intval( $_POST['chart_id'] );
+		$order    = array_map( function($i){ return array('id' => (int)$i['id'], 'type' => sanitize_text_field($i['type'])); }, (array)$_POST['order'] );
+
+		$manager = new SourceManager();
+		$result = $manager->save_manual_entries( $chart_id, $order );
+
+		if ( $result !== false ) {
+			wp_send_json_success( array( 'count' => $result ) );
+		} else {
+			wp_send_json_error( array( 'message' => 'Failed to persist manual ranking order.' ) );
+		}
+	}
+
 	private static function render_view( $name, $data = [] ) {
 		$file = CHARTS_PATH . "admin/views/{$name}.php";
 
