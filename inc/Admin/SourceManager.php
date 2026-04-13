@@ -480,7 +480,9 @@ class SourceManager {
 	}
 
 	/**
-	 * Safely remove legacy seeded records...
+	 * Safely remove legacy seeded records that match known demo signatures.
+	 * This protects user-created charts while cleaning up the DP 'Egypt' presets.
+	 */
 	public function cleanup_mock_data() {
 		global $wpdb;
 
