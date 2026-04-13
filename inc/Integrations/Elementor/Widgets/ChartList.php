@@ -85,38 +85,133 @@ class ChartList extends Widget_Base {
 
 		$this->end_controls_section();
 
-		// 3. Style Options
-		$this->start_controls_section( 'section_style', [ 'label' => __( 'Style Configuration', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		// 3. Style: Layout & Density
+		$this->start_controls_section( 'section_style_layout', [ 'label' => __( 'Layout & Spacing', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 
-		$this->add_responsive_control( 'item_spacing', [
-			'label' => __( 'Vertical Spacing', 'charts' ),
+		$this->add_control( 'density_mode', [
+			'label' => __( 'Density Mode', 'charts' ),
+			'type' => Controls_Manager::SELECT,
+			'options' => [
+				'compact'  => 'Compact',
+				'default'  => 'Default',
+				'spacious' => 'Spacious'
+			],
+			'default' => 'default',
+		]);
+
+		$this->add_responsive_control( 'row_height', [
+			'label' => __( 'Minimum Row Height', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'size_units' => [ 'px' ],
+			'range' => [ 'px' => [ 'min' => 40, 'max' => 200 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'min-height: {{SIZE}}{{UNIT}};' ]
+		]);
+
+		$this->add_responsive_control( 'item_padding', [
+			'label' => __( 'Item Padding', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em' ],
+			'default' => [ 'top' => '20', 'bottom' => '20', 'left' => '0', 'right' => '0', 'unit' => 'px' ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ]
+		]);
+
+		$this->add_responsive_control( 'gap_badge_title', [
+			'label' => __( 'Gap: Badge to Title', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'size_units' => [ 'px' ],
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 60 ] ],
+			'default' => [ 'size' => 12 ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-badge' => 'margin-bottom: {{SIZE}}{{UNIT}};' ]
+		]);
+
+		$this->add_responsive_control( 'gap_title_subtitle', [
+			'label' => __( 'Gap: Title to Subtitle', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'size_units' => [ 'px' ],
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 60 ] ],
+			'default' => [ 'size' => 4 ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-title' => 'margin-bottom: {{SIZE}}{{UNIT}};' ]
+		]);
+
+		$this->add_responsive_control( 'row_gap', [
+			'label' => __( 'Gap Between Rows', 'charts' ),
 			'type' => Controls_Manager::SLIDER,
 			'size_units' => [ 'px' ],
 			'range' => [ 'px' => [ 'min' => 0, 'max' => 100 ] ],
-			'default' => [ 'size' => 40 ],
+			'default' => [ 'size' => 0 ],
 			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'margin-bottom: {{SIZE}}{{UNIT}};' ]
 		]);
 
-		$this->add_control( 'accent_color', [
-			'label' => __( 'Accent Color', 'charts' ),
-			'type' => Controls_Manager::COLOR,
-			'default' => 'var(--k-accent)',
-			'selectors' => [ '{{WRAPPER}} .kc-list-badge' => 'background: {{VALUE}};' ]
-		]);
+		$this->end_controls_section();
 
+		// 4. Style: Typography & Colors
+		$this->start_controls_section( 'section_style_content', [ 'label' => __( 'Typography & Colors', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+
+		// Title
+		$this->add_control( 'heading_title', [ 'label' => __( 'Title', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
 		$this->add_group_control( Group_Control_Typography::get_type(), [
 			'name' => 'title_typography',
-			'label' => __( 'Title Typography', 'charts' ),
 			'selector' => '{{WRAPPER}} .kc-list-title',
 		] );
+		$this->add_control( 'title_color', [
+			'label' => __( 'Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-title' => 'color: {{VALUE}};' ]
+		] );
 
-		$this->add_control( 'index_opacity', [
-			'label' => __( 'Index Number Opacity', 'charts' ),
+		// Subtitle
+		$this->add_control( 'heading_subtitle', [ 'label' => __( 'Subtitle', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'subtitle_typography',
+			'selector' => '{{WRAPPER}} .kc-list-subtitle',
+		] );
+		$this->add_control( 'subtitle_color', [
+			'label' => __( 'Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-subtitle' => 'color: {{VALUE}};' ]
+		] );
+
+		// Badge
+		$this->add_control( 'heading_badge', [ 'label' => __( 'Badge', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'badge_typography',
+			'selector' => '{{WRAPPER}} .kc-list-badge',
+		] );
+		$this->add_control( 'badge_bg_color', [
+			'label' => __( 'Background Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-badge' => 'background: {{VALUE}};' ]
+		] );
+		$this->add_control( 'badge_text_color', [
+			'label' => __( 'Text Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-badge' => 'color: {{VALUE}};' ]
+		] );
+
+		// Index
+		$this->add_control( 'heading_index', [ 'label' => __( 'Index Number', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'index_size', [
+			'label' => __( 'Size', 'charts' ),
 			'type' => Controls_Manager::SLIDER,
-			'range' => [ 'px' => [ 'min' => 0, 'max' => 1, 'step' => 0.1 ] ],
+			'range' => [ 'px' => [ 'min' => 40, 'max' => 200 ] ],
+			'default' => [ 'size' => 80 ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-index' => 'font-size: {{SIZE}}{{UNIT}};' ]
+		]);
+		$this->add_control( 'index_opacity_val', [
+			'label' => __( 'Opacity', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 1, 'step' => 0.05 ] ],
 			'default' => [ 'size' => 0.05 ],
 			'selectors' => [ '{{WRAPPER}} .kc-list-index' => 'opacity: {{SIZE}};' ]
 		]);
+
+		// Separator
+		$this->add_control( 'heading_separator', [ 'label' => __( 'Separator', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'divider_color', [
+			'label' => __( 'Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'border-color: {{VALUE}};' ]
+		] );
 
 		$this->end_controls_section();
 	}
@@ -139,9 +234,10 @@ class ChartList extends Widget_Base {
 		if ( empty($definitions) ) return;
 
 		$start_index = intval($settings['start_index'] ?: 1);
+		$density_class = 'density-' . ($settings['density_mode'] ?? 'default');
 ?>
 		<div class="kc-root">
-			<div class="kc-chart-list-widget" style="display: flex; flex-direction: column;">
+			<div class="kc-chart-list-widget <?php echo esc_attr($density_class); ?>" style="display: flex; flex-direction: column;">
 				<?php foreach ( $definitions as $i => $def ) : 
 					$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 1);
 					$top = !empty($entries) ? $entries[0] : null;
@@ -149,25 +245,33 @@ class ChartList extends Widget_Base {
 					
 					$idx_str = str_pad($i + $start_index, 2, '0', STR_PAD_LEFT);
 					$has_sep = $settings['show_separator'] === 'yes' && ($i < count($definitions) - 1);
+					
+					// Core structural styles only (no properties controlled by Elementor selectors)
+					$list_item_style = 'position: relative; display: flex; align-items: center; justify-content: space-between; overflow: hidden;';
+					if ($has_sep && empty($settings['divider_color'])) {
+						$list_item_style .= ' border-bottom: 1px solid rgba(0,0,0,0.05);';
+					} elseif ($has_sep) {
+						$list_item_style .= ' border-bottom-style: solid; border-bottom-width: 1px;';
+					}
 				?>
-					<div class="kc-list-item" style="position: relative; display: flex; align-items: center; justify-content: space-between; padding-bottom: <?php echo intval($settings['item_spacing']['size']); ?>px; <?php echo $has_sep ? 'border-bottom: 1px solid var(--k-divider);' : ''; ?> transition: opacity 0.3s; margin-bottom: <?php echo intval($settings['item_spacing']['size']); ?>px;">
+					<div class="kc-list-item" style="<?php echo esc_attr($list_item_style); ?>">
 						
-						<div class="kc-list-main" style="position: relative; z-index: 2; flex-grow: 1; padding-right: 60px;">
+						<div class="kc-list-main" style="position: relative; z-index: 2; flex-grow: 1;">
 							<?php if ( $settings['show_badge'] === 'yes' ) : ?>
-								<span class="kc-list-badge" style="display: inline-block; padding: 4px 10px; background: var(--k-accent); color: #fff; font-size: 8px; font-weight: 900; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;"><?php echo esc_html($def->title); ?></span>
+								<span class="kc-list-badge" style="display: inline-block; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.1em;"><?php echo esc_html($def->title); ?></span>
 							<?php endif; ?>
 
-							<h3 class="kc-list-title" style="margin: 0; font-size: 32px; font-weight: 950; color: var(--k-text); letter-spacing: -0.04em; line-height: 1;"><?php echo esc_html($top->track_name); ?></h3>
+							<h3 class="kc-list-title" style="margin: 0; line-height: 1.1;"><?php echo esc_html($top->track_name); ?></h3>
 							
 							<?php if ( $settings['show_subtitle'] === 'yes' ) : ?>
-								<span class="kc-list-subtitle" style="display: block; margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--k-accent-purple); opacity: 0.8;"><?php echo esc_html($top->artist_names); ?></span>
+								<span class="kc-list-subtitle" style="display: block;"><?php echo esc_html($top->artist_names); ?></span>
 							<?php endif; ?>
 
 							<a href="<?php echo home_url('/charts/' . $def->slug); ?>" style="position: absolute; inset: 0; z-index: 5;"></a>
 						</div>
 
 						<?php if ( $settings['show_index'] === 'yes' ) : ?>
-							<div class="kc-list-index" style="position: absolute; right: 0; font-size: 100px; font-weight: 950; color: var(--k-text); opacity: 0.05; pointer-events: none; line-height: 1;"><?php echo $idx_str; ?></div>
+							<div class="kc-list-index" style="position: absolute; right: 0; font-weight: 950; pointer-events: none; line-height: 1;"><?php echo $idx_str; ?></div>
 						<?php endif; ?>
 					</div>
 				<?php endforeach; ?>

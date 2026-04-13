@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           1.30.2
+ * Version:           1.30.3
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'CHARTS_VERSION', '1.30.2' );
+define( 'CHARTS_VERSION', '1.30.3' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -183,6 +183,10 @@ final class Charts {
 					}
 				}
 			}
+			// 3. Data Healing: Ensure max_rows/ordering_mode are populated
+			$wpdb->query( "UPDATE {$wpdb->prefix}charts_definitions SET max_rows = 100 WHERE max_rows IS NULL OR max_rows = 0" );
+			$wpdb->query( "UPDATE {$wpdb->prefix}charts_definitions SET ordering_mode = 'import' WHERE ordering_mode IS NULL OR ordering_mode = ''" );
+
 			update_option( 'kcharts_db_version', '1.30.0' );
 		}
 

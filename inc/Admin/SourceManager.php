@@ -395,7 +395,8 @@ class SourceManager {
 		if ( ! $definition ) return array();
 
 		// Use PublicIntegration to fetch current entries for this chart's cid- source
-		$entries = \Charts\Core\PublicIntegration::get_preview_entries( $definition, $definition->max_rows );
+		// We pass a large limit (500) for the admin view to ensure visibility even if front-end limit is lower
+		$entries = \Charts\Core\PublicIntegration::get_preview_entries( $definition, 500 );
 		return $entries;
 	}
 
