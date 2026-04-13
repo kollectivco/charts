@@ -218,17 +218,33 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 							<table class="charts-admin-table" style="width: 100%; border-collapse: collapse;">
 								<thead style="background: var(--charts-bg); border-bottom: 1px solid var(--charts-border);">
 									<tr>
-										<th style="width: 60px; text-align: center; padding: 12px;">#</th>
+										<?php if ( $ordering_mode === 'manual' ) : ?>
+											<th style="width: 44px; text-align: center; padding: 12px; border-right: 1px solid var(--charts-border);">
+												<input type="checkbox" disabled style="margin: 0;">
+											</th>
+										<?php endif; ?>
+										<th style="width: 50px; text-align: center; padding: 12px;">#</th>
 										<th style="padding: 12px;">Entity</th>
 										<th style="padding: 12px; width: 140px;">ID / Slug</th>
 										<?php if ( $ordering_mode === 'manual' ) : ?>
-											<th style="padding: 12px; width: 80px;"></th>
+											<th style="padding: 12px; width: 44px;"></th>
 										<?php endif; ?>
 									</tr>
 								</thead>
 								<tbody id="chart_rows_sortable" data-chart-id="<?php echo $def_id; ?>" data-ordering-mode="<?php echo $ordering_mode; ?>">
 									<?php if ( ! empty($entries) ) : foreach ( $entries as $e ) : ?>
 										<tr class="chart-row-item" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>" style="border-bottom: 1px solid var(--charts-border);">
+											<?php if ( $ordering_mode === 'manual' ) : ?>
+												<td style="text-align: center; padding: 8px 4px; border-right: 1px solid var(--charts-border); background: #fafafa;">
+													<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+														<input type="checkbox" style="margin-bottom: 6px;">
+														<div class="reorder-stack" style="display: flex; flex-direction: column; gap: -4px;">
+															<span class="dashicons dashicons-arrow-up-alt2 row-move-up" title="Move Up" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
+															<span class="dashicons dashicons-arrow-down-alt2 row-move-down" title="Move Down" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
+														</div>
+													</div>
+												</td>
+											<?php endif; ?>
 											<td class="row-rank" style="text-align: center; font-weight: 800; color: var(--charts-accent); padding: 14px;"><?php echo $e->rank_position; ?></td>
 											<td style="padding: 14px;">
 												<div style="display: flex; align-items: center; gap: 12px;">
@@ -246,18 +262,16 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 											</td>
 											<?php if ( $ordering_mode === 'manual' ) : ?>
 												<td style="padding: 14px; text-align: right;">
-													<div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
-														<span class="dashicons dashicons-arrow-up-alt2 row-move-up" title="Move Up" style="color: var(--charts-text-dim); cursor: pointer; padding: 4px;"></span>
-														<span class="dashicons dashicons-arrow-down-alt2 row-move-down" title="Move Down" style="color: var(--charts-text-dim); cursor: pointer; padding: 4px;"></span>
-														<span class="dashicons dashicons-move row-handle" style="color: var(--charts-text-dim); cursor: grab; padding: 4px; margin-left: 8px; opacity: 0.5;"></span>
-														<span class="dashicons dashicons-dismiss row-delete" title="Remove from Chart" style="color: #ef4444; cursor: pointer; padding: 4px; margin-left: 8px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
+													<div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+														<span class="dashicons dashicons-move row-handle" style="color: #ddd; cursor: grab; padding: 4px; transition: color 0.2s;"></span>
+														<span class="dashicons dashicons-dismiss row-delete" title="Remove" style="color: #fca5a5; cursor: pointer; padding: 4px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
 													</div>
 												</td>
 											<?php endif; ?>
 										</tr>
 									<?php endforeach; else : ?>
 										<tr>
-											<td colspan="4" style="padding: 60px; text-align: center;">
+											<td colspan="<?php echo $ordering_mode === 'manual' ? 5 : 3; ?>" style="padding: 60px; text-align: center;">
 												<div style="opacity: 0.3; margin-bottom: 12px;">
 													<span class="dashicons dashicons-list-view" style="font-size: 32px; width: 32px; height: 32px;"></span>
 												</div>
@@ -503,5 +517,8 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 		.search-result-row:hover { background: #f8f8fb; }
 		.ui-state-highlight { height: 60px; background: rgba(99, 102, 241, 0.05); border: 1px dashed var(--charts-accent); }
 		.charts-admin-table th { font-weight: 700; font-size: 12px; color: var(--charts-text-dim); text-transform: uppercase; letter-spacing: 0.03em; }
+		.row-move-up:hover, .row-move-down:hover { color: var(--charts-accent) !important; }
+		.row-handle:hover { color: var(--charts-text) !important; }
+		.row-delete:hover { color: #ef4444 !important; }
 	</style>
 </div>
