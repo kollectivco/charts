@@ -176,11 +176,7 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 							<span class="input-helper">Determine if this chart is fed by automated systems or curated by hand.</span>
 						</div>
 						
-						<div class="form-group">
-							<label for="max_rows">Ranking Pipeline Depth</label>
-							<input type="number" id="max_rows" name="max_rows" value="<?php echo $max_rows; ?>" class="form-control" style="width: 140px;" min="1" max="500">
-							<span class="input-helper">The maximum number of items allowed in this ranking list.</span>
-						</div>
+						<!-- Removed Ranking Pipeline Depth -->
 					</div>
 				</div>
 
@@ -193,58 +189,51 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 							<div>
 								<h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--charts-text);">Chart Rows & Live Rankings</h3>
 								<p style="font-size: 13px; color: var(--charts-text-dim); margin-top: 4px;">
-									<?php if ( $ordering_mode === 'manual' ) : ?>
-										You are in <strong>Manual Mode</strong>. Drag rows to reorder or add new items via search.
-									<?php else : ?>
+									<span class="mode-notice mode-notice-manual" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?>">
+										You are in <strong>Manual Mode</strong>. Use up/down arrows or drag rows to reorder.
+									</span>
+									<span class="mode-notice mode-notice-import" style="<?php echo $ordering_mode === 'manual' ? 'display:none;' : ''; ?>">
 										You are in <strong>Automatic Mode</strong>. Rankings are controlled by Import Center.
-									<?php endif; ?>
+									</span>
 								</p>
 							</div>
 							
-							<?php if ( $ordering_mode === 'manual' ) : ?>
-								<div class="manual-search-wrap" style="position: relative; width: 340px;">
-									<div style="position: relative;">
-										<span class="dashicons dashicons-search" style="position: absolute; left: 12px; top: 10px; color: var(--charts-text-dim); opacity: 0.5;"></span>
-										<input type="text" id="manual_row_search" class="form-control" style="padding-left: 36px;" placeholder="Search for <?php echo esc_attr($item_type); ?>s to add...">
-									</div>
-									<div id="search_results_bubble" style="display: none; position: absolute; top: 48px; left: 0; right: 0; background: #fff; border: 1px solid var(--charts-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 100; max-height: 400px; overflow-y: auto;">
-										<!-- Dynamic Results -->
-									</div>
+							<div class="manual-search-wrap" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> position: relative; width: 340px;">
+								<div style="position: relative;">
+									<span class="dashicons dashicons-search" style="position: absolute; left: 12px; top: 10px; color: var(--charts-text-dim); opacity: 0.5;"></span>
+									<input type="text" id="manual_row_search" class="form-control" style="padding-left: 36px;" placeholder="Search for <?php echo esc_attr($item_type); ?>s to add...">
 								</div>
-							<?php endif; ?>
+								<div id="search_results_bubble" style="display: none; position: absolute; top: 48px; left: 0; right: 0; background: #fff; border: 1px solid var(--charts-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 100; max-height: 400px; overflow-y: auto;">
+									<!-- Dynamic Results -->
+								</div>
+							</div>
 						</div>
 
 						<div id="chart_rows_table_wrap" style="border: 1px solid var(--charts-border); border-radius: 12px; overflow: hidden; background: #fff;">
 							<table class="charts-admin-table" style="width: 100%; border-collapse: collapse;">
 								<thead style="background: var(--charts-bg); border-bottom: 1px solid var(--charts-border);">
 									<tr>
-										<?php if ( $ordering_mode === 'manual' ) : ?>
-											<th style="width: 44px; text-align: center; padding: 12px; border-right: 1px solid var(--charts-border);">
-												<input type="checkbox" disabled style="margin: 0;">
-											</th>
-										<?php endif; ?>
+										<th class="manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> width: 44px; text-align: center; padding: 12px; border-right: 1px solid var(--charts-border);">
+											<input type="checkbox" disabled style="margin: 0;">
+										</th>
 										<th style="width: 50px; text-align: center; padding: 12px;">#</th>
 										<th style="padding: 12px;">Entity</th>
 										<th style="padding: 12px; width: 140px;">ID / Slug</th>
-										<?php if ( $ordering_mode === 'manual' ) : ?>
-											<th style="padding: 12px; width: 44px;"></th>
-										<?php endif; ?>
+										<th class="manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> padding: 12px; width: 44px;"></th>
 									</tr>
 								</thead>
 								<tbody id="chart_rows_sortable" data-chart-id="<?php echo $def_id; ?>" data-ordering-mode="<?php echo $ordering_mode; ?>">
 									<?php if ( ! empty($entries) ) : foreach ( $entries as $e ) : ?>
 										<tr class="chart-row-item" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>" style="border-bottom: 1px solid var(--charts-border);">
-											<?php if ( $ordering_mode === 'manual' ) : ?>
-												<td style="text-align: center; padding: 8px 4px; border-right: 1px solid var(--charts-border); background: #fafafa;">
-													<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-														<input type="checkbox" style="margin-bottom: 6px;">
-														<div class="reorder-stack" style="display: flex; flex-direction: column; gap: -4px;">
-															<span class="dashicons dashicons-arrow-up-alt2 row-move-up" title="Move Up" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
-															<span class="dashicons dashicons-arrow-down-alt2 row-move-down" title="Move Down" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
-														</div>
+											<td class="manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> text-align: center; padding: 8px 4px; border-right: 1px solid var(--charts-border); background: #fafafa;">
+												<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+													<input type="checkbox" style="margin-bottom: 6px;">
+													<div class="reorder-stack" style="display: flex; flex-direction: column; gap: -4px;">
+														<span class="dashicons dashicons-arrow-up-alt2 row-move-up" title="Move Up" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
+														<span class="dashicons dashicons-arrow-down-alt2 row-move-down" title="Move Down" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
 													</div>
-												</td>
-											<?php endif; ?>
+												</div>
+											</td>
 											<td class="row-rank" style="text-align: center; font-weight: 800; color: var(--charts-accent); padding: 14px;"><?php echo $e->rank_position; ?></td>
 											<td style="padding: 14px;">
 												<div style="display: flex; align-items: center; gap: 12px;">
@@ -260,24 +249,20 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 											<td style="padding: 14px; font-family: monospace; font-size: 11px; color: var(--charts-text-dim);">
 												<?php echo esc_html($e->item_slug); ?>
 											</td>
-											<?php if ( $ordering_mode === 'manual' ) : ?>
-												<td style="padding: 14px; text-align: right;">
-													<div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
-														<span class="dashicons dashicons-move row-handle" style="color: #ddd; cursor: grab; padding: 4px; transition: color 0.2s;"></span>
-														<span class="dashicons dashicons-dismiss row-delete" title="Remove" style="color: #fca5a5; cursor: pointer; padding: 4px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
-													</div>
-												</td>
-											<?php endif; ?>
+											<td class="manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> padding: 14px; text-align: right;">
+												<div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+													<span class="dashicons dashicons-move row-handle" style="color: #ddd; cursor: grab; padding: 4px; transition: color 0.2s;"></span>
+													<span class="dashicons dashicons-dismiss row-delete" title="Remove" style="color: #fca5a5; cursor: pointer; padding: 4px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
+												</div>
+											</td>
 										</tr>
 									<?php endforeach; else : ?>
-										<tr>
-											<td colspan="<?php echo $ordering_mode === 'manual' ? 5 : 3; ?>" style="padding: 60px; text-align: center;">
+											<td colspan="5" class="empty-notice" style="padding: 60px; text-align: center;">
 												<div style="opacity: 0.3; margin-bottom: 12px;">
 													<span class="dashicons dashicons-list-view" style="font-size: 32px; width: 32px; height: 32px;"></span>
 												</div>
 												<p style="margin: 0; font-size: 13px; font-weight: 700; color: var(--charts-text-dim);">No active rows found for this chart.</p>
 											</td>
-										</tr>
 									<?php endif; ?>
 								</tbody>
 							</table>
@@ -348,27 +333,47 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 		$('#item_type').on('change', syncRankingLogic);
 		syncRankingLogic();
 
-		// Manual Management: DRAG & DROP
-		if ($('#ordering_mode').val() === 'manual') {
-			$("#chart_rows_sortable").sortable({
-				handle: ".row-handle",
-				placeholder: "ui-state-highlight",
-				helper: function(e, tr) {
-					var $originals = tr.children();
-					var $helper = tr.clone();
-					$helper.children().each(function(index) {
-						$(this).width($originals.eq(index).width());
-					});
-					return $helper;
-				},
-				update: function(event, ui) {
-					saveManualOrder();
-					updateRanksUI();
-				}
-			});
+		// Manual Management Core
+		function initManualOrdering() {
+			const isManual = $('#ordering_mode').val() === 'manual';
+			
+			// Toggle UI visibility
+			$('.manual-col').toggle(isManual);
+			$('.manual-search-wrap').toggle(isManual);
+			$('.mode-notice-manual').toggle(isManual);
+			$('.mode-notice-import').toggle(!isManual);
 
-			updateRanksUI(); // Initialize arrows on load
+			if (isManual) {
+				if (!$("#chart_rows_sortable").data('ui-sortable')) {
+					$("#chart_rows_sortable").sortable({
+						handle: ".row-handle",
+						placeholder: "ui-state-highlight",
+						helper: function(e, tr) {
+							var $originals = tr.children();
+							var $helper = tr.clone();
+							$helper.children().each(function(index) {
+								$(this).width($originals.eq(index).width());
+							});
+							return $helper;
+						},
+						update: function(event, ui) {
+							saveManualOrder();
+							updateRanksUI();
+						}
+					});
+				} else {
+					$("#chart_rows_sortable").sortable("enable");
+				}
+				updateRanksUI();
+			} else {
+				if ($("#chart_rows_sortable").data('ui-sortable')) {
+					$("#chart_rows_sortable").sortable("disable");
+				}
+			}
 		}
+
+		$('#ordering_mode').on('change', initManualOrdering);
+		initManualOrdering();
 
 		function updateRanksUI() {
 			const $rows = $('#chart_rows_sortable tr.chart-row-item');

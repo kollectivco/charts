@@ -257,10 +257,8 @@ class PublicIntegration {
 
 		if ( ! $period_id ) return array();
 
-		// 2. Resolve Max Depth (0 or empty = unlimited/default 100)
-		$max_rows = intval($definition->max_rows ?? 0);
-		$max_depth = ($max_rows > 0) ? $max_rows : 100;
-		$final_limit = ($limit > 0) ? min($limit, $max_depth) : $max_depth;
+		// 2. Resolve Max Depth (Pipeline depth removed, defaulting to safe high limit)
+		$final_limit = ($limit > 0) ? $limit : 500;
 
 		// 2. Fetch deduped entries for this period
 		$query_params = array_values( $source_ids );

@@ -44,7 +44,7 @@ if ( $definition ) {
 			$query_params = array_values( $source_ids );
 			$query_params[] = $period->id;
 			
-			$max_depth = !empty($definition->max_rows) ? intval($definition->max_rows) : 100;
+			$max_depth = 500; // Pipeline depth removed, using safe high limit
 			$query_params[] = $max_depth;
 			
 			$entries = $wpdb->get_results( $wpdb->prepare( "
