@@ -234,7 +234,10 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 													</div>
 												</div>
 											</td>
-											<td class="row-rank" style="text-align: center; font-weight: 800; color: var(--charts-accent); padding: 14px;"><?php echo $e->rank_position; ?></td>
+											<td style="text-align: center; font-weight: 800; color: var(--charts-accent); padding: 14px;">
+												<div class="row-rank-static" style="<?php echo $ordering_mode === 'manual' ? 'display:none;' : ''; ?>"><?php echo $e->rank_position; ?></div>
+												<input type="number" class="row-rank-input manual-col" value="<?php echo $e->rank_position; ?>" min="1" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> width: 50px; text-align: center; font-weight: 800; border: 1px solid var(--charts-border); border-radius: 4px; padding: 4px;">
+											</td>
 											<td style="padding: 14px;">
 												<div style="display: flex; align-items: center; gap: 12px;">
 													<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f8f8f8;">
@@ -339,6 +342,7 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 			
 			// Toggle UI visibility
 			$('.manual-col').toggle(isManual);
+			$('.row-rank-static').toggle(!isManual);
 			$('.manual-search-wrap').toggle(isManual);
 			$('.mode-notice-manual').toggle(isManual);
 			$('.mode-notice-import').toggle(!isManual);
@@ -381,13 +385,46 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 				const is_first = idx === 0;
 				const is_last = idx === $rows.length - 1;
 				
-				$(this).find('.row-rank').text(idx + 1);
+				$(this).find('.row-rank-static').text(idx + 1);
+				$(this).find('.row-rank-input').val(idx + 1);
 				
 				// Handle Arrow Visibility
 				$(this).find('.row-move-up').css('visibility', is_first ? 'hidden' : 'visible');
 				$(this).find('.row-move-down').css('visibility', is_last ? 'hidden' : 'visible');
 			});
 		}
+
+		// Manual Management: NUMERIC DIRECT EDIT
+		$(document).on('change', '.row-rank-input', function() {
+			const $row = $(this).closest('tr');
+			const $rows = $('#chart_rows_sortable tr.chart-row-item');
+			let newIdx = parseInt($(this).val()) - 1;
+			
+			if (isNaN(newIdx) || newIdx < 0) newIdx = 0;
+			if (newIdx >= $rows.length) newIdx = $rows.length - 1;
+
+			if (newIdx === $row.index()) {
+				$(this).val(newIdx + 1);
+				return;
+			}
+
+			// Move row
+			if (newIdx === 0) {
+				$row.prependTo('#chart_rows_sortable');
+			} else if (newIdx >= $rows.length - 1) {
+				$row.appendTo('#chart_rows_sortable');
+			} else {
+				const $target = $rows.eq(newIdx);
+				if (newIdx > $row.index()) {
+					$row.insertAfter($target);
+				} else {
+					$row.insertBefore($target);
+				}
+			}
+
+			updateRanksUI();
+			saveManualOrder();
+		});
 
 		// Manual Management: ARROW REORDERING
 		$(document).on('click', '.row-move-up', function() {
