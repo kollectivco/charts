@@ -246,9 +246,11 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 											</td>
 											<?php if ( $ordering_mode === 'manual' ) : ?>
 												<td style="padding: 14px; text-align: right;">
-													<div style="display: flex; gap: 8px; justify-content: flex-end;">
-														<span class="dashicons dashicons-move row-handle" style="color: var(--charts-text-dim); cursor: grab; padding: 4px;"></span>
-														<span class="dashicons dashicons-dismiss row-delete" title="Remove from Chart" style="color: #ef4444; cursor: pointer; padding: 4px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
+													<div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
+														<span class="dashicons dashicons-arrow-up-alt2 row-move-up" title="Move Up" style="color: var(--charts-text-dim); cursor: pointer; padding: 4px;"></span>
+														<span class="dashicons dashicons-arrow-down-alt2 row-move-down" title="Move Down" style="color: var(--charts-text-dim); cursor: pointer; padding: 4px;"></span>
+														<span class="dashicons dashicons-move row-handle" style="color: var(--charts-text-dim); cursor: grab; padding: 4px; margin-left: 8px; opacity: 0.5;"></span>
+														<span class="dashicons dashicons-dismiss row-delete" title="Remove from Chart" style="color: #ef4444; cursor: pointer; padding: 4px; margin-left: 8px;" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>"></span>
 													</div>
 												</td>
 											<?php endif; ?>
@@ -350,13 +352,44 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 					updateRanksUI();
 				}
 			});
+
+			updateRanksUI(); // Initialize arrows on load
 		}
 
 		function updateRanksUI() {
-			$('#chart_rows_sortable tr').each(function(idx) {
+			const $rows = $('#chart_rows_sortable tr.chart-row-item');
+			$rows.each(function(idx) {
+				const is_first = idx === 0;
+				const is_last = idx === $rows.length - 1;
+				
 				$(this).find('.row-rank').text(idx + 1);
+				
+				// Handle Arrow Visibility
+				$(this).find('.row-move-up').css('visibility', is_first ? 'hidden' : 'visible');
+				$(this).find('.row-move-down').css('visibility', is_last ? 'hidden' : 'visible');
 			});
 		}
+
+		// Manual Management: ARROW REORDERING
+		$(document).on('click', '.row-move-up', function() {
+			const $row = $(this).closest('tr');
+			const $prev = $row.prev('.chart-row-item');
+			if ($prev.length) {
+				$row.insertBefore($prev);
+				updateRanksUI();
+				saveManualOrder();
+			}
+		});
+
+		$(document).on('click', '.row-move-down', function() {
+			const $row = $(this).closest('tr');
+			const $next = $row.next('.chart-row-item');
+			if ($next.length) {
+				$row.insertAfter($next);
+				updateRanksUI();
+				saveManualOrder();
+			}
+		});
 
 		function saveManualOrder() {
 			const order = [];
