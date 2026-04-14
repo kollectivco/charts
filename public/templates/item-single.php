@@ -95,10 +95,10 @@ foreach ( $more_items as $mi ) {
 					<div style="display: flex; gap: 8px; margin-bottom: 16px;">
 						<span style="background: var(--k-accent); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"><?php echo strtoupper($type); ?></span>
 					</div>
-					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;" class="<?php echo \Charts\Core\Typography::get_font_class($item->title); ?>"><?php echo esc_html($item->title); ?></h1>
-					<?php if ( ! empty($item->title_franko) ) : ?>
-						<div style="font-size: 24px; font-weight: 700; color: var(--k-text-dim); margin-top: 8px; opacity: 0.6; letter-spacing: -0.02em;"><?php echo esc_html($item->title_franko); ?></div>
-					<?php endif; ?>
+					<?php 
+						$resolved = \Charts\Core\PublicIntegration::resolve_display_name($item); 
+					?>
+					<h1 style="font-size: 72px; font-weight: 950; margin: 0; line-height: 1; letter-spacing: -0.04em;" class="<?php echo \Charts\Core\Typography::get_font_class($resolved['title']); ?>"><?php echo esc_html($resolved['title']); ?></h1>
 					
 						<div style="display: flex; align-items: center; gap: 20px; margin-top: 28px; flex-wrap: wrap;">
 							<?php 
@@ -113,9 +113,12 @@ foreach ( $more_items as $mi ) {
 								$artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
 								if ( $artist_row ) :
 							?>
-								<a href="<?php echo home_url('/charts/artist/' . $artist_row->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;" class="<?php echo \Charts\Core\Typography::get_font_class($artist_row->display_name); ?>">
+								<?php 
+									$a_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist_row);
+								?>
+								<a href="<?php echo home_url('/charts/artist/' . $artist_row->slug); ?>" style="display: flex; align-items: center; gap: 10px; color: var(--k-text); text-decoration: none; font-weight: 800; font-size: 14px;" class="<?php echo \Charts\Core\Typography::get_font_class($a_resolved['title']); ?>">
 									<img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-									<?php echo esc_html($artist_row->display_name); ?>
+									<?php echo esc_html($a_resolved['title']); ?>
 								</a>
 							<?php 
 								endif;
@@ -152,9 +155,12 @@ foreach ( $more_items as $mi ) {
 
 				<div class="kc-card" style="margin-top: 40px; display: flex; align-items: center; gap: 24px; padding: 24px 32px;">
 					<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
+					<?php 
+						$pa_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
+					?>
 					<div>
 						<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Primary Artist</span>
-						<span style="font-size: 16px; font-weight: 900; color: var(--k-text);"><?php echo esc_html($artist->display_name); ?></span>
+						<span style="font-size: 16px; font-weight: 900; color: var(--k-text);"><?php echo esc_html($pa_resolved['title']); ?></span>
 					</div>
 				</div>
 			</div>
@@ -203,14 +209,16 @@ foreach ( $more_items as $mi ) {
 		<section class="kc-section" style="padding: 100px 0 80px;">
 			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">More by <?php echo esc_html($artist->display_name); ?></h3>
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
-				<?php foreach ( $more_items as $mi ) : ?>
-					<a href="<?php echo home_url('/charts/' . $type . '/' . $mi->slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-radius: 12px; text-decoration: none;">
-						<div style="display: flex; align-items: center; gap: 20px;">
-							<img src="<?php echo esc_url($mi->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 10px;">
-							<div>
-								<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($mi->title); ?>"><?php echo esc_html($mi->title); ?></h4>
-							</div>
-						</div>
+						<?php foreach ( $more_items as $mi ) : 
+							$mi_resolved = \Charts\Core\PublicIntegration::resolve_display_name($mi);
+						?>
+							<a href="<?php echo home_url('/charts/' . $type . '/' . $mi->slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-radius: 12px; text-decoration: none;">
+								<div style="display: flex; align-items: center; gap: 20px;">
+									<img src="<?php echo esc_url($mi->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 10px;">
+									<div>
+										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($mi_resolved['title']); ?>"><?php echo esc_html($mi_resolved['title']); ?></h4>
+									</div>
+								</div>
 						<div style="width: 32px; height: 32px; border: 1px solid var(--k-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--k-accent); border-color: var(--k-accent);">
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
 						</div>

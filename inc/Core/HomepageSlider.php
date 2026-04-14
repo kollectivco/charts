@@ -89,10 +89,10 @@ class HomepageSlider {
                 ", $def->chart_type, $def->country_code));
 
                 if ($row) {
-                    $is_artist = ( $row->item_type === 'artist' );
+                    $resolved = PublicIntegration::resolve_display_name($row, $def);
                     $slides[] = [
-                        'title'     => ( $is_artist && ! empty($row->artist_names) ) ? $row->artist_names : $row->track_name,
-                        'desc'      => $is_artist ? '' : $row->artist_names, // Clear subtitle for artists
+                        'title'     => $resolved['title'],
+                        'desc'      => $resolved['subtitle'],
                         'badge'     => '',
                         'image_url' => $row->resolved_thumb ?: $def->cover_image_url,
                         'btn1_text' => 'View Chart',
@@ -126,9 +126,10 @@ class HomepageSlider {
         $artists = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}charts_artists WHERE id IN ($ids_string) LIMIT $count");
 
         foreach ($artists as $a) {
+            $resolved = PublicIntegration::resolve_display_name($a);
             $slides[] = [
-                'title'     => $a->display_name,
-                'desc'      => '', // Clear "Trending Artist Profile" subtitle per new rules
+                'title'     => $resolved['title'],
+                'desc'      => '', 
                 'badge'     => '',
                 'image_url' => $a->image ?: CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => 'View Profile',
@@ -152,8 +153,9 @@ class HomepageSlider {
         ");
 
         foreach ($tracks as $t) {
+            $resolved = PublicIntegration::resolve_display_name($t);
             $slides[] = [
-                'title'     => $t->title,
+                'title'     => $resolved['title'],
                 'desc'      => $t->artist_name,
                 'badge'     => '',
                 'image_url' => $t->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png',

@@ -176,7 +176,15 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 							<span class="input-helper">Determine if this chart is fed by automated systems or curated by hand.</span>
 						</div>
 						
-						<!-- Removed Ranking Pipeline Depth -->
+						<div class="form-group">
+							<label for="franco_mode">Display Language Mode</label>
+							<select name="franco_mode" id="franco_mode" class="form-control">
+								<option value="original" <?php selected($franco_mode ?? 'original', 'original'); ?>>Original Text (Arabic/English)</option>
+								<option value="franco_auto" <?php selected($franco_mode ?? 'original', 'franco_auto'); ?>>Automatic Franco (Arabizi)</option>
+								<option value="franco_manual" <?php selected($franco_mode ?? 'original', 'franco_manual'); ?>>Franco (Manual Preferred)</option>
+							</select>
+							<span class="input-helper">Choose how entity names are rendered on the frontend.</span>
+						</div>
 					</div>
 				</div>
 
@@ -209,12 +217,21 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 							</div>
 						</div>
 
+						<div class="bulk-actions-bar manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 10px 16px; background: #fdfdfd; border: 1px solid var(--charts-border); border-radius: 8px;">
+							<select id="bulk_action_selector" class="form-control" style="width: 160px; height: 32px; font-size: 13px;">
+								<option value="">Bulk Actions</option>
+								<option value="delete">Delete Selected</option>
+							</select>
+							<button type="button" id="apply_bulk_action" class="charts-btn-back" style="padding: 4px 12px; font-size: 12px; height: 32px;">Apply</button>
+							<span id="selection_count" style="font-size: 12px; color: var(--charts-text-dim); margin-left: auto;">0 items selected</span>
+						</div>
+
 						<div id="chart_rows_table_wrap" style="border: 1px solid var(--charts-border); border-radius: 12px; overflow: hidden; background: #fff;">
 							<table class="charts-admin-table" style="width: 100%; border-collapse: collapse;">
 								<thead style="background: var(--charts-bg); border-bottom: 1px solid var(--charts-border);">
 									<tr>
 										<th class="manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> width: 44px; text-align: center; padding: 12px; border-right: 1px solid var(--charts-border);">
-											<input type="checkbox" disabled style="margin: 0;">
+											<input type="checkbox" id="master_checkbox" style="margin: 0;">
 										</th>
 										<th style="width: 50px; text-align: center; padding: 12px;">#</th>
 										<th style="padding: 12px;">Entity</th>
@@ -227,7 +244,7 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 										<tr class="chart-row-item" data-id="<?php echo $e->item_id; ?>" data-type="<?php echo $e->item_type; ?>" style="border-bottom: 1px solid var(--charts-border);">
 											<td class="manual-col" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> text-align: center; padding: 8px 4px; border-right: 1px solid var(--charts-border); background: #fafafa;">
 												<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-													<input type="checkbox" style="margin-bottom: 6px;">
+													<input type="checkbox" class="row-checkbox" style="margin-bottom: 6px;">
 													<div class="reorder-stack" style="display: flex; flex-direction: column; gap: -4px;">
 														<span class="dashicons dashicons-arrow-up-alt2 row-move-up" title="Move Up" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
 														<span class="dashicons dashicons-arrow-down-alt2 row-move-down" title="Move Down" style="color: #bbb; cursor: pointer; font-size: 16px; width: 16px; height: 16px; transition: color 0.2s;"></span>
@@ -243,6 +260,10 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 													<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f8f8f8;">
 													<div>
 														<div style="font-weight: 700; color: var(--charts-text);"><?php echo esc_html($e->track_name ?: $e->artist_names); ?></div>
+														<div class="manual-col franco-overrides" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> margin-top: 6px;">
+															<input type="text" class="franco-manual-title" placeholder="Manual Franco Title..." value="<?php echo esc_attr($e->track_name_franco_manual ?? ''); ?>" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid #eee; background: #fff; margin-bottom: 2px;">
+															<input type="text" class="franco-manual-artist" placeholder="Manual Franco Artist..." value="<?php echo esc_attr($e->artist_names_franco_manual ?? ''); ?>" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid #eee; background: #fff;">
+														</div>
 														<?php if ( !empty($e->artist_names) && $e->item_type !== 'artist' ) : ?>
 															<div style="font-size: 11px; font-weight: 500; color: var(--charts-text-dim);"><?php echo esc_html($e->artist_names); ?></div>
 														<?php endif; ?>
@@ -450,7 +471,12 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 		function saveManualOrder() {
 			const order = [];
 			$('#chart_rows_sortable tr.chart-row-item').each(function() {
-				order.push({ id: $(this).data('id'), type: $(this).data('type') });
+				order.push({ 
+					id: $(this).data('id'), 
+					type: $(this).data('type'),
+					title_franco_manual: $(this).find('.franco-manual-title').val() || '',
+					artist_franco_manual: $(this).find('.franco-manual-artist').val() || ''
+				});
 			});
 
 			$.post(charts_admin.ajax_url, {
@@ -521,9 +547,9 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 			});
 		});
 
-		// Manual Management: DELETE
+		// Manual Management: DELETE (Instant)
 		$(document).on('click', '.row-delete', function() {
-			if (!confirm('Remove this item from the chart?')) return;
+			// Removed confirm() for faster UX
 			const item_id = $(this).data('id');
 			const type = $(this).data('type');
 			const $row = $(this).closest('tr');
@@ -545,6 +571,37 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 					alert(response.data.message || 'Failed to remove row');
 				}
 			});
+		});
+
+		// Manual Management: BULK ACTIONS
+		$('#master_checkbox').on('change', function() {
+			$('.row-checkbox').prop('checked', $(this).is(':checked')).trigger('change');
+		});
+
+		$(document).on('change', '.row-checkbox', function() {
+			const count = $('.row-checkbox:checked').length;
+			$('#selection_count').text(count + ' items selected');
+		});
+
+		$('#apply_bulk_action').on('click', function() {
+			const action = $('#bulk_action_selector').val();
+			if (action !== 'delete') return;
+
+			const $selectedItems = $('.row-checkbox:checked').closest('tr');
+			if ($selectedItems.length === 0) return;
+
+			$selectedItems.fadeOut(300, function() {
+				$(this).remove();
+				updateRanksUI();
+				saveManualOrder();
+				$('#master_checkbox').prop('checked', false);
+				$('#selection_count').text('0 items selected');
+			});
+		});
+
+		// Manual Management: SAVE ON FRANCO CHANGE
+		$(document).on('change', '.franco-manual-title, .franco-manual-artist', function() {
+			saveManualOrder();
 		});
 
 		// Hide search bubble on outside click

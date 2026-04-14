@@ -74,6 +74,7 @@ class ChartTable extends Widget_Base {
 			<div class="kc-chart-table kc-variant-<?php echo esc_attr($style_variant); ?> kc-widget-card" style="background:var(--k-surface); border:1px solid var(--k-border); border-radius:var(--k-radius-lg); overflow:hidden; box-shadow:var(--k-shadow-sm);">
 				<?php foreach ( $rows as $idx => $row ) : 
 					$is_featured = ($style_variant === 'featured' && $idx === 0);
+					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 				?>
 					<div class="kc-row-item kc-rank-row <?php echo $is_featured ? 'kc-row-featured' : ''; ?>" style="display:flex; align-items:center; border-bottom:1px solid var(--k-divider); <?php echo $is_featured ? 'padding:32px 40px; background:var(--k-surface-alt);' : 'padding:16px 24px;'; ?>">
 						
@@ -83,14 +84,14 @@ class ChartTable extends Widget_Base {
 						
 						<?php if ( $show_cover ) : ?>
 						<div class="kc-row-img-wrap" style="margin-right:24px; flex-shrink:0;">
-							<img src="<?php echo esc_url($row->cover_image); ?>" class="kc-row-art" alt="<?php echo esc_attr($row->track_name); ?>" style="border-radius:var(--k-radius-sm); object-fit:cover; <?php echo $is_featured ? 'width:80px; height:80px;' : 'width:48px; height:48px;'; ?>">
+							<img src="<?php echo esc_url($row->cover_image); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>" style="border-radius:var(--k-radius-sm); object-fit:cover; <?php echo $is_featured ? 'width:80px; height:80px;' : 'width:48px; height:48px;'; ?>">
 						</div>
 						<?php endif; ?>
 
 						<div class="kc-row-info" style="flex-grow:1; min-width:0;">
-							<h4 class="kc-row-title kc-title" style="margin:0; font-weight:800; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; <?php echo $is_featured ? 'font-size:1.5rem;' : 'font-size:14px;'; ?>"><?php echo esc_html($row->track_name); ?></h4>
+							<h4 class="kc-row-title kc-title" style="margin:0; font-weight:800; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; <?php echo $is_featured ? 'font-size:1.5rem;' : 'font-size:14px;'; ?>"><?php echo esc_html($resolved['title']); ?></h4>
 							<?php if ( $show_artist ) : ?>
-								<p class="kc-row-subtitle kc-meta" style="margin:4px 0 0; font-weight:600; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; <?php echo $is_featured ? 'font-size:1.1rem;' : 'font-size:12px;'; ?>"><?php echo esc_html($row->artist_names); ?></p>
+								<p class="kc-row-subtitle kc-meta" style="margin:4px 0 0; font-weight:600; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; <?php echo $is_featured ? 'font-size:1.1rem;' : 'font-size:12px;'; ?>"><?php echo esc_html($resolved['subtitle']); ?></p>
 							<?php endif; ?>
 						</div>
 

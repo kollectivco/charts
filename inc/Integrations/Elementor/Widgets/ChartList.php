@@ -265,15 +265,18 @@ class ChartList extends Widget_Base {
 					$top = !empty($entries) ? $entries[0] : null;
 					if (!$top) continue;
 					
-					$idx_str = str_pad($i + $start_index, 2, '0', STR_PAD_LEFT);
-					$has_sep = $settings['show_separator'] === 'yes' && ($i < count($definitions) - 1);
-					
-					// Core structural styles only (no properties controlled by Elementor selectors)
-					$list_item_style = 'position: relative; display: flex; align-items: center; justify-content: space-between; overflow: visible;';
-					if ($has_sep) {
-						$list_item_style .= ' border-bottom-style: solid; border-bottom-width: 1px;';
-					}
-				?>
+					<?php 
+						$idx_str = str_pad($i + $start_index, 2, '0', STR_PAD_LEFT);
+						$has_sep = $settings['show_separator'] === 'yes' && ($i < count($definitions) - 1);
+						
+						$resolved = \Charts\Core\PublicIntegration::resolve_display_name($top, $def);
+
+						// Core structural styles only (no properties controlled by Elementor selectors)
+						$list_item_style = 'position: relative; display: flex; align-items: center; justify-content: space-between; overflow: visible;';
+						if ($has_sep) {
+							$list_item_style .= ' border-bottom-style: solid; border-bottom-width: 1px;';
+						}
+					?>
 					<div class="kc-list-item" style="<?php echo esc_attr($list_item_style); ?>">
 						
 						<div class="kc-list-main" style="position: relative; z-index: 2; flex-grow: 1;">
@@ -281,10 +284,10 @@ class ChartList extends Widget_Base {
 								<span class="kc-list-badge" style="display: inline-block; padding: 4px 10px; letter-spacing: 0.1em; line-height: 1;"><?php echo esc_html($def->title); ?></span>
 							<?php endif; ?>
 
-							<h3 class="kc-list-title" style="margin: 0; line-height: 1.1;"><?php echo esc_html($top->track_name); ?></h3>
+							<h3 class="kc-list-title" style="margin: 0; line-height: 1.1;"><?php echo esc_html($resolved['title']); ?></h3>
 							
 							<?php if ( $settings['show_subtitle'] === 'yes' ) : ?>
-								<span class="kc-list-subtitle" style="display: block; line-height: 1.4;"><?php echo esc_html($top->artist_names); ?></span>
+								<span class="kc-list-subtitle" style="display: block; line-height: 1.4;"><?php echo esc_html($resolved['subtitle']); ?></span>
 							<?php endif; ?>
 
 							<a href="<?php echo home_url('/charts/' . $def->slug); ?>" style="position: absolute; inset: 0; z-index: 5;"></a>

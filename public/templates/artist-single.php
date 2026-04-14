@@ -157,10 +157,10 @@ foreach($chart_rankings as $cr) {
 				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
 					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">Artist</span>
 				</div>
-				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>" style="margin: 0; line-height: 1;"><?php echo esc_html($artist->display_name); ?></h1>
-				<?php if ( ! empty($artist->display_name_franko) ) : ?>
-					<div style="font-size: 20px; font-weight: 700; color: var(--k-text-muted); margin-top: 8px; opacity: 0.4;"><?php echo esc_html($artist->display_name_franko); ?></div>
-				<?php endif; ?>
+				<?php 
+					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
+				?>
+				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($resolved['title']); ?>" style="margin: 0; line-height: 1;"><?php echo esc_html($resolved['title']); ?></h1>
 
 				<?php if ( ! empty($genres) ) : ?>
 					<div style="display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;">
@@ -205,9 +205,13 @@ foreach($chart_rankings as $cr) {
 									<div style="display: flex; align-items: center; gap: 20px;">
 										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $pt->rank_position; ?></span>
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
+										<?php 
+											$pt_resolved = \Charts\Core\PublicIntegration::resolve_display_name($pt);
+											$a_resolved  = \Charts\Core\PublicIntegration::resolve_display_name($artist);
+										?>
 										<div>
-											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($pt->track_name); ?>"><?php echo esc_html($pt->track_name); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($artist->display_name); ?>"><?php echo esc_html($artist->display_name); ?></span>
+											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($pt_resolved['title']); ?>"><?php echo esc_html($pt_resolved['title']); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($a_resolved['title']); ?>"><?php echo esc_html($a_resolved['title']); ?></span>
 										</div>
 									</div>
 									<div style="display: flex; align-items: center; gap: 20px;">

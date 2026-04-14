@@ -191,9 +191,9 @@ class ImportFlow {
 		$views_count  = intval( $flat['views_count'] ?? $row['views_count'] ?? 0 );
 		$source_url   = esc_url_raw( $flat['source_url'] ?? $row['source_url'] ?? '' );
 
-		// Franko Transliteration
-		$track_franko  = Normalizer::to_franko( $track_name );
-		$artist_franko = Normalizer::to_franko( $artist_names );
+		// Franco Transliteration (Automated Generation)
+		$track_franco_auto  = \Charts\Core\Transliteration::to_franco( $track_name );
+		$artist_franco_auto = \Charts\Core\Transliteration::to_franco( $artist_names );
 
 		// Resolve canonical slug if missing
 		$item_slug = $flat['item_slug'] ?? null;
@@ -221,9 +221,9 @@ class ImportFlow {
 			'views_count'      => $views_count,
 			// Flat display columns — no JOIN needed on frontend
 			'track_name'       => $track_name,
-			'track_name_franko' => $track_franko !== $track_name ? $track_franko : null,
+			'track_name_franco_auto' => $track_franco_auto !== $track_name ? $track_franco_auto : null,
 			'artist_names'     => $artist_names,
-			'artist_names_franko' => $artist_franko !== $artist_names ? $artist_franko : null,
+			'artist_names_franco_auto' => $artist_franco_auto !== $artist_names ? $artist_franco_auto : null,
 			'cover_image'      => $cover_image ?: null,
 			'item_slug'        => $item_slug,
 			'spotify_id'       => $spotify_id ?: null,

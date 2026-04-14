@@ -214,6 +214,7 @@ class SourceManager {
 			
 			update_post_meta( $id, '_is_featured', isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0 );
 			update_post_meta( $id, '_ordering_mode', sanitize_text_field( $data['ordering_mode'] ?? 'import' ) );
+			update_post_meta( $id, '_franco_mode', sanitize_text_field( $data['franco_mode'] ?? 'original' ) );
 			update_post_meta( $id, '_archive_enabled', isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1 );
 
 			// Sync to SQL
@@ -237,6 +238,7 @@ class SourceManager {
 				'is_public'       => isset( $data['is_public'] ) && $data['is_public'] ? 1 : 0,
 				'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
 				'ordering_mode'   => sanitize_text_field( $data['ordering_mode'] ?? 'import' ),
+				'franco_mode'     => sanitize_text_field( $data['franco_mode'] ?? 'original' ),
 				'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,
 				'menu_order'      => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
 				'updated_at'      => current_time( 'mysql' ),
@@ -251,6 +253,7 @@ class SourceManager {
 			$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $id );
 			if ( $native_post_id ) {
 				update_post_meta( $native_post_id, '_ordering_mode', $fields['ordering_mode'] );
+				update_post_meta( $native_post_id, '_franco_mode', $fields['franco_mode'] );
 				update_post_meta( $native_post_id, '_item_type', $fields['item_type'] );
 				update_post_meta( $native_post_id, '_chart_type', $fields['chart_type'] );
 				update_post_meta( $native_post_id, '_platform', $fields['platform'] );
@@ -297,6 +300,7 @@ class SourceManager {
 		$obj->is_public       = $post->post_status === 'publish' ? 1 : 0;
 		$obj->is_featured     = (int) get_post_meta( $post->ID, '_is_featured', true );
 		$obj->ordering_mode   = get_post_meta( $post->ID, '_ordering_mode', true ) ?: 'import';
+		$obj->franco_mode     = get_post_meta( $post->ID, '_franco_mode', true ) ?: 'original';
 		$obj->archive_enabled = (int) get_post_meta( $post->ID, '_archive_enabled', true );
 		$obj->menu_order      = $post->menu_order;
 		$obj->created_at      = $post->post_date;
@@ -343,6 +347,7 @@ class SourceManager {
 			update_post_meta( $post_id, '_accent_color', $row->accent_color );
 			update_post_meta( $post_id, '_is_featured', $row->is_featured );
 			update_post_meta( $post_id, '_ordering_mode', $row->ordering_mode ?: 'import' );
+			update_post_meta( $post_id, '_franco_mode', $row->franco_mode ?: 'original' );
 			update_post_meta( $post_id, '_archive_enabled', $row->archive_enabled );
 			
 			// Optional: Try to set featured image from URL if possible (AssetManager can do this later)
@@ -391,6 +396,7 @@ class SourceManager {
 			'cover_image_url' => $def->cover_image_url,
 			'accent_color'    => $def->accent_color,
 			'ordering_mode'   => $def->ordering_mode,
+			'franco_mode'     => $def->franco_mode,
 			'is_public'       => $def->is_public,
 			'is_featured'     => $def->is_featured,
 			'archive_enabled' => $def->archive_enabled,
@@ -482,17 +488,21 @@ class SourceManager {
 			if ( ! $meta ) continue;
 
 			$wpdb->insert( "{$wpdb->prefix}charts_entries", array(
-				'source_id'     => $source_id,
-				'period_id'     => $period_id,
-				'item_type'     => $item_type,
-				'item_id'       => $item_id,
-				'rank_position' => $rank,
-				'is_new_entry'  => 0,
-				'track_name'    => $meta->title ?? ( $meta->display_name ?? '' ),
-				'artist_names'  => $meta->display_name ?? '',
-				'item_slug'     => $meta->slug,
-				'cover_image'   => $meta->cover_image ?? ( $meta->thumbnail ?? ( $meta->image ?? '' ) ),
-				'created_at'    => current_time( 'mysql' )
+				'source_id'                 => $source_id,
+				'period_id'                 => $period_id,
+				'item_type'                 => $item_type,
+				'item_id'                   => $item_id,
+				'rank_position'             => $rank,
+				'is_new_entry'              => 0,
+				'track_name'                => $meta->title ?? ( $meta->display_name ?? '' ),
+				'track_name_franco_auto'    => \Charts\Core\Transliteration::to_franco( $meta->title ?? ( $meta->display_name ?? '' ) ),
+				'track_name_franco_manual'  => sanitize_text_field( $item['title_franco_manual'] ?? '' ),
+				'artist_names'              => $meta->display_name ?? '',
+				'artist_names_franco_auto'  => \Charts\Core\Transliteration::to_franco( $meta->display_name ?? '' ),
+				'artist_names_franco_manual' => sanitize_text_field( $item['artist_franco_manual'] ?? '' ),
+				'item_slug'                 => $meta->slug,
+				'cover_image'               => $meta->cover_image ?? ( $meta->thumbnail ?? ( $meta->image ?? '' ) ),
+				'created_at'                => current_time( 'mysql' )
 			) );
 			$saved++;
 		}

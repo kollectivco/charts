@@ -113,7 +113,12 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 							<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);"></div>
 							<div style="position: absolute; top: 16px; left: 16px; width: 32px; height: 32px; background: var(--k-accent-purple); color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">#<?php echo $art->rank_position; ?></div>
 							<div style="position: absolute; bottom: 24px; left: 24px; right: 24px;">
-								<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class($art->track_name); ?>"><?php echo esc_html($art->track_name); ?></h3>
+								<?php 
+									// For artists row, we treat entries as artists
+									$resolved = \Charts\Core\PublicIntegration::resolve_display_name($art, $top_artists_chart);
+									$art_title = $resolved['title'];
+								?>
+								<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class($art_title); ?>"><?php echo esc_html($art_title); ?></h3>
 								<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;" class="<?php echo \Charts\Core\Typography::get_font_class(Settings::get('labels.trending_artist_tag', 'Trending Artist')); ?>"><?php echo esc_html(Settings::get('labels.trending_artist_tag', 'Trending Artist')); ?></p>
 							</div>
 						</a>
@@ -165,11 +170,12 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 									<?php else : ?>
 										<?php foreach ( $entries as $e ) : 
 											$is_art_entry = ($e->item_type === 'artist' || $def->chart_type === 'top-artists');
-											$e_title = $is_art_entry ? ($e->artist_names ?: $e->track_name) : $e->track_name;
+											$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
+											$e_title = $is_art_entry ? ($resolved['subtitle'] ?: $resolved['title']) : $resolved['title'];
 											
 											// Healing
-											if ( $e_title === 'Unknown YouTube Item' && ! empty($e->artist_names) ) {
-												$e_title = $e->artist_names;
+											if ( $e_title === 'Unknown YouTube Item' && ! empty($resolved['subtitle']) ) {
+												$e_title = $resolved['subtitle'];
 											}
 										?>
 											<div class="kc-card-entry">
@@ -177,8 +183,8 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 												<img class="kc-entry-art" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 												<div class="kc-entry-info">
 													<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class($e_title); ?>"><?php echo esc_html($e_title); ?></span>
-													<?php if ( ! $is_art_entry && ! empty($e->artist_names) && strtolower($e_title) !== strtolower($e->artist_names) ) : ?>
-														<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
+													<?php if ( ! $is_art_entry && ! empty($resolved['subtitle']) && strtolower($e_title) !== strtolower($resolved['subtitle']) ) : ?>
+														<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class($resolved['subtitle']); ?>"><?php echo esc_html($resolved['subtitle']); ?></span>
 													<?php endif; ?>
 												</div>
 											</div>

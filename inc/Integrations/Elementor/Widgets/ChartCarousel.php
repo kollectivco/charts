@@ -267,13 +267,15 @@ class ChartCarousel extends Widget_Base {
 			</div>
 
 			<div class="kc-card-rows" style="padding: 12px 0; flex-grow: 1;">
-				<?php foreach ( $rows as $row ) : ?>
+				<?php foreach ( $rows as $e ) : 
+					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
+				?>
 					<div class="kc-preview-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--k-divider);">
-						<span style="font-size: 12px; font-weight: 900; color: <?php echo $accent; ?>; width: 16px;"><?php echo $row->rank_position; ?></span>
-						<img src="<?php echo esc_url($row->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;">
+						<span style="font-size: 12px; font-weight: 900; color: <?php echo $accent; ?>; width: 16px;"><?php echo $e->rank_position; ?></span>
+						<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;">
 						<div style="overflow: hidden;">
-							<span style="display: block; font-size: 13px; font-weight: 800; color: var(--k-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($row->track_name); ?></span>
-							<span style="display: block; font-size: 10px; font-weight: 600; color: var(--k-text-muted);"><?php echo esc_html($row->artist_names); ?></span>
+							<span style="display: block; font-size: 13px; font-weight: 800; color: var(--k-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($resolved['title']); ?></span>
+							<span style="display: block; font-size: 10px; font-weight: 600; color: var(--k-text-muted);"><?php echo esc_html($resolved['subtitle']); ?></span>
 						</div>
 					</div>
 				<?php endforeach; ?>
@@ -306,12 +308,14 @@ class ChartCarousel extends Widget_Base {
 				
 				<h3 style="margin: 0; color: #fff; font-size: 28px; font-weight: 950; letter-spacing: -0.04em; line-height: 1;"><?php echo esc_html($def->title); ?></h3>
 				
-				<?php if ( $top ) : ?>
+				<?php if ( $top ) : 
+					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($top, $def);
+				?>
 					<div style="margin-top: 16px; display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
 						<span style="font-size: 16px; font-weight: 950; color: #fff; opacity: 0.6;">#1</span>
 						<div style="min-width: 0;">
-							<span style="display: block; font-size: 14px; font-weight: 850; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($top->track_name); ?></span>
-							<span style="display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.6);"><?php echo esc_html($top->artist_names); ?></span>
+							<span style="display: block; font-size: 14px; font-weight: 850; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($resolved['title']); ?></span>
+							<span style="display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.6);"><?php echo esc_html($resolved['subtitle']); ?></span>
 						</div>
 					</div>
 				<?php endif; ?>

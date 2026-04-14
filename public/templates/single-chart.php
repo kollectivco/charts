@@ -137,6 +137,12 @@ if ( $definition ) {
 				?>
 					<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative;">
 					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
+					<?php 
+						$franco_mode = $definition->franco_mode ?? 'original';
+						$resolved = \Charts\Core\Transliteration::resolve_entry_display($top, $franco_mode);
+						$top_track = $resolved['track'];
+						$top_artist = $resolved['artist'];
+					?>
 					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
 						<div style="position: relative; display: flex; align-items: center; gap: 10px;">
 							<div style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">1</div>
@@ -151,19 +157,19 @@ if ( $definition ) {
 							</div>
 							<?php 
                                 // Rule: In artist mode, main title is Artist Name. In song mode, it's Track Name.
-                                $display_title = $is_artist_chart ? ($top->artist_names ?: $top->track_name) : $top->track_name;
+                                $display_title = $is_artist_chart ? ($top_artist ?: $top_track) : $top_track;
                                 
                                 // Auto-healing for stale "Unknown" data
-                                if ( $display_title === 'Unknown YouTube Item' && ! empty($top->artist_names) ) {
-                                    $display_title = $top->artist_names;
+                                if ( $display_title === 'Unknown YouTube Item' && ! empty($top_artist) ) {
+                                    $display_title = $top_artist;
                                 }
                             ?>
                             <h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($display_title); ?>"><?php echo esc_html($display_title); ?></h2>
 							
                             <?php 
                             // Rule: Disable subtitle for Artist Charts to prevent duplication
-                            if ( ! $is_artist_chart && ! empty($top->artist_names) && strtolower($display_title) !== strtolower($top->artist_names) ) : ?>
-								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top->artist_names); ?>"><?php echo esc_html($top->artist_names); ?></h3>
+                            if ( ! $is_artist_chart && ! empty($top_artist) && strtolower($display_title) !== strtolower($top_artist) ) : ?>
+								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top_artist); ?>"><?php echo esc_html($top_artist); ?></h3>
 							<?php endif; ?>
 							
 							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
@@ -212,22 +218,27 @@ if ( $definition ) {
 										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<?php 
+												$franco_mode = $definition->franco_mode ?? 'original';
+												$resolved = \Charts\Core\Transliteration::resolve_entry_display($e, $franco_mode);
+												$row_track = $resolved['track'];
+												$row_artist = $resolved['artist'];
+
                                                 // Rule: In artist mode, main title is Artist Name. In song mode, it's Track Name.
-                                                $row_title = $is_artist_chart ? ($e->artist_names ?: $e->track_name) : $e->track_name;
+                                                $row_title = $is_artist_chart ? ($row_artist ?: $row_track) : $row_track;
 
                                                 // Auto-healing for stale "Unknown" data
-                                                if ( $row_title === 'Unknown YouTube Item' && ! empty($e->artist_names) ) {
-                                                    $row_title = $e->artist_names;
+                                                if ( $row_title === 'Unknown YouTube Item' && ! empty($row_artist) ) {
+                                                    $row_title = $row_artist;
                                                 }
                                              ?>
                                              <span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($row_title); ?>"><?php echo esc_html($row_title); ?></span>
- 											
+  											
                                             <?php 
                                             // Rule: Disable subtitle for Artist Charts to prevent duplication
-                                            if ( ! $is_artist_chart && ! empty($e->artist_names) && strtolower($row_title) !== strtolower($e->artist_names) ) : ?>
- 												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($e->artist_names); ?>"><?php echo esc_html($e->artist_names); ?></span>
- 											<?php endif; ?>
- 										</div>
+                                            if ( ! $is_artist_chart && ! empty($row_artist) && strtolower($row_title) !== strtolower($row_artist) ) : ?>
+  												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($row_artist); ?>"><?php echo esc_html($row_artist); ?></span>
+  											<?php endif; ?>
+  										</div>
  									</div>
  								</td>
 								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo $e->previous_rank ?: '—'; ?></td>

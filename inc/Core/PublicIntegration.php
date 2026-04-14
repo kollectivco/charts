@@ -150,6 +150,44 @@ class PublicIntegration {
 	}
 
 	/**
+	 * Centralized resolver for entity/entry names with Franco support.
+	 */
+	public static function resolve_display_name( $obj, $definition = null ) {
+		$mode = $definition ? ($definition->franco_mode ?? 'original') : Settings::get('design.franco_mode', 'original');
+		
+		// 1. If it's a Chart Entry object (has track_name, artist_names)
+		if ( isset($obj->track_name) || isset($obj->artist_names) ) {
+			$resolved = Transliteration::resolve_entry_display($obj, $mode);
+			return [
+				'title'    => $resolved['track'],
+				'subtitle' => $resolved['artist']
+			];
+		}
+
+		// 2. If it's an Artist entity object
+		if ( isset($obj->display_name) ) {
+			$manual = $obj->display_name_franco_manual ?? '';
+			$auto = $obj->display_name_franco_auto ?? Transliteration::to_franco($obj->display_name);
+			return [
+				'title'    => Transliteration::resolve_display($obj->display_name, $manual ?: $auto, $mode),
+				'subtitle' => ''
+			];
+		}
+
+		// 3. If it's a Track entity object
+		if ( isset($obj->title) ) {
+			$manual = $obj->title_franco_manual ?? '';
+			$auto = $obj->title_franco_auto ?? Transliteration::to_franco($obj->title);
+			return [
+				'title'    => Transliteration::resolve_display($obj->title, $manual ?: $auto, $mode),
+				'subtitle' => ''
+			];
+		}
+
+		return ['title' => '', 'subtitle' => ''];
+	}
+
+	/**
 	 * Centralized resolver for track/video/artist artwork.
 	 * Priorities: Enriched Canonical > Entry-level Metadata > Source-specific Thumbs > Placeholder
 	 */

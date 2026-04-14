@@ -68,7 +68,8 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_artists` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`display_name` VARCHAR(255) NOT NULL,
-				`display_name_franko` VARCHAR(255) DEFAULT NULL,
+				`display_name_franco_auto` VARCHAR(255) DEFAULT NULL,
+				`display_name_franco_manual` VARCHAR(255) DEFAULT NULL,
 				`normalized_name` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -106,7 +107,8 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_tracks` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`title` VARCHAR(255) NOT NULL,
-				`title_franko` VARCHAR(255) DEFAULT NULL,
+				`title_franco_auto` VARCHAR(255) DEFAULT NULL,
+				`title_franco_manual` VARCHAR(255) DEFAULT NULL,
 				`normalized_title` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -192,9 +194,11 @@ class Schema {
 				`views_count` BIGINT(20) DEFAULT 0,
 				`score` DECIMAL(10,2) DEFAULT 0,
 				`track_name` VARCHAR(500) DEFAULT NULL,
-				`track_name_franko` VARCHAR(500) DEFAULT NULL,
+				`track_name_franco_auto` VARCHAR(500) DEFAULT NULL,
+				`track_name_franco_manual` VARCHAR(500) DEFAULT NULL,
 				`artist_names` TEXT DEFAULT NULL,
-				`artist_names_franko` TEXT DEFAULT NULL,
+				`artist_names_franco_auto` TEXT DEFAULT NULL,
+				`artist_names_franco_manual` TEXT DEFAULT NULL,
 				`cover_image` TEXT DEFAULT NULL,
 				`item_slug` VARCHAR(255) DEFAULT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -285,6 +289,7 @@ class Schema {
 				`cover_image_url` TEXT DEFAULT NULL,
 				`accent_color` VARCHAR(20) DEFAULT '#6366f1',
 				`ordering_mode` VARCHAR(20) NOT NULL DEFAULT 'import',
+				`franco_mode` VARCHAR(50) NOT NULL DEFAULT 'original',
 				`max_rows` INT(11) DEFAULT 100,
 				`is_public` TINYINT(1) NOT NULL DEFAULT 1,
 				`is_featured` TINYINT(1) NOT NULL DEFAULT 0,
@@ -441,9 +446,11 @@ class Schema {
 
 		$needed = array(
 			'track_name'    => "VARCHAR(500) DEFAULT NULL",
-			'track_name_franko' => "VARCHAR(500) DEFAULT NULL",
+			'track_name_franco_auto' => "VARCHAR(500) DEFAULT NULL",
+			'track_name_franco_manual' => "VARCHAR(500) DEFAULT NULL",
 			'artist_names'  => "TEXT DEFAULT NULL",
-			'artist_names_franko' => "TEXT DEFAULT NULL",
+			'artist_names_franco_auto' => "TEXT DEFAULT NULL",
+			'artist_names_franco_manual' => "TEXT DEFAULT NULL",
 			'cover_image'   => "TEXT DEFAULT NULL",
 			'item_slug'     => "VARCHAR(255) DEFAULT NULL",
 			'spotify_id'    => "VARCHAR(100) DEFAULT NULL",
@@ -490,15 +497,23 @@ class Schema {
 			if ( ! in_array( 'youtube_id', $cols, true ) ) {
 				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `youtube_id` VARCHAR(100) DEFAULT NULL" );
 			}
-			if ( strpos($tbl, 'tracks') !== false && ! in_array( 'title_franko', $cols, true ) ) {
-				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franko` VARCHAR(255) DEFAULT NULL" );
+			if ( strpos($tbl, 'tracks') !== false ) {
+				if ( ! in_array( 'title_franco_auto', $cols, true ) ) {
+					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franco_auto` VARCHAR(255) DEFAULT NULL" );
+				}
+				if ( ! in_array( 'title_franco_manual', $cols, true ) ) {
+					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franco_manual` VARCHAR(255) DEFAULT NULL" );
+				}
 			}
 		}
 		
 		$artists_tbl = $wpdb->prefix . 'charts_artists';
 		$art_cols = $wpdb->get_col( "DESCRIBE $artists_tbl", 0 );
-		if ( ! in_array( 'display_name_franko', $art_cols, true ) ) {
-			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_franko` VARCHAR(255) DEFAULT NULL" );
+		if ( ! in_array( 'display_name_franco_auto', $art_cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_franco_auto` VARCHAR(255) DEFAULT NULL" );
+		}
+		if ( ! in_array( 'display_name_franco_manual', $art_cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_franco_manual` VARCHAR(255) DEFAULT NULL" );
 		}
 		// Upgrade definitions table
 		$definitions_tbl = $wpdb->prefix . 'charts_definitions';
@@ -508,6 +523,7 @@ class Schema {
 			'cover_image_url' => "TEXT DEFAULT NULL",
 			'accent_color'    => "VARCHAR(20) DEFAULT '#6366f1'",
 			'ordering_mode'   => "VARCHAR(20) NOT NULL DEFAULT 'import'",
+			'franco_mode'     => "VARCHAR(50) NOT NULL DEFAULT 'original'",
 			'max_rows'        => "INT(11) DEFAULT 100",
 			'archive_enabled' => "TINYINT(1) NOT NULL DEFAULT 1",
 		);

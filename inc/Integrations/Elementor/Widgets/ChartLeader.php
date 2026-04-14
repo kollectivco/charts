@@ -94,6 +94,18 @@ class ChartLeader extends Widget_Base {
 								</p>
 							<?php endif; ?>
 							
+							<?php foreach ( $entries as $e ) : 
+						$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $definition);
+					?>
+						<div class="kc-leader-item" style="display: flex; align-items: center; gap: 16px; padding: 12px 0;">
+							<div style="font-size: 12px; font-weight: 800; color: var(--k-text-dim); width: 30px;">#<?php echo $e->rank_position; ?></div>
+							<div style="flex-grow: 1;">
+								<h4 style="font-size: 14px; font-weight: 800; margin: 0; color: var(--k-text);"><?php echo esc_html($resolved['title']); ?></h4>
+								<p style="font-size: 11px; color: var(--k-text-dim); margin: 0; font-weight: 600;"><?php echo esc_html($resolved['subtitle']); ?></p>
+							</div>
+						</div>
+					<?php endforeach; ?>
+
 							<?php if ( $show_meta ) : ?>
 							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
 								<div class="kc-stat-item">
