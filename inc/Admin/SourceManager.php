@@ -487,6 +487,10 @@ class SourceManager {
 			
 			if ( ! $meta ) continue;
 
+			$m_data = !empty($meta->metadata_json) ? json_decode($meta->metadata_json, true) : [];
+			$source_track_en  = $m_data['title_en'] ?? ($m_data['name_en'] ?? '');
+			$source_artist_en = $m_data['artist_en'] ?? ($m_data['artist_name_en'] ?? '');
+
 			$wpdb->insert( "{$wpdb->prefix}charts_entries", array(
 				'source_id'                 => $source_id,
 				'period_id'                 => $period_id,
@@ -495,11 +499,9 @@ class SourceManager {
 				'rank_position'             => $rank,
 				'is_new_entry'              => 0,
 				'track_name'                => $meta->title ?? ( $meta->display_name ?? '' ),
-				'track_name_franco_auto'    => \Charts\Core\Transliteration::to_franco( $meta->title ?? ( $meta->display_name ?? '' ) ),
-				'track_name_franco_manual'  => sanitize_text_field( $item['title_franco_manual'] ?? '' ),
+				'track_name_en'             => sanitize_text_field( $item['title_en'] ?: ( ($meta->title_en ?? '') ?: $source_track_en ) ),
 				'artist_names'              => $meta->display_name ?? '',
-				'artist_names_franco_auto'  => \Charts\Core\Transliteration::to_franco( $meta->display_name ?? '' ),
-				'artist_names_franco_manual' => sanitize_text_field( $item['artist_franco_manual'] ?? '' ),
+				'artist_names_en'           => sanitize_text_field( $item['artist_en'] ?: ( ($meta->display_name_en ?? '') ?: $source_artist_en ) ),
 				'item_slug'                 => $meta->slug,
 				'cover_image'               => $meta->cover_image ?? ( $meta->thumbnail ?? ( $meta->image ?? '' ) ),
 				'created_at'                => current_time( 'mysql' )

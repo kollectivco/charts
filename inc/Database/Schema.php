@@ -70,6 +70,7 @@ class Schema {
 				`display_name` VARCHAR(255) NOT NULL,
 				`display_name_franco_auto` VARCHAR(255) DEFAULT NULL,
 				`display_name_franco_manual` VARCHAR(255) DEFAULT NULL,
+				`display_name_en` VARCHAR(255) DEFAULT NULL,
 				`normalized_name` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -109,6 +110,7 @@ class Schema {
 				`title` VARCHAR(255) NOT NULL,
 				`title_franco_auto` VARCHAR(255) DEFAULT NULL,
 				`title_franco_manual` VARCHAR(255) DEFAULT NULL,
+				`title_en` VARCHAR(255) DEFAULT NULL,
 				`normalized_title` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -199,6 +201,8 @@ class Schema {
 				`artist_names` TEXT DEFAULT NULL,
 				`artist_names_franco_auto` TEXT DEFAULT NULL,
 				`artist_names_franco_manual` TEXT DEFAULT NULL,
+				`track_name_en` VARCHAR(500) DEFAULT NULL,
+				`artist_names_en` TEXT DEFAULT NULL,
 				`cover_image` TEXT DEFAULT NULL,
 				`item_slug` VARCHAR(255) DEFAULT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -504,17 +508,27 @@ class Schema {
 				if ( ! in_array( 'title_franco_manual', $cols, true ) ) {
 					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franco_manual` VARCHAR(255) DEFAULT NULL" );
 				}
+				if ( ! in_array( 'title_en', $cols, true ) ) {
+					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_en` VARCHAR(255) DEFAULT NULL" );
+				}
 			}
 		}
 		
 		$artists_tbl = $wpdb->prefix . 'charts_artists';
 		$art_cols = $wpdb->get_col( "DESCRIBE $artists_tbl", 0 );
-		if ( ! in_array( 'display_name_franco_auto', $art_cols, true ) ) {
-			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_franco_auto` VARCHAR(255) DEFAULT NULL" );
+		if ( ! in_array( 'display_name_en', $art_cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_en` VARCHAR(255) DEFAULT NULL" );
 		}
-		if ( ! in_array( 'display_name_franco_manual', $art_cols, true ) ) {
-			$wpdb->query( "ALTER TABLE `$artists_tbl` ADD COLUMN `display_name_franco_manual` VARCHAR(255) DEFAULT NULL" );
+
+		$entries_tbl = $wpdb->prefix . 'charts_entries';
+		$ent_cols = $wpdb->get_col( "DESCRIBE $entries_tbl", 0 );
+		if ( ! in_array( 'track_name_en', $ent_cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$entries_tbl` ADD COLUMN `track_name_en` VARCHAR(500) DEFAULT NULL" );
 		}
+		if ( ! in_array( 'artist_names_en', $ent_cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$entries_tbl` ADD COLUMN `artist_names_en` TEXT DEFAULT NULL" );
+		}
+
 		// Upgrade definitions table
 		$definitions_tbl = $wpdb->prefix . 'charts_definitions';
 		$def_cols = $wpdb->get_col( "DESCRIBE $definitions_tbl", 0 );

@@ -1217,7 +1217,14 @@ class Bootstrap {
 		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error();
 
 		$chart_id = intval( $_POST['chart_id'] );
-		$order    = array_map( function($i){ return array('id' => (int)$i['id'], 'type' => sanitize_text_field($i['type'])); }, (array)$_POST['order'] );
+		$order    = array_map( function($i){ 
+			return array(
+				'id'        => (int)$i['id'], 
+				'type'      => sanitize_text_field($i['type']),
+				'title_en'  => sanitize_text_field($i['title_en'] ?? ''),
+				'artist_en' => sanitize_text_field($i['artist_en'] ?? '')
+			); 
+		}, (array)($_POST['order'] ?? array()) );
 
 		$manager = new SourceManager();
 		$result = $manager->save_manual_entries( $chart_id, $order );

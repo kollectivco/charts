@@ -166,20 +166,18 @@ class PublicIntegration {
 
 		// 2. If it's an Artist entity object
 		if ( isset($obj->display_name) ) {
-			$manual = $obj->display_name_franco_manual ?? '';
-			$auto = $obj->display_name_franco_auto ?? Transliteration::to_franco($obj->display_name);
+			$english = $obj->display_name_en ?? ($obj->display_name_franco_manual ?? ($obj->display_name_franco_auto ?? ''));
 			return [
-				'title'    => Transliteration::resolve_display($obj->display_name, $manual ?: $auto, $mode),
+				'title'    => Transliteration::resolve_display($obj->display_name, $english, $mode),
 				'subtitle' => ''
 			];
 		}
 
 		// 3. If it's a Track entity object
 		if ( isset($obj->title) ) {
-			$manual = $obj->title_franco_manual ?? '';
-			$auto = $obj->title_franco_auto ?? Transliteration::to_franco($obj->title);
+			$english = $obj->title_en ?? ($obj->title_franco_manual ?? ($obj->title_franco_auto ?? ''));
 			return [
-				'title'    => Transliteration::resolve_display($obj->title, $manual ?: $auto, $mode),
+				'title'    => Transliteration::resolve_display($obj->title, $english, $mode),
 				'subtitle' => ''
 			];
 		}
