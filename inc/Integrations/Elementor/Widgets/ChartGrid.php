@@ -114,13 +114,15 @@ class ChartGrid extends Widget_Base {
 			<?php endif; ?>
 
 			<div class="kc-card-list" style="padding:16px 0; flex-grow:1;">
-				<?php foreach ( $rows as $row ) : ?>
+				<?php foreach ( $rows as $row ) : 
+					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
+				?>
 					<div class="kc-card-entry" style="display:flex; align-items:center; gap:12px; padding:12px 24px; border-bottom:1px solid var(--k-divider);">
 						<div class="kc-entry-rank" style="font-size:12px; font-weight:800; width:14px;"><?php echo $row->rank_position; ?></div>
 						<div class="kc-entry-info" style="min-width:0; flex-grow:1;">
-							<div class="kc-entry-name" style="font-size:13px; font-weight:700; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($row->track_name); ?></div>
+							<div class="kc-entry-name" style="font-size:13px; font-weight:700; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($resolved['title']); ?></div>
 							<?php if ( $show_artist ) : ?>
-								<div class="kc-entry-artist" style="font-size:11px; font-weight:500; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($row->artist_names); ?></div>
+								<div class="kc-entry-artist" style="font-size:11px; font-weight:500; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($resolved['subtitle']); ?></div>
 							<?php endif; ?>
 						</div>
 					</div>

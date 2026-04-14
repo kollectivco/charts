@@ -84,28 +84,19 @@ class ChartLeader extends Widget_Base {
 								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
 							<?php endif; ?>
 							
+							<?php 
+								$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
+							?>
 							<h1 class="kc-title" style="font-size:clamp(2rem, 5vw, 4rem); font-weight:900; letter-spacing:-0.05em; line-height:0.95; margin-bottom:16px; color:var(--k-text);">
-								<?php echo esc_html($row->track_name); ?>
+								<?php echo esc_html($resolved['title']); ?>
 							</h1>
 							
 							<?php if ( $show_artist ) : ?>
 								<p style="font-size:1.5rem; font-weight:700; color:var(--k-accent); margin-bottom:32px;">
-									<?php echo esc_html($row->artist_names); ?>
+									<?php echo esc_html($resolved['subtitle']); ?>
 								</p>
 							<?php endif; ?>
 							
-							<?php foreach ( $entries as $e ) : 
-						$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $definition);
-					?>
-						<div class="kc-leader-item" style="display: flex; align-items: center; gap: 16px; padding: 12px 0;">
-							<div style="font-size: 12px; font-weight: 800; color: var(--k-text-dim); width: 30px;">#<?php echo $e->rank_position; ?></div>
-							<div style="flex-grow: 1;">
-								<h4 style="font-size: 14px; font-weight: 800; margin: 0; color: var(--k-text);"><?php echo esc_html($resolved['title']); ?></h4>
-								<p style="font-size: 11px; color: var(--k-text-dim); margin: 0; font-weight: 600;"><?php echo esc_html($resolved['subtitle']); ?></p>
-							</div>
-						</div>
-					<?php endforeach; ?>
-
 							<?php if ( $show_meta ) : ?>
 							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
 								<div class="kc-stat-item">
@@ -135,12 +126,15 @@ class ChartLeader extends Widget_Base {
 						<?php if ( $show_meta ) : ?>
 							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
 						<?php endif; ?>
+						<?php 
+							$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
+						?>
 						<h2 class="kc-title" style="font-size:3rem; font-weight:950; letter-spacing:-0.03em; margin:0 0 16px; color:var(--k-text);">
-							<?php echo esc_html($row->track_name); ?>
+							<?php echo esc_html($resolved['title']); ?>
 						</h2>
 						<?php if ( $show_artist ) : ?>
 							<p style="font-size:1.25rem; font-weight:700; color:var(--k-accent); margin:0;">
-								<?php echo esc_html($row->artist_names); ?>
+								<?php echo esc_html($resolved['subtitle']); ?>
 							</p>
 						<?php endif; ?>
 						<?php if ( $show_cta ) : ?>
