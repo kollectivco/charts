@@ -28,6 +28,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_search_entities', array( self::class, 'handle_search_entities' ) );
 		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
 		add_action( 'wp_ajax_charts_save_manual_order', array( self::class, 'handle_save_manual_order' ) );
+		add_action( 'wp_ajax_charts_generate_franco', array( self::class, 'handle_generate_franco' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1307,5 +1308,26 @@ class Bootstrap {
 			</p>
 		</div>
 		<?php
+	}
+	/**
+	 * AJAX: Generate Franco transliteration for a given string.
+	 */
+	public static function handle_generate_franco() {
+		if ( ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+
+		$text = isset( $_POST['text'] ) ? wp_unslash( $_POST['text'] ) : '';
+		
+		if ( empty($text) ) {
+			wp_send_json_success( array( 'franco' => '' ) );
+			return;
+		}
+
+		$franco = \Charts\Core\Transliteration::to_franco( $text );
+		
+		wp_send_json_success( array( 
+			'franco' => ( $franco !== $text ) ? $franco : '' 
+		) );
 	}
 }

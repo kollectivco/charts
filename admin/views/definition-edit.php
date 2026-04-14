@@ -24,6 +24,7 @@ $is_featured     = $def ? (int)$def->is_featured : 0;
 $archive_enabled = $def ? (int)$def->archive_enabled : 1;
 $menu_order      = $def ? (int)$def->menu_order : 0;
 $ordering_mode   = $def ? $def->ordering_mode : 'import';
+$franco_mode     = $def ? $def->franco_mode : 'original';
 $max_rows        = $def ? (int)$def->max_rows : 100;
 ?>
 
@@ -179,9 +180,9 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 						<div class="form-group">
 							<label for="franco_mode">Display Language Mode</label>
 							<select name="franco_mode" id="franco_mode" class="form-control">
-								<option value="original" <?php selected($franco_mode ?? 'original', 'original'); ?>>Original Text (Arabic/English)</option>
-								<option value="franco_auto" <?php selected($franco_mode ?? 'original', 'franco_auto'); ?>>Automatic Franco (Arabizi)</option>
-								<option value="franco_manual" <?php selected($franco_mode ?? 'original', 'franco_manual'); ?>>Franco (Manual Preferred)</option>
+								<option value="original" <?php selected($franco_mode, 'original'); ?>>Original Text (Arabic/English)</option>
+								<option value="franco_auto" <?php selected($franco_mode, 'franco_auto'); ?>>Automatic Franco (Arabizi)</option>
+								<option value="franco_manual" <?php selected($franco_mode, 'franco_manual'); ?>>Franco (Manual Preferred)</option>
 							</select>
 							<span class="input-helper">Choose how entity names are rendered on the frontend.</span>
 						</div>
@@ -260,9 +261,19 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 													<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f8f8f8;">
 													<div>
 														<div style="font-weight: 700; color: var(--charts-text);"><?php echo esc_html($e->track_name ?: $e->artist_names); ?></div>
-														<div class="manual-col franco-overrides" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> margin-top: 6px;">
-															<input type="text" class="franco-manual-title" placeholder="Manual Franco Title..." value="<?php echo esc_attr($e->track_name_franco_manual ?? ''); ?>" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid #eee; background: #fff; margin-bottom: 2px;">
-															<input type="text" class="franco-manual-artist" placeholder="Manual Franco Artist..." value="<?php echo esc_attr($e->artist_names_franco_manual ?? ''); ?>" style="width: 100%; font-size: 11px; padding: 4px; border: 1px solid #eee; background: #fff;">
+														<div class="manual-col franco-overrides" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> margin-top: 8px;">
+															<div style="display: flex; gap: 4px; margin-bottom: 4px; align-items: center;">
+																<input type="text" class="franco-manual-title" placeholder="Manual Franco Title..." value="<?php echo esc_attr($e->track_name_franco_manual ?? ''); ?>" style="flex: 1; font-size: 11px; padding: 4px; border: 1px solid #eee; background: #fff;">
+																<button type="button" class="charts-btn-generate-franco" data-source="<?php echo esc_attr($e->track_name); ?>" data-target=".franco-manual-title" title="Generate Franco" style="padding: 2px 6px; font-size: 10px; height: 24px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: pointer;">
+																	<span class="dashicons dashicons-admin-settings" style="font-size: 14px; width: 14px; height: 14px;"></span>
+																</button>
+															</div>
+															<div style="display: flex; gap: 4px; align-items: center;">
+																<input type="text" class="franco-manual-artist" placeholder="Manual Franco Artist..." value="<?php echo esc_attr($e->artist_names_franco_manual ?? ''); ?>" style="flex: 1; font-size: 11px; padding: 4px; border: 1px solid #eee; background: #fff;">
+																<button type="button" class="charts-btn-generate-franco" data-source="<?php echo esc_attr($e->artist_names); ?>" data-target=".franco-manual-artist" title="Generate Franco" style="padding: 2px 6px; font-size: 10px; height: 24px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: pointer;">
+																	<span class="dashicons dashicons-admin-settings" style="font-size: 14px; width: 14px; height: 14px;"></span>
+																</button>
+															</div>
 														</div>
 														<?php if ( !empty($e->artist_names) && $e->item_type !== 'artist' ) : ?>
 															<div style="font-size: 11px; font-weight: 500; color: var(--charts-text-dim);"><?php echo esc_html($e->artist_names); ?></div>
@@ -602,6 +613,28 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 		// Manual Management: SAVE ON FRANCO CHANGE
 		$(document).on('change', '.franco-manual-title, .franco-manual-artist', function() {
 			saveManualOrder();
+		});
+
+		// Manual Management: GENERATE FRANCO
+		$(document).on('click', '.charts-btn-generate-franco', function() {
+			const $btn = $(this);
+			const sourceText = $btn.data('source');
+			const $targetInput = $btn.closest('div').find($btn.data('target'));
+			
+			if (!sourceText) return;
+
+			$btn.addClass('is-loading').prop('disabled', true);
+			
+			$.post(charts_admin.ajax_url, {
+				action: 'charts_generate_franco',
+				nonce: charts_admin.nonce,
+				text: sourceText
+			}, function(response) {
+				$btn.removeClass('is-loading').prop('disabled', false);
+				if (response.success && response.data.franco) {
+					$targetInput.val(response.data.franco).trigger('change');
+				}
+			});
 		});
 
 		// Hide search bubble on outside click
