@@ -169,6 +169,7 @@ $site_title = get_bloginfo('name');
                 <?php endforeach; ?>
             </div>
         </section>
+        <?php endif; ?>
 
     </main>
 
