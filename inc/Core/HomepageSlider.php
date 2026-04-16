@@ -109,7 +109,7 @@ class HomepageSlider {
                 'title'     => $def->title,
                 'desc'      => $def->chart_summary,
                 'badge'     => '',
-                'image_url' => $def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png',
+                'image_url' => PublicIntegration::resolve_chart_image($def),
                 'btn1_text' => 'Browse Chart',
                 'btn1_link' => home_url('/charts/' . $def->slug . '/'),
             ];

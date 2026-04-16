@@ -241,7 +241,12 @@ class PublicIntegration {
 			return $def->cover_image_url;
 		}
 
-		// 2. First preview entry's artwork
+		// 2. Auto-fetch entries if missing
+		if ( empty($entries) ) {
+			$entries = self::get_preview_entries($def, 1);
+		}
+
+		// 3. First preview entry's artwork
 		if ( ! empty( $entries ) ) {
 			$first = is_array( $entries ) ? $entries[0] : null;
 			if ( $first ) {

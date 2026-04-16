@@ -252,10 +252,11 @@ class ChartCarousel extends Widget_Base {
 		$rows = \Charts\Core\PublicIntegration::get_preview_entries( $def, $rows_limit );
 		$accent = !empty($settings['accent_color']) ? $settings['accent_color'] : (!empty($def->accent_color) ? $def->accent_color : 'var(--k-accent)');
 		$radius = intval($settings['card_radius'] ?? 24);
+		$card_image = \Charts\Core\PublicIntegration::resolve_chart_image( $def, $rows );
 ?>
 		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="background: #fff; border: 1px solid var(--k-border); border-radius: <?php echo $radius; ?>px; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
 			<div class="kc-card-hero" style="position: relative; height: 180px; overflow: hidden; background: <?php echo $accent; ?>; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px;">
-				<img src="<?php echo esc_url($def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+				<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
 				<div class="kc-hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%);"></div>
 				
 				<div style="position: relative; z-index: 2;">
@@ -296,9 +297,10 @@ class ChartCarousel extends Widget_Base {
 		$accent = !empty($settings['accent_color']) ? $settings['accent_color'] : (!empty($def->accent_color) ? $def->accent_color : 'var(--k-accent)');
 		$radius = intval($settings['card_radius'] ?? 24);
 		$opacity = intval($settings['overlay_gradient']['size'] ?? 80) / 100;
+		$card_image = \Charts\Core\PublicIntegration::resolve_chart_image( $def, $top_rows );
 ?>
 		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="position: relative; height: 420px; border-radius: <?php echo $radius; ?>px; overflow: hidden; background: #000; group;">
-			<img src="<?php echo esc_url($def->cover_image_url ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: transform 0.4s ease;">
+			<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: transform 0.4s ease;">
 			<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,<?php echo $opacity; ?>) 0%, transparent 100%);"></div>
 
 			<div style="position: absolute; inset: 0; padding: 32px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 2;">

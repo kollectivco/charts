@@ -96,9 +96,10 @@ class ChartGrid extends Widget_Base {
 		<article class="kc-chart-card kc-widget-card style-<?php echo esc_attr($style); ?>" style="display:flex; flex-direction:column; background:var(--k-surface); border:1px solid var(--k-border); border-radius:var(--k-radius-lg); overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; height: 100%;">
 			<?php if ( $show_cover ) : ?>
 			<div class="kc-card-header" style="height:140px; background:var(--k-chart-bg); padding:24px; display:flex; flex-direction:column; justify-content:flex-end; position: relative;">
-				<?php if ( !empty($def->cover_image_url) ) : ?>
-					<img src="<?php echo esc_url($def->cover_image_url); ?>" style="position: absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.6;">
-				<?php endif; ?>
+				<?php 
+					$card_image = \Charts\Core\PublicIntegration::resolve_chart_image( $def, $rows );
+				?>
+				<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.6;">
 				<div class="kc-card-title kc-title" style="font-size:20px; font-weight:900; letter-spacing:-0.02em; margin:0; position:relative; z-index:2; color:#fff;"><?php echo esc_html($def->title); ?></div>
 				<?php if ( $show_meta ) : ?>
 					<div class="kc-card-label kc-meta" style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#fff; margin-bottom:4px; position:relative; z-index:2; opacity:0.8;"><?php echo strtoupper($def->country_code); ?> • <?php echo strtoupper($def->chart_type); ?></div>
