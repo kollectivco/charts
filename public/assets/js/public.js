@@ -232,7 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const carousels = document.querySelectorAll('.kc-widget-carousel-wrap');
         
         carousels.forEach(wrap => {
-            // Unbind existing to prevent duplication
             if (wrap.dataset.initialized === "1") return;
             wrap.dataset.initialized = "1";
 
@@ -255,6 +254,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const update = (idx) => {
                 const spv = getSlidesPerView();
+                
+                // Dynamically update slide widths for responsiveness
+                const slideWidthPct = 100 / spv;
+                slides.forEach(s => {
+                    s.style.flex = `0 0 ${slideWidthPct}%`;
+                    s.style.width = `${slideWidthPct}%`;
+                });
+
                 const maxIdx = config.loop ? total - 1 : Math.max(0, total - spv);
                 
                 if (idx < 0) {
@@ -264,10 +271,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 currentIdx = idx;
-                const offset = (currentIdx * (100 / spv));
+                const offset = (currentIdx * slideWidthPct);
                 
                 wrapper.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
                 wrapper.style.transform = `translateX(-${offset}%)`;
+
+                // Hide arrows if not needed
+                if (!config.loop) {
+                    if (prevBtn) prevBtn.style.opacity = currentIdx === 0 ? '0.3' : '1';
+                    if (nextBtn) nextBtn.style.opacity = currentIdx >= maxIdx ? '0.3' : '1';
+                }
             };
 
             const startAutoplay = () => {
@@ -309,7 +322,9 @@ document.addEventListener('DOMContentLoaded', function() {
             update(0);
             startAutoplay();
             
-            window.addEventListener('resize', () => update(currentIdx));
+            window.addEventListener('resize', () => {
+                update(currentIdx);
+            });
         });
     };
 

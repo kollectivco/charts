@@ -222,24 +222,26 @@ class ChartCarousel extends Widget_Base {
 ?>
 		<div class="kc-root <?php echo esc_attr($instance_id); ?>">
 			<div class="kc-widget-carousel-wrap" data-carousel-config='<?php echo esc_attr(json_encode($carousel_config)); ?>'>
-				<div class="kc-widget-carousel swiper-container" style="overflow: visible; position: relative;">
-					<div class="swiper-wrapper" style="display: flex; gap: <?php echo intval($settings['slides_spacing']); ?>px; transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);">
+				<div class="kc-widget-carousel swiper-container" style="overflow: hidden; position: relative; width: 100%;">
+					<div class="swiper-wrapper" style="display: flex; flex-wrap: nowrap; margin: 0 -<?php echo intval($settings['slides_spacing'] / 2); ?>px; transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);">
 						<?php foreach ( $definitions as $def ) : ?>
-							<div class="swiper-slide" style="flex-shrink: 0; width: calc( (100% / <?php echo $carousel_config['slidesPerView']['desktop']; ?>) - <?php echo $carousel_config['spaceBetween'] * ($carousel_config['slidesPerView']['desktop'] - 1) / $carousel_config['slidesPerView']['desktop']; ?>px );">
-								<?php 
-									if ( $style_variant === 'overlay' ) {
-										$this->render_overlay_card( $def, $settings, $shadow_class );
-									} else {
-										$this->render_standard_card( $def, $settings, $shadow_class );
-									}
-								?>
+							<div class="swiper-slide" style="flex: 0 0 <?php echo (100 / $carousel_config['slidesPerView']['desktop']); ?>%; box-sizing: border-box; padding: 0 <?php echo intval($settings['slides_spacing'] / 2); ?>px;">
+								<div class="kc-slide-inner-box" style="height: 100%;">
+									<?php 
+										if ( $style_variant === 'overlay' ) {
+											$this->render_overlay_card( $def, $settings, $shadow_class );
+										} else {
+											$this->render_standard_card( $def, $settings, $shadow_class );
+										}
+									?>
+								</div>
 							</div>
 						<?php endforeach; ?>
 					</div>
 					
 					<?php if ( $settings['arrows'] === 'yes' ) : ?>
-						<button class="kc-carousel-nav kc-prev" style="position: absolute; top: 50%; left: -24px; z-index: 10; transform: translateY(-50%); border: none; background: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
-						<button class="kc-carousel-nav kc-next" style="position: absolute; top: 50%; right: -24px; z-index: 10; transform: translateY(-50%); border: none; background: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
+						<button class="kc-carousel-nav kc-prev" style="position: absolute; top: 50%; left: 0; z-index: 20; transform: translateY(-50%); border: none; background: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+						<button class="kc-carousel-nav kc-next" style="position: absolute; top: 50%; right: 0; z-index: 20; transform: translateY(-50%); border: none; background: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
 					<?php endif; ?>
 				</div>
 			</div>
