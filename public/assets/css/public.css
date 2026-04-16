@@ -71,6 +71,15 @@
 	-webkit-font-smoothing: antialiased;
 }
 
+.kc-widget-root {
+	background-color: transparent !important;
+}
+
+.kc-widget-grid {
+	display: grid;
+	gap: 30px;
+}
+
 .kc-container {
 	max-width: 1440px;
 	margin: 0 auto;

@@ -220,7 +220,7 @@ class ChartCarousel extends Widget_Base {
 		$style_variant = $settings['style_variant'] ?? 'standard';
 		$shadow_class = "kc-shadow-" . ($settings['card_shadow'] ?? 'sm');
 ?>
-		<div class="kc-root <?php echo esc_attr($instance_id); ?>">
+		<div class="kc-widget-root <?php echo esc_attr($instance_id); ?>">
 			<div class="kc-widget-carousel-wrap" data-carousel-config='<?php echo esc_attr(json_encode($carousel_config)); ?>'>
 				<div class="kc-widget-carousel swiper-container" style="overflow: hidden; position: relative; width: 100%;">
 					<div class="swiper-wrapper" style="display: flex; flex-wrap: nowrap; margin: 0 -<?php echo intval($settings['slides_spacing'] / 2); ?>px; transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);">
