@@ -236,17 +236,23 @@ class PublicIntegration {
 	 * Priorities: Chart-level cover > First item artwork > Placeholder
 	 */
 	public static function resolve_chart_image( $def, $entries = array() ) {
-		// 1. Chart-level explicit cover
-		if ( ! empty( $def->cover_image_url ) ) {
-			return $def->cover_image_url;
+		// 1. Convert to unified object if array
+		$obj = (object) $def;
+
+		// 2. Chart-level explicit cover (check both naming conventions)
+		if ( ! empty( $obj->cover_image_url ) ) {
+			return $obj->cover_image_url;
+		}
+		if ( ! empty( $obj->cover_image ) ) {
+			return $obj->cover_image;
 		}
 
-		// 2. Auto-fetch entries if missing
+		// 3. Auto-fetch entries if missing
 		if ( empty($entries) ) {
-			$entries = self::get_preview_entries($def, 1);
+			$entries = self::get_preview_entries($obj, 1);
 		}
 
-		// 3. First preview entry's artwork
+		// 4. First preview entry's artwork
 		if ( ! empty( $entries ) ) {
 			$first = is_array( $entries ) ? $entries[0] : null;
 			if ( $first ) {
@@ -353,6 +359,14 @@ class PublicIntegration {
 		", $limit );
 
 		$results = $wpdb->get_results( $query );
-		return (array) $results;
+		$manager = new \Charts\Admin\SourceManager();
+		$definitions = array();
+
+		foreach ( $results as $row ) {
+			// Resolve the "Rich" definition (handles CPT promotion and metadata)
+			$definitions[] = $manager->get_definition( $row->id );
+		}
+
+		return $definitions;
 	}
 }
