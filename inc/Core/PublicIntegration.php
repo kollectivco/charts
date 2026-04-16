@@ -69,7 +69,7 @@ class PublicIntegration {
 		}
 
 		$path = trim( $_SERVER['REQUEST_URI'], '/' );
-		if ( $path === 'charts' || strpos( $path, 'charts/' ) === 0 ) {
+		if ( $path === 'charts' || strpos( $path, 'charts/' ) === 0 || $path === 'cm' || strpos( $path, 'cm/' ) === 0 ) {
             return true;
         }
 

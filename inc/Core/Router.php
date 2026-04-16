@@ -22,7 +22,11 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Base /charts/
+		// 1. Mobile WebView Route /cm (Flutter ready)
+		add_rewrite_rule( '^cm/?$', 'index.php?charts_route=cm', 'top' );
+		add_rewrite_rule( '^cm/([^/]+)/?$', 'index.php?charts_route=cm&charts_definition_slug=$matches[1]', 'top' );
+
+		// 2. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
 
 		// 2. Specific Entity Routes (highest specificity)
@@ -89,6 +93,8 @@ class Router {
 		switch ( $route ) {
 			case 'index':
 				return CHARTS_PATH . 'public/templates/index.php';
+			case 'cm':
+				return CHARTS_PATH . 'public/templates/cm-mobile.php';
 			case 'single-chart':
 				return CHARTS_PATH . 'public/templates/single-chart.php';
 			case 'artist-archive':

@@ -1,0 +1,241 @@
+/* 
+ * CM Mobile Experience (Flutter Webview)
+ * Optimized for high-performance mobile-first rendering.
+ */
+
+:root {
+    --cm-bg: #0b0c10;
+    --cm-surface: #1a1c23;
+    --cm-surface-alt: #242731;
+    --cm-text: #ffffff;
+    --cm-text-muted: #8a8d9b;
+    --cm-primary: #6366f1;
+    --cm-accent: #fe025b;
+    --cm-divider: rgba(255,255,255,0.08);
+    --cm-radius: 20px;
+    --cm-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--cm-bg);
+    color: var(--cm-text);
+    font-family: var(--cm-font);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3 {
+    margin: 0;
+    font-weight: 850;
+    letter-spacing: -0.02em;
+}
+
+.cm-meta {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--cm-text-muted);
+}
+
+/* Layout */
+.cm-app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.cm-header {
+    padding: 24px 20px 12px;
+    background: var(--cm-bg);
+}
+
+.cm-header h1 {
+    font-size: 32px;
+    color: var(--cm-text);
+}
+
+.cm-content {
+    flex-grow: 1;
+    padding: 0 0 40px;
+}
+
+/* Sections */
+.cm-section {
+    padding: 24px 0 0;
+}
+
+.cm-section-head {
+    padding: 0 20px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cm-section-title {
+    font-size: 20px;
+}
+
+/* Hero Slider (Compact for Mobile) */
+.cm-hero {
+    margin: 0;
+    position: relative;
+    padding: 0 20px;
+}
+
+.cm-hero-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 8px;
+}
+
+.cm-hero-track::-webkit-scrollbar {
+    display: none;
+}
+
+.cm-hero-slide {
+    flex: 0 0 85%;
+    scroll-snap-align: center;
+    position: relative;
+    aspect-ratio: 16/9;
+    border-radius: var(--cm-radius);
+    overflow: hidden;
+    background: var(--cm-surface);
+}
+
+.cm-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+}
+
+.cm-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%);
+}
+
+.cm-hero-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+}
+
+/* Vertical Charts Feed */
+.cm-charts-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 20px;
+}
+
+.cm-chart-card {
+    background: var(--cm-surface);
+    border-radius: var(--cm-radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--cm-divider);
+    text-decoration: none;
+    color: inherit;
+}
+
+.cm-card-hero {
+    height: 120px;
+    position: relative;
+}
+
+.cm-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
+}
+
+.cm-card-title {
+    position: absolute;
+    bottom: 16px;
+    left: 20px;
+    font-size: 22px;
+}
+
+.cm-card-content {
+    padding: 12px 0;
+}
+
+.cm-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--cm-divider);
+}
+
+.cm-row:last-child {
+    border-bottom: none;
+}
+
+.cm-rank {
+    width: 24px;
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--cm-primary);
+}
+
+.cm-row-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.cm-row-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.cm-row-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cm-row-sub {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--cm-text-muted);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.cm-chart-card {
+    animation: fadeInUp 0.5s ease backwards;
+}
+
+.cm-chart-card:nth-child(2) { animation-delay: 0.1s; }
+.cm-chart-card:nth-child(3) { animation-delay: 0.2s; }
