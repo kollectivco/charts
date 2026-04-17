@@ -31,6 +31,7 @@ $resolve_art = function($e) {
 $site_title = get_bloginfo('name');
 ?>
 <!DOCTYPE html>
+<!-- ACTIVE_RENDERER: public/templates/cm-mobile.php -->
 <html <?php language_attributes(); ?>>
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
@@ -39,6 +40,7 @@ $site_title = get_bloginfo('name');
     
     <!-- Mobile Optimized Assets -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/public.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
     <link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/cm.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
     
     <style>
@@ -47,10 +49,8 @@ $site_title = get_bloginfo('name');
         }
         .cm-rank, .cm-accent-color { color: var(--cm-primary-override) !important; }
     </style>
-
-    <?php wp_print_scripts(); ?>
 </head>
-<body>
+<body <?php body_class('cm-body-mobile'); ?>>
 
 <div class="cm-app-shell">
     
@@ -193,5 +193,7 @@ $site_title = get_bloginfo('name');
 
 </div>
 
+<script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
+<?php wp_footer(); ?>
 </body>
 </html>

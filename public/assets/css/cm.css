@@ -34,12 +34,24 @@ body {
 }
 
 /* Link Normalization */
-.cm-app-shell a {
+.cm-app-shell a,
+.cm-app-shell a span,
+.cm-app-shell a h1,
+.cm-app-shell a h2,
+.cm-app-shell a h3,
+.cm-app-shell a div {
     text-decoration: none !important;
     color: inherit;
+    border-bottom: none !important;
 }
 
-.cm-app-shell a:hover {
+.cm-app-shell a::after, 
+.cm-app-shell a::before {
+    display: none !important;
+}
+
+.cm-app-shell a:hover,
+.cm-app-shell a:hover span {
     text-decoration: none !important;
 }
 
