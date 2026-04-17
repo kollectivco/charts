@@ -24,6 +24,10 @@ class Router {
 	public static function add_rewrite_rules() {
 		// 1. Mobile WebView Routes /cm (Flutter ready)
 		add_rewrite_rule( '^cm/?$', 'index.php?charts_route=cm-index', 'top' );
+		add_rewrite_rule( '^cm/artists/?$', 'index.php?charts_route=cm-artists-archive', 'top' );
+		add_rewrite_rule( '^cm/tracks/?$', 'index.php?charts_route=cm-tracks-archive', 'top' );
+		add_rewrite_rule( '^cm/videos/?$', 'index.php?charts_route=cm-videos-archive', 'top' );
+
 		add_rewrite_rule( '^cm/chart/([^/]+)/?$', 'index.php?charts_route=cm-chart-single&charts_definition_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^cm/track/([^/]+)/?$', 'index.php?charts_route=cm-item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
 		add_rewrite_rule( '^cm/(video|clip)/([^/]+)/?$', 'index.php?charts_route=cm-item-single&charts_item_type=video&charts_item_slug=$matches[2]', 'top' );
@@ -101,6 +105,12 @@ class Router {
 				return CHARTS_PATH . 'public/templates/index.php';
 			case 'cm-index':
 				return CHARTS_PATH . 'public/templates/cm-index.php';
+			case 'cm-artists-archive':
+				return CHARTS_PATH . 'public/templates/cm-artists-archive.php';
+			case 'cm-tracks-archive':
+				return CHARTS_PATH . 'public/templates/cm-tracks-archive.php';
+			case 'cm-videos-archive':
+				return CHARTS_PATH . 'public/templates/cm-videos-archive.php';
 			case 'cm-chart-single':
 				return CHARTS_PATH . 'public/templates/cm-chart-single.php';
 			case 'cm-artist-single':
