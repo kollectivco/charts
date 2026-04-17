@@ -22,9 +22,15 @@ class Router {
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Mobile WebView Route /cm (Flutter ready)
-		add_rewrite_rule( '^cm/?$', 'index.php?charts_route=cm', 'top' );
-		add_rewrite_rule( '^cm/([^/]+)/?$', 'index.php?charts_route=cm&charts_definition_slug=$matches[1]', 'top' );
+		// 1. Mobile WebView Routes /cm (Flutter ready)
+		add_rewrite_rule( '^cm/?$', 'index.php?charts_route=cm-index', 'top' );
+		add_rewrite_rule( '^cm/chart/([^/]+)/?$', 'index.php?charts_route=cm-chart-single&charts_definition_slug=$matches[1]', 'top' );
+		add_rewrite_rule( '^cm/track/([^/]+)/?$', 'index.php?charts_route=cm-item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
+		add_rewrite_rule( '^cm/(video|clip)/([^/]+)/?$', 'index.php?charts_route=cm-item-single&charts_item_type=video&charts_item_slug=$matches[2]', 'top' );
+		add_rewrite_rule( '^cm/artist/([^/]+)/?$', 'index.php?charts_route=cm-artist-single&charts_artist_slug=$matches[1]', 'top' );
+		
+		// Legacy / Backward compatibility catch-all for /cm/{slug}
+		add_rewrite_rule( '^cm/([^/]+)/?$', 'index.php?charts_route=cm-chart-single&charts_definition_slug=$matches[1]', 'top' );
 
 		// 2. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
@@ -38,7 +44,7 @@ class Router {
 		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );
 		add_rewrite_rule( '^charts/tracks/?$', 'index.php?charts_route=track-archive', 'top' );
 
-		// 4. Generic Single Chart (lowest specificity, added LAST with 'top' so it's at the bottom of our custom set)
+		// 4. Generic Single Chart
 		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'top' );
 
 		// 5. External Dashboard
@@ -93,8 +99,14 @@ class Router {
 		switch ( $route ) {
 			case 'index':
 				return CHARTS_PATH . 'public/templates/index.php';
-			case 'cm':
-				return CHARTS_PATH . 'public/templates/cm-mobile.php';
+			case 'cm-index':
+				return CHARTS_PATH . 'public/templates/cm-index.php';
+			case 'cm-chart-single':
+				return CHARTS_PATH . 'public/templates/cm-chart-single.php';
+			case 'cm-artist-single':
+				return CHARTS_PATH . 'public/templates/cm-artist-single.php';
+			case 'cm-item-single':
+				return CHARTS_PATH . 'public/templates/cm-item-single.php';
 			case 'single-chart':
 				return CHARTS_PATH . 'public/templates/single-chart.php';
 			case 'artist-archive':
