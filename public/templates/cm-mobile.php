@@ -113,9 +113,15 @@ $site_title = get_bloginfo('name');
                                     <label>Weeks On</label>
                                     <span><?php echo $e->weeks_on_chart ?: 1; ?> wks</span>
                                 </div>
-                                <div class="cm-detail-item">
-                                    <label>Entity</label>
-                                    <span><?php echo ucfirst($current_def->item_type ?: 'track'); ?></span>
+                                <div class="cm-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--cm-divider); margin-top: 4px;">
+                                    <?php 
+                                        $entity_type = $e->item_type ?: $current_def->item_type ?: 'track';
+                                        $details_url = home_url('/charts/' . $entity_type . '/' . $e->item_slug . '/');
+                                    ?>
+                                    <a href="<?php echo esc_url($details_url); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--cm-primary); text-transform: uppercase; letter-spacing: 0.05em;">
+                                        <span>Full Analysis Breakdown</span>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                    </a>
                                 </div>
                             </div>
                         </div>
