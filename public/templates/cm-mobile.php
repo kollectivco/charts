@@ -149,7 +149,7 @@ $site_title = get_bloginfo('name');
             <!-- B. The Charts Horizontal Carousel -->
             <section class="cm-section">
                 <div class="cm-section-head">
-                    <h2 class="cm-section-title">Global Analysis</h2>
+                    <h2 class="cm-section-title">All Charts</h2>
                     <span class="cm-meta cm-accent-color">Filter</span>
                 </div>
 

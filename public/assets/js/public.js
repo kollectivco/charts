@@ -328,16 +328,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    initExpandables();
-    initMotionCarousel();
-    initMobileMenu();
-    initWidgetCarousels();
+    const ready = (fn) => {
+        if (document.readyState !== 'loading') fn();
+        else document.addEventListener('DOMContentLoaded', fn);
+    };
 
-    // Elementor Preview Init
-    if (window.elementorFrontend) {
-        elementorFrontend.hooks.addAction('frontend/element_ready/charts_carousel.default', initWidgetCarousels);
-        elementorFrontend.hooks.addAction('frontend/element_ready/hero_slider.default', initMotionCarousel);
-    }
+    ready(() => {
+        initExpandables();
+        initMotionCarousel();
+        initMobileMenu();
+        initWidgetCarousels();
+
+        // Elementor Preview Init
+        if (window.elementorFrontend) {
+            elementorFrontend.hooks.addAction('frontend/element_ready/charts_carousel.default', initWidgetCarousels);
+            elementorFrontend.hooks.addAction('frontend/element_ready/hero_slider.default', initMotionCarousel);
+        }
+    });
 });
 
 /**
