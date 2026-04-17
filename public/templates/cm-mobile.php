@@ -75,19 +75,49 @@ $site_title = get_bloginfo('name');
                 <?php foreach ( $entries as $e ) : 
                     $resolved = $resolve_name($e, $current_def);
                 ?>
-                    <div class="cm-row" style="padding: 12px 20px;">
-                        <span class="cm-rank"><?php echo $e->rank_position; ?></span>
-                        <img src="<?php echo esc_url($resolve_art($e)); ?>" class="cm-row-img" style="width:48px; height:48px;">
-                        <div class="cm-row-info">
-                            <span class="cm-row-title"><?php echo esc_html($resolved['title']); ?></span>
-                            <span class="cm-row-sub"><?php echo esc_html($resolved['subtitle']); ?></span>
+                    <div class="cm-row-item kc-rank-row">
+                        <div class="cm-row" style="padding: 14px 20px;">
+                            <span class="cm-rank"><?php echo $e->rank_position; ?></span>
+                            <img src="<?php echo esc_url($resolve_art($e)); ?>" class="cm-row-img" style="width:48px; height:48px;">
+                            <div class="cm-row-info">
+                                <span class="cm-row-title"><?php echo esc_html($resolved['title']); ?></span>
+                                <span class="cm-row-sub"><?php echo esc_html($resolved['subtitle']); ?></span>
+                            </div>
+                            
+                            <div style="text-align:right; margin-right: 12px;">
+                                <?php if ( $e->rank_position < $e->previous_rank ) : ?>
+                                    <span style="color:#2ecc71; font-size:10px; font-weight:900;">▲ <?php echo ($e->previous_rank - $e->rank_position); ?></span>
+                                <?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
+                                    <span style="color:#e74c3c; font-size:10px; font-weight:900;">▼ <?php echo ($e->rank_position - $e->previous_rank); ?></span>
+                                <?php elseif ( ! empty($e->previous_rank) && $e->previous_rank == 0 ) : ?>
+                                    <span style="color:var(--cm-primary); font-size:9px; font-weight:900;">NEW</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="cm-chevron">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
                         </div>
-                        <div style="text-align:right;">
-                            <?php if ( $e->movement_direction === 'up' ) : ?>
-                                <span style="color:#2ecc71; font-size:10px; font-weight:900;">▲ <?php echo $e->movement_value; ?></span>
-                            <?php elseif ( $e->movement_direction === 'down' ) : ?>
-                                <span style="color:#e74c3c; font-size:10px; font-weight:900;">▼ <?php echo $e->movement_value; ?></span>
-                            <?php endif; ?>
+
+                        <div class="cm-details-wrapper">
+                            <div class="cm-details-inner">
+                                <div class="cm-detail-item">
+                                    <label>Peak</label>
+                                    <span>#<?php echo $e->peak_rank ?: $e->rank_position; ?></span>
+                                </div>
+                                <div class="cm-detail-item">
+                                    <label>Last Wk</label>
+                                    <span>#<?php echo $e->previous_rank ?: '—'; ?></span>
+                                </div>
+                                <div class="cm-detail-item">
+                                    <label>Weeks On</label>
+                                    <span><?php echo $e->weeks_on_chart ?: 1; ?> wks</span>
+                                </div>
+                                <div class="cm-detail-item">
+                                    <label>Entity</label>
+                                    <span><?php echo ucfirst($current_def->item_type ?: 'track'); ?></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>

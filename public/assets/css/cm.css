@@ -33,6 +33,16 @@ body {
     overflow-x: hidden;
 }
 
+/* Link Normalization */
+.cm-app-shell a {
+    text-decoration: none !important;
+    color: inherit;
+}
+
+.cm-app-shell a:hover {
+    text-decoration: none !important;
+}
+
 /* Typography */
 h1, h2, h3 {
     margin: 0;
@@ -263,3 +273,70 @@ h1, h2, h3 {
 .cm-chart-card, .cm-hero-slide {
     animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
+
+/* Row Details System (Mobile Optimized) */
+.cm-row-item {
+    border-bottom: 1px solid var(--cm-divider);
+}
+
+.cm-row {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.is-expanded .cm-row {
+    background: var(--cm-surface-alt);
+}
+
+.cm-details-wrapper {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    background: var(--cm-surface-alt);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.is-expanded .cm-details-wrapper {
+    max-height: 400px;
+    opacity: 1;
+    border-bottom: 1px solid var(--cm-divider);
+}
+
+.cm-details-inner {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.cm-detail-item label {
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--cm-text-muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+}
+
+.cm-detail-item span {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cm-text);
+}
+
+.cm-chevron {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+    opacity: 0.3;
+}
+
+.is-expanded .cm-chevron {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
