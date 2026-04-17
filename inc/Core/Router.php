@@ -82,11 +82,6 @@ class Router {
 
 		// If this is a CM route, aggressively prevent theme noise leakage
 		if ( $route && strpos( (string) $route, 'cm-' ) === 0 ) {
-			add_action( 'get_header', function() {
-				// Skip theme headers entirely
-				if ( ! defined('DONOTCACHEPAGE') ) define('DONOTCACHEPAGE', true);
-			} );
-
 			// Remove common theme UI injector hooks specifically for this request
 			remove_all_actions( 'wp_footer' );
 			add_action( 'wp_footer', 'wp_print_footer_scripts', 20 );
