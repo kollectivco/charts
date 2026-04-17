@@ -352,3 +352,34 @@ h1, h2, h3 {
     opacity: 1;
 }
 
+/* 
+ * THEME COMPONENT SUPPRESSION
+ * Aggressively hide any theme-injected elements that are not part of CM.
+ */
+#masthead, #colophon, .site-header, .site-footer, 
+#sidebar, .sidebar, .widget-area, .secondary,
+#login-form, .login-form, .search-form, .search-box,
+#wpadminbar, .admin-bar, .entry-content, .page-header,
+.site-info, .footer-widgets, .comments-area,
+.post-navigation, .related-posts, #main-navigation,
+.mobile-menu, #side-menu, .theme-login-modal {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Ensure CM body is isolated */
+html, body.cm-body-mobile {
+    overflow: auto !important;
+    height: auto !important;
+    width: 100vw !important;
+    position: relative !important;
+}
+
+.cm-body-mobile .cm-app-shell {
+    position: relative;
+    z-index: 999999;
+    background: var(--cm-bg);
+}
+

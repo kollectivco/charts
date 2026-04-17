@@ -80,6 +80,18 @@ class Router {
 	public static function load_template( $template ) {
 		$route = get_query_var( 'charts_route' );
 
+		// If this is a CM route, aggressively prevent theme noise leakage
+		if ( $route && strpos( (string) $route, 'cm-' ) === 0 ) {
+			add_action( 'get_header', function() {
+				// Skip theme headers entirely
+				if ( ! defined('DONOTCACHEPAGE') ) define('DONOTCACHEPAGE', true);
+			} );
+
+			// Remove common theme UI injector hooks specifically for this request
+			remove_all_actions( 'wp_footer' );
+			add_action( 'wp_footer', 'wp_print_footer_scripts', 20 );
+		}
+
 		if ( ! $route ) {
 			if ( is_singular( array( 'chart', 'artist', 'track', 'video' ) ) ) {
 				$post_type = get_post_type();
