@@ -10,6 +10,13 @@ global $wpdb;
 $slug = get_query_var( 'charts_artist_slug' );
 $artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
 
+// 2. MOBILE BRANCH (Unified Architecture)
+$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+if ( $is_mobile ) {
+    include CHARTS_PATH . 'public/templates/mobile-artist-single.php';
+    return;
+}
+
 if ( ! $artist ) {
 	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Artist Not Found</h1></div>';

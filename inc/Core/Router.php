@@ -39,6 +39,7 @@ class Router {
 		// 3. Static Archive Routes
 		add_rewrite_rule( '^charts/artists/?$', 'index.php?charts_route=artist-archive', 'top' );
 		add_rewrite_rule( '^charts/tracks/?$', 'index.php?charts_route=track-archive', 'top' );
+		add_rewrite_rule( '^charts/videos/?$', 'index.php?charts_route=video-archive', 'top' );
 
 		// 4. Generic Single Chart
 		add_rewrite_rule( '^charts/([^/]+)/?$', 'index.php?charts_route=single-chart&charts_definition_slug=$matches[1]', 'top' );
@@ -89,7 +90,6 @@ class Router {
 	 */
 	public static function load_template( $template ) {
 		$route = get_query_var( 'charts_route' );
-		$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 
 		if ( ! $route ) {
 			if ( is_singular( array( 'chart', 'artist', 'track', 'video' ) ) ) {
@@ -97,11 +97,11 @@ class Router {
 				$path = '';
 
 				if ( $post_type === 'chart' ) {
-					$path = $is_mobile ? CHARTS_PATH . 'public/templates/cm-chart-single.php' : CHARTS_PATH . 'public/templates/single-chart.php';
+					$path = CHARTS_PATH . 'public/templates/single-chart.php';
 				} elseif ( $post_type === 'artist' ) {
-					$path = $is_mobile ? CHARTS_PATH . 'public/templates/cm-artist-single.php' : CHARTS_PATH . 'public/templates/artist-single.php';
+					$path = CHARTS_PATH . 'public/templates/artist-single.php';
 				} elseif ( in_array( $post_type, array( 'track', 'video' ) ) ) {
-					$path = $is_mobile ? CHARTS_PATH . 'public/templates/cm-item-single.php' : CHARTS_PATH . 'public/templates/item-single.php';
+					$path = CHARTS_PATH . 'public/templates/item-single.php';
 				}
 
 				if ( ! empty( $path ) && file_exists( $path ) ) {
@@ -111,25 +111,28 @@ class Router {
 			return $template;
 		}
 
-		// Combined Routing and Mobile Switching
+		// Canonical Routing only. Mobile branching is handled within the templates themselves.
 		switch ( $route ) {
 			case 'index':
-				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-index.php' : CHARTS_PATH . 'public/templates/index.php';
+				return CHARTS_PATH . 'public/templates/index.php';
 			
 			case 'artist-archive':
-				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-artists-archive.php' : CHARTS_PATH . 'public/templates/artist-archive.php';
+				return CHARTS_PATH . 'public/templates/artist-archive.php';
 			
 			case 'track-archive':
-				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-tracks-archive.php' : CHARTS_PATH . 'public/templates/track-archive.php';
+				return CHARTS_PATH . 'public/templates/track-archive.php';
+
+			case 'video-archive':
+				return CHARTS_PATH . 'public/templates/video-archive.php';
 			
 			case 'artist-single':
-				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-artist-single.php' : CHARTS_PATH . 'public/templates/artist-single.php';
+				return CHARTS_PATH . 'public/templates/artist-single.php';
 			
 			case 'item-single':
-				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-item-single.php' : CHARTS_PATH . 'public/templates/item-single.php';
+				return CHARTS_PATH . 'public/templates/item-single.php';
 			
 			case 'single-chart':
-				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-chart-single.php' : CHARTS_PATH . 'public/templates/single-chart.php';
+				return CHARTS_PATH . 'public/templates/single-chart.php';
 
 			case 'dashboard':
 				return CHARTS_PATH . 'public/templates/dashboard.php';

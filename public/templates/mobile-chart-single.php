@@ -1,6 +1,6 @@
 <?php
 /**
- * CM Mobile Experience: Single Chart View
+ * Mobile Experience: Single Chart View (App/WebView Mode)
  */
 
 $slug = get_query_var('charts_definition_slug');
@@ -31,23 +31,21 @@ $resolve_art = function($e) {
 $site_title = get_bloginfo('name');
 ?>
 <!DOCTYPE html>
-<!-- CM_RENDERER: public/templates/cm-chart-single.php -->
 <html <?php language_attributes(); ?>>
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html($current_def->title); ?> — Charts CM</title>
+    <title><?php echo esc_html($current_def->title); ?> — Mobile Mode</title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
-    <link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/public.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
-    <link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/cm.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
-    
+    <?php wp_head(); ?>
+
     <style>
         :root { --cm-primary-override: <?php echo $current_def->accent_color ?: \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
         .cm-rank, .cm-accent-color { color: var(--cm-primary-override) !important; }
     </style>
 </head>
-<body <?php body_class('cm-body-mobile cm-view-chart-single'); ?>>
+<body <?php body_class('kc-body-mobile kc-view-chart-single'); ?>>
 
 <div class="cm-app-shell">
     
@@ -117,7 +115,6 @@ $site_title = get_bloginfo('name');
     </main>
 </div>
 
-<script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
 <?php wp_footer(); ?>
 </body>
 </html>

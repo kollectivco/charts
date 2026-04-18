@@ -1,6 +1,6 @@
 <?php
 /**
- * CM Mobile Experience: Artist Profile View
+ * Mobile Mode: Artist Profile View
  */
 
 global $wpdb;
@@ -55,18 +55,16 @@ $site_title = get_bloginfo('name');
 $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 ?>
 <!DOCTYPE html>
-<!-- CM_RENDERER: public/templates/cm-artist-single.php -->
 <html <?php language_attributes(); ?>>
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html($resolved['title']); ?> — CM</title>
+    <title><?php echo esc_html($resolved['title']); ?></title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
-    <link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/public.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
-    <link rel="stylesheet" href="<?php echo CHARTS_URL . 'public/assets/css/cm.css'; ?>?v=<?php echo CHARTS_VERSION; ?>">
+    <?php wp_head(); ?>
 </head>
-<body <?php body_class('cm-body-mobile cm-view-artist-single'); ?>>
+<body <?php body_class('kc-body-mobile cm-view-artist-single'); ?>>
 
 <div class="cm-app-shell">
     

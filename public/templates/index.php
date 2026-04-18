@@ -10,6 +10,13 @@ global $wpdb;
 $manager     = new \Charts\Admin\SourceManager();
 $definitions = \Charts\Core\PublicIntegration::get_eligible_definitions( 12 ); 
 
+// 2. MOBILE BRANCH (Unified Architecture)
+$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+if ( $is_mobile ) {
+    include CHARTS_PATH . 'public/templates/mobile-index.php';
+    return;
+}
+
 
 // Helper to check if a chart is REALLY syncing
 function kc_is_syncing_active($def) {

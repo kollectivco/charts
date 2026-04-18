@@ -19,6 +19,13 @@ $tracks = $wpdb->get_results( "
 	LIMIT 100
 " );
 
+// 1. MOBILE BRANCH (Unified Architecture)
+$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+if ( $is_mobile ) {
+    include CHARTS_PATH . 'public/templates/mobile-tracks-archive.php';
+    return;
+}
+
 \Charts\Core\PublicIntegration::get_header();
 ?>
 

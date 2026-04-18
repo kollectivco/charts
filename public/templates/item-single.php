@@ -11,6 +11,13 @@ $slug = get_query_var( 'charts_item_slug' );
 
 $item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
 
+// 2. MOBILE BRANCH (Unified Architecture)
+$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+if ( $is_mobile ) {
+    include CHARTS_PATH . 'public/templates/mobile-item-single.php';
+    return;
+}
+
 if ( ! $item ) {
 	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';

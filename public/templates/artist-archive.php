@@ -18,6 +18,13 @@ $artists = $wpdb->get_results( "
 	ORDER BY appearance_count DESC, a.display_name ASC
 " );
 
+// 1. MOBILE BRANCH (Unified Architecture)
+$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+if ( $is_mobile ) {
+    include CHARTS_PATH . 'public/templates/mobile-artists-archive.php';
+    return;
+}
+
 \Charts\Core\PublicIntegration::get_header();
 ?>
 

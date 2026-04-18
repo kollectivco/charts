@@ -21,7 +21,7 @@ class PublicIntegration {
 	 * Add specific body classes to aid styling within themes.
 	 */
 	public static function add_body_classes( $classes ) {
-		$route = get_query_var( 'charts_route' );
+		$route     = get_query_var( 'charts_route' );
 		$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 
 		if ( $route ) {
@@ -30,10 +30,12 @@ class PublicIntegration {
 		}
 
 		if ( $is_mobile ) {
-			$classes[] = 'cm-body-mobile';
+			$classes[] = 'kc-mode-mobile';
+		} else {
+			$classes[] = 'kc-mode-desktop';
 		}
 
-		if ( is_singular( 'artist' ) || is_singular( 'chart' ) || is_singular( 'track' ) || is_singular( 'video' ) ) {
+		if ( is_singular( ['artist', 'chart', 'track', 'video'] ) ) {
 			$classes[] = 'kc-charts-route';
 			$classes[] = 'kc-route-singular';
 			$classes[] = 'kc-route-' . get_post_type() . '-single';
@@ -75,7 +77,7 @@ class PublicIntegration {
 		}
 
 		$path = trim( $_SERVER['REQUEST_URI'], '/' );
-		if ( $path === 'charts' || strpos( $path, 'charts/' ) === 0 || $path === 'cm' || strpos( $path, 'cm/' ) === 0 ) {
+		if ( $path === 'charts' || strpos( $path, 'charts/' ) === 0 ) {
             return true;
         }
 
