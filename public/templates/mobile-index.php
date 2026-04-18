@@ -35,32 +35,32 @@ $site_title = get_bloginfo('name');
     <?php wp_head(); ?>
 
     <style>
-        :root { --kc-primary-override: <?php echo \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
-        .kc-rank, .kc-accent-color { color: var(--kc-primary-override) !important; }
+        :root { -kc-primary-override: <?php echo \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
+        .cm-rank, .cm-accent-color { color: var(-kc-primary-override) !important; }
     </style>
 </head>
-<body <?php body_class('kc-mode-mobile kc-view-index'); ?>>
+<body <?php body_class('kc-body-mobile kc-view-index'); ?>>
 
-<div class="kc-app-shell">
+<div class="cm-app-shell">
     
-    <header class="kc-header">
-        <span class="kc-meta"><?php echo date('l, F d'); ?></span>
+    <header class="cm-header">
+        <span class="cm-meta"><?php echo date('l, F d'); ?></span>
         <h1 style="margin-top:4px;">Charts</h1>
     </header>
 
-    <main class="kc-content">
+    <main class="cm-content">
 
         <!-- Billboard Slider -->
         <?php if ( ! empty($slides) ) : ?>
-        <section class="kc-section" style="padding-top:10px;">
-            <div class="kc-slider">
-                <div class="kc-slider-track">
+        <section class="cm-section" style="padding-top:10px;">
+            <div class="cm-slider">
+                <div class="cm-slider-track">
                     <?php foreach ( $slides as $s ) : ?>
-                        <a href="<?php echo esc_url($link($s['btn1_link'])); ?>" class="kc-hero-slide">
-                            <img src="<?php echo esc_url($s['image_url']); ?>" class="kc-hero-img">
-                            <div class="kc-hero-overlay"></div>
-                            <div class="kc-hero-info">
-                                <span class="kc-meta" style="color:#fff; opacity:0.8;"><?php echo esc_html($s['badge'] ?: 'Intelligence'); ?></span>
+                        <a href="<?php echo esc_url($link($s['btn1_link'])); ?>" class="cm-hero-slide">
+                            <img src="<?php echo esc_url($s['image_url']); ?>" class="cm-hero-img">
+                            <div class="cm-hero-overlay"></div>
+                            <div class="cm-hero-info">
+                                <span class="cm-meta" style="color:#fff; opacity:0.8;"><?php echo esc_html($s['badge'] ?: 'Intelligence'); ?></span>
                                 <h3 style="color:#fff; font-size: 24px; margin-top:4px;"><?php echo esc_html($s['title']); ?></h3>
                             </div>
                         </a>
@@ -71,40 +71,40 @@ $site_title = get_bloginfo('name');
         <?php endif; ?>
 
         <!-- Active Charts Carousel -->
-        <section class="kc-section">
-            <div class="kc-section-head">
-                <h2 class="kc-section-title">All Charts</h2>
-                <span class="kc-meta kc-accent-color">Global Feed</span>
+        <section class="cm-section">
+            <div class="cm-section-head">
+                <h2 class="cm-section-title">All Charts</h2>
+                <span class="cm-meta cm-accent-color">Global Feed</span>
             </div>
 
-            <div class="kc-charts-carousel">
+            <div class="cm-charts-carousel">
                 <?php foreach ( $definitions as $def ) : 
                     $entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 3);
                     $chart_image = \Charts\Core\PublicIntegration::resolve_chart_image($def, $entries);
                     $chart_url   = $link('/charts/' . $def->slug . '/');
                 ?>
-                    <div class="kc-chart-card">
-                        <a href="<?php echo esc_url($chart_url); ?>" class="kc-card-hero">
-                            <img src="<?php echo esc_url($chart_image); ?>" class="kc-card-img">
+                    <div class="cm-chart-card">
+                        <a href="<?php echo esc_url($chart_url); ?>" class="cm-card-hero">
+                            <img src="<?php echo esc_url($chart_image); ?>" class="cm-card-img">
                             <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent);"></div>
-                            <h3 class="kc-card-title"><?php echo esc_html($def->title); ?></h3>
+                            <h3 class="cm-card-title"><?php echo esc_html($def->title); ?></h3>
                         </a>
 
-                        <div class="kc-card-content">
+                        <div class="cm-card-content">
                             <?php foreach ( $entries as $index => $e ) : 
                                 $resolved = $resolve_name($e, $def);
                             ?>
-                                <a href="<?php echo esc_url($chart_url); ?>" class="kc-row" style="border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(--kc-divider)'; ?>">
-                                    <span class="kc-rank"><?php echo $e->rank_position; ?></span>
-                                    <div class="kc-row-info">
-                                        <span class="kc-row-title"><?php echo esc_html($resolved['title']); ?></span>
-                                        <span class="kc-row-sub"><?php echo esc_html($resolved['subtitle']); ?></span>
+                                <a href="<?php echo esc_url($chart_url); ?>" class="cm-row" style="border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(-kc-divider)'; ?>">
+                                    <span class="cm-rank"><?php echo $e->rank_position; ?></span>
+                                    <div class="cm-row-info">
+                                        <span class="cm-row-title"><?php echo esc_html($resolved['title']); ?></span>
+                                        <span class="cm-row-sub"><?php echo esc_html($resolved['subtitle']); ?></span>
                                     </div>
                                 </a>
                             <?php endforeach; ?>
                         </div>
 
-                        <a href="<?php echo esc_url($chart_url); ?>" class="kc-view-more">
+                        <a href="<?php echo esc_url($chart_url); ?>" class="cm-view-more">
                             Full Analysis &rarr;
                         </a>
                     </div>

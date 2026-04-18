@@ -14,15 +14,15 @@ $item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
 // 2. MOBILE BRANCH (Unified Architecture)
 $is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 if ( $is_mobile ) {
-    include CHARTS_PATH . 'public/templates/mobile-item-single.php'; exit;
-     
+    include CHARTS_PATH . 'public/templates/mobile-item-single.php';
+    return;
 }
 
 if ( ! $item ) {
-	if ( ! $is_mobile ) { PublicIntegration::get_header(); }
+	\Charts\Core\PublicIntegration::get_header();
 	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';
-	if ( ! $is_mobile ) { PublicIntegration::get_footer(); }
-	 
+	\Charts\Core\PublicIntegration::get_footer();
+	return;
 }
 
 // Map SQL to object for template compatibility
@@ -81,7 +81,7 @@ foreach ( $more_items as $mi ) {
 	}
 }
 
-if ( ! $is_mobile ) { PublicIntegration::get_header(); }
+\Charts\Core\PublicIntegration::get_header();
 ?>
 
 <div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
@@ -296,4 +296,4 @@ if ( ! $is_mobile ) { PublicIntegration::get_header(); }
 	</div>
 </div>
 
-<?php if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } ?>
+<?php \Charts\Core\PublicIntegration::get_footer(); ?>

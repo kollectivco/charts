@@ -13,8 +13,8 @@ $definitions = \Charts\Core\PublicIntegration::get_eligible_definitions( 12 );
 // 2. MOBILE BRANCH (Unified Architecture)
 $is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 if ( $is_mobile ) {
-    include CHARTS_PATH . 'public/templates/mobile-index.php'; exit;
-     
+    include CHARTS_PATH . 'public/templates/mobile-index.php';
+    return;
 }
 
 
@@ -57,7 +57,7 @@ if ( $top_artists_chart ) {
 }
 
 use Charts\Core\Settings;
-if ( ! $is_mobile ) { PublicIntegration::get_header(); }
+\Charts\Core\PublicIntegration::get_header();
 
 $homepage_show_artists = Settings::get('homepage.show_artists_row');
 $homepage_show_more    = Settings::get('homepage.show_charts_grid');
@@ -214,4 +214,4 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 </div>
 
 <script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
-<?php if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } ?>
+<?php \Charts\Core\PublicIntegration::get_footer(); ?>
