@@ -11,13 +11,19 @@ $slug = get_query_var( 'charts_item_slug' );
 $item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
 
 if ( ! $item ) {
-    wp_redirect(home_url('/cm'));
+    wp_redirect(add_query_arg('mobile_view', '1', home_url('/charts')));
     exit;
 }
 
 if ( $type === 'video' ) {
     $item->cover_image = $item->thumbnail;
 }
+
+// Helpers
+$link = function($path) {
+    $url = home_url($path);
+    return add_query_arg('mobile_view', '1', $url);
+};
 
 // Fetch Appearances
 $entries_table = $wpdb->prefix . 'charts_entries';
@@ -86,7 +92,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
                 <div style="flex: 1;">
                     <h2 style="font-size: 24px; font-weight: 900; margin: 0; line-height: 1.1;"><?php echo esc_html($resolved['title']); ?></h2>
                     <?php if ( $artist ) : ?>
-                        <a href="<?php echo home_url('/cm/artist/' . $artist->slug); ?>" style="display: block; font-size: 14px; font-weight: 700; color: var(--cm-primary); margin-top: 8px; text-decoration: none;"><?php echo esc_html($artist->display_name); ?> &rarr;</a>
+                        <a href="<?php echo esc_url($link('/charts/artist/' . $artist->slug)); ?>" style="display: block; font-size: 14px; font-weight: 700; color: var(--cm-primary); margin-top: 8px; text-decoration: none;"><?php echo esc_html($artist->display_name); ?> &rarr;</a>
                     <?php endif; ?>
                 </div>
             </div>

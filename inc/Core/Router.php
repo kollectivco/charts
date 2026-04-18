@@ -10,33 +10,25 @@ class Router {
 	/**
 	 * Initialize routing.
 	 */
+	/**
+	 * Initialize routing.
+	 */
 	public static function init() {
 		add_action( 'init', array( self::class, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( self::class, 'add_query_vars' ) );
 		
 		// Priority 999 to ensure we override any other plugin or theme interference
 		add_filter( 'template_include', array( self::class, 'load_template' ), 999 );
+
+		// Mobile View Isolation
+		add_action( 'wp', array( self::class, 'handle_mobile_mode_isolation' ) );
 	}
 
 	/**
 	 * Add custom rewrite rules for the /charts endpoint.
 	 */
 	public static function add_rewrite_rules() {
-		// 1. Mobile WebView Routes /cm (Flutter ready)
-		add_rewrite_rule( '^cm/?$', 'index.php?charts_route=cm-index', 'top' );
-		add_rewrite_rule( '^cm/artists/?$', 'index.php?charts_route=cm-artists-archive', 'top' );
-		add_rewrite_rule( '^cm/tracks/?$', 'index.php?charts_route=cm-tracks-archive', 'top' );
-		add_rewrite_rule( '^cm/videos/?$', 'index.php?charts_route=cm-videos-archive', 'top' );
-
-		add_rewrite_rule( '^cm/chart/([^/]+)/?$', 'index.php?charts_route=cm-chart-single&charts_definition_slug=$matches[1]', 'top' );
-		add_rewrite_rule( '^cm/track/([^/]+)/?$', 'index.php?charts_route=cm-item-single&charts_item_type=track&charts_item_slug=$matches[1]', 'top' );
-		add_rewrite_rule( '^cm/(video|clip)/([^/]+)/?$', 'index.php?charts_route=cm-item-single&charts_item_type=video&charts_item_slug=$matches[2]', 'top' );
-		add_rewrite_rule( '^cm/artist/([^/]+)/?$', 'index.php?charts_route=cm-artist-single&charts_artist_slug=$matches[1]', 'top' );
-		
-		// Legacy / Backward compatibility catch-all for /cm/{slug}
-		add_rewrite_rule( '^cm/([^/]+)/?$', 'index.php?charts_route=cm-chart-single&charts_definition_slug=$matches[1]', 'top' );
-
-		// 2. Base /charts/
+		// 1. Base /charts/
 		add_rewrite_rule( '^charts/?$', 'index.php?charts_route=index', 'top' );
 
 		// 2. Specific Entity Routes (highest specificity)
@@ -71,7 +63,25 @@ class Router {
 		$vars[] = 'charts_item_slug';
 		$vars[] = 'charts_item_type';
 		$vars[] = 'charts_module';
+		$vars[] = 'mobile_view'; // App/WebView indicator
 		return $vars;
+	}
+
+	/**
+	 * Handle Clean Room isolation for mobile mode.
+	 */
+	public static function handle_mobile_mode_isolation() {
+		$is_mobile_view = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+		$route = get_query_var('charts_route');
+
+		if ( $is_mobile_view && $route ) {
+			// Aggressively prevent theme noise leakage on official pages when in mobile mode
+			remove_all_actions( 'wp_footer' );
+			add_action( 'wp_footer', 'wp_print_footer_scripts', 20 );
+
+			// Ensure mobile view isn't cached as the standard view
+			if ( ! defined('DONOTCACHEPAGE') ) define('DONOTCACHEPAGE', true);
+		}
 	}
 
 	/**
@@ -79,13 +89,7 @@ class Router {
 	 */
 	public static function load_template( $template ) {
 		$route = get_query_var( 'charts_route' );
-
-		// If this is a CM route, aggressively prevent theme noise leakage
-		if ( $route && strpos( (string) $route, 'cm-' ) === 0 ) {
-			// Remove common theme UI injector hooks specifically for this request
-			remove_all_actions( 'wp_footer' );
-			add_action( 'wp_footer', 'wp_print_footer_scripts', 20 );
-		}
+		$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 
 		if ( ! $route ) {
 			if ( is_singular( array( 'chart', 'artist', 'track', 'video' ) ) ) {
@@ -93,11 +97,11 @@ class Router {
 				$path = '';
 
 				if ( $post_type === 'chart' ) {
-					$path = CHARTS_PATH . 'public/templates/single-chart.php';
+					$path = $is_mobile ? CHARTS_PATH . 'public/templates/cm-chart-single.php' : CHARTS_PATH . 'public/templates/single-chart.php';
 				} elseif ( $post_type === 'artist' ) {
-					$path = CHARTS_PATH . 'public/templates/artist-single.php';
+					$path = $is_mobile ? CHARTS_PATH . 'public/templates/cm-artist-single.php' : CHARTS_PATH . 'public/templates/artist-single.php';
 				} elseif ( in_array( $post_type, array( 'track', 'video' ) ) ) {
-					$path = CHARTS_PATH . 'public/templates/item-single.php';
+					$path = $is_mobile ? CHARTS_PATH . 'public/templates/cm-item-single.php' : CHARTS_PATH . 'public/templates/item-single.php';
 				}
 
 				if ( ! empty( $path ) && file_exists( $path ) ) {
@@ -107,36 +111,30 @@ class Router {
 			return $template;
 		}
 
+		// Combined Routing and Mobile Switching
 		switch ( $route ) {
 			case 'index':
-				return CHARTS_PATH . 'public/templates/index.php';
-			case 'cm-index':
-				return CHARTS_PATH . 'public/templates/cm-index.php';
-			case 'cm-artists-archive':
-				return CHARTS_PATH . 'public/templates/cm-artists-archive.php';
-			case 'cm-tracks-archive':
-				return CHARTS_PATH . 'public/templates/cm-tracks-archive.php';
-			case 'cm-videos-archive':
-				return CHARTS_PATH . 'public/templates/cm-videos-archive.php';
-			case 'cm-chart-single':
-				return CHARTS_PATH . 'public/templates/cm-chart-single.php';
-			case 'cm-artist-single':
-				return CHARTS_PATH . 'public/templates/cm-artist-single.php';
-			case 'cm-item-single':
-				return CHARTS_PATH . 'public/templates/cm-item-single.php';
-			case 'single-chart':
-				return CHARTS_PATH . 'public/templates/single-chart.php';
+				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-index.php' : CHARTS_PATH . 'public/templates/index.php';
+			
 			case 'artist-archive':
-				return CHARTS_PATH . 'public/templates/artist-archive.php';
+				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-artists-archive.php' : CHARTS_PATH . 'public/templates/artist-archive.php';
+			
 			case 'track-archive':
-				return CHARTS_PATH . 'public/templates/track-archive.php';
+				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-tracks-archive.php' : CHARTS_PATH . 'public/templates/track-archive.php';
+			
 			case 'artist-single':
-				return CHARTS_PATH . 'public/templates/artist-single.php';
+				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-artist-single.php' : CHARTS_PATH . 'public/templates/artist-single.php';
+			
 			case 'item-single':
-				return CHARTS_PATH . 'public/templates/item-single.php';
+				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-item-single.php' : CHARTS_PATH . 'public/templates/item-single.php';
+			
+			case 'single-chart':
+				return $is_mobile ? CHARTS_PATH . 'public/templates/cm-chart-single.php' : CHARTS_PATH . 'public/templates/single-chart.php';
+
 			case 'dashboard':
 				return CHARTS_PATH . 'public/templates/dashboard.php';
 		}
+
 		return $template;
 	}
 

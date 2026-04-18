@@ -8,13 +8,18 @@ $manager = new \Charts\Admin\SourceManager();
 $current_def = $manager->get_definition_by_slug($slug);
 
 if ( ! $current_def ) {
-    wp_redirect(home_url('/cm'));
+    wp_redirect(add_query_arg('mobile_view', '1', home_url('/charts')));
     exit;
 }
 
 $entries = \Charts\Core\PublicIntegration::get_preview_entries($current_def, 100);
 
 // Helpers
+$link = function($path) {
+    $url = home_url($path);
+    return add_query_arg('mobile_view', '1', $url);
+};
+
 $resolve_name = function($e, $def) {
     return \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 };
@@ -47,7 +52,7 @@ $site_title = get_bloginfo('name');
 <div class="cm-app-shell">
     
     <header class="cm-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--cm-divider); position:sticky; top:0; z-index:100; background:var(--cm-surface);">
-        <a href="<?php echo home_url('/cm'); ?>" style="color:var(--cm-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
+        <a href="<?php echo esc_url($link('/charts')); ?>" style="color:var(--cm-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
         <h1 style="font-size: 18px; margin:0; line-height:1;"><?php echo esc_html($current_def->title); ?></h1>
     </header>
 
@@ -97,7 +102,7 @@ $site_title = get_bloginfo('name');
                             <div class="cm-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--cm-divider); margin-top: 4px;">
                                 <?php 
                                     $entity_type = $e->item_type ?: $current_def->item_type ?: 'track';
-                                    $details_url = home_url('/cm/' . $entity_type . '/' . $e->item_slug . '/');
+                                    $details_url = $link('/charts/' . $entity_type . '/' . $e->item_slug . '/');
                                 ?>
                                 <a href="<?php echo esc_url($details_url); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--cm-primary); text-transform: uppercase; letter-spacing: 0.05em;">
                                     <span>Full Analysis Breakdown</span>

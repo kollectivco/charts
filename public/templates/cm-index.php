@@ -9,6 +9,11 @@ $definitions = \Charts\Core\PublicIntegration::get_eligible_definitions( 15 );
 $slides      = \Charts\Core\HomepageSlider::get_slides_data( 5 );
 
 // Resolution Helpers
+$link = function($path) {
+    $url = home_url($path);
+    return add_query_arg('mobile_view', '1', $url);
+};
+
 $resolve_name = function($e, $def) {
     return \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 };
@@ -53,7 +58,7 @@ $site_title = get_bloginfo('name');
             <div class="cm-slider">
                 <div class="cm-slider-track">
                     <?php foreach ( $slides as $s ) : ?>
-                        <a href="<?php echo esc_url($s['btn1_link']); ?>" class="cm-hero-slide">
+                        <a href="<?php echo esc_url($link($s['btn1_link'])); ?>" class="cm-hero-slide">
                             <img src="<?php echo esc_url($s['image_url']); ?>" class="cm-hero-img">
                             <div class="cm-hero-overlay"></div>
                             <div class="cm-hero-info">
@@ -78,9 +83,10 @@ $site_title = get_bloginfo('name');
                 <?php foreach ( $definitions as $def ) : 
                     $entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 3);
                     $chart_image = \Charts\Core\PublicIntegration::resolve_chart_image($def, $entries);
+                    $chart_url   = $link('/charts/' . $def->slug . '/');
                 ?>
                     <div class="cm-chart-card">
-                        <a href="<?php echo home_url('/cm/chart/' . $def->slug . '/'); ?>" class="cm-card-hero">
+                        <a href="<?php echo esc_url($chart_url); ?>" class="cm-card-hero">
                             <img src="<?php echo esc_url($chart_image); ?>" class="cm-card-img">
                             <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent);"></div>
                             <h3 class="cm-card-title"><?php echo esc_html($def->title); ?></h3>
@@ -90,7 +96,7 @@ $site_title = get_bloginfo('name');
                             <?php foreach ( $entries as $index => $e ) : 
                                 $resolved = $resolve_name($e, $def);
                             ?>
-                                <a href="<?php echo home_url('/cm/chart/' . $def->slug . '/'); ?>" class="cm-row" style="border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(--cm-divider)'; ?>">
+                                <a href="<?php echo esc_url($chart_url); ?>" class="cm-row" style="border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(--cm-divider)'; ?>">
                                     <span class="cm-rank"><?php echo $e->rank_position; ?></span>
                                     <div class="cm-row-info">
                                         <span class="cm-row-title"><?php echo esc_html($resolved['title']); ?></span>
@@ -100,7 +106,7 @@ $site_title = get_bloginfo('name');
                             <?php endforeach; ?>
                         </div>
 
-                        <a href="<?php echo home_url('/cm/chart/' . $def->slug . '/'); ?>" class="cm-view-more">
+                        <a href="<?php echo esc_url($chart_url); ?>" class="cm-view-more">
                             Full Analysis &rarr;
                         </a>
                     </div>

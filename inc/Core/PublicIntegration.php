@@ -22,9 +22,15 @@ class PublicIntegration {
 	 */
 	public static function add_body_classes( $classes ) {
 		$route = get_query_var( 'charts_route' );
+		$is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
+
 		if ( $route ) {
 			$classes[] = 'kc-charts-route';
 			$classes[] = 'kc-route-' . $route;
+		}
+
+		if ( $is_mobile ) {
+			$classes[] = 'cm-body-mobile';
 		}
 
 		if ( is_singular( 'artist' ) || is_singular( 'chart' ) || is_singular( 'track' ) || is_singular( 'video' ) ) {

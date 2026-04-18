@@ -9,13 +9,19 @@ $slug = get_query_var( 'charts_artist_slug' );
 $artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
 
 if ( ! $artist ) {
-    wp_redirect(home_url('/cm'));
+    wp_redirect(add_query_arg('mobile_view', '1', home_url('/charts')));
     exit;
 }
 
 $metadata = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : array();
 $display_image = \Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist');
 $artist_name_escaped = '%' . $wpdb->esc_like( $artist->display_name ) . '%';
+
+// Helpers
+$link = function($path) {
+    $url = home_url($path);
+    return add_query_arg('mobile_view', '1', $url);
+};
 
 // Popular tracks
 $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
@@ -99,8 +105,9 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <?php foreach ( $popular_tracks as $pt ) : 
                     $pt_resolved = \Charts\Core\PublicIntegration::resolve_display_name($pt);
+                    $pt_url = $link('/charts/' . ($pt->item_type==='video' ? 'video' : 'track') . '/' . $pt->item_slug);
                 ?>
-                    <a href="<?php echo home_url('/cm/'.($pt->item_type==='video'?'video':'track').'/' . $pt->item_slug); ?>" class="cm-row" style="padding: 12px 16px; background:var(--cm-surface); border-radius:12px; border:1px solid var(--cm-divider); text-decoration:none;">
+                    <a href="<?php echo esc_url($pt_url); ?>" class="cm-row" style="padding: 12px 16px; background:var(--cm-surface); border-radius:12px; border:1px solid var(--cm-divider); text-decoration:none;">
                         <img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
                         <div class="cm-row-info">
                             <span class="cm-row-title" style="font-size:14px;"><?php echo esc_html($pt_resolved['title']); ?></span>
