@@ -29,14 +29,14 @@ $site_title = get_bloginfo('name');
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html($site_title); ?> — Mobile Mode — Mobile Mode</title>
+    <title><?php echo esc_html($site_title); ?> — Mobile Mode</title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
 
     <style>
-        :root { --cm-primary-override: <?php echo \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
-        .cm-rank, .cm-accent-color { color: var(--cm-primary-override) !important; }
+        :root { -kc-primary-override: <?php echo \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
+        .cm-rank, .cm-accent-color { color: var(-kc-primary-override) !important; }
     </style>
 </head>
 <body <?php body_class('kc-body-mobile kc-view-index'); ?>>
@@ -94,7 +94,7 @@ $site_title = get_bloginfo('name');
                             <?php foreach ( $entries as $index => $e ) : 
                                 $resolved = $resolve_name($e, $def);
                             ?>
-                                <a href="<?php echo esc_url($chart_url); ?>" class="cm-row" style="border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(--cm-divider)'; ?>">
+                                <a href="<?php echo esc_url($chart_url); ?>" class="cm-row" style="border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(-kc-divider)'; ?>">
                                     <span class="cm-rank"><?php echo $e->rank_position; ?></span>
                                     <div class="cm-row-info">
                                         <span class="cm-row-title"><?php echo esc_html($resolved['title']); ?></span>

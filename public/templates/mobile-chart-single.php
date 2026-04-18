@@ -41,16 +41,16 @@ $site_title = get_bloginfo('name');
     <?php wp_head(); ?>
 
     <style>
-        :root { --cm-primary-override: <?php echo $current_def->accent_color ?: \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
-        .cm-rank, .cm-accent-color { color: var(--cm-primary-override) !important; }
+        :root { -kc-primary-override: <?php echo $current_def->accent_color ?: \Charts\Core\Settings::get('design.primary_color', '#6366f1'); ?>; }
+        .cm-rank, .cm-accent-color { color: var(-kc-primary-override) !important; }
     </style>
 </head>
 <body <?php body_class('kc-body-mobile kc-view-chart-single'); ?>>
 
 <div class="cm-app-shell">
     
-    <header class="cm-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--cm-divider); position:sticky; top:0; z-index:100; background:var(--cm-surface);">
-        <a href="<?php echo esc_url($link('/charts')); ?>" style="color:var(--cm-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
+    <header class="cm-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(-kc-divider); position:sticky; top:0; z-index:100; background:var(-kc-surface);">
+        <a href="<?php echo esc_url($link('/charts')); ?>" style="color:var(-kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
         <h1 style="font-size: 18px; margin:0; line-height:1;"><?php echo esc_html($current_def->title); ?></h1>
     </header>
 
@@ -74,7 +74,7 @@ $site_title = get_bloginfo('name');
                             <?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
                                 <span style="color:#e74c3c; font-size:10px; font-weight:900;">▼ <?php echo ($e->rank_position - $e->previous_rank); ?></span>
                             <?php elseif ( ! empty($e->previous_rank) && $e->previous_rank == 0 ) : ?>
-                                <span style="color:var(--cm-primary); font-size:9px; font-weight:900;">NEW</span>
+                                <span style="color:var(-kc-primary); font-size:9px; font-weight:900;">NEW</span>
                             <?php endif; ?>
                         </div>
 
@@ -97,12 +97,12 @@ $site_title = get_bloginfo('name');
                                 <label>Weeks On</label>
                                 <span><?php echo $e->weeks_on_chart ?: 1; ?> wks</span>
                             </div>
-                            <div class="cm-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--cm-divider); margin-top: 4px;">
+                            <div class="cm-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(-kc-divider); margin-top: 4px;">
                                 <?php 
                                     $entity_type = $e->item_type ?: $current_def->item_type ?: 'track';
                                     $details_url = $link('/charts/' . $entity_type . '/' . $e->item_slug . '/');
                                 ?>
-                                <a href="<?php echo esc_url($details_url); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--cm-primary); text-transform: uppercase; letter-spacing: 0.05em;">
+                                <a href="<?php echo esc_url($details_url); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(-kc-primary); text-transform: uppercase; letter-spacing: 0.05em;">
                                     <span>Full Analysis Breakdown</span>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                                 </a>
