@@ -19,9 +19,9 @@ if ( $is_mobile ) {
 }
 
 if ( ! $item ) {
-	if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); } }
+	if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 	echo '<div class="kc-root"><h1>Item Not Found</h1></div>';
-	if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } }
+	if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); }
 	return;
 }
 
@@ -81,7 +81,7 @@ foreach ( $more_items as $mi ) {
 	}
 }
 
-if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); } }
+if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 ?>
 
 <div class="kc-root" style="background: var(--k-bg); color: var(--k-text);">
@@ -296,4 +296,4 @@ if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_
 	</div>
 </div>
 
-<?php if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } } ?>
+<?php if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } ?>

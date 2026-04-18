@@ -44,8 +44,8 @@ $site_title = get_bloginfo('name');
 <div class="kc-app-shell">
     
     <header class="kc-header" style="padding: 32px 20px 20px;">
-        <span class="kc-meta" style="font-size: 11px; color: var(--kc-text-muted); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;"><?php echo strtoupper(date('l, F d')); ?></span>
-        <h1 style="font-size: 44px; margin-top: 6px; font-weight: 950; letter-spacing: -0.05em; line-height: 0.9;">Charts</h1>
+        <span class="kc-meta" style="font-size: 10px; color: var(--kc-text-muted); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 900; display: block; margin-bottom: 4px;"><?php echo date('l, F d'); ?></span>
+        <h1 style="font-size: 48px; margin: 0; font-weight: 950; letter-spacing: -0.05em; line-height: 0.9; color: var(--kc-text);">Charts</h1>
     </header>
 
     <main class="kc-content">
@@ -88,17 +88,17 @@ $site_title = get_bloginfo('name');
                 <span class="kc-meta kc-accent-color" style="font-weight: 900; letter-spacing: 0.1em; color: var(--kc-accent);">Artist Feed</span>
             </div>
 
-            <div class="kc-charts-carousel" style="padding-bottom: 20px;">
+            <div class="kc-artists-grid" style="padding: 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 20px;">
                 <?php foreach ( $top_artists as $ta ) : 
                     $resolved_ta = $resolve_name($ta, $active_artists_def);
                 ?>
-                    <a href="<?php echo esc_url($link('/charts/artist/' . $ta->item_slug)); ?>" class="kc-chart-card" style="flex: 0 0 30%; min-height: 120px; aspect-ratio: 1/1; border-radius: 20px; border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
+                    <a href="<?php echo esc_url($link('/charts/artist/' . $ta->item_slug)); ?>" class="kc-artist-card" style="position: relative; aspect-ratio: 1/1; border-radius: 20px; text-decoration: none; display: block; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.12);">
                         <img src="<?php echo esc_url($resolve_art($ta)); ?>" style="width: 100%; height: 100%; object-fit: cover; border-radius: 20px;">
-                        <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent 70%); border-radius: 20px;"></div>
-                        <div style="position: absolute; bottom: 12px; left: 12px; right: 12px;">
-                             <h4 style="color:#fff; font-size: 13px; font-weight: 950; margin: 0; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"><?php echo esc_html($resolved_ta['title']); ?></h4>
+                        <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 70%);"></div>
+                        <div style="position: absolute; bottom: 12px; left: 10px; right: 10px;">
+                             <h4 style="color:#fff; font-size: 12px; font-weight: 900; margin: 0; line-height: 1.1; text-align: center;"><?php echo esc_html($resolved_ta['title']); ?></h4>
                         </div>
-                        <div style="position: absolute; top: 10px; left: 10px; background: var(--kc-accent); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 950; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                        <div style="position: absolute; top: 10px; left: 10px; background: #fe025b; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 950; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #fff;">
                             <?php echo $ta->rank_position; ?>
                         </div>
                     </a>

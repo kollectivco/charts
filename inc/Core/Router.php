@@ -82,6 +82,12 @@ class Router {
 			remove_all_actions( 'wp_footer' );
 			add_action( 'wp_footer', 'wp_print_footer_scripts', 20 );
 
+            // Selective wp_head cleaning to avoid theme-injected overlays or bars
+            remove_action( 'wp_head', 'rsd_link' );
+            remove_action( 'wp_head', 'wlwmanifest_link' );
+            remove_action( 'wp_head', 'wp_generator' );
+            remove_action( 'wp_head', 'wp_shortlink_wp_head' );
+
 			// Ensure mobile view isn't cached as the standard view
 			if ( ! defined('DONOTCACHEPAGE') ) define('DONOTCACHEPAGE', true);
 		}
