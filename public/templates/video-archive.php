@@ -23,11 +23,11 @@ $videos = $wpdb->get_results( "
 // 1. MOBILE BRANCH (Unified Architecture)
 $is_mobile = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 if ( $is_mobile ) {
-    include CHARTS_PATH . 'public/templates/mobile-videos-archive.php';
+    include CHARTS_PATH . 'public/templates/mobile-videos-archive.php'; exit;
     return;
 }
 
-\Charts\Core\PublicIntegration::get_header();
+if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 ?>
 
 <div class="kc-container">
@@ -105,4 +105,4 @@ if ( $is_mobile ) {
 	</div>
 
 <script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
-<?php \Charts\Core\PublicIntegration::get_footer(); ?>
+<?php if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } ?>
