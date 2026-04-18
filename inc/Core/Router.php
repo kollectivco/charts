@@ -74,9 +74,11 @@ class Router {
 	public static function handle_mobile_mode_isolation() {
 		$is_mobile_view = get_query_var('mobile_view') || isset($_GET['mobile_view']);
 		$route = get_query_var('charts_route');
+		$post_type = get_post_type();
+		$is_chart_pt = in_array( $post_type, array('chart', 'artist', 'track', 'video') );
 
-		if ( $is_mobile_view && $route ) {
-			// Aggressively prevent theme noise leakage on official pages when in mobile mode
+		if ( $is_mobile_view && ($route || $is_chart_pt) ) {
+			// Aggressively prevent theme noise leakage on ALL charts pages when in mobile mode
 			remove_all_actions( 'wp_footer' );
 			add_action( 'wp_footer', 'wp_print_footer_scripts', 20 );
 

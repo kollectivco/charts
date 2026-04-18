@@ -68,18 +68,18 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 
 <div class="kc-app-shell">
     
-    <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(---kc-divider); position:sticky; top:0; z-index:100; background:var(---kc-surface);">
-        <a href="javascript:history.back()" style="color:var(---kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
+    <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--kc-divider); position:sticky; top:0; z-index:100; background:var(--kc-surface);">
+        <a href="javascript:history.back()" style="color:var(--kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
         <h1 style="font-size: 16px; margin:0; line-height:1; font-weight:800;">Artist Profile</h1>
     </header>
 
     <main class="kc-content">
         <!-- Hero -->
         <section class="kc-section" style="padding: 32px 20px; text-align: center;">
-            <img src="<?php echo esc_url($display_image); ?>" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; box-shadow: var(---kc-shadow-sm); margin: 0 auto 16px;">
+            <img src="<?php echo esc_url($display_image); ?>" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; box-shadow: var(--kc-shadow-sm); margin: 0 auto 16px;">
             <h2 style="font-size: 32px; font-weight: 950; margin: 0; line-height: 1;"><?php echo esc_html($resolved['title']); ?></h2>
             <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
-                <span style="background: var(---kc-primary); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 20px; text-transform: uppercase;">Billboard Artist</span>
+                <span style="background: var(--kc-primary); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 20px; text-transform: uppercase;">Billboard Artist</span>
             </div>
         </section>
 
@@ -87,11 +87,11 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
         <section class="kc-section" style="padding: 0 20px 32px;">
              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="kc-card" style="padding: 16px; text-align: center;">
-                    <span style="display:block; font-size: 9px; font-weight:800; color:var(---kc-text-muted); text-transform:uppercase; margin-bottom:4px;">Rankings</span>
+                    <span style="display:block; font-size: 9px; font-weight:800; color:var(--kc-text-muted); text-transform:uppercase; margin-bottom:4px;">Rankings</span>
                     <span style="font-size: 18px; font-weight:900;"><?php echo count($chart_rankings); ?></span>
                 </div>
                 <div class="kc-card" style="padding: 16px; text-align: center;">
-                    <span style="display:block; font-size: 9px; font-weight:800; color:var(---kc-text-muted); text-transform:uppercase; margin-bottom:4px;">Popular Works</span>
+                    <span style="display:block; font-size: 9px; font-weight:800; color:var(--kc-text-muted); text-transform:uppercase; margin-bottom:4px;">Popular Works</span>
                     <span style="font-size: 18px; font-weight:900;"><?php echo count($popular_tracks); ?></span>
                 </div>
              </div>
@@ -99,13 +99,13 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 
         <!-- Popular Tracks -->
         <section class="kc-section" style="padding: 0 20px 40px;">
-            <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(---kc-text-muted); margin-bottom: 16px;">Top Analysis</h3>
+            <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--kc-text-muted); margin-bottom: 16px;">Top Analysis</h3>
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <?php foreach ( $popular_tracks as $pt ) : 
                     $pt_resolved = \Charts\Core\PublicIntegration::resolve_display_name($pt);
                     $pt_url = $link('/charts/' . ($pt->item_type==='video' ? 'video' : 'track') . '/' . $pt->item_slug);
                 ?>
-                    <a href="<?php echo esc_url($pt_url); ?>" class="kc-row" style="padding: 12px 16px; background:var(---kc-surface); border-radius:12px; border:1px solid var(---kc-divider); text-decoration:none;">
+                    <a href="<?php echo esc_url($pt_url); ?>" class="kc-row" style="padding: 12px 16px; background:var(--kc-surface); border-radius:12px; border:1px solid var(--kc-divider); text-decoration:none;">
                         <img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
                         <div class="kc-row-info">
                             <span class="kc-row-title" style="font-size:14px;"><?php echo esc_html($pt_resolved['title']); ?></span>

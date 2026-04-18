@@ -57,7 +57,7 @@ if ( $top_artists_chart ) {
 }
 
 use Charts\Core\Settings;
-if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
+if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); } }
 
 $homepage_show_artists = Settings::get('homepage.show_artists_row');
 $homepage_show_more    = Settings::get('homepage.show_charts_grid');
@@ -214,4 +214,4 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 </div>
 
 <script src="<?php echo CHARTS_URL . 'public/assets/js/public.js'; ?>?v=<?php echo CHARTS_VERSION; ?>"></script>
-<?php if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } ?>
+<?php if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } } ?>

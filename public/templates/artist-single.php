@@ -18,9 +18,9 @@ if ( $is_mobile ) {
 }
 
 if ( ! $artist ) {
-	if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
+	if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); } }
 	echo '<div class="kc-root"><h1>Artist Not Found</h1></div>';
-	if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); }
+	if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } }
 	return;
 }
 
@@ -151,7 +151,7 @@ foreach($chart_rankings as $cr) {
 	$cr->definition_title = $row ? $row->title : 'Top Artists';
 }
 
-if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
+if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); } }
 ?>
 
 <div class="kc-root kc-artist-profile-root" style="background: var(--k-bg); color: var(--k-text);">
@@ -345,4 +345,4 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 	</div>
 </div>
 
-<?php if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } ?>
+<?php if ( ! $is_mobile ) { if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_footer(); } } ?>

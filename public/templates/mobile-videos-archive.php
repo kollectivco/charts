@@ -32,15 +32,15 @@ $site_title = get_bloginfo('name');
 <body <?php body_class('kc-mode-mobile kc-view-videos-archive'); ?>>
 
 <div class="kc-app-shell">
-    <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(---kc-divider); position:sticky; top:0; z-index:100; background:var(---kc-surface);">
-        <a href="<?php echo home_url('/charts?mobile_view=1'); ?>" style="color:var(---kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
+    <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--kc-divider); position:sticky; top:0; z-index:100; background:var(--kc-surface);">
+        <a href="<?php echo home_url('/charts?mobile_view=1'); ?>" style="color:var(--kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
         <h1 style="font-size: 18px; margin:0; line-height:1;">Top Videos</h1>
     </header>
 
     <main class="kc-content">
         <div class="kc-charts-list" style="padding: 10px 0;">
             <?php if ( empty($videos) ) : ?>
-                <div style="padding: 40px; text-align: center; color: var(---kc-text-muted);">No videos found.</div>
+                <div style="padding: 40px; text-align: center; color: var(--kc-text-muted);">No videos found.</div>
             <?php else : ?>
                 <?php foreach ( $videos as $v ) : 
                     $img = !empty($v->cover_image) ? $v->cover_image : CHARTS_URL . 'public/assets/img/placeholder.png';
@@ -67,8 +67,8 @@ $site_title = get_bloginfo('name');
                                     <label>Appearances</label>
                                     <span><?php echo number_format($v->appearance_count); ?></span>
                                 </div>
-                                <div class="kc-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(---kc-divider); margin-top: 4px;">
-                                    <a href="<?php echo add_query_arg('mobile_view', '1', home_url('/charts/video/' . $v->slug . '/')); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(---kc-primary); text-transform: uppercase; letter-spacing: 0.05em;">
+                                <div class="kc-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--kc-divider); margin-top: 4px;">
+                                    <a href="<?php echo add_query_arg('mobile_view', '1', home_url('/charts/video/' . $v->slug . '/')); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--kc-primary); text-transform: uppercase; letter-spacing: 0.05em;">
                                         <span>Full Analysis Breakdown</span>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                                     </a>
