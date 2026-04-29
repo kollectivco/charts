@@ -165,18 +165,10 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 
 				<!-- Row 6: Structural Sovereignty -->
 				<div class="form-group form-group-full" style="padding-top: 32px; border-top: 1px solid var(--charts-border);">
-					<label style="font-size: 14px; font-weight: 800; color: var(--charts-text-dim); margin-bottom: 24px; display: block;">Ranking Model & Independent Control</label>
+					<label style="font-size: 14px; font-weight: 800; color: var(--charts-text-dim); margin-bottom: 24px; display: block;">Localization & Display Preferences</label>
+					<input type="hidden" name="ordering_mode" id="ordering_mode" value="<?php echo esc_attr($ordering_mode); ?>">
 					
 					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
-						<div class="form-group">
-							<label for="ordering_mode">Ordering Model <span class="required">*</span></label>
-							<select name="ordering_mode" id="ordering_mode" class="form-control">
-								<option value="import" <?php selected($ordering_mode, 'import'); ?>>Automatic (Import Center & API)</option>
-								<option value="manual" <?php selected($ordering_mode, 'manual'); ?>>Manual (Hand-picked & Custom Sort)</option>
-							</select>
-							<span class="input-helper">Determine if this chart is fed by automated systems or curated by hand.</span>
-						</div>
-						
 						<div class="form-group">
 							<label for="franco_mode">Display Language Preference</label>
 							<select name="franco_mode" id="franco_mode" class="form-control">
@@ -196,14 +188,6 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 						<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px;">
 							<div>
 								<h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--charts-text);">Chart Rows & Live Rankings</h3>
-								<p style="font-size: 13px; color: var(--charts-text-dim); margin-top: 4px;">
-									<span class="mode-notice mode-notice-manual" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?>">
-										You are in <strong>Manual Mode</strong>. Use up/down arrows or drag rows to reorder.
-									</span>
-									<span class="mode-notice mode-notice-import" style="<?php echo $ordering_mode === 'manual' ? 'display:none;' : ''; ?>">
-										You are in <strong>Automatic Mode</strong>. Rankings are controlled by Import Center.
-									</span>
-								</p>
 							</div>
 							
 							<div class="manual-search-wrap" style="<?php echo $ordering_mode !== 'manual' ? 'display:none;' : ''; ?> position: relative; width: 340px;">
@@ -369,8 +353,6 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 			$('.manual-col').toggle(isManual);
 			$('.row-rank-static').toggle(!isManual);
 			$('.manual-search-wrap').toggle(isManual);
-			$('.mode-notice-manual').toggle(isManual);
-			$('.mode-notice-import').toggle(!isManual);
 
 			if (isManual) {
 				if (!$("#chart_rows_sortable").data('ui-sortable')) {

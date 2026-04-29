@@ -65,6 +65,7 @@ class SpotifyCsvImporter {
 			$saved        = 0;
 			$parse_errors = 0;
 			$current_row  = 0;
+			$error_reasons = array();
 
 			foreach ( $rows as $row ) {
 				$current_row++;
@@ -76,14 +77,22 @@ class SpotifyCsvImporter {
 
 				if ( $track_name === '' && $artist_raw === '' ) {
 					$parse_errors++;
+					$error_reasons[] = "Row {$current_row}: Missing both track_name and artist_names";
 					continue;
 				}
 
 				// Resolve / create primary artist
 				$primary_artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
 
+				if ( ! $primary_artist_id ) {
+					global $wpdb;
+					$parse_errors++;
+					$error_reasons[] = "Row {$current_row}: Failed to ensure primary artist ($primary_name) - DB: {$wpdb->last_error}";
+					continue;
+				}
+
 				// Link ALL artists
-				$all_artists = ! empty( $all_artists ) ? $all_artists : \Charts\Services\Normalizer::split_artists( $artist_raw );
+				$all_artists = \Charts\Services\Normalizer::split_artists( $artist_raw );
 				if ( empty( $all_artists ) && ! empty( $primary_name ) ) $all_artists = array( $primary_name );
 
 				// Resolve / create track
@@ -93,14 +102,21 @@ class SpotifyCsvImporter {
 				$official_name = ! empty( $enrichment['official_name'] ) ? $enrichment['official_name'] : $track_name;
 				$official_name = $this->import_flow->normalize_title( $official_name );
 
-				$track_id = \Charts\Core\EntityManager::ensure_track( $official_name, $primary_artist_id, array(
-					'spotify_id' => $spotify_id,
-					'cover_image' => $cover_image
-				) );
+				$item_type = $meta['item_type'] ?? 'track';
 
-				if ( ! $track_id ) {
-					$parse_errors++;
-					continue;
+				$track_id = null;
+				if ( $item_type !== 'artist' ) {
+					$track_id = \Charts\Core\EntityManager::ensure_track( $official_name, $primary_artist_id, array(
+						'spotify_id' => $spotify_id,
+						'cover_image' => $cover_image
+					) );
+
+					if ( ! $track_id ) {
+						global $wpdb;
+						$parse_errors++;
+						$error_reasons[] = "Row {$current_row}: Failed to ensure track ($official_name) - DB: {$wpdb->last_error}";
+						continue;
+					}
 				}
 
 				$artist_ids = array();
@@ -110,8 +126,6 @@ class SpotifyCsvImporter {
 					$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name );
 					if ( $a_id ) $artist_ids[] = $a_id;
 				}
-
-				$item_type = $meta['item_type'] ?? 'track';
 
 				if ( $item_type === 'artist' ) {
 					$item_id = $primary_artist_id;
@@ -143,18 +157,26 @@ class SpotifyCsvImporter {
 					try { ( new Analyzer() )->analyze_entry( $entry_id ); } catch ( \Exception $e ) {}
 					$saved++;
 				} else {
+					global $wpdb;
 					$parse_errors++;
+					$error_reasons[] = "Row {$current_row}: Upsert entry failed - DB: {$wpdb->last_error}";
 				}
 			}
 
 			// 7. Complete run record
+			$err_msg = $parse_errors > 0 ? "Processed with {$parse_errors} row(s) skipped." : "Import completed successfully.";
+			if ( ! empty( $error_reasons ) ) {
+				$unique_reasons = array_unique( $error_reasons );
+				$err_msg .= ' Reasons: ' . implode( ' | ', array_slice( $unique_reasons, 0, 3 ) );
+			}
+
 			$wpdb->update( $wpdb->prefix . 'charts_import_runs', array(
 				'status'              => 'completed',
 				'parsed_rows'         => count( $rows ),
 				'matched_items'       => $saved,
 				'enrichment_attempts' => count( $rows ),
 				'enrichment_failures' => count( $rows ) - $enriched_count,
-				'error_message'       => $parse_errors > 0 ? "Processed with {$parse_errors} row(s) skipped." : "Import completed successfully.",
+				'error_message'       => $err_msg,
 				'finished_at'         => current_time( 'mysql' ),
 			), array( 'id' => $run_id ) );
 
