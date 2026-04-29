@@ -68,8 +68,6 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_artists` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`display_name` VARCHAR(255) NOT NULL,
-				`display_name_franco_auto` VARCHAR(255) DEFAULT NULL,
-				`display_name_franco_manual` VARCHAR(255) DEFAULT NULL,
 				`display_name_en` VARCHAR(255) DEFAULT NULL,
 				`normalized_name` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
@@ -108,8 +106,6 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_tracks` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`title` VARCHAR(255) NOT NULL,
-				`title_franco_auto` VARCHAR(255) DEFAULT NULL,
-				`title_franco_manual` VARCHAR(255) DEFAULT NULL,
 				`title_en` VARCHAR(255) DEFAULT NULL,
 				`normalized_title` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
@@ -196,11 +192,7 @@ class Schema {
 				`views_count` BIGINT(20) DEFAULT 0,
 				`score` DECIMAL(10,2) DEFAULT 0,
 				`track_name` VARCHAR(500) DEFAULT NULL,
-				`track_name_franco_auto` VARCHAR(500) DEFAULT NULL,
-				`track_name_franco_manual` VARCHAR(500) DEFAULT NULL,
 				`artist_names` TEXT DEFAULT NULL,
-				`artist_names_franco_auto` TEXT DEFAULT NULL,
-				`artist_names_franco_manual` TEXT DEFAULT NULL,
 				`track_name_en` VARCHAR(500) DEFAULT NULL,
 				`artist_names_en` TEXT DEFAULT NULL,
 				`cover_image` TEXT DEFAULT NULL,
@@ -450,11 +442,7 @@ class Schema {
 
 		$needed = array(
 			'track_name'    => "VARCHAR(500) DEFAULT NULL",
-			'track_name_franco_auto' => "VARCHAR(500) DEFAULT NULL",
-			'track_name_franco_manual' => "VARCHAR(500) DEFAULT NULL",
 			'artist_names'  => "TEXT DEFAULT NULL",
-			'artist_names_franco_auto' => "TEXT DEFAULT NULL",
-			'artist_names_franco_manual' => "TEXT DEFAULT NULL",
 			'cover_image'   => "TEXT DEFAULT NULL",
 			'item_slug'     => "VARCHAR(255) DEFAULT NULL",
 			'spotify_id'    => "VARCHAR(100) DEFAULT NULL",
@@ -502,12 +490,6 @@ class Schema {
 				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `youtube_id` VARCHAR(100) DEFAULT NULL" );
 			}
 			if ( strpos($tbl, 'tracks') !== false ) {
-				if ( ! in_array( 'title_franco_auto', $cols, true ) ) {
-					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franco_auto` VARCHAR(255) DEFAULT NULL" );
-				}
-				if ( ! in_array( 'title_franco_manual', $cols, true ) ) {
-					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_franco_manual` VARCHAR(255) DEFAULT NULL" );
-				}
 				if ( ! in_array( 'title_en', $cols, true ) ) {
 					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_en` VARCHAR(255) DEFAULT NULL" );
 				}

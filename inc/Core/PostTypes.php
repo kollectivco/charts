@@ -32,16 +32,18 @@ class PostTypes {
 				'not_found'          => __( 'No charts found', 'charts' ),
 				'not_found_in_trash' => __( 'No charts found in trash', 'charts' ),
 			),
-			'public'              => true,
-			'has_archive'         => true,
-			'show_in_menu'        => false, // Handled manually in Bootstrap to avoid duplication
-			'show_in_nav_menus'   => false, // Hide technical CPT from menu editor
-			'show_in_rest'        => true,  // Gutenberg & Elementor support
-			'supports'            => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
+			'public'              => false,
+			'publicly_queryable'  => false,
+			'show_ui'             => false,
+			'has_archive'         => false,
+			'show_in_menu'        => false,
+			'show_in_nav_menus'   => false,
+			'show_in_rest'        => false,
+			'supports'            => array( 'title', 'custom-fields' ),
 			'hierarchical'        => false,
-			'menu_icon'           => 'dashicons-chart-bar',
-			'rewrite'             => array( 'slug' => 'chart-native' ), // Avoid conflict with legacy /charts/ route
+			'rewrite'             => false,
 		) );
+
 	}
 }
 
