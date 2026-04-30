@@ -213,8 +213,6 @@ class SourceManager {
 			update_post_meta( $id, '_accent_color', $color );
 			
 			update_post_meta( $id, '_is_featured', isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0 );
-			update_post_meta( $id, '_ordering_mode', sanitize_text_field( $data['ordering_mode'] ?? 'import' ) );
-			update_post_meta( $id, '_franco_mode', sanitize_text_field( $data['franco_mode'] ?? 'original' ) );
 			update_post_meta( $id, '_archive_enabled', isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1 );
 
 			// Sync to SQL
@@ -237,8 +235,6 @@ class SourceManager {
 				'accent_color'    => !empty($data['accent_color']) ? (strpos($data['accent_color'], '#') === 0 ? sanitize_text_field($data['accent_color']) : '#' . sanitize_text_field($data['accent_color'])) : '#6366f1',
 				'is_public'       => isset( $data['is_public'] ) && $data['is_public'] ? 1 : 0,
 				'is_featured'     => isset( $data['is_featured'] ) ? (int) $data['is_featured'] : 0,
-				'ordering_mode'   => sanitize_text_field( $data['ordering_mode'] ?? 'import' ),
-				'franco_mode'     => sanitize_text_field( $data['franco_mode'] ?? 'original' ),
 				'archive_enabled' => isset( $data['archive_enabled'] ) ? (int) $data['archive_enabled'] : 1,
 				'menu_order'      => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
 				'updated_at'      => current_time( 'mysql' ),
@@ -246,14 +242,16 @@ class SourceManager {
 
 		if ( $id ) {
 			// Update existing record
-			$wpdb->update( $table, $fields, array( 'id' => $id ) );
+			$result = $wpdb->update( $table, $fields, array( 'id' => $id ) );
+			
+			if ( $result === false ) {
+				return new \WP_Error( 'db_error', $wpdb->last_error ?: 'Unknown database error during update' );
+			}
 
 			// CRITICAL: If this definition has been promoted, we MUST update the Post meta too 
 			// otherwise the next 'get_definition' (which prefers posts) will return stale data.
 			$native_post_id = \Charts\Core\EntityManager::get_post_id_by_legacy_id( 'chart', $id );
 			if ( $native_post_id ) {
-				update_post_meta( $native_post_id, '_ordering_mode', $fields['ordering_mode'] );
-				update_post_meta( $native_post_id, '_franco_mode', $fields['franco_mode'] );
 				update_post_meta( $native_post_id, '_item_type', $fields['item_type'] );
 				update_post_meta( $native_post_id, '_chart_type', $fields['chart_type'] );
 				update_post_meta( $native_post_id, '_platform', $fields['platform'] );
@@ -272,7 +270,10 @@ class SourceManager {
 			return $id;
 		} else {
 			$fields['created_at'] = current_time( 'mysql' );
-			$wpdb->insert( $table, $fields );
+			$result = $wpdb->insert( $table, $fields );
+			if ( $result === false ) {
+				return new \WP_Error( 'db_error', $wpdb->last_error ?: 'Unknown database error during insert' );
+			}
 			return $wpdb->insert_id;
 		}
 		}
@@ -299,8 +300,6 @@ class SourceManager {
 		$obj->accent_color    = get_post_meta( $post->ID, '_accent_color', true );
 		$obj->is_public       = $post->post_status === 'publish' ? 1 : 0;
 		$obj->is_featured     = (int) get_post_meta( $post->ID, '_is_featured', true );
-		$obj->ordering_mode   = get_post_meta( $post->ID, '_ordering_mode', true ) ?: 'import';
-		$obj->franco_mode     = get_post_meta( $post->ID, '_franco_mode', true ) ?: 'original';
 		$obj->archive_enabled = (int) get_post_meta( $post->ID, '_archive_enabled', true );
 		$obj->menu_order      = $post->menu_order;
 		$obj->created_at      = $post->post_date;
@@ -346,8 +345,6 @@ class SourceManager {
 			update_post_meta( $post_id, '_cover_image_url', $row->cover_image_url );
 			update_post_meta( $post_id, '_accent_color', $row->accent_color );
 			update_post_meta( $post_id, '_is_featured', $row->is_featured );
-			update_post_meta( $post_id, '_ordering_mode', $row->ordering_mode ?: 'import' );
-			update_post_meta( $post_id, '_franco_mode', $row->franco_mode ?: 'original' );
 			update_post_meta( $post_id, '_archive_enabled', $row->archive_enabled );
 			
 			// Optional: Try to set featured image from URL if possible (AssetManager can do this later)
@@ -395,8 +392,6 @@ class SourceManager {
 			'platform'        => $def->platform,
 			'cover_image_url' => $def->cover_image_url,
 			'accent_color'    => $def->accent_color,
-			'ordering_mode'   => $def->ordering_mode,
-			'franco_mode'     => $def->franco_mode,
 			'is_public'       => $def->is_public,
 			'is_featured'     => $def->is_featured,
 			'archive_enabled' => $def->archive_enabled,

@@ -246,10 +246,12 @@ class Bootstrap {
 			case 'save_definition':
 				$manager = new SourceManager();
 				$result = $manager->save_definition( $_POST );
-				if ( $result ) {
+				if ( is_wp_error( $result ) ) {
+					\Charts\Core\Notify::error( sprintf( __( 'Save Failed: %s', 'charts' ), $result->get_error_message() ), __( 'Definition Error', 'charts' ) );
+				} elseif ( $result ) {
 					\Charts\Core\Notify::success( __( 'Chart definition saved successfully.', 'charts' ), __( 'Definition Updated', 'charts' ) );
 				} else {
-					\Charts\Core\Notify::error( __( 'Failed to save chart definition.', 'charts' ), __( 'Definition Error', 'charts' ) );
+					\Charts\Core\Notify::warning( __( 'Save completed, but no changes were detected.', 'charts' ), __( 'Definition Unchanged', 'charts' ) );
 				}
 				$processed = true;
 				break;
