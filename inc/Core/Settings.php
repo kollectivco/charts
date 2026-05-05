@@ -100,6 +100,17 @@ class Settings {
                 'header_menu_id'       => 0,
             ],
 
+            // Floating Popup / Notification Card
+            'popup' => [
+                'enable'               => 0,
+                'source_chart_slug'    => '',
+                'display_rules'        => 'all', // 'all', 'charts_only'
+                'delay_ms'             => 3000,
+                'show_close'           => 1,
+                'image_source'         => 'item', // 'item', 'chart'
+                'cta_text'             => 'View Full Chart',
+            ],
+
             // Performance & Advanced
             'advanced' => [
                 'cache_previews'       => 1,

@@ -96,9 +96,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 				<?php elseif ( empty($s_settings['enable']) ) : ?>
 					<!-- Slider is administratively disabled -->
 				<?php else : ?>
-					<section class="kc-hero-slider-section" style="padding-top: 40px; text-align: center;">
-						<p style="color:var(--k-text-muted);">Kontentainment Billboard: Currently no slide data to display.</p>
-					</section>
+					<!-- Slider is active but has no data; suppressing section -->
 				<?php endif;
 			endif; 
 			

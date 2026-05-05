@@ -112,6 +112,23 @@ $panel = [
             ]
         ]
     ],
+    'engagement' => [
+        'title' => 'Engagement & Conversion',
+        'sections' => [
+            'popup' => [
+                'title' => 'Floating Chart Card',
+                'fields' => [
+                    [ 'id' => 'popup.enable', 'type' => 'switch', 'label' => 'Enable Floating Notification Card' ],
+                    [ 'id' => 'popup.source_chart_slug', 'type' => 'text', 'label' => 'Source Chart Slug (Leave blank for active chart)', 'desc' => 'e.g. "top-50-global"' ],
+                    [ 'id' => 'popup.display_rules', 'type' => 'select', 'label' => 'Display Rules', 'options' => ['all' => 'Sitewide', 'charts_only' => 'Only on Chart Pages'] ],
+                    [ 'id' => 'popup.delay_ms', 'type' => 'number', 'label' => 'Appearance Delay (ms)', 'min' => 0, 'max' => 60000 ],
+                    [ 'id' => 'popup.show_close', 'type' => 'switch', 'label' => 'Enable Dismiss/Close Button' ],
+                    [ 'id' => 'popup.image_source', 'type' => 'select', 'label' => 'Image Priority', 'options' => ['item' => 'Top Item Artwork', 'chart' => 'Chart Cover Image'] ],
+                    [ 'id' => 'popup.cta_text', 'type' => 'text', 'label' => 'Call to Action Text' ],
+                ]
+            ]
+        ]
+    ],
     'integrations' => [
         'title' => 'Service Nexus',
         'sections' => [

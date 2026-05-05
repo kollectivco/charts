@@ -83,16 +83,27 @@ if ( $definition ) {
                     $e->item_slug = $wpdb->get_var($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id));
                 }
 			}
+			unset($e); // Critical fix: break reference to avoid last item duplication in subsequent foreach
 		} else {
 			$page_state = 'empty';
 		}
 
-		// 5. Ranking Integrity Guard
+		// 5. Ranking Integrity Guard & Rendering Validation
 		if ( ! empty($entries) ) {
 			$found_ranks = array_column( $entries, 'rank_position' );
 			$duplicates  = array_unique( array_diff_assoc( $found_ranks, array_unique( $found_ranks ) ) );
 			$expected    = range( 1, count( $entries ) );
 			$missing     = array_diff( $expected, $found_ranks );
+            
+            // Validate final array for object reference corruption (duplicate identity)
+            $obj_ids = array();
+            foreach ($entries as $item) {
+                if (isset($obj_ids[$item->id])) {
+                    error_log("Chart Render Error: Duplicate object ID {$item->id} detected in final set.");
+                    $duplicates[] = 'RefDupe:'.$item->id;
+                }
+                $obj_ids[$item->id] = true;
+            }
 
 			if ( ! empty( $duplicates ) || ! empty( $missing ) ) {
 				error_log( sprintf( 

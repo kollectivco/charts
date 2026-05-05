@@ -15,6 +15,9 @@ class PublicIntegration {
 
 		// Inject design tokens into head
 		add_action( 'wp_head', array( self::class, 'render_design_tokens' ), 100 );
+
+		// Render Floating Popup
+		add_action( 'wp_footer', array( self::class, 'render_floating_popup' ) );
 	}
 
 	/**
@@ -95,10 +98,23 @@ class PublicIntegration {
 		if ( ! self::is_charts_page() ) return;
 
 		$mode = Settings::get('design.mode', 'light');
-		
+		$primary = Settings::get('design.primary_color');
+		$secondary = Settings::get('design.accent_color');
+
+		// Override with Chart-Specific Brand Accent Color if on a single chart
+		$def_slug = get_query_var( 'charts_definition_slug' );
+		if ( $def_slug ) {
+			$manager = new \Charts\Admin\SourceManager();
+			$def = $manager->get_definition_by_slug( $def_slug );
+			if ( $def && !empty($def->accent_color) ) {
+				$primary = $def->accent_color;
+				$secondary = $def->accent_color;
+			}
+		}
+
 		$variables = [
-			'--k-primary'            => Settings::get('design.primary_color'),
-			'--k-secondary'          => Settings::get('design.accent_color'),
+			'--k-primary'            => $primary,
+			'--k-secondary'          => $secondary,
 			'--k-radius-md'          => Settings::get('design.card_radius_px', 24) . 'px',
 			'--kb-height'            => Settings::get('slider.height_vh', 60) . 'vh',
 			'--kb-mobile-height'     => Settings::get('slider.mobile_height_vh', 50) . 'vh',
@@ -150,6 +166,216 @@ class PublicIntegration {
 		}
 
 		echo '</style>';
+	}
+
+	/**
+	 * Render the Floating Popup (Bottom Right)
+	 */
+	public static function render_floating_popup() {
+		if ( ! Settings::get('popup.enable') ) return;
+
+		$rules = Settings::get('popup.display_rules', 'all');
+		if ( $rules === 'charts_only' && ! self::is_charts_page() ) return;
+
+		$slug = Settings::get('popup.source_chart_slug');
+		$manager = new \Charts\Admin\SourceManager();
+		$def = null;
+
+		if ( ! empty($slug) ) {
+			$def = $manager->get_definition_by_slug($slug);
+		} else {
+			$current_slug = get_query_var('charts_definition_slug');
+			if ( $current_slug ) {
+				$def = $manager->get_definition_by_slug($current_slug);
+			} else {
+				$eligible = self::get_eligible_definitions(1);
+				if ( ! empty($eligible) ) {
+					$def = $eligible[0];
+				}
+			}
+		}
+
+		if ( ! $def ) return;
+
+		$entries = self::get_preview_entries($def, 1);
+		if ( empty($entries) ) return;
+		$top = $entries[0];
+
+		$franco_mode = $def->franco_mode ?? 'original';
+		$resolved = Transliteration::resolve_entry_display($top, $franco_mode);
+		$title = $resolved['track'];
+		$subtitle = $resolved['artist'];
+
+		$image_pref = Settings::get('popup.image_source', 'item');
+		$image = '';
+		if ( $image_pref === 'chart' && ! empty($def->cover_image) ) {
+			$image = $def->cover_image;
+		} else {
+			$image = self::resolve_artwork($top, $top->item_type);
+		}
+		if ( empty($image) ) $image = CHARTS_URL . 'public/assets/img/placeholder.png';
+
+		$delay_ms = intval(Settings::get('popup.delay_ms', 3000));
+		$show_close = Settings::get('popup.show_close', 1);
+		$cta_text = Settings::get('popup.cta_text', 'View Full Chart');
+		$chart_url = home_url('/charts/' . $def->slug);
+		$accent = !empty($def->accent_color) ? $def->accent_color : Settings::get('design.primary_color', '#fe025b');
+
+		?>
+		<style>
+		.kc-floating-popup {
+			position: fixed;
+			bottom: 30px;
+			right: 30px;
+			width: 340px;
+			background: var(--k-surface, #fff);
+			border-radius: 16px;
+			box-shadow: 0 20px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+			z-index: 999999;
+			transform: translateY(100px);
+			opacity: 0;
+			pointer-events: none;
+			transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+			overflow: hidden;
+			text-decoration: none;
+			display: flex;
+			flex-direction: column;
+		}
+		.kc-floating-popup.is-visible {
+			transform: translateY(0);
+			opacity: 1;
+			pointer-events: auto;
+		}
+		.kc-popup-close {
+			position: absolute;
+			top: 12px;
+			right: 12px;
+			width: 28px;
+			height: 28px;
+			background: rgba(0,0,0,0.5);
+			color: #fff;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			z-index: 10;
+			border: none;
+			backdrop-filter: blur(4px);
+			transition: background 0.2s;
+		}
+		.kc-popup-close:hover { background: rgba(0,0,0,0.8); }
+		.kc-popup-header {
+			height: 140px;
+			position: relative;
+			overflow: hidden;
+		}
+		.kc-popup-bg {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+		.kc-popup-overlay {
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+		}
+		.kc-popup-badge {
+			position: absolute;
+			bottom: 16px;
+			left: 16px;
+			background: <?php echo esc_attr($accent); ?>;
+			color: #fff;
+			font-size: 10px;
+			font-weight: 900;
+			padding: 4px 10px;
+			border-radius: 6px;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+		.kc-popup-body {
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.kc-popup-title {
+			font-size: 18px;
+			font-weight: 900;
+			color: var(--k-text, #111);
+			margin: 0;
+			line-height: 1.2;
+		}
+		.kc-popup-subtitle {
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--k-text-muted, #666);
+			margin: 0;
+		}
+		.kc-popup-cta {
+			margin-top: 12px;
+			font-size: 12px;
+			font-weight: 800;
+			color: <?php echo esc_attr($accent); ?>;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+		}
+		@media (max-width: 768px) {
+			.kc-floating-popup {
+				bottom: 20px; right: 20px; left: 20px; width: auto;
+			}
+		}
+		</style>
+		
+		<a href="<?php echo esc_url($chart_url); ?>" class="kc-floating-popup" id="kc-floating-popup">
+			<?php if ( $show_close ) : ?>
+			<button class="kc-popup-close" id="kc-popup-close" aria-label="Close">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+			</button>
+			<?php endif; ?>
+			
+			<div class="kc-popup-header">
+				<img src="<?php echo esc_url($image); ?>" class="kc-popup-bg" alt="Cover">
+				<div class="kc-popup-overlay"></div>
+				<div class="kc-popup-badge">#1 &middot; <?php echo esc_html($def->title); ?></div>
+			</div>
+			<div class="kc-popup-body">
+				<h4 class="kc-popup-title"><?php echo esc_html($title); ?></h4>
+				<p class="kc-popup-subtitle"><?php echo esc_html($subtitle); ?></p>
+				<div class="kc-popup-cta">
+					<?php echo esc_html($cta_text); ?>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+				</div>
+			</div>
+		</a>
+
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var popup = document.getElementById('kc-floating-popup');
+			if (!popup) return;
+
+			var defId = 'kc_popup_<?php echo esc_js($def->id); ?>';
+			if (localStorage.getItem(defId) === 'closed') return;
+
+			setTimeout(function() {
+				popup.classList.add('is-visible');
+			}, <?php echo intval($delay_ms); ?>);
+
+			var closeBtn = document.getElementById('kc-popup-close');
+			if (closeBtn) {
+				closeBtn.addEventListener('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					popup.classList.remove('is-visible');
+					localStorage.setItem(defId, 'closed');
+				});
+			}
+		});
+		</script>
+		<?php
 	}
 
 	public static function get_footer() {
@@ -342,6 +568,7 @@ class PublicIntegration {
 				$e->item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id ) );
 			}
 		}
+		unset($e); // Critical fix: break reference to avoid duplicating last row when array is iterated again
 
 		return $entries;
 	}
