@@ -208,8 +208,8 @@ class PublicIntegration {
 
 		$image_pref = Settings::get('popup.image_source', 'item');
 		$image = '';
-		if ( $image_pref === 'chart' && ! empty($def->cover_image) ) {
-			$image = $def->cover_image;
+		if ( $image_pref === 'chart' && ! empty($def->cover_image_url) ) {
+			$image = $def->cover_image_url;
 		} else {
 			$image = self::resolve_artwork($top, $top->item_type);
 		}

@@ -42,19 +42,17 @@ class Transliteration {
      * Resolve a full entry row containing both track and artist names.
      */
     public static function resolve_entry_display($entry, $mode = 'original') {
-        // Resolve Track
-        $track = self::resolve_display(
-            $entry->track_name, 
-            $entry->track_name_en ?: ($entry->track_name_franco_manual ?: ($entry->track_name_franco_auto ?: '')),
-            $mode
-        );
+        // Resolve Track safely
+        $track_name = $entry->track_name ?? '';
+        $track_en = $entry->track_name_en ?? ($entry->track_name_franco_manual ?? ($entry->track_name_franco_auto ?? ''));
+        
+        $track = self::resolve_display($track_name, $track_en, $mode);
 
-        // Resolve Artist
-        $artist = self::resolve_display(
-            $entry->artist_names, 
-            $entry->artist_names_en ?: ($entry->artist_names_franco_manual ?: ($entry->artist_names_franco_auto ?: '')),
-            $mode
-        );
+        // Resolve Artist safely
+        $artist_name = $entry->artist_names ?? '';
+        $artist_en = $entry->artist_names_en ?? ($entry->artist_names_franco_manual ?? ($entry->artist_names_franco_auto ?? ''));
+        
+        $artist = self::resolve_display($artist_name, $artist_en, $mode);
 
         return [
             'track'  => $track,
