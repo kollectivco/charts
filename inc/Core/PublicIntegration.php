@@ -16,8 +16,8 @@ class PublicIntegration {
 		// Inject design tokens into head
 		add_action( 'wp_head', array( self::class, 'render_design_tokens' ), 100 );
 
-		// Render Floating Popup
-		add_action( 'wp_footer', array( self::class, 'render_floating_popup' ) );
+		// Render Floating Popup (Temporarily disabled to isolate crash)
+		// add_action( 'wp_footer', array( self::class, 'render_floating_popup' ) );
 	}
 
 	/**
