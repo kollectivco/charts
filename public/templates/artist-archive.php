@@ -35,7 +35,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 
 		<header class="kc-page-hero" style="padding: 40px 0 20px;">
 			<div class="kc-eyebrow">Discovery</div>
-			<h1 class="kc-page-title">Top Artists</h1>
+			<h1 class="kc-page-title">أفضل الفنانين</h1>
 			<p style="font-size: 13px; color: var(--k-text-dim); max-width: 600px; font-weight: 500;">
 				Browse the most influential voices currently shaping the regional music charts.
 			</p>
@@ -91,7 +91,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span><?php echo number_format($artist->momentum_score ?: 0, 1); ?> / 100</span>
 								</div>
 								<div class="kc-details-item" style="text-align: right;">
-									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &rarr;</a>
+									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &larr;</a>
 								</div>
 							</div>
 							

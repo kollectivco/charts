@@ -148,7 +148,7 @@ foreach($chart_rankings as $cr) {
 			WHERE s.id = %d LIMIT 1
 		", $cr->source_id));
 	}
-	$cr->definition_title = $row ? $row->title : 'Top Artists';
+	$cr->definition_title = $row ? $row->title : 'أفضل الفنانين';
 }
 
 if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
@@ -162,7 +162,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 			<img src="<?php echo esc_url($display_image); ?>" class="kc-profile-avatar" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; box-shadow: var(--k-shadow-lg);">
 			<div class="kc-profile-info">
 				<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">Artist</span>
+					<span class="kc-eyebrow" style="margin: 0; background: var(--k-accent); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase;">فنان</span>
 				</div>
 				<?php 
 					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
@@ -264,7 +264,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;">
 									<div style="display: flex; align-items: center; gap: 12px;">
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist')); ?>" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
-										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class($cr->definition_title); ?>"><?php echo esc_html($cr->definition_title ?: 'Top Artists'); ?></span>
+										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class($cr->definition_title); ?>"><?php echo esc_html($cr->definition_title ?: 'أفضل الفنانين'); ?></span>
 									</div>
 									<div style="text-align: right;">
 										<div style="font-size: 24px; font-weight: 950; color: var(--k-text);">#<?php echo $cr->rank_position; ?></div>
@@ -305,7 +305,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<section class="kc-section" style="padding-top: 100px;">
 			<div class="kc-section-header">
 				<h2 class="kc-section-title"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:12px;"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> More Charts</h2>
-				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &rarr;</a>
+				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &larr;</a>
 			</div>
 			
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
@@ -319,7 +319,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<div class="kc-card-header">
 							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($mdef, $mentries)); ?>">
 							<div class="kc-card-header-overlay"></div>
-							<span class="kc-card-label">Weekly Chart</span>
+							<span class="kc-card-label">قائمة الأسبوع</span>
 							<h3 class="kc-card-title"><?php echo esc_html($mdef->title); ?></h3>
 						</div>
 						<div class="kc-card-list">
@@ -335,7 +335,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							<?php endforeach; ?>
 						</div>
 						<div class="kc-card-footer" style="justify-content: center;">
-							<a href="<?php echo home_url('/charts/'.$mdef->slug.'/'); ?>" class="kc-card-cta">See Full Chart</a>
+							<a href="<?php echo home_url('/charts/'.$mdef->slug.'/'); ?>" class="kc-card-cta">عرض القائمة كاملة</a>
 						</div>
 					</article>
 				<?php endforeach; ?>

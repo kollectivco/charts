@@ -1500,3 +1500,22 @@
 .kc-hero-slider-section {
     padding-top: 30px; /* Gap from header */
 }
+
+/* RTL Override injected by script */
+.kc-root, .kc-app-shell {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Fix arrows and directional elements */
+.kc-next, .kc-prev {
+    transform: scaleX(-1);
+}
+
+.kc-motion-carousel .kc-motion-slide {
+    /* Potential flip for 3D transforms handled in JS, but text needs RTL */
+    direction: rtl;
+}
+
+/* Margin flips (basic heuristic) */
+.kc-root .kc-margin-right-8 { margin-left: 8px !important; margin-right: 0 !important; }

@@ -71,7 +71,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span style="font-size: 14px; font-weight: 950; color: var(--k-accent);"><?php echo number_format( $track->appearance_count ); ?></span>
 								</div>
 								<div>
-									<label style="display: block; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted); margin-bottom: 4px;">Peak</label>
+									<label style="display: block; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted); margin-bottom: 4px;">أعلى مركز</label>
 									<span style="font-size: 14px; font-weight: 950; color: var(--k-text);">#<?php echo $track->peak_rank ?: '—'; ?></span>
 								</div>
 							</div>
@@ -96,7 +96,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span><?php echo intval($track->weeks_on_chart ?: 1); ?></span>
 								</div>
 								<div class="kc-details-item" style="text-align: right;">
-									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &rarr;</a>
+									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &larr;</a>
 								</div>
 							</div>
 						</div>

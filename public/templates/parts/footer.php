@@ -24,11 +24,11 @@ $footer_right = Settings::get( 'labels.footer_right' );
 				<?php dynamic_sidebar( 'charts-footer-widgets' ); ?>
 			<?php else : ?>
 				<div class="footer-col">
-					<h5>Charts</h5>
+					<h5>القوائم</h5>
 					<ul>
-						<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">All Charts</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">كل القوائم</a></li>
 						<li><a href="<?php echo esc_url( home_url( '/charts/tracks' ) ); ?>">Top Tracks</a></li>
-						<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">Top Artists</a></li>
+						<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">أفضل الفنانين</a></li>
 					</ul>
 				</div>
 

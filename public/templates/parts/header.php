@@ -62,8 +62,8 @@ $week_date    = date('F j, Y');
 					<?php else : ?>
 						<ul class="charts-menu">
 							<li><a href="<?php echo esc_url( home_url( '/charts' ) ); ?>">Home</a></li>
-							<li><a href="<?php echo esc_url( home_url( '/charts/tracks' ) ); ?>">Tracks</a></li>
-							<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">Artists</a></li>
+							<li><a href="<?php echo esc_url( home_url( '/charts/tracks' ) ); ?>">مقاطع</a></li>
+							<li><a href="<?php echo esc_url( home_url( '/charts/artists' ) ); ?>">فنانين</a></li>
 						</ul>
 					<?php endif; ?>
 				</nav>

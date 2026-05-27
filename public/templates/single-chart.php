@@ -207,11 +207,11 @@ if ( ! $is_mobile ) {
 				<table class="kc-rankings-table">
 					<thead class="kc-table-head">
 						<tr>
-							<th style="width: 80px;">Rank</th>
+							<th style="width: 80px;">المركز</th>
 							<th style="width: 100px;">Move</th>
 							<th>Cover Title</th>
 							<th style="text-align: right;">Last Wk</th>
-							<th style="text-align: right;">Peak</th>
+							<th style="text-align: right;">أعلى مركز</th>
 							<th style="text-align: right; width: 120px;">Wks On Chart</th>
 							<th style="width: 60px;"></th>
 						</tr>
@@ -295,7 +295,7 @@ if ( ! $is_mobile ) {
 												<span><?php echo intval($e->weeks_on_chart ?: 1); ?></span>
 											</div>
 											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 1 : 2; ?>;">
-												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'More Details') . ' &rarr;'); ?>
+												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'More Details') . ' &larr;'); ?>
 												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;"><?php echo $label; ?></a>
 											</div>
 										</div>

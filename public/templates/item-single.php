@@ -244,11 +244,11 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					<div style="display: flex; align-items: center; gap: 20px;">
 						<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
 						<div>
-							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">Artist</span>
+							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">فنان</span>
 							<h3 style="font-size: 24px; font-weight: 900; color: white; margin: 0;"><?php echo esc_html($artist->display_name); ?></h3>
 						</div>
 					</div>
-					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;">View Artist &rarr;</a>
+					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;">View Artist &larr;</a>
 				</div>
 			</section>
 		<?php endif; ?>
@@ -257,7 +257,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<section class="kc-section">
 			<div class="kc-section-header">
 				<h2 class="kc-section-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> More Charts</h2>
-				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &rarr;</a>
+				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &larr;</a>
 			</div>
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
@@ -270,7 +270,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<div class="kc-card-header">
 							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($odef, $oentries)); ?>">
 							<div class="kc-card-header-overlay"></div>
-							<span class="kc-card-label">Weekly Chart</span>
+							<span class="kc-card-label">قائمة الأسبوع</span>
 							<h3 class="kc-card-title"><?php echo esc_html($odef->title); ?></h3>
 						</div>
 						<div class="kc-card-list">
@@ -286,7 +286,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							<?php endforeach; ?>
 						</div>
 						<div class="kc-card-footer" style="justify-content: center;">
-							<a href="<?php echo home_url('/charts/'.$odef->slug.'/'); ?>" class="kc-card-cta">See Full Chart</a>
+							<a href="<?php echo home_url('/charts/'.$odef->slug.'/'); ?>" class="kc-card-cta">عرض القائمة كاملة</a>
 						</div>
 					</article>
 				<?php endforeach; ?>

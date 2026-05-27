@@ -48,7 +48,7 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 foreach($chart_rankings as $cr) {
 	$row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON (s.chart_type = CONCAT('cid-', d.id)) WHERE s.id = %d LIMIT 1", $cr->source_id));
 	if (!$row) $row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON (s.chart_type = d.chart_type AND s.country_code = d.country_code) WHERE s.id = %d LIMIT 1", $cr->source_id));
-	$cr->definition_title = $row ? $row->title : 'Top Artists';
+	$cr->definition_title = $row ? $row->title : 'أفضل الفنانين';
 }
 
 $site_title = get_bloginfo('name');
@@ -109,7 +109,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
                         <img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
                         <div class="kc-row-info">
                             <span class="kc-row-title" style="font-size:14px;"><?php echo esc_html($pt_resolved['title']); ?></span>
-                            <span class="kc-row-sub" style="font-size:10px;">Explorer Insights &rarr;</span>
+                            <span class="kc-row-sub" style="font-size:10px;">Explorer Insights &larr;</span>
                         </div>
                     </a>
                 <?php endforeach; ?>

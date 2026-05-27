@@ -90,7 +90,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
                 <div style="flex: 1;">
                     <h2 style="font-size: 24px; font-weight: 900; margin: 0; line-height: 1.1;"><?php echo esc_html($resolved['title']); ?></h2>
                     <?php if ( $artist ) : ?>
-                        <a href="<?php echo esc_url($link('/charts/artist/' . $artist->slug)); ?>" style="display: block; font-size: 14px; font-weight: 700; color: var(--kc-primary); margin-top: 8px; text-decoration: none;"><?php echo esc_html($artist->display_name); ?> &rarr;</a>
+                        <a href="<?php echo esc_url($link('/charts/artist/' . $artist->slug)); ?>" style="display: block; font-size: 14px; font-weight: 700; color: var(--kc-primary); margin-top: 8px; text-decoration: none;"><?php echo esc_html($artist->display_name); ?> &larr;</a>
                     <?php endif; ?>
                 </div>
             </div>

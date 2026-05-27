@@ -171,10 +171,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const diff = currentX - startX;
                 
-                // If dragged more than 10% of container width, swipe
+                // If dragged more than 10% of container width, swipe (RTL Reversed)
                 if (Math.abs(diff) > containerWidth * 0.10) {
-                    if (diff > 0) goPrev();
-                    else goNext();
+                    if (diff > 0) goNext();
+                    else goPrev();
                 } else {
                     update(currentIdx); // Snap back to center
                 }
@@ -447,8 +447,8 @@ class PremiumSliderEngine {
         this.el.addEventListener('touchstart', (e) => startX = e.touches[0].clientX, {passive: true});
         this.el.addEventListener('touchend', (e) => {
             let endX = e.changedTouches[0].clientX;
-            if (startX - endX > 50) this.next();
-            if (endX - startX > 50) this.prev();
+            if (startX - endX > 50) this.prev(); // RTL Swipe left goes to prev
+            if (endX - startX > 50) this.next(); // RTL Swipe right goes to next
         }, {passive: true});
     }
 

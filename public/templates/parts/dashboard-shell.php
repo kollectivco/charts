@@ -36,7 +36,7 @@ $current_module = get_query_var( 'charts_module', 'overview' );
 
 <!-- Sidebar -->
 <aside class="kc-db-sidebar">
-	<a href="<?php echo home_url('/charts'); ?>" class="kc-db-logo">K<span>Charts</span></a>
+	<a href="<?php echo home_url('/charts'); ?>" class="kc-db-logo">K<span>القوائم</span></a>
 
 	<nav class="kc-db-nav">
 		<a href="<?php echo home_url('/charts-dashboard/overview'); ?>" class="kc-db-nav-item <?php echo $current_module === 'overview' ? 'active' : ''; ?>">

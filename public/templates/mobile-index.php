@@ -45,7 +45,7 @@ $site_title = get_bloginfo('name');
     
     <header class="kc-header" style="padding: 32px 20px 20px;">
         <span class="kc-meta" style="font-size: 10px; color: var(--kc-text-muted); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 900; display: block; margin-bottom: 4px;"><?php echo date('l, F d'); ?></span>
-        <h1 style="font-size: 48px; margin: 0; font-weight: 950; letter-spacing: -0.05em; line-height: 0.9; color: var(--kc-text);">Charts</h1>
+        <h1 style="font-size: 48px; margin: 0; font-weight: 950; letter-spacing: -0.05em; line-height: 0.9; color: var(--kc-text);">القوائم</h1>
     </header>
 
     <main class="kc-content">
@@ -84,8 +84,8 @@ $site_title = get_bloginfo('name');
         ?>
         <section class="kc-section" style="padding-top: 40px;">
             <div class="kc-section-head">
-                <h2 class="kc-section-title" style="font-size: 24px;">Top Performing</h2>
-                <span class="kc-meta kc-accent-color" style="font-weight: 900; letter-spacing: 0.1em; color: var(--kc-accent);">Artist Feed</span>
+                <h2 class="kc-section-title" style="font-size: 24px;">الأفضل أداءً</h2>
+                <span class="kc-meta kc-accent-color" style="font-weight: 900; letter-spacing: 0.1em; color: var(--kc-accent);">تغذية الفنانين</span>
             </div>
 
             <div class="kc-artists-grid" style="padding: 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 20px;">
@@ -110,8 +110,8 @@ $site_title = get_bloginfo('name');
         <!-- All Charts Vertical Feed -->
         <section class="kc-section" style="padding-top: 40px;">
             <div class="kc-section-head">
-                <h2 class="kc-section-title" style="font-size: 24px;">All Charts</h2>
-                <span class="kc-meta" style="color: #fe025b; font-weight: 900;">Global Feed</span>
+                <h2 class="kc-section-title" style="font-size: 24px;">كل القوائم</h2>
+                <span class="kc-meta" style="color: #fe025b; font-weight: 900;">التغذية العالمية</span>
             </div>
 
             <div style="padding: 0 20px; display: flex; flex-direction: column; gap: 24px;">
@@ -125,7 +125,7 @@ $site_title = get_bloginfo('name');
                             <img src="<?php echo esc_url($chart_image); ?>" class="kc-card-img" style="transform: scale(1.1); filter: contrast(1.1);">
                             <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent 80%);"></div>
                             <div style="position: absolute; bottom: 20px; left: 24px; right: 24px;">
-                                <span class="kc-meta" style="color: #fff; font-size: 9px; letter-spacing: 0.15em; font-weight: 900; opacity: 0.8;">KONTENTAINMENT</span>
+                                <span class="kc-meta" style="color: #fff; font-size: 9px; letter-spacing: 0.15em; font-weight: 900; opacity: 0.8;">كونتينتمنت</span>
                                 <h3 class="kc-card-title" style="font-size: 28px; color: #fff; line-height: 1; margin-top: 4px;"><?php echo esc_html($def->title); ?></h3>
                             </div>
                         </a>
@@ -145,7 +145,7 @@ $site_title = get_bloginfo('name');
                         </div>
 
                         <a href="<?php echo esc_url($chart_url); ?>" class="kc-view-more" style="background: var(--kc-surface-alt); padding: 18px; font-size: 11px; letter-spacing: 0.08em;">
-                            Full Analysis &rarr;
+                            تحليل كامل &larr;
                         </a>
                     </div>
                 <?php endforeach; ?>

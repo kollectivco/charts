@@ -82,7 +82,7 @@ $site_title = get_bloginfo('name');
 
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; background:var(--kc-surface); padding:12px; border-radius:12px; border:1px solid var(--kc-divider);">
                     <div style="text-align:center;">
-                        <span style="display:block; font-size:9px; color:var(--kc-text-muted); text-transform:uppercase; font-weight:800; margin-bottom:2px;">Peak</span>
+                        <span style="display:block; font-size:9px; color:var(--kc-text-muted); text-transform:uppercase; font-weight:800; margin-bottom:2px;">أعلى مركز</span>
                         <span style="font-size:14px; font-weight:900; color:var(--kc-text);">#<?php echo $top->peak_rank ?: 1; ?></span>
                     </div>
                     <div style="text-align:center; border-left:1px solid var(--kc-divider); border-right:1px solid var(--kc-divider);">
@@ -129,7 +129,7 @@ $site_title = get_bloginfo('name');
                     <div class="kc-details-wrapper">
                         <div class="kc-details-inner">
                             <div class="kc-detail-item">
-                                <label>Peak</label>
+                                <label>أعلى مركز</label>
                                 <span>#<?php echo $e->peak_rank ?: $e->rank_position; ?></span>
                             </div>
                             <div class="kc-detail-item">

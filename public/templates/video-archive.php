@@ -71,7 +71,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span style="font-size: 14px; font-weight: 950; color: var(--k-accent);"><?php echo number_format( $video->appearance_count ); ?></span>
 								</div>
 								<div>
-									<label style="display: block; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted); margin-bottom: 4px;">Peak</label>
+									<label style="display: block; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; color: var(--k-text-muted); margin-bottom: 4px;">أعلى مركز</label>
 									<span style="font-size: 14px; font-weight: 950; color: var(--k-text);">#<?php echo $video->peak_rank ?: '—'; ?></span>
 								</div>
 							</div>
@@ -91,7 +91,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span><?php echo $first_entry_date !== '—' ? date('M j, Y', strtotime($first_entry_date)) : '—'; ?></span>
 								</div>
 								<div class="kc-details-item" style="text-align: right; grid-column: span 2;">
-									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Clip Detail &rarr;</a>
+									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Clip Detail &larr;</a>
 								</div>
 							</div>
 						</div>
