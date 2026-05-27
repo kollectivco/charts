@@ -47,8 +47,9 @@ class Integrity {
 
 		// 3. Normalization: Force move to canonical slug
 		$canonical_path = trailingslashit( $remote_source ) . CHARTS_PLUGIN_SLUG;
+		$canonical_path = trailingslashit( $canonical_path );
 
-		if ( $source !== $canonical_path ) {
+		if ( trailingslashit( $source ) !== $canonical_path ) {
 			// If destination exists, clear it first to ensure clean replacement
 			if ( $wp_filesystem->exists( $canonical_path ) ) {
 				$wp_filesystem->delete( $canonical_path, true );
