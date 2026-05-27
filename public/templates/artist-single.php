@@ -1,11 +1,12 @@
 <?php
 /**
- * Kontentainment Charts — Artist Intelligence Profile
+ * Kontentainment Lists — Artist Intelligence Profile
  * 1:1 Reference Match - High-Fidelity Design System
  */
 \Charts\Core\StandaloneLayout::get_header();
 
 global $wpdb;
+$editorial_service = new \Charts\Services\EditorialService();
 
 $artist_slug = get_query_var( 'charts_artist_slug' );
 $artist = $wpdb->get_row( $wpdb->prepare(
@@ -14,7 +15,7 @@ $artist = $wpdb->get_row( $wpdb->prepare(
 ) );
 
 if ( ! $artist ) {
-	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>Artist Not Found</h1></div>';
+	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>' . charts_tr('Artist Not Found') . '</h1></div>';
 	\Charts\Core\StandaloneLayout::get_footer();
 	exit;
 }
@@ -66,7 +67,9 @@ if (!function_exists('kc_fmt')) {
 }
 
 $hero_img = !empty($artist->image) ? $artist->image : CHARTS_URL . 'public/assets/img/placeholder.png';
-$bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio : "{$artist->display_name} is a leading charting force in the Middle East music market, with a career defined by consistent chart-topping dominance and multi-streaming success.";
+$bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio : "{$artist->display_name} is a leading list force in the Middle East music market, with a career defined by consistent list-topping dominance and multi-streaming success.";
+$artist_share_url = home_url( '/lists/artist/' . $artist->slug . '/' );
+$artist_share_caption = $editorial_service->get_share_caption( array( 'type' => 'artist', 'artist' => $artist ) );
 ?>
 
 <div class="kc-root">
@@ -79,9 +82,9 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 				<img src="<?php echo esc_url($hero_img); ?>" class="kc-hero-avatar" alt="Artist">
 				<div class="kc-hero-text">
 					<div class="kc-hero-label-row">
-						<span>ARTIST</span>
+						<span><?php echo charts_tr('ARTIST'); ?></span>
 						<span>&bull;</span>
-						<span>OFFICIAL PROFILE</span>
+						<span><?php echo charts_tr('OFFICIAL PROFILE'); ?></span>
 					</div>
 					<h1><?php echo esc_html($artist->display_name); ?></h1>
 				</div>
@@ -90,10 +93,15 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 
 		<!-- 3. BREADCRUMBS -->
 		<nav style="padding: 20px 0 40px; font-size: 11px; font-weight: 850; letter-spacing: 0.1em; color: var(--k-text-muted);">
-			<a href="/charts" style="color: inherit; text-decoration: none;">HOME</a> &nbsp; / &nbsp; 
-			<a href="/charts" style="color: inherit; text-decoration: none;">TOP ARTISTS</a> &nbsp; / &nbsp; 
+			<a href="/lists" style="color: inherit; text-decoration: none;"><?php echo charts_tr('HOME'); ?></a> &nbsp; / &nbsp; 
+			<a href="/lists" style="color: inherit; text-decoration: none;"><?php echo charts_tr('TOP ARTIST LISTS'); ?></a> &nbsp; / &nbsp; 
 			<span style="color: white;"><?php echo strtoupper($artist->display_name); ?></span>
 		</nav>
+
+		<section style="display:flex; gap:12px; flex-wrap:wrap; margin: 0 0 28px;">
+			<a href="<?php echo esc_url( 'https://twitter.com/intent/tweet?text=' . rawurlencode( $artist_share_caption ) . '&url=' . rawurlencode( $artist_share_url ) ); ?>" target="_blank" rel="noopener" class="kc-btn-dashboard" style="text-decoration:none;"><?php echo charts_tr('Share Artist'); ?></a>
+			<button type="button" class="kc-btn-dashboard" data-share-copy="<?php echo esc_attr( $artist_share_caption ); ?>" data-share-label="<?php echo esc_attr(charts_tr('Copy Caption')); ?>" style="background:rgba(255,255,255,0.08);"><?php echo charts_tr('Copy Caption'); ?></button>
+		</section>
 
 		<!-- 4. STATS STRIP -->
 		<div class="kc-bento-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 60px;">
@@ -104,26 +112,26 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 				));
 			?>
 			<div class="kc-stat-card">
-				<label>Monthly Listeners</label>
+				<label><?php echo charts_tr('Monthly Listeners'); ?></label>
 				<div class="val">48.1M</div>
 			</div>
 			<div class="kc-stat-card">
-				<label>Hotness Score</label>
+				<label><?php echo charts_tr('Hotness Score'); ?></label>
 				<div class="val" style="color:var(--k-accent-purple);"><?php echo $intel ? number_format($intel->momentum_score, 1) : '–'; ?></div>
 			</div>
 			<div class="kc-stat-card">
-				<label>Total Entries</label>
+				<label><?php echo charts_tr('Total Entries'); ?></label>
 				<div class="val"><?php echo $intel ? $intel->weeks_on_chart : '–'; ?></div>
 			</div>
 			<div class="kc-stat-card">
-				<label>Best Peak</label>
+				<label><?php echo charts_tr('Best Peak'); ?></label>
 				<div class="val" style="color:var(--k-accent-yellow);">#<?php echo $intel ? $intel->peaks_count : '–'; ?></div>
 			</div>
 		</div>
 
 		<!-- 5. ABOUT SECTION -->
 		<section class="kc-artist-about">
-			<h3 class="kc-about-title">ABOUT</h3>
+			<h3 class="kc-about-title"><?php echo charts_tr('ABOUT'); ?></h3>
 			<p class="kc-about-text"><?php echo wp_kses_post($bio); ?></p>
 		</section>
 
@@ -133,20 +141,20 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 			<!-- Left Column -->
 			<div class="kc-col-left">
 				<section class="kc-charting-section" style="margin-bottom: 60px;">
-					<h3 class="kc-col-title">CHARTING TRACKS</h3>
+					<h3 class="kc-col-title"><?php echo charts_tr('LISTING TRACKS'); ?></h3>
 					<?php foreach ( $charting_tracks as $ct ) : ?>
 						<div class="kc-appearance-card">
 							<div class="kc-app-info">
-								<div class="val" style="font-size: 1.5rem; font-weight: 950; margin-right: 20px; color: var(--k-text-dim);"><?php echo $ct->rank_position; ?></div>
+								<div class="val" style="font-size: 1.5rem; font-weight: 950; margin-inline-end: 20px; color: var(--k-text-dim);"><?php echo $ct->rank_position; ?></div>
 								<img src="<?php echo esc_url($ct->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-app-art">
 								<div class="kc-app-details">
 									<h4 style="font-size: 14px;"><?php echo esc_html($ct->track_name); ?></h4>
-									<span style="font-size: 10px;"><?php echo esc_html($ct->chart_title ?: 'Featured Chart'); ?></span>
+									<span style="font-size: 10px;"><?php echo esc_html($ct->chart_title ?: charts_tr('Featured List')); ?></span>
 								</div>
 							</div>
 							<div class="kc-app-rank-box" style="gap: 12px; font-size: 10px; font-weight: 800; opacity: 0.5;">
 								<span style="color: var(--k-accent-red);">▼ <?php echo $ct->movement_value ?: 1; ?></span>
-								<span>Peak #<?php echo $ct->peak_rank ?: 1; ?> &middot; 12wk</span>
+								<span><?php echo charts_tr('Peak'); ?> #<?php echo $ct->peak_rank ?: 1; ?> &middot; 12wk</span>
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="m9 5 11 7-11 7V5z"/></svg>
 							</div>
 						</div>
@@ -154,11 +162,11 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 				</section>
 
 				<section class="kc-popular-section">
-					<h3 class="kc-col-title">POPULAR TRACKS</h3>
+					<h3 class="kc-col-title"><?php echo charts_tr('POPULAR TRACKS'); ?></h3>
 					<?php foreach ( $popular_tracks as $idx => $pt ) : ?>
 						<div class="kc-appearance-card" style="padding: 16px 24px;">
 							<div class="kc-app-info">
-								<div class="val" style="font-size: 1.2rem; font-weight: 950; margin-right: 20px; opacity: 0.4;"><?php echo $idx+1; ?></div>
+								<div class="val" style="font-size: 1.2rem; font-weight: 950; margin-inline-end: 20px; opacity: 0.4;"><?php echo $idx+1; ?></div>
 								<img src="<?php echo esc_url($pt->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-app-art" style="width: 40px; height: 40px;">
 								<div class="kc-app-details">
 									<h4 style="font-size: 14px;"><?php echo esc_html($pt->title); ?></h4>
@@ -177,14 +185,14 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 			<!-- Right Column -->
 			<div class="kc-col-right">
 				<section class="kc-rankings-section" style="margin-bottom: 60px;">
-					<h3 class="kc-col-title">CHART RANKINGS</h3>
+					<h3 class="kc-col-title"><?php echo charts_tr('LIST RANKINGS'); ?></h3>
 					<?php if (empty($artist_rankings)): ?>
 						<!-- Demo fallbacks per reference -->
 						<div class="kc-appearance-card">
 							<div class="kc-app-info">
 								<img src="<?php echo esc_url($hero_img); ?>" class="kc-app-art" style="border-radius: 50%;">
 								<div class="kc-app-details">
-									<h4>Hot 100 Artists</h4>
+									<h4><?php echo charts_tr('Hot 100 Artists'); ?></h4>
 								</div>
 							</div>
 							<div class="kc-app-rank-box" style="flex-direction: column; align-items: flex-end; gap: 4px;">
@@ -196,7 +204,7 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 							<div class="kc-app-info">
 								<img src="<?php echo esc_url($hero_img); ?>" class="kc-app-art" style="border-radius: 50%;">
 								<div class="kc-app-details">
-									<h4>Top Artists</h4>
+									<h4><?php echo charts_tr('Top Artists'); ?></h4>
 								</div>
 							</div>
 							<div class="kc-app-rank-box" style="flex-direction: column; align-items: flex-end; gap: 4px;">
@@ -210,7 +218,7 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 								<div class="kc-app-info">
 									<img src="<?php echo esc_url($hero_img); ?>" class="kc-app-art" style="border-radius: 50%;">
 									<div class="kc-app-details">
-										<h4><?php echo esc_html($ar->chart_title ?: 'Major Chart'); ?></h4>
+										<h4><?php echo esc_html($ar->chart_title ?: charts_tr('Major List')); ?></h4>
 									</div>
 								</div>
 								<div class="kc-app-rank-box" style="flex-direction: column; align-items: flex-end; gap: 4px;">
@@ -223,7 +231,7 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 				</section>
 
 				<section class="kc-albums-section">
-					<h3 class="kc-col-title">ALBUMS</h3>
+					<h3 class="kc-col-title"><?php echo charts_tr('ALBUMS'); ?></h3>
 					<?php if (empty($albums)): ?>
 						<div class="kc-appearance-card">
 							<div class="kc-app-info">
@@ -253,17 +261,17 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 			</div>
 		</div>
 
-		<!-- 7. MORE CHARTS SECTION -->
+		<!-- 7. MORE LISTS SECTION -->
 		<section class="kc-more-charts" style="margin-top: 80px;">
 			<header class="kc-section-header">
 				<div>
 					<div class="kc-header-label" style="color: var(--k-text-muted);">
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-						EXPLORE
+						<?php echo charts_tr('EXPLORE'); ?>
 					</div>
-					<h2 class="kc-header-title">More Charts</h2>
+					<h2 class="kc-header-title"><?php echo charts_tr('More Lists'); ?></h2>
 				</div>
-				<a href="/charts" class="kc-header-link" style="color: var(--k-text-muted);">View All Charts &rarr;</a>
+				<a href="/lists" class="kc-header-link" style="color: var(--k-text-muted);"><?php echo charts_tr('View All Lists &rarr;'); ?></a>
 			</header>
 
 			<div class="kc-bento-grid" style="grid-template-columns: repeat(3, 1fr);">
@@ -271,13 +279,13 @@ $bio = !empty($artist->metadata_json) ? json_decode($artist->metadata_json)->bio
 					<article class="kc-chart-card">
 						<div class="kc-card-hero" style="height: 120px;">
 							<div style="position: relative; z-index: 10;">
-								<span class="kc-card-meta"><?php echo strtoupper($m_def->frequency); ?> CHART</span>
+								<span class="kc-card-meta"><?php echo charts_tr(strtoupper($m_def->frequency)); ?> <?php echo charts_tr('LIST'); ?></span>
 								<h2 class="kc-card-title"><?php echo esc_html($m_def->title); ?></h2>
 							</div>
 						</div>
 						<div class="kc-card-footer">
-							<span class="kc-card-date">Updated Weekly</span>
-							<a href="<?php echo home_url('/charts/' . $m_def->slug); ?>" class="kc-card-cta" style="color: var(--k-accent);">See Full Chart &rarr;</a>
+							<span class="kc-card-date"><?php echo charts_tr('Updated Weekly'); ?></span>
+							<a href="<?php echo home_url('/lists/' . $m_def->slug); ?>" class="kc-card-cta" style="color: var(--k-accent);"><?php echo charts_tr('See Full List &rarr;'); ?></a>
 						</div>
 					</article>
 				<?php endforeach; ?>

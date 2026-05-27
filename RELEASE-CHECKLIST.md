@@ -3,8 +3,8 @@
 Follow these steps for every new version release to ensure the updater finds the update correctly.
 
 ## 1. Version Bump
-- [ ] Update `Version` in `charts.php` header.
-- [ ] Update `CHARTS_VERSION` constant in `charts.php`.
+- [ ] Update `Version` in `kontentainment-lists.php` header.
+- [ ] Update `KONTENTAINMENT_LISTS_VERSION` in `kontentainment-lists.php` and legacy aliases if needed.
 - [ ] (Optional) Update version in internal docs if any.
 
 ## 2. Commit & Tag
@@ -20,7 +20,7 @@ Follow these steps for every new version release to ensure the updater finds the
 
 ## 3. GitHub Automation
 - [ ] Monitor GitHub Actions. Once the `push --tags` occurs, the `Release Plugin` workflow will trigger.
-- [ ] Verify the action builds `charts-v1.1.0.zip`.
+- [ ] Verify the action builds `kontentainment-lists.zip`.
 - [ ] Verify the ZIP is attached as a **Release Asset** in the newly created GitHub Release.
 
 ## 4. Verification
@@ -33,7 +33,7 @@ Follow these steps for every new version release to ensure the updater finds the
 
 ## 5. Troubleshooting
 - If update is not detected:
-  - Check `https://api.github.com/repos/kollectivco/charts/releases/latest`.
+  - Check `https://api.github.com/repos/kollectivco/kontentainment-lists/releases/latest`.
   - Ensure `tag_name` is correct (`v1.1.0`).
   - Ensure at least one `.zip` asset exists.
 - If update fails to unpack:

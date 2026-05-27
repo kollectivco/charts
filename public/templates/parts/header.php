@@ -1,18 +1,18 @@
 <?php
 /**
- * Standalone Charts Header - Cinematic Dark Dashboard
+ * Standalone Lists Header - Cinematic Dark Dashboard
  */
 // Force standalone for these templates
 $logo_id      = get_option( 'charts_logo_id' );
 $logo_alt     = get_option( 'charts_logo_alt' );
-$wordmark     = get_option( 'charts_wordmark', 'KCharts' ); // Use KCharts for cinematic feel per ref
+$wordmark     = get_option( 'charts_wordmark', 'KLists' );
 $show_logo    = get_option( 'charts_show_logo', 1 );
 $show_nav     = get_option( 'charts_show_nav', 1 );
 $show_search  = get_option( 'charts_show_search', 1 );
 $menu_id      = get_option( 'charts_header_menu_id' );
 
 // Calculate dynamic "Week of" date
-$week_date = date('F j, Y'); 
+$week_date = charts_tr_date(date('F j, Y')); 
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -32,10 +32,10 @@ $week_date = date('F j, Y');
 	<div class="kc-container">
 		<div class="kc-micro-inner">
 			<div class="micro-left">
-				KONTENTAINMENT CHARTS &middot; WEEK OF <?php echo strtoupper($week_date); ?>
+				<?php echo charts_tr('KONTENTAINMENT LISTS &middot; WEEK OF'); ?> <?php echo strtoupper($week_date); ?>
 			</div>
 			<div class="micro-right">
-				Powered by streaming data from Spotify &middot; YouTube Music &middot; TikTok
+				<?php echo charts_tr('Powered by streaming data from Spotify &middot; YouTube Music &middot; TikTok'); ?>
 			</div>
 		</div>
 	</div>
@@ -50,12 +50,12 @@ $week_date = date('F j, Y');
 				<!-- Branding -->
 				<?php if ( $show_logo ) : ?>
 				<div class="charts-branding">
-					<a href="<?php echo esc_url( home_url( '/charts' ) ); ?>" class="charts-wordmark">
+					<a href="<?php echo esc_url( home_url( \Charts\Core\Router::get_public_base() ) ); ?>" class="charts-wordmark">
 						<?php 
 						if ( $logo_id ) {
 							echo wp_get_attachment_image( $logo_id, 'medium', false, array( 'class' => 'charts-logo-img', 'alt' => $logo_alt ?: $wordmark ) );
 						} else {
-							echo esc_html( $wordmark ?: 'KCharts' ); 
+							echo esc_html( $wordmark ?: 'KLists' ); 
 						}
 						?>
 					</a>
@@ -79,11 +79,12 @@ $week_date = date('F j, Y');
 				<!-- Hardcoded Fallback per Reference -->
 				<nav class="charts-nav">
 					<ul class="charts-menu">
-						<li class="current-menu-item"><a href="/charts">Home</a></li>
-						<li><a href="/charts">Charts</a></li>
-						<li><a href="/charts">Tracks</a></li>
-						<li><a href="/charts">Artists</a></li>
-						<li><a href="/charts">Albums</a></li>
+						<li class="current-menu-item"><a href="/lists"><?php echo charts_tr('Home'); ?></a></li>
+						<li><a href="/lists"><?php echo charts_tr('Lists'); ?></a></li>
+						<li><a href="/lists/trending"><?php echo charts_tr('Trending'); ?></a></li>
+						<li><a href="/lists"><?php echo charts_tr('Tracks'); ?></a></li>
+						<li><a href="/lists"><?php echo charts_tr('Artists'); ?></a></li>
+						<li><a href="/lists"><?php echo charts_tr('Albums'); ?></a></li>
 					</ul>
 				</nav>
 				<?php endif; ?>
@@ -98,7 +99,7 @@ $week_date = date('F j, Y');
 				<?php endif; ?>
 
 				<a href="<?php echo admin_url('admin.php?page=charts-dashboard'); ?>" class="kc-btn-dashboard">
-					DASHBOARD
+					<?php echo charts_tr('DASHBOARD'); ?>
 				</a>
 			</div>
 

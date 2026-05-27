@@ -323,7 +323,7 @@
 }
 
 .kc-stat-card .val { font-size: 1.6rem; font-weight: 900; }
-.kc-stat-card .unit { font-size: 12px; font-weight: 600; opacity: 0.4; margin-left: 4px; }
+.kc-stat-card .unit { font-size: 12px; font-weight: 600; opacity: 0.4; margin-inline-start: 4px; }
 
 .kc-appearance-card {
 	background: var(--k-surface);
@@ -527,3 +527,51 @@
 	.kc-hero-text h1 { font-size: 3rem; }
 	.kc-bento-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── RTL OVERRIDES & LOGICAL STYLES ─── */
+[dir="rtl"] {
+	text-align: right;
+}
+
+[dir="rtl"] .micro-left {
+	text-align: right;
+}
+
+[dir="rtl"] .micro-right {
+	text-align: left;
+}
+
+[dir="rtl"] .kc-app-rank-box {
+	text-align: left;
+}
+
+[dir="rtl"] .kc-app-rank-box span {
+	margin-inline-start: 0;
+	margin-inline-end: 8px;
+}
+
+[dir="rtl"] .kc-rankings-panel .kc-table-head div:nth-child(5),
+[dir="rtl"] .kc-rankings-panel .kc-table-head div:nth-card(5),
+[dir="rtl"] .kc-rankings-panel .kc-table-head div:nth-child(6),
+[dir="rtl"] .kc-rankings-panel .kc-table-head div:nth-child(7) {
+	text-align: left;
+}
+
+[dir="rtl"] .kc-rank-row .kc-stat-val {
+	text-align: left;
+}
+
+[dir="rtl"] .kc-artist-hero-inner {
+	background: linear-gradient(to left, rgba(0,0,0,0.8) 0%, transparent 60%);
+	padding: 0 60px;
+}
+
+[dir="rtl"] .kc-appearance-card:hover {
+	transform: translateX(-10px);
+}
+
+[dir="rtl"] .kc-header-link,
+[dir="rtl"] .kc-card-cta {
+	display: inline-block;
+}
+

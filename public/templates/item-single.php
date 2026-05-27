@@ -1,11 +1,12 @@
 <?php
 /**
- * Kontentainment Charts — Intelligence Explorer (Single Track/Video)
+ * Kontentainment Lists — Intelligence Explorer (Single Track/Video)
  * 1:1 Reference Match - High-Fidelity Design System
  */
 \Charts\Core\StandaloneLayout::get_header();
 
 global $wpdb;
+$editorial_service = new \Charts\Services\EditorialService();
 
 $type = get_query_var( 'charts_item_type' );
 $slug = get_query_var( 'charts_item_slug' );
@@ -29,7 +30,7 @@ if ( ! $item ) {
 }
 
 if ( ! $item ) {
-	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>Intelligence Not Found</h1><p>The record for this item is not yet synchronized.</p></div>';
+	echo '<div class="kc-container" style="padding: 120px 0; text-align: center;"><h1>' . charts_tr('Intelligence Not Found') . '</h1><p>' . charts_tr('The record for this item is not yet synchronized.') . '</p></div>';
 	\Charts\Core\StandaloneLayout::get_footer();
 	exit;
 }
@@ -95,6 +96,8 @@ $release_date = !empty($item->release_date) ? date('Y-m-d', strtotime($item->rel
 $duration = '3:42'; // Mock per ref
 $genre = 'Pop / Hip-Hop'; // Mock per ref
 $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) . ' views' : kc_fmt_metric($item->streams_count ?? 280000000) . ' streams';
+$item_share_url = home_url( '/lists/' . $type . '/' . $slug . '/' );
+$item_share_caption = $editorial_service->get_share_caption( array( 'type' => 'track', 'item' => (object) array( 'title' => $item->title, 'artist_names' => $item->artist_names ?? '' ) ) );
 ?>
 
 <div class="kc-root">
@@ -102,10 +105,15 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 		
 		<!-- BREADCRUMBS -->
 		<nav style="padding: 40px 0; font-size: 11px; font-weight: 850; letter-spacing: 0.1em; color: var(--k-text-muted);">
-			<a href="/charts" style="color: inherit; text-decoration: none;">HOME</a> &nbsp; / &nbsp; 
-			<a href="/charts" style="color: inherit; text-decoration: none;">EXPLORE</a> &nbsp; / &nbsp; 
+			<a href="/lists" style="color: inherit; text-decoration: none;"><?php echo charts_tr('HOME'); ?></a> &nbsp; / &nbsp; 
+			<a href="/lists" style="color: inherit; text-decoration: none;"><?php echo charts_tr('EXPLORE'); ?></a> &nbsp; / &nbsp; 
 			<span style="color: white;"><?php echo esc_html(strtoupper($item->title)); ?></span>
 		</nav>
+
+		<section style="display:flex; gap:12px; flex-wrap:wrap; margin: 0 0 28px;">
+			<a href="<?php echo esc_url( 'https://twitter.com/intent/tweet?text=' . rawurlencode( $item_share_caption ) . '&url=' . rawurlencode( $item_share_url ) ); ?>" target="_blank" rel="noopener" class="kc-btn-dashboard" style="text-decoration:none;"><?php echo charts_tr('Share Track'); ?></a>
+			<button type="button" class="kc-btn-dashboard" data-share-copy="<?php echo esc_attr( $item_share_caption ); ?>" data-share-label="<?php echo esc_attr(charts_tr('Copy Caption')); ?>" style="background:rgba(255,255,255,0.08);"><?php echo charts_tr('Copy Caption'); ?></button>
+		</section>
 
 		<!-- 3. MAIN HERO PANEL -->
 		<section class="kc-item-hero">
@@ -115,33 +123,32 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 					<img src="<?php echo esc_url($hero_img); ?>" alt="Poster">
 				</div>
 				<div style="flex: 1;">
-					<span class="kc-hero-badge"><?php echo strtoupper($type); ?></span>
-					<span style="font-size: 11px; font-weight: 800; opacity: 0.4; margin-left: 12px;"><?php echo strtoupper($genre); ?></span>
+					<span class="kc-hero-badge"><?php echo strtoupper(charts_tr($type)); ?></span>
+					<span style="font-size: 11px; font-weight: 800; opacity: 0.4; margin-inline-start: 12px;"><?php echo strtoupper(charts_tr($genre)); ?></span>
 					
 					<div class="kc-item-title-wrap">
 						<h1 class="kc-item-main-title"><?php echo esc_html($item->title); ?></h1>
 						<div class="kc-item-sub-title"><?php echo esc_html($item->title); ?></div>
 					</div>
-
+ 
 					<div class="kc-item-meta-row">
 						<a href="#" class="kc-artist-pill">
 							<img src="<?php echo esc_url($hero_img); ?>" class="kc-artist-mini-avatar" alt="Avatar">
 							<?php echo esc_html($item->artist_names); ?>
 						</a>
-						<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><?php echo $duration; ?></span>
+						<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-inline-end: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><?php echo $duration; ?></span>
 						<span><?php echo $release_date; ?></span>
-						<span><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><path d="m7 4 12 8-12 8V4z"/></svg><?php echo $metrics; ?></span>
+						<span><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-inline-end: 6px; vertical-align: middle;"><path d="m7 4 12 8-12 8V4z"/></svg><?php echo $metrics; ?></span>
 					</div>
 				</div>
 			</div>
 		</section>
 
-		<!-- 4. STATS + APPEARANCES SECTION -->
-		<div class="kc-item-grid-split">
+		<!-- 4. STATS + APPEARANCES SECTION --			<div class="kc-item-grid-split">
 			
 			<!-- Market Performance Stats -->
 			<div class="kc-col-stats">
-				<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);">PERFORMANCE INTELLIGENCE</h3>
+				<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);"><?php echo charts_tr('PERFORMANCE INTELLIGENCE'); ?></h3>
 				<div class="kc-bento-stats">
 					<?php 
 						$item_id = $item->id ?? 0;
@@ -151,56 +158,65 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 						));
 					?>
 					<div class="kc-stat-card">
-						<label>Momentum</label>
+						<label><?php echo charts_tr('Momentum'); ?></label>
 						<div class="val" style="color:var(--k-accent);"><?php echo $intel ? number_format($intel->momentum_score, 1) : '–'; ?></div>
 					</div>
 					<div class="kc-stat-card">
-						<label>Growth</label>
+						<label><?php echo charts_tr('Growth'); ?></label>
 						<div class="val" style="color:<?php echo ($intel && $intel->growth_rate > 0) ? 'var(--k-accent-green)' : 'inherit'; ?>;">
 							<?php echo $intel ? number_format($intel->growth_rate, 1) . '%' : '–'; ?>
 						</div>
 					</div>
 					<div class="kc-stat-card">
-						<label>Active Trend</label>
+						<label><?php echo charts_tr('Active Trend'); ?></label>
 						<div class="val" style="font-size: 1rem; text-transform:uppercase; letter-spacing:0.1em; color:<?php echo $intel && $intel->trend_status === 'rising' ? 'var(--k-accent-green)' : ($intel && $intel->trend_status === 'falling' ? 'var(--k-accent-red)' : 'inherit'); ?>;">
-							<?php echo $intel ? $intel->trend_status : 'Stable'; ?>
+							<?php echo $intel ? charts_tr($intel->trend_type ?: $intel->trend_status) : charts_tr('Stable'); ?>
 						</div>
 					</div>
 					<div class="kc-stat-card">
-						<label>Market Vel.</label>
-						<div class="val" style="font-size: 1rem; opacity:0.6;">High Traction</div>
+						<label><?php echo charts_tr('Velocity'); ?></label>
+						<div class="val" style="font-size: 1rem; opacity:0.6;"><?php echo $intel ? number_format($intel->velocity_score, 1) : '–'; ?></div>
+					</div>
+					<div class="kc-stat-card">
+						<label><?php echo charts_tr('Predicted Rank'); ?></label>
+						<div class="val" style="font-size: 1rem; opacity:0.9;">#<?php echo $intel && $intel->predicted_rank ? (int) $intel->predicted_rank : '–'; ?></div>
+					</div>
+					<div class="kc-stat-card">
+						<label><?php echo charts_tr('Prediction'); ?></label>
+						<div class="val" style="font-size: 1rem; opacity:0.6;"><?php echo $intel && $intel->prediction_confidence ? number_format($intel->prediction_confidence, 0) . '%' : '–'; ?></div>
 					</div>
 					<div class="kc-stat-card" style="grid-column: span 2;">
-						<label>Historical Progress</label>
+						<label><?php echo charts_tr('Historical Progress'); ?></label>
 						<div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 99px; margin-top: 20px; position: relative;">
 							<div style="position: absolute; left: 0; top: 0; height: 100%; width: 75%; background: linear-gradient(to right, var(--k-accent), var(--k-accent-cyan)); border-radius: 99px;"></div>
 						</div>
 						<div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 9px; font-weight: 800; opacity: 0.3;">
-							<span>ENTRY</span>
-							<span>PEAK</span>
+							<span><?php echo charts_tr('ENTRY'); ?></span>
+							<span><?php echo charts_tr('PEAK'); ?></span>
 						</div>
 					</div>
 				</div>
+			</div>v>
 			</div>
 
-			<!-- Right Column: Chart Appearances -->
+			<!-- Right Column: List Appearances -->
 			<div class="kc-col-appearances">
-				<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);">CHART APPEARANCES</h3>
+				<h3 style="font-size: 11px; font-weight: 900; letter-spacing: 0.15em; margin-bottom: 32px; color: var(--k-text-dim);"><?php echo charts_tr('LIST APPEARANCES'); ?></h3>
 				<div class="kc-appearances-list">
 					<?php foreach ( $history as $h ) : ?>
 						<div class="kc-appearance-card">
 							<div class="kc-app-info">
 								<img src="<?php echo esc_url($h->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-app-art">
 								<div class="kc-app-details">
-									<h4><?php echo esc_html($h->chart_title ?: 'Featured Chart'); ?></h4>
-									<span>Month of <?php echo date('F j, Y', strtotime($h->created_at)); ?></span>
+									<h4><?php echo esc_html($h->chart_title ?: charts_tr('Featured List')); ?></h4>
+									<span><?php echo charts_tr('Month of '); ?><?php echo charts_tr_date(date('F j, Y', strtotime($h->created_at))); ?></span>
 								</div>
 							</div>
 							<div class="kc-app-rank-box">
 								<div class="kc-app-movement" style="color: <?php echo ($h->movement_direction === 'up' ? 'var(--k-accent-green)' : ($h->movement_direction === 'down' ? 'var(--k-accent-red)' : 'var(--k-accent)')); ?>">
 									<?php echo ($h->movement_direction === 'up' ? '▲' : ($h->movement_direction === 'down' ? '▼' : '')); ?>
 									<?php echo $h->movement_value ?: ''; ?>
-									<span style="color: var(--k-text-muted); margin-left:8px; opacity:0.5;">Peak #<?php echo $h->peak_rank; ?></span>
+									<span style="color: var(--k-text-muted); margin-inline-start:8px; opacity:0.5;"><?php echo charts_tr('Peak'); ?> #<?php echo $h->peak_rank; ?></span>
 								</div>
 								<div class="kc-app-rank">#<?php echo $h->rank_position; ?></div>
 							</div>
@@ -212,9 +228,9 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 				<div class="kc-more-section" style="margin-top: 60px;">
 					<?php foreach ( $related as $rel ) : ?>
 						<?php 
-						$rel_link = ( ! empty( $rel->slug ) ) ? home_url( '/charts/' . $type . '/' . $rel->slug ) : '#';
+						$rel_link = ( ! empty( $rel->slug ) ) ? home_url( '/lists/' . $type . '/' . $rel->slug ) : '#';
 						?>
-						<a href="<?php echo esc_url( $rel_link ); ?>" class="kc-related-row">
+						<a href="<?php echo esc_url( $rel_link ); ?>" class="kc-related-row charts-track-click" data-page-type="item" data-object-type="<?php echo esc_attr( $type ); ?>" data-object-id="<?php echo (int) ( $rel->id ?? 0 ); ?>" data-slug="<?php echo esc_attr( $rel->slug ?? sanitize_title( $rel->title ) ); ?>">
 							<img src="<?php echo esc_url($rel->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="kc-related-art">
 							<div>
 								<div class="kc-related-title"><?php echo esc_html($rel->title); ?></div>
@@ -236,9 +252,9 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 			<div class="kc-banner-content">
 				<img src="<?php echo esc_url($hero_img); ?>" class="kc-banner-avatar" alt="Artist">
 				<div>
-					<span class="kc-banner-label">ARTIST</span>
+					<span class="kc-banner-label"><?php echo charts_tr('ARTIST'); ?></span>
 					<h2 class="kc-banner-title"><?php echo esc_html($item->artist_names); ?></h2>
-					<div style="font-size: 13px; opacity: 0.6; font-weight: 600;">52.4M MONTHLY LISTENERS · <?php echo esc_html($item->artist_names); ?></div>
+					<div style="font-size: 13px; opacity: 0.6; font-weight: 600;">52.4M <?php echo charts_tr('Monthly Listeners'); ?> &middot; <?php echo esc_html($item->artist_names); ?></div>
 				</div>
 			</div>
 			<?php 
@@ -247,22 +263,22 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 			if ( ! $artist_slug && $primary_artist_id ) {
 				$artist_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_artists WHERE id = %d", $primary_artist_id ) );
 			}
-			$artist_link = $artist_slug ? home_url( '/charts/artist/' . $artist_slug ) : '#';
+			$artist_link = $artist_slug ? home_url( '/lists/artist/' . $artist_slug ) : '#';
 			?>
-			<a href="<?php echo esc_url( $artist_link ); ?>" class="kc-banner-cta">View Artist &rarr;</a>
+			<a href="<?php echo esc_url( $artist_link ); ?>" class="kc-banner-cta"><?php echo charts_tr('View Artist &rarr;'); ?></a>
 		</section>
 
-		<!-- 7. MORE CHARTS SECTION -->
+		<!-- 7. MORE LISTS SECTION -->
 		<section class="kc-more-charts">
 			<header class="kc-section-header">
 				<div>
 					<div class="kc-header-label" style="color: var(--k-text-muted);">
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-						EXPLORE
+						<?php echo charts_tr('EXPLORE'); ?>
 					</div>
-					<h2 class="kc-header-title">More Charts</h2>
+					<h2 class="kc-header-title"><?php echo charts_tr('More Lists'); ?></h2>
 				</div>
-				<a href="/charts" class="kc-header-link" style="color: var(--k-text-muted);">View All Charts &rarr;</a>
+				<a href="/lists" class="kc-header-link" style="color: var(--k-text-muted);"><?php echo charts_tr('View All Lists &rarr;'); ?></a>
 			</header>
 
 			<div class="kc-bento-grid">
@@ -270,13 +286,13 @@ $metrics = ($type === 'video') ? kc_fmt_metric($item->views_count ?? 280000000) 
 					<article class="kc-chart-card">
 						<div class="kc-card-hero" style="height: 120px;">
 							<div style="position: relative; z-index: 10;">
-								<span class="kc-card-meta"><?php echo strtoupper($m_def->frequency); ?> CHART</span>
+								<span class="kc-card-meta"><?php echo charts_tr(strtoupper($m_def->frequency)); ?> <?php echo charts_tr('LIST'); ?></span>
 								<h2 class="kc-card-title"><?php echo esc_html($m_def->title); ?></h2>
 							</div>
 						</div>
 						<div class="kc-card-footer">
-							<span class="kc-card-date">Updated Weekly</span>
-							<a href="<?php echo home_url('/charts/' . $m_def->slug); ?>" class="kc-card-cta" style="color: var(--k-accent);">See Full Chart &rarr;</a>
+							<span class="kc-card-date"><?php echo charts_tr('Updated Weekly'); ?></span>
+							<a href="<?php echo home_url('/lists/' . $m_def->slug); ?>" class="kc-card-cta" style="color: var(--k-accent);"><?php echo charts_tr('See Full List &rarr;'); ?></a>
 						</div>
 					</article>
 				<?php endforeach; ?>
