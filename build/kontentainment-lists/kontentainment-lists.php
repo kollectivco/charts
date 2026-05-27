@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Lists
  * Plugin URI: https://github.com/kollectivco/kontentainment-lists
  * Description: Premium music lists intelligence and editorial publishing platform.
- * Version: 1.7.0
+ * Version: 2.0.0
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/kontentainment-lists
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define canonical constants for the rebrand.
-define( 'KONTENTAINMENT_LISTS_VERSION', '1.7.0' );
+define( 'KONTENTAINMENT_LISTS_VERSION', '2.0.0' );
 define( 'KONTENTAINMENT_LISTS_PLUGIN_SLUG', 'kontentainment-lists' );
 define( 'KONTENTAINMENT_LISTS_PLUGIN_FILE', __FILE__ );
 define( 'KONTENTAINMENT_LISTS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
