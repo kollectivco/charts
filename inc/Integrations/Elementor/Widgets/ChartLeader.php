@@ -81,7 +81,7 @@ class ChartLeader extends Widget_Base {
 						<?php endif; ?>
 						<div class="hero-info" style="flex:1.5; padding:48px; min-width:300px;">
 							<?php if ( $show_meta ) : ?>
-								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
+								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">متصدر الأسبوع • <?php echo esc_html($def->title); ?></span>
 							<?php endif; ?>
 							
 							<?php 
@@ -100,15 +100,15 @@ class ChartLeader extends Widget_Base {
 							<?php if ( $show_meta ) : ?>
 							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
 								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">WKS ON CHART</span>
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أسابيع في السباق</span>
 									<span style="font-size:24px; font-weight:900; color:var(--k-text);"><?php echo $row->weeks_on_chart ?: 1; ?></span>
 								</div>
 								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">PEAK</span>
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أعلى مركز</span>
 									<span style="font-size:24px; font-weight:900; color:var(--k-text);">#<?php echo $row->peak_rank ?: 1; ?></span>
 								</div>
 								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">TREND</span>
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">التريند</span>
 									<span style="font-size:16px; font-weight:900; color:var(--k-text);"><?php echo strtoupper($row->movement_direction); ?></span>
 								</div>
 							</div>
@@ -116,7 +116,7 @@ class ChartLeader extends Widget_Base {
 
 							<?php if ( $show_cta ) : ?>
 								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="display:inline-flex; align-items:center; gap:8px; padding:16px 32px; background:var(--k-text); color:var(--k-surface); font-size:12px; font-weight:800; text-decoration:none; border-radius:40px; letter-spacing:0.05em; transition:transform 0.2s;">
-									<?php echo esc_html($settings['card_cta_text'] ?? 'Explore Market Intelligence'); ?> &rarr;
+									<?php echo esc_html($settings['card_cta_text'] ?? 'استكشف بيانات السوق'); ?> &rarr;
 								</a>
 							<?php endif; ?>
 						</div>
@@ -124,7 +124,7 @@ class ChartLeader extends Widget_Base {
 				<?php else : // Minimal Variant ?>
 					<div style="padding:48px; text-align:center; position:relative; z-index:2;">
 						<?php if ( $show_meta ) : ?>
-							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">WEEKLY LEADER • <?php echo esc_html($def->title); ?></span>
+							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">متصدر الأسبوع • <?php echo esc_html($def->title); ?></span>
 						<?php endif; ?>
 						<?php 
 							$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
@@ -140,7 +140,7 @@ class ChartLeader extends Widget_Base {
 						<?php if ( $show_cta ) : ?>
 							<div style="margin-top:32px;">
 								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="font-size:12px; font-weight:800; color:var(--k-text); text-decoration:underline;">
-									<?php echo esc_html($settings['card_cta_text'] ?? 'View Chart'); ?>
+									<?php echo esc_html($settings['card_cta_text'] ?? 'عرض السباق'); ?>
 								</a>
 							</div>
 						<?php endif; ?>

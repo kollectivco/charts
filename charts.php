@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           2.1.5
+ * Version:           2.1.6
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHARTS_VERSION', '2.1.5' );
+define( 'CHARTS_VERSION', '2.1.6' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -156,6 +156,29 @@ final class Charts {
 		$schema->install();
 		
 		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
+
+		// 4. Force Arabic Translation for Chart Titles (v2.1.6)
+		if ( version_compare( $current_db_version, '2.1.6', '<' ) ) {
+			global $wpdb;
+			$table = $wpdb->prefix . 'charts_definitions';
+			
+			// Only update if table exists
+			if ( $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table ) {
+				$title_translations = [
+					'Top 100 Songs' => 'أفضل 100 أغنية',
+					'Top Videos'    => 'أفضل الفيديوهات',
+					'Top Artists'   => 'أفضل الفنانين'
+				];
+				
+				foreach ($title_translations as $en_title => $ar_title) {
+					$wpdb->update(
+						$table,
+						['title' => $ar_title],
+						['title' => $en_title]
+					);
+				}
+			}
+		}
 
 		// 3. Force Arabic Translation for Labels (v2.1.5)
 		if ( version_compare( $current_db_version, '2.1.5', '<' ) ) {

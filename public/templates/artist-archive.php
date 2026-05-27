@@ -83,7 +83,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span>#<?php echo $artist->peak_rank ?: '—'; ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>Weeks on Chart</label>
+									<label>أسابيع في السباق</label>
 									<span><?php echo intval($artist->weeks_on_chart ?: 1); ?></span>
 								</div>
 								<div class="kc-details-item">

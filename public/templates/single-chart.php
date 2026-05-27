@@ -208,11 +208,11 @@ if ( ! $is_mobile ) {
 					<thead class="kc-table-head">
 						<tr>
 							<th style="width: 80px;">المركز</th>
-							<th style="width: 100px;">Move</th>
-							<th>Cover Title</th>
-							<th style="text-align: right;">Last Wk</th>
+							<th style="width: 100px;">الحركة</th>
+							<th>الغلاف والاسم</th>
+							<th style="text-align: right;">الأسبوع اللي فات</th>
 							<th style="text-align: right;">أعلى مركز</th>
-							<th style="text-align: right; width: 120px;">Wks On Chart</th>
+							<th style="text-align: right; width: 120px;">أسابيع في السباق</th>
 							<th style="width: 60px;"></th>
 						</tr>
 					</thead>
@@ -275,27 +275,27 @@ if ( ! $is_mobile ) {
 									<div class="kc-details-inner">
 										<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 											<div class="kc-details-item">
-												<label>Current Rank</label>
+												<label>المركز الحالي</label>
 												<span>#<?php echo $e->rank_position; ?></span>
 											</div>
 											<?php if ( ! empty($e->peak_rank) ) : ?>
 											<div class="kc-details-item">
-												<label>Peak Position</label>
+												<label>أعلى مركز</label>
 												<span>#<?php echo intval($e->peak_rank); ?></span>
 											</div>
 											<?php endif; ?>
 											<?php if ( ! empty($e->previous_rank) ) : ?>
 											<div class="kc-details-item">
-												<label>Previous Week</label>
+												<label>الأسبوع اللي فات</label>
 												<span>#<?php echo intval($e->previous_rank); ?></span>
 											</div>
 											<?php endif; ?>
 											<div class="kc-details-item">
-												<label>Weeks on Chart</label>
+												<label>أسابيع في السباق</label>
 												<span><?php echo intval($e->weeks_on_chart ?: 1); ?></span>
 											</div>
 											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 1 : 2; ?>;">
-												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'More Details') . ' &larr;'); ?>
+												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'تفاصيل أكتر') . ' &larr;'); ?>
 												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;"><?php echo $label; ?></a>
 											</div>
 										</div>

@@ -84,7 +84,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<div class="kc-details-inner">
 							<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 								<div class="kc-details-item">
-									<label>Peak Position</label>
+									<label>أعلى مركز</label>
 									<span>#<?php echo $track->peak_rank ?: '—'; ?></span>
 								</div>
 								<div class="kc-details-item">

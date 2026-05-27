@@ -86,7 +86,7 @@ $site_title = get_bloginfo('name');
                         <span style="font-size:14px; font-weight:900; color:var(--kc-text);">#<?php echo $top->peak_rank ?: 1; ?></span>
                     </div>
                     <div style="text-align:center; border-left:1px solid var(--kc-divider); border-right:1px solid var(--kc-divider);">
-                        <span style="display:block; font-size:9px; color:var(--kc-text-muted); text-transform:uppercase; font-weight:800; margin-bottom:2px;">Last Wk</span>
+                        <span style="display:block; font-size:9px; color:var(--kc-text-muted); text-transform:uppercase; font-weight:800; margin-bottom:2px;">الأسبوع اللي فات</span>
                         <span style="font-size:14px; font-weight:900; color:var(--kc-text);">#<?php echo $top->previous_rank ?: '—'; ?></span>
                     </div>
                     <div style="text-align:center;">
@@ -133,7 +133,7 @@ $site_title = get_bloginfo('name');
                                 <span>#<?php echo $e->peak_rank ?: $e->rank_position; ?></span>
                             </div>
                             <div class="kc-detail-item">
-                                <label>Last Wk</label>
+                                <label>الأسبوع اللي فات</label>
                                 <span>#<?php echo $e->previous_rank ?: '—'; ?></span>
                             </div>
                             <div class="kc-detail-item">
