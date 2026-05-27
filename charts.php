@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           2.1.4
+ * Version:           2.1.5
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHARTS_VERSION', '2.1.4' );
+define( 'CHARTS_VERSION', '2.1.5' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -157,6 +157,29 @@ final class Charts {
 		
 		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
 
+		// 3. Force Arabic Translation for Labels (v2.1.5)
+		if ( version_compare( $current_db_version, '2.1.5', '<' ) ) {
+			$saved_settings = get_option('kcharts_settings', []);
+			if ( isset($saved_settings['labels']) ) {
+				$translations = [
+					'View Full Chart' => 'عرض السباق كاملاً',
+					'Trending Artist' => 'فنان تريند',
+					'Top Artists'     => 'أفضل الفنانين',
+					'All Charts'      => 'كل السباقات'
+				];
+				$updated = false;
+				foreach ($saved_settings['labels'] as $key => $val) {
+					if (isset($translations[$val])) {
+						$saved_settings['labels'][$key] = $translations[$val];
+						$updated = true;
+					}
+				}
+				if ( $updated ) {
+					update_option('kcharts_settings', $saved_settings);
+				}
+			}
+		}
+
 		// 2. Structural Sovereignty Migration (v1.30.0)
 		if ( version_compare( $current_db_version, '1.30.0', '<' ) ) {
 			global $wpdb;
@@ -198,6 +221,7 @@ final class Charts {
 
 		// 4. Update the stored DB version
 		if ( version_compare( $current_db_version, CHARTS_VERSION, '<' ) ) {
+			// Always bump DB version to match plugin version
 			update_option( 'kcharts_db_version', CHARTS_VERSION );
 		}
 	}

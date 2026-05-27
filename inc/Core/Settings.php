@@ -80,13 +80,13 @@ class Settings {
             
             // Labels & Localization
             'labels' => [
-                'chart_cta_text'       => 'View Full Chart',
-                'trending_artist_tag'  => 'Trending Artist',
-                'top_artists_title'    => 'Top Artists',
-                'all_charts_title'     => 'All Charts',
+                'chart_cta_text'       => 'عرض السباق كاملاً',
+                'trending_artist_tag'  => 'فنان تريند',
+                'top_artists_title'    => 'أفضل الفنانين',
+                'all_charts_title'     => 'كل السباقات',
                 'footer_wordmark'      => 'KCharts',
-                'footer_left'          => '&copy; ' . date('Y') . ' Kontentainment. All rights reserved.',
-                'footer_right'         => 'Powered by Kontentainment Intelligence',
+                'footer_left'          => '&copy; ' . date('Y') . ' Kontentainment. جميع الحقوق محفوظة.',
+                'footer_right'         => 'مدعوم بواسطة Kontentainment Intelligence',
                 'header_wordmark'      => 'Kontentainment',
             ],
 
