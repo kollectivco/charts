@@ -148,7 +148,7 @@ foreach($chart_rankings as $cr) {
 			WHERE s.id = %d LIMIT 1
 		", $cr->source_id));
 	}
-	$cr->definition_title = $row ? $row->title : 'أفضل <?php echo \Charts\Core\Translation::get('Artist'); ?>ين';
+	$cr->definition_title = $row ? $row->title : 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين';
 }
 
 if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
@@ -264,7 +264,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;">
 									<div style="display: flex; align-items: center; gap: 12px;">
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist')); ?>" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
-										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class($cr->definition_title); ?>"><?php echo esc_html($cr->definition_title ?: 'أفضل <?php echo \Charts\Core\Translation::get('Artist'); ?>ين'); ?></span>
+										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class($cr->definition_title); ?>"><?php echo esc_html($cr->definition_title ?: 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين'); ?></span>
 									</div>
 									<div style="text-align: right;">
 										<div style="font-size: 24px; font-weight: 950; color: var(--k-text);">#<?php echo $cr->rank_position; ?></div>
