@@ -13,7 +13,7 @@
     --kc-accent: #fe025b;
     --kc-divider: rgba(0,0,0,0.06);
     --kc-radius: 24px;
-    --kc-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --kc-font: inherit;
 }
 
 * {

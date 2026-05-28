@@ -24,12 +24,12 @@
 	--k-accent-soft: rgba(254, 2, 91, 0.08);
 	
 	/* Typography */
-	--k-font-ar: var(--k-font-ar, 'KChartsArabic', sans-serif);
-	--k-font-en: var(--k-font-en, 'KChartsEnglish', system-ui, sans-serif);
+	--k-font-ar: inherit;
+	--k-font-en: inherit;
 	
-	--k-font-h: var(--k-font-en);
-	--k-font-b: var(--k-font-en);
-	--k-font-m: var(--k-font-en);
+	--k-font-h: inherit;
+	--k-font-b: inherit;
+	--k-font-m: inherit;
 
 	/* Sizing */
 	--k-radius-lg: 16px;
@@ -1381,7 +1381,7 @@
 }
 
 .kc-ps-title {
-    font-family: var(--k-f-en);
+    font-family: var(--k-font-en);
     font-size: clamp(32px, 6vw, 72px);
     font-weight: 950;
     line-height: 0.95;
