@@ -223,9 +223,9 @@ class ChartCarousel extends Widget_Base {
 		<div class="kc-widget-root <?php echo esc_attr($instance_id); ?>">
 			<div class="kc-widget-carousel-wrap" data-carousel-config='<?php echo esc_attr(json_encode($carousel_config)); ?>'>
 				<div class="kc-widget-carousel swiper-container" style="overflow: hidden; position: relative; width: 100%;">
-					<div class="swiper-wrapper" style="display: flex; flex-wrap: nowrap; margin: 0 -<?php echo intval($settings['slides_spacing'] / 2); ?>px; transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);">
+					<div class="swiper-wrapper" style="display: flex; flex-wrap: nowrap; margin: 0 -<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($settings['slides_spacing'] / 2)); ?>px; transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);">
 						<?php foreach ( $definitions as $def ) : ?>
-							<div class="swiper-slide" style="flex: 0 0 <?php echo (100 / $carousel_config['slidesPerView']['desktop']); ?>%; box-sizing: border-box; padding: 0 <?php echo intval($settings['slides_spacing'] / 2); ?>px;">
+							<div class="swiper-slide" style="flex: 0 0 <?php echo (100 / $carousel_config['slidesPerView']['desktop']); ?>%; box-sizing: border-box; padding: 0 <?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($settings['slides_spacing'] / 2)); ?>px;">
 								<div class="kc-slide-inner-box" style="height: 100%;">
 									<?php 
 										if ( $style_variant === 'overlay' ) {
@@ -274,7 +274,7 @@ class ChartCarousel extends Widget_Base {
 					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 				?>
 					<div class="kc-preview-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--k-divider);">
-						<span style="font-size: 12px; font-weight: 900; color: <?php echo $accent; ?>; width: 16px;"><?php echo $e->rank_position; ?></span>
+						<span style="font-size: 12px; font-weight: 900; color: <?php echo $accent; ?>; width: 16px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
 						<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;">
 						<div style="overflow: hidden;">
 							<span style="display: block; font-size: 13px; font-weight: 800; color: var(--k-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($resolved['title']); ?></span>

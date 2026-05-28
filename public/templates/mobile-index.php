@@ -135,7 +135,7 @@ $site_title = get_bloginfo('name');
                                 $resolved = $resolve_name($e, $def);
                             ?>
                                 <a href="<?php echo esc_url($chart_url); ?>" class="kc-row" style="padding: 16px 24px; border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(--kc-divider)'; ?>; gap: 20px;">
-                                    <span class="kc-rank" style="font-size: 18px; color: #fe025b; width: 24px;"><?php echo $e->rank_position; ?></span>
+                                    <span class="kc-rank" style="font-size: 18px; color: #fe025b; width: 24px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
                                     <div class="kc-row-info">
                                         <span class="kc-row-title" style="font-size: 15px; font-weight: 900; color: #000;"><?php echo esc_html($resolved['title']); ?></span>
                                         <span class="kc-row-sub" style="font-size: 12px; font-weight: 700; opacity: 0.6;"><?php echo esc_html($resolved['subtitle']); ?></span>

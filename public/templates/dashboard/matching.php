@@ -77,7 +77,7 @@ $stats = array(
                                     </div>
                                 </td>
                                 <td><span style="font-size:11px; font-weight:700; opacity:0.6;"><?php echo esc_html($e->definition_title ?: $e->source_name); ?></span></td>
-                                <td style="font-weight:900; color:var(--db-secondary);">#<?php echo $e->rank_position; ?></td>
+                                <td style="font-weight:900; color:var(--db-secondary);">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></td>
                                 <td><span class="status-pill status-pending" style="background:rgba(231, 76, 60, 0.1); color:#e74c3c;">Low Match</span></td>
                                 <td style="text-align:right;">
                                     <?php 

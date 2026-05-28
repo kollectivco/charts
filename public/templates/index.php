@@ -184,7 +184,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 											}
 										?>
 											<div class="kc-card-entry">
-												<span class="kc-entry-rank"><?php echo $e->rank_position; ?></span>
+												<span class="kc-entry-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
 												<img class="kc-entry-art" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 												<div class="kc-entry-info">
 													<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class($e_title); ?>"><?php echo esc_html($e_title); ?></span>

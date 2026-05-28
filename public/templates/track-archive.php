@@ -93,7 +93,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 								</div>
 								<div class="kc-details-item">
 									<label>Lifetime Weeks</label>
-									<span><?php echo intval($track->weeks_on_chart ?: 1); ?></span>
+									<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($track->weeks_on_chart ?: 1)); ?></span>
 								</div>
 								<div class="kc-details-item" style="text-align: right;">
 									<a href="<?php echo esc_url( $url ); ?>" class="kc-view-all" style="font-size: 13px; margin-top: 12px; display: inline-block;">View Insight Report &larr;</a>

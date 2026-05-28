@@ -104,7 +104,7 @@ $site_title = get_bloginfo('name');
             ?>
                 <div class="kc-row-item kc-rank-row">
                     <div class="kc-row" style="padding: 14px 20px;">
-                        <span class="kc-rank"><?php echo $e->rank_position; ?></span>
+                        <span class="kc-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
                         <img src="<?php echo esc_url($resolve_art($e)); ?>" class="kc-row-img" style="width:48px; height:48px;">
                         <div class="kc-row-info">
                             <span class="kc-row-title"><?php echo esc_html($resolved['title']); ?></span>
@@ -130,15 +130,15 @@ $site_title = get_bloginfo('name');
                         <div class="kc-details-inner">
                             <div class="kc-detail-item">
                                 <label>أعلى مركز</label>
-                                <span>#<?php echo $e->peak_rank ?: $e->rank_position; ?></span>
+                                <span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->peak_rank ?: $e->rank_position); ?></span>
                             </div>
                             <div class="kc-detail-item">
                                 <label>الأسبوع اللي فات</label>
-                                <span>#<?php echo $e->previous_rank ?: '—'; ?></span>
+                                <span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank ?: '—'); ?></span>
                             </div>
                             <div class="kc-detail-item">
                                 <label>Weeks On</label>
-                                <span><?php echo $e->weeks_on_chart ?: 1; ?> wks</span>
+                                <span><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->weeks_on_chart ?: 1); ?> wks</span>
                             </div>
                             <div class="kc-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--kc-divider); margin-top: 4px;">
                                 <?php 

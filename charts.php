@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           2.1.6
+ * Version:           2.1.7
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHARTS_VERSION', '2.1.6' );
+define( 'CHARTS_VERSION', '2.1.7' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -156,6 +156,45 @@ final class Charts {
 		$schema->install();
 		
 		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
+
+		// 5. Force Arabic Translation for known Artists (v2.1.7)
+		if ( version_compare( $current_db_version, '2.1.7', '<' ) ) {
+			global $wpdb;
+			$table_artists = $wpdb->prefix . 'charts_artists';
+			$table_entries = $wpdb->prefix . 'charts_entries';
+			
+			$artist_translations = [
+				'Essam Saasa'       => 'عصام صاصا',
+				'Amr Diab'          => 'عمرو دياب',
+				'Ahmed Saad'        => 'أحمد سعد',
+				'Rahma Mohsen'      => 'رحمة محسن',
+				'Hamou Al-Murshidi' => 'حمو المرشدي',
+				'Angham'            => 'أنغام',
+				'Houda Bondok'      => 'حودة بندق',
+				'Lege-Cy'           => 'ليجي-سي',
+			];
+
+			if ( $wpdb->get_var("SHOW TABLES LIKE '$table_artists'") === $table_artists ) {
+				foreach ($artist_translations as $en_name => $ar_name) {
+					// Safe translation: change display name, keep slug intact
+					$wpdb->update(
+						$table_artists,
+						['display_name' => $ar_name],
+						['display_name' => $en_name]
+					);
+				}
+			}
+
+			if ( $wpdb->get_var("SHOW TABLES LIKE '$table_entries'") === $table_entries ) {
+				foreach ($artist_translations as $en_name => $ar_name) {
+					// Also update the cached artist names in entries
+					$wpdb->query( $wpdb->prepare(
+						"UPDATE $table_entries SET artist_names = %s WHERE artist_names = %s",
+						$ar_name, $en_name
+					) );
+				}
+			}
+		}
 
 		// 4. Force Arabic Translation for Chart Titles (v2.1.6)
 		if ( version_compare( $current_db_version, '2.1.6', '<' ) ) {

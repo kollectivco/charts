@@ -165,14 +165,14 @@ if ( ! $is_mobile ) {
 					?>
 					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
 						<div style="position: relative; display: flex; align-items: center; gap: 10px;">
-							<div style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">1</div>
+							<div style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">١</div>
 							<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
 						</div>
 						<div style="flex-grow: 1;">
 							<div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-								<span style="background: <?php echo esc_attr($chart_color); ?>; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#1 This Week</span>
+								<span style="background: <?php echo esc_attr($chart_color); ?>; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#١ الأسبوع ده</span>
 								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
-									<span style="font-size: 14px; font-weight: 800; color: #2ecc71;">+<?php echo intval($top->movement_value); ?></span>
+									<span style="font-size: 14px; font-weight: 800; color: #2ecc71;">+<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->movement_value)); ?></span>
 								<?php endif; ?>
 							</div>
 							<?php 
@@ -193,8 +193,8 @@ if ( ! $is_mobile ) {
 							<?php endif; ?>
 							
 							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
-								<span>Peak #<?php echo intval($top->peak_rank ?: 1); ?></span>
-								<span><?php echo intval($top->weeks_on_chart ?: 1); ?> wks on chart</span>
+								<span>أعلى مركز #<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->peak_rank ?: 1)); ?></span>
+								<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->weeks_on_chart ?: 1)); ?> أسابيع في الشارتس</span>
 							</div>
 						</div>
 					</div>
@@ -209,25 +209,25 @@ if ( ! $is_mobile ) {
 						<tr>
 							<th style="width: 80px;">المركز</th>
 							<th style="width: 100px;">الحركة</th>
-							<th>الغلاف والاسم</th>
+							<th>الفنان</th>
 							<th style="text-align: right;">الأسبوع اللي فات</th>
 							<th style="text-align: right;">أعلى مركز</th>
-							<th style="text-align: right; width: 120px;">أسابيع في السباق</th>
+							<th style="text-align: right; width: 120px;">أسابيع في الشارتس</th>
 							<th style="width: 60px;"></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $entries as $e ) : ?>
 							<tr class="kc-rank-row">
-								<td class="kc-rank-num">#<?php echo $e->rank_position; ?></td>
+								<td class="kc-rank-num">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></td>
 								<td>
 									<div class="kc-rank-move">
 										<?php if ( $e->rank_position < $e->previous_rank ) : ?>
-											<span class="kc-move-up">▲ <?php echo ($e->previous_rank - $e->rank_position); ?></span>
+											<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank - $e->rank_position); ?></span>
 										<?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
-											<span class="kc-move-down">▼ <?php echo ($e->rank_position - $e->previous_rank); ?></span>
+											<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position - $e->previous_rank); ?></span>
 										<?php elseif ( $e->previous_rank == 0 ) : ?>
-											<span class="kc-move-new">NEW</span>
+											<span class="kc-move-new">جديد</span>
 										<?php else : ?>
 											<span style="opacity: 0.3;">–</span>
 										<?php endif; ?>
@@ -261,9 +261,9 @@ if ( ! $is_mobile ) {
   										</div>
  									</div>
  								</td>
-								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo $e->previous_rank ?: '—'; ?></td>
-								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);">#<?php echo $e->peak_rank ?: $e->rank_position; ?></td>
-								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo $e->weeks_on_chart ?: 1; ?></td>
+								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank ?: '—'); ?></td>
+								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->peak_rank ?: $e->rank_position); ?></td>
+								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->weeks_on_chart ?: 1); ?></td>
 								<td style="text-align: right;">
 									<div class="kc-chevron-toggle" style="width: 24px; height: 24px; margin-left: auto;">
 										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -276,23 +276,23 @@ if ( ! $is_mobile ) {
 										<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 											<div class="kc-details-item">
 												<label>المركز الحالي</label>
-												<span>#<?php echo $e->rank_position; ?></span>
+												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
 											</div>
 											<?php if ( ! empty($e->peak_rank) ) : ?>
 											<div class="kc-details-item">
 												<label>أعلى مركز</label>
-												<span>#<?php echo intval($e->peak_rank); ?></span>
+												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->peak_rank)); ?></span>
 											</div>
 											<?php endif; ?>
 											<?php if ( ! empty($e->previous_rank) ) : ?>
 											<div class="kc-details-item">
 												<label>الأسبوع اللي فات</label>
-												<span>#<?php echo intval($e->previous_rank); ?></span>
+												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->previous_rank)); ?></span>
 											</div>
 											<?php endif; ?>
 											<div class="kc-details-item">
-												<label>أسابيع في السباق</label>
-												<span><?php echo intval($e->weeks_on_chart ?: 1); ?></span>
+												<label>أسابيع في الشارتس</label>
+												<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->weeks_on_chart ?: 1)); ?></span>
 											</div>
 											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 1 : 2; ?>;">
 												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'تفاصيل أكتر') . ' &larr;'); ?>

@@ -65,7 +65,7 @@ $site_title = get_bloginfo('name');
                                 </div>
                                 <div class="kc-detail-item">
                                     <label>Weeks On</label>
-                                    <span><?php echo intval($a->weeks_on_chart ?: 1); ?></span>
+                                    <span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($a->weeks_on_chart ?: 1)); ?></span>
                                 </div>
                                 <div class="kc-detail-cta" style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--kc-divider); margin-top: 4px;">
                                     <a href="<?php echo add_query_arg('mobile_view', '1', home_url('/charts/artist/' . $a->slug . '/')); ?>" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--kc-primary); text-transform: uppercase; letter-spacing: 0.05em;">

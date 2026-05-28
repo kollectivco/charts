@@ -151,8 +151,8 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					?>
 						<?php if ( ! empty($item_stats->weeks_on_chart) ) : ?>
 						<div class="kc-stat-pill">
-							<label>أسابيع في السباق</label>
-							<span class="val"><?php echo intval($item_stats->weeks_on_chart); ?></span>
+							<label>أسابيع في الشارتس</label>
+							<span class="val"><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($item_stats->weeks_on_chart)); ?></span>
 						</div>
 						<?php endif; ?>
 					<?php else : ?>

@@ -75,7 +75,7 @@ class ChartLeader extends Widget_Base {
 					<div style="display:flex; flex-wrap:wrap; align-items:center;">
 						<?php if ( $show_cover ) : ?>
 						<div class="hero-art" style="position:relative; flex:1; min-width:300px;">
-							<span class="kc-row-rank" style="position:absolute; top:24px; left:24px; font-size:4rem; font-weight:900; line-height:1; color:#fff; text-shadow:0 4px 12px rgba(0,0,0,0.5); z-index:10;">1</span>
+							<span class="kc-row-rank" style="position:absolute; top:24px; left:24px; font-size:4rem; font-weight:900; line-height:1; color:#fff; text-shadow:0 4px 12px rgba(0,0,0,0.5); z-index:10;">١</span>
 							<img src="<?php echo esc_url($row->cover_image); ?>" alt="<?php echo esc_attr($row->track_name); ?>" style="width:100%; height:100%; min-height:400px; object-fit:cover;">
 						</div>
 						<?php endif; ?>
@@ -100,12 +100,12 @@ class ChartLeader extends Widget_Base {
 							<?php if ( $show_meta ) : ?>
 							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
 								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أسابيع في السباق</span>
-									<span style="font-size:24px; font-weight:900; color:var(--k-text);"><?php echo $row->weeks_on_chart ?: 1; ?></span>
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أسابيع في الشارتس</span>
+									<span style="font-size:24px; font-weight:900; color:var(--k-text);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->weeks_on_chart ?: 1); ?></span>
 								</div>
 								<div class="kc-stat-item">
 									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أعلى مركز</span>
-									<span style="font-size:24px; font-weight:900; color:var(--k-text);">#<?php echo $row->peak_rank ?: 1; ?></span>
+									<span style="font-size:24px; font-weight:900; color:var(--k-text);">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->peak_rank ?: 1); ?></span>
 								</div>
 								<div class="kc-stat-item">
 									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">التريند</span>

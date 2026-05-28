@@ -362,7 +362,7 @@ class PublicIntegration {
 
 			setTimeout(function() {
 				popup.classList.add('is-visible');
-			}, <?php echo intval($delay_ms); ?>);
+			}, <?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($delay_ms)); ?>);
 
 			var closeBtn = document.getElementById('kc-popup-close');
 			if (closeBtn) {

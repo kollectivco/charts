@@ -83,8 +83,8 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span>#<?php echo $artist->peak_rank ?: '—'; ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>أسابيع في السباق</label>
-									<span><?php echo intval($artist->weeks_on_chart ?: 1); ?></span>
+									<label>أسابيع في الشارتس</label>
+									<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($artist->weeks_on_chart ?: 1)); ?></span>
 								</div>
 								<div class="kc-details-item">
 									<label>Momentum Score</label>

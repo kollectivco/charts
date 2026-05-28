@@ -61,6 +61,15 @@ class Transliteration {
     }
 
     /**
+     * Convert Western numbers to Eastern Arabic numerals.
+     */
+    public static function to_arabic_numerals($number) {
+        $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        return str_replace($western, $eastern, (string)$number);
+    }
+
+    /**
      * Legcay support for old calls. No longer transliterates.
      */
     public static function to_franco($text) {
