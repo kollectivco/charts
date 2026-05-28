@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           2.1.7
+ * Version:           2.1.8
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHARTS_VERSION', '2.1.7' );
+define( 'CHARTS_VERSION', '2.1.8' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -83,6 +83,7 @@ final class Charts {
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 		
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
+		add_action( 'plugins_loaded', array( $this, 'check_version' ) );
 
 		// Custom Update Link in Plugins List - Use ACTUAL basename for filter registration
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_updater_link' ) );
@@ -145,6 +146,16 @@ final class Charts {
 		// Flush rewrite rules
 		\Charts\Core\Router::add_rewrite_rules();
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Check version on load to ensure migrations run even if activation hook is skipped
+	 */
+	public function check_version() {
+		$current_db_version = get_option( 'kcharts_db_version', '0.0.0' );
+		if ( version_compare( $current_db_version, CHARTS_VERSION, '<' ) ) {
+			$this->run_migrations();
+		}
 	}
 
 	/**
