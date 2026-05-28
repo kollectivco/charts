@@ -557,7 +557,18 @@ class Bootstrap {
 	 * Render the Quick Translation view.
 	 */
 	public static function render_translations() {
-		include CHARTS_PATH . 'admin/views/translations.php';
+		ini_set('display_errors', 1);
+		ini_set('display_startup_errors', 1);
+		error_reporting(E_ALL);
+		try {
+			include CHARTS_PATH . 'admin/views/translations.php';
+		} catch ( \Throwable $e ) {
+			echo '<div class="wrap" style="padding:40px; background:#fff; border:2px solid red;">';
+			echo '<h1>Fatal Error in Translations Page</h1>';
+			echo '<p><strong>' . esc_html( $e->getMessage() ) . '</strong></p>';
+			echo '<pre>' . esc_html( $e->getTraceAsString() ) . '</pre>';
+			echo '</div>';
+		}
 	}
 
 	/**
