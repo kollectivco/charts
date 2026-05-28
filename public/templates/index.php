@@ -106,7 +106,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 				<div class="kc-section-header">
 					<h2 class="kc-section-title">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-						<?php echo esc_html(Settings::get('labels.top_artists_title', 'أفضل الفنانين')); ?>
+						<?php echo esc_html(Settings::get('labels.top_artists_title', 'أفضل <?php echo \Charts\Core\Translation::get('Artist'); ?>ين')); ?>
 					</h2>
 					<a href="<?php echo $top_artists_chart ? home_url('/charts/' . $top_artists_chart->slug . '/') : '#'; ?>" class="kc-view-all">القائمة كاملة &larr;</a>
 				</div>

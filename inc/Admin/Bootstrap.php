@@ -158,6 +158,19 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'save_translations':
+				if ( isset( $_POST['kc_trans'] ) && is_array( $_POST['kc_trans'] ) ) {
+					$translations = array_map( 'sanitize_text_field', wp_unslash( $_POST['kc_trans'] ) );
+					// Filter out empty strings so it falls back to defaults properly
+					$translations = array_filter( $translations, function($val) {
+						return trim($val) !== '';
+					});
+					update_option( 'kcharts_translations', $translations );
+					\Charts\Core\Notify::success( __( 'Translations updated successfully.', 'charts' ), __( 'Settings Saved', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
 			case 'run_integrity_check_v2':
 				\Charts\Core\Integrity::recalculate_entity_links();
 				$redundant = \Charts\Core\Integrity::detect_redundant_sources();
@@ -424,7 +437,7 @@ class Bootstrap {
 			}
 
 			// 4. Append persistent notices if necessary
-			if ( $action === 'save_settings' ) {
+			if ( $action === 'save_settings' || $action === 'save_translations' ) {
 				$target_url = add_query_arg( 'settings-updated', '1', $target_url );
 			}
 
@@ -490,6 +503,7 @@ class Bootstrap {
 			array( 'title' => 'Matching Center', 'slug' => 'charts-matching', 'callback' => 'render_matching' ),
 			array( 'title' => 'Intelligence', 'slug' => 'charts-intelligence', 'callback' => 'render_intelligence' ),
 			array( 'title' => 'Insights', 'slug' => 'charts-insights', 'callback' => 'render_insights' ),
+			array( 'title' => 'Quick Translation', 'slug' => 'charts-translations', 'callback' => 'render_translations' ),
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
 			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
 		);
@@ -537,6 +551,13 @@ class Bootstrap {
 	 */
 	public static function render_performance() {
 		include CHARTS_PATH . 'admin/views/performance.php';
+	}
+
+	/**
+	 * Render the Quick Translation view.
+	 */
+	public static function render_translations() {
+		include CHARTS_PATH . 'admin/views/translations.php';
 	}
 
 	/**

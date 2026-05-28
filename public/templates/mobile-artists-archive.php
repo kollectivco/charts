@@ -25,7 +25,7 @@ $site_title = get_bloginfo('name');
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>أفضل الفنانين</title>
+    <title>أفضل <?php echo \Charts\Core\Translation::get('Artist'); ?>ين</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
 </head>
@@ -34,7 +34,7 @@ $site_title = get_bloginfo('name');
 <div class="kc-app-shell">
     <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--kc-divider); position:sticky; top:0; z-index:100; background:var(--kc-surface);">
         <a href="<?php echo home_url('/charts?mobile_view=1'); ?>" style="color:var(--kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
-        <h1 style="font-size: 18px; margin:0; line-height:1;">أفضل الفنانين</h1>
+        <h1 style="font-size: 18px; margin:0; line-height:1;">أفضل <?php echo \Charts\Core\Translation::get('Artist'); ?>ين</h1>
     </header>
 
     <main class="kc-content">

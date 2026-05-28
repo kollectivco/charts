@@ -35,7 +35,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 
 		<header class="kc-page-hero" style="padding: 40px 0 20px;">
 			<div class="kc-eyebrow">Discovery</div>
-			<h1 class="kc-page-title">أفضل الفنانين</h1>
+			<h1 class="kc-page-title">أفضل <?php echo \Charts\Core\Translation::get('Artist'); ?>ين</h1>
 			<p style="font-size: 13px; color: var(--k-text-dim); max-width: 600px; font-weight: 500;">
 				Browse the most influential voices currently shaping the regional music charts.
 			</p>
@@ -83,7 +83,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<span>#<?php echo $artist->peak_rank ?: '—'; ?></span>
 								</div>
 								<div class="kc-details-item">
-									<label>أسابيع في الشارتس</label>
+									<label><?php echo \Charts\Core\Translation::get('wks on chart'); ?></label>
 									<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($artist->weeks_on_chart ?: 1)); ?></span>
 								</div>
 								<div class="kc-details-item">

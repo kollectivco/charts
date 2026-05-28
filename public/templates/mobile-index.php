@@ -85,7 +85,7 @@ $site_title = get_bloginfo('name');
         <section class="kc-section" style="padding-top: 40px;">
             <div class="kc-section-head">
                 <h2 class="kc-section-title" style="font-size: 24px;">الأفضل أداءً</h2>
-                <span class="kc-meta kc-accent-color" style="font-weight: 900; letter-spacing: 0.1em; color: var(--kc-accent);">تغذية الفنانين</span>
+                <span class="kc-meta kc-accent-color" style="font-weight: 900; letter-spacing: 0.1em; color: var(--kc-accent);">تغذية <?php echo \Charts\Core\Translation::get('Artist'); ?>ين</span>
             </div>
 
             <div class="kc-artists-grid" style="padding: 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 20px;">

@@ -193,8 +193,8 @@ if ( ! $is_mobile ) {
 							<?php endif; ?>
 							
 							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
-								<span>أعلى مركز #<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->peak_rank ?: 1)); ?></span>
-								<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->weeks_on_chart ?: 1)); ?> أسابيع في الشارتس</span>
+								<span><?php echo \Charts\Core\Translation::get('Peak #'); ?><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->peak_rank ?: 1)); ?></span>
+								<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->weeks_on_chart ?: 1)); ?> <?php echo \Charts\Core\Translation::get('wks on chart'); ?></span>
 							</div>
 						</div>
 					</div>
@@ -207,12 +207,12 @@ if ( ! $is_mobile ) {
 				<table class="kc-rankings-table">
 					<thead class="kc-table-head">
 						<tr>
-							<th style="width: 80px;">المركز</th>
-							<th style="width: 100px;">الحركة</th>
-							<th>الفنان</th>
-							<th style="text-align: right;">الأسبوع اللي فات</th>
+							<th style="width: 80px;"><?php echo \Charts\Core\Translation::get('Rank'); ?></th>
+							<th style="width: 100px;"><?php echo \Charts\Core\Translation::get('Movement'); ?></th>
+							<th><?php echo \Charts\Core\Translation::get('Artist'); ?></th>
+							<th style="text-align: right;"><?php echo \Charts\Core\Translation::get('Previous Rank'); ?></th>
 							<th style="text-align: right;">أعلى مركز</th>
-							<th style="text-align: right; width: 120px;">أسابيع في الشارتس</th>
+							<th style="text-align: right; width: 120px;"><?php echo \Charts\Core\Translation::get('wks on chart'); ?></th>
 							<th style="width: 60px;"></th>
 						</tr>
 					</thead>
@@ -227,7 +227,7 @@ if ( ! $is_mobile ) {
 										<?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
 											<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position - $e->previous_rank); ?></span>
 										<?php elseif ( $e->previous_rank == 0 ) : ?>
-											<span class="kc-move-new">جديد</span>
+											<span class="kc-move-new"><?php echo \Charts\Core\Translation::get('NEW'); ?></span>
 										<?php else : ?>
 											<span style="opacity: 0.3;">–</span>
 										<?php endif; ?>
@@ -275,7 +275,7 @@ if ( ! $is_mobile ) {
 									<div class="kc-details-inner">
 										<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
 											<div class="kc-details-item">
-												<label>المركز الحالي</label>
+												<label><?php echo \Charts\Core\Translation::get('Current Rank'); ?></label>
 												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
 											</div>
 											<?php if ( ! empty($e->peak_rank) ) : ?>
@@ -286,16 +286,16 @@ if ( ! $is_mobile ) {
 											<?php endif; ?>
 											<?php if ( ! empty($e->previous_rank) ) : ?>
 											<div class="kc-details-item">
-												<label>الأسبوع اللي فات</label>
+												<label><?php echo \Charts\Core\Translation::get('Previous Rank'); ?></label>
 												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->previous_rank)); ?></span>
 											</div>
 											<?php endif; ?>
 											<div class="kc-details-item">
-												<label>أسابيع في الشارتس</label>
+												<label><?php echo \Charts\Core\Translation::get('wks on chart'); ?></label>
 												<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->weeks_on_chart ?: 1)); ?></span>
 											</div>
 											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 1 : 2; ?>;">
-												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', 'تفاصيل أكتر') . ' &larr;'); ?>
+												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', \Charts\Core\Translation::get('Details') . ' أكتر') . ' &larr;'); ?>
 												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;"><?php echo $label; ?></a>
 											</div>
 										</div>

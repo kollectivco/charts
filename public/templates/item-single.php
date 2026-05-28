@@ -151,7 +151,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					?>
 						<?php if ( ! empty($item_stats->weeks_on_chart) ) : ?>
 						<div class="kc-stat-pill">
-							<label>أسابيع في الشارتس</label>
+							<label><?php echo \Charts\Core\Translation::get('wks on chart'); ?></label>
 							<span class="val"><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($item_stats->weeks_on_chart)); ?></span>
 						</div>
 						<?php endif; ?>

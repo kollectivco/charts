@@ -81,7 +81,7 @@ class ChartLeader extends Widget_Base {
 						<?php endif; ?>
 						<div class="hero-info" style="flex:1.5; padding:48px; min-width:300px;">
 							<?php if ( $show_meta ) : ?>
-								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">متصدر الأسبوع • <?php echo esc_html($def->title); ?></span>
+								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
 							<?php endif; ?>
 							
 							<?php 
@@ -100,7 +100,7 @@ class ChartLeader extends Widget_Base {
 							<?php if ( $show_meta ) : ?>
 							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
 								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أسابيع في الشارتس</span>
+									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;"><?php echo \Charts\Core\Translation::get('wks on chart'); ?></span>
 									<span style="font-size:24px; font-weight:900; color:var(--k-text);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->weeks_on_chart ?: 1); ?></span>
 								</div>
 								<div class="kc-stat-item">
@@ -124,7 +124,7 @@ class ChartLeader extends Widget_Base {
 				<?php else : // Minimal Variant ?>
 					<div style="padding:48px; text-align:center; position:relative; z-index:2;">
 						<?php if ( $show_meta ) : ?>
-							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;">متصدر الأسبوع • <?php echo esc_html($def->title); ?></span>
+							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
 						<?php endif; ?>
 						<?php 
 							$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
