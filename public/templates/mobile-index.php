@@ -126,7 +126,7 @@ $site_title = get_bloginfo('name');
                             <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent 80%);"></div>
                             <div style="position: absolute; bottom: 20px; left: 24px; right: 24px;">
                                 <span class="kc-meta" style="color: #fff; font-size: 9px; letter-spacing: 0.15em; font-weight: 900; opacity: 0.8;">كونتينتمنت</span>
-                                <h3 class="kc-card-title" style="font-size: 28px; color: #fff; line-height: 1; margin-top: 4px;"><?php echo esc_html($def->title); ?></h3>
+                                <h3 class="kc-card-title" style="font-size: 28px; color: #fff; line-height: 1; margin-top: 4px;"><?php echo esc_html(\Charts\Core\Translation::get($def->title)); ?></h3>
                             </div>
                         </a>
 

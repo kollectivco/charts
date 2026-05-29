@@ -43,8 +43,8 @@ class Typography {
     --k-font-en: inherit;
 }
 
-.k-font-ar { font-family: var(--k-font-ar) !important; }
-.k-font-en { font-family: var(--k-font-en) !important; }
+.k-font-ar { font-family: inherit !important; }
+.k-font-en { font-family: inherit !important; }
 ";
         return $css;
     }

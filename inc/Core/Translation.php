@@ -29,6 +29,20 @@ class Translation {
         'Details' => 'تفاصيل',
         'Listen' => 'استمع',
         'Watch' => 'شاهد',
+        
+        // Dynamic Section Names
+        'Top Videos' => 'أفضل الفيديوهات',
+        'Top Tracks' => 'أفضل التراكات',
+        
+        // Artist Names Arabic Translations
+        'Amr Diab' => 'عمرو دياب',
+        'Ahmed Saad' => 'أحمد سعد',
+        'Essam Saasa' => 'عصام صاصا',
+        'Rahma Mohsen' => 'رحمة محسن',
+        'Hamou Al-Murshidi' => 'حمو المرشدي',
+        'Angham' => 'أنغام',
+        'Houda Bondok' => 'حودة بندق',
+        'Lege-Cy' => 'ليجي-سي',
     ];
 
     /**
@@ -37,22 +51,41 @@ class Translation {
      * @return string Translated string
      */
     public static function get($key) {
+        if ( empty( $key ) ) {
+            return '';
+        }
+
         $saved = get_option('kcharts_translations', []);
         if ( ! is_array( $saved ) ) {
             $saved = [];
         }
         
-        // 1. Check user saved translations
+        // 1. Exact match in user saved translations
         if (isset($saved[$key]) && $saved[$key] !== '') {
             return $saved[$key];
         }
 
-        // 2. Fallback to default Arabic
+        // 2. Exact match in default Arabic
         if (isset(self::$default_strings[$key])) {
             return self::$default_strings[$key];
         }
 
-        // 3. Fallback to the original key
+        // 3. Case-insensitive / Trimmed match
+        $normalized_key = strtolower(trim($key));
+
+        foreach ($saved as $k => $v) {
+            if (strtolower(trim($k)) === $normalized_key && $v !== '') {
+                return $v;
+            }
+        }
+
+        foreach (self::$default_strings as $k => $v) {
+            if (strtolower(trim($k)) === $normalized_key && $v !== '') {
+                return $v;
+            }
+        }
+
+        // 4. Fallback to the original key
         return $key;
     }
 

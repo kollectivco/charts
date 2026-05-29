@@ -25,6 +25,12 @@ class Transliteration {
     public static function resolve_display($original, $english_alt, $mode = 'original') {
         if (empty($original)) return '';
         
+        // Check if our translation engine has a custom/default translation for this string
+        $translated = \Charts\Core\Translation::get($original);
+        if ($translated !== $original) {
+            return $translated;
+        }
+        
         // Rule #1: If already English/Latin, keep it
         if ( ! self::has_arabic($original) ) {
             return $original;

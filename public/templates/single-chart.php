@@ -131,7 +131,7 @@ if ( ! $is_mobile ) {
 		<?php else : ?>
 
 			<header class="kc-page-hero" style="padding: 40px 0 60px;">
-				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($definition->title); ?>"><?php echo esc_html($definition->title); ?></h1>
+				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($definition->title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($definition->title)); ?></h1>
 				<?php if ( ! empty($definition->title_ar) ) : ?>
 					<p class="kc-page-subtitle k-font-ar"><?php echo esc_html($definition->title_ar); ?></p>
 				<?php endif; ?>

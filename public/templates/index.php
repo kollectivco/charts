@@ -106,7 +106,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 				<div class="kc-section-header">
 					<h2 class="kc-section-title">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-						<?php echo esc_html(Settings::get('labels.top_artists_title', 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين')); ?>
+						<?php echo esc_html(\Charts\Core\Translation::get(Settings::get('labels.top_artists_title', 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين'))); ?>
 					</h2>
 					<a href="<?php echo $top_artists_chart ? home_url('/charts/' . $top_artists_chart->slug . '/') : '#'; ?>" class="kc-view-all">القائمة كاملة &larr;</a>
 				</div>
@@ -122,9 +122,10 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 									// For artists row, we treat entries as artists
 									$resolved = \Charts\Core\PublicIntegration::resolve_display_name($art, $top_artists_chart);
 									$art_title = $resolved['title'];
+									$trending_tag = \Charts\Core\Translation::get(Settings::get('labels.trending_artist_tag', 'فنان متصدر'));
 								?>
 								<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class($art_title); ?>"><?php echo esc_html($art_title); ?></h3>
-								<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;" class="<?php echo \Charts\Core\Typography::get_font_class(Settings::get('labels.trending_artist_tag', 'فنان متصدر')); ?>"><?php echo esc_html(Settings::get('labels.trending_artist_tag', 'فنان متصدر')); ?></p>
+								<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;" class="<?php echo \Charts\Core\Typography::get_font_class($trending_tag); ?>"><?php echo esc_html($trending_tag); ?></p>
 							</div>
 						</a>
 					<?php endforeach; ?>
@@ -138,7 +139,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 				<div class="kc-section-header">
 					<h2 class="kc-section-title">
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-						<?php echo esc_html(Settings::get('labels.all_charts_title', 'كل القوائم')); ?>
+						<?php echo esc_html(\Charts\Core\Translation::get(Settings::get('labels.all_charts_title', 'كل القوائم'))); ?>
 					</h2>
 					<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">تصفح الكل &larr;</a>
 				</div>
@@ -159,7 +160,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 									<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($def, $entries)); ?>">
 									<div class="kc-card-header-overlay" style="background: linear-gradient(to top, <?php echo $accent; ?>dd, transparent);"></div>
 									<span class="kc-card-label">قائمة الأسبوع</span>
-									<h3 class="kc-card-title"><?php echo \Charts\Core\Typography::apply($def->title); ?></h3>
+									<h3 class="kc-card-title"><?php echo \Charts\Core\Typography::apply(\Charts\Core\Translation::get($def->title)); ?></h3>
 								</div>
 
 								<div class="kc-card-list">
@@ -198,7 +199,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 								</div>
 
 								<div class="kc-card-footer" style="justify-content: center;">
-									<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-card-cta"><?php echo esc_html(Settings::get('labels.chart_cta_text', 'عرض القائمة كاملة')); ?></a>
+									<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-card-cta"><?php echo esc_html(\Charts\Core\Translation::get(Settings::get('labels.chart_cta_text', 'عرض القائمة كاملة'))); ?></a>
 								</div>
 							</article>
 						<?php endforeach; ?>

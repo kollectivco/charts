@@ -189,7 +189,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 										<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
 									</div>
 									<div>
-										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($app->definition_title); ?>"><?php echo esc_html($app->definition_title ?: 'Standard Chart'); ?></h4>
+										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($app->definition_title ?: 'Standard Chart')); ?>"><?php echo esc_html(\Charts\Core\Translation::get($app->definition_title ?: 'Standard Chart')); ?></h4>
 										<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);">Week of <?php echo date('M j, Y', strtotime($app->period_start)); ?></span>
 									</div>
 								</div>
@@ -271,7 +271,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($odef, $oentries)); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">قائمة الأسبوع</span>
-							<h3 class="kc-card-title"><?php echo esc_html($odef->title); ?></h3>
+							<h3 class="kc-card-title"><?php echo esc_html(\Charts\Core\Translation::get($odef->title)); ?></h3>
 						</div>
 						<div class="kc-card-list">
 							<?php foreach ( $oentries as $oe ) : ?>
