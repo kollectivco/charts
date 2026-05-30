@@ -65,7 +65,7 @@
 * { box-sizing: border-box; }
 
 .kc-root {
-	font-family: var(--k-font-b);
+	font-family: inherit;
 	background-color: var(--k-bg);
 	color: var(--k-text);
 	-webkit-font-smoothing: antialiased;
@@ -153,7 +153,7 @@
 }
 
 .kc-page-title {
-	font-family: var(--k-font-h);
+	font-family: inherit;
 	font-size: 64px;
 	font-weight: 950;
 	letter-spacing: -0.04em;
@@ -1169,7 +1169,7 @@
 }
 
 .kc-bb-title {
-	font-family: var(--k-font-h);
+	font-family: inherit;
 	font-size: clamp(40px, 8vw, 92px);
 	font-weight: 950;
 	line-height: 0.95;
@@ -1381,7 +1381,7 @@
 }
 
 .kc-ps-title {
-    font-family: var(--k-font-en);
+    font-family: inherit;
     font-size: clamp(32px, 6vw, 72px);
     font-weight: 950;
     line-height: 0.95;

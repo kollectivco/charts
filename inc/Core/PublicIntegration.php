@@ -147,13 +147,9 @@ class PublicIntegration {
 		echo '}';
 		
 		echo '.kc-charts-route {';
-		echo 'font-family: var(--k-font-en);';
 		echo 'background: var(--k-bg) !important;';
 		echo 'color: var(--k-text) !important;';
 		echo '}';
-		
-        // Arabic Context Specific Overrides
-        echo '.kc-charts-route .is-arabic { font-family: var(--k-font-ar) !important; }';
 
 		if ( $mode === 'system' ) {
 			echo '@media (prefers-color-scheme: dark) {';
