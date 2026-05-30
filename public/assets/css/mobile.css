@@ -1,3 +1,5 @@
+@import url('../fonts/din-next-lt-arabic/stylesheet.css');
+
 /* 
  * CM Mobile Experience (Flutter Webview) - LIGHT MODE THEME
  * Optimized for high-performance mobile-first rendering.
@@ -26,7 +28,7 @@ body {
     padding: 0;
     background: var(--kc-bg);
     color: var(--kc-text);
-    font-family: inherit;
+    font-family: 'DIN Next LT Arabic', sans-serif;
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;

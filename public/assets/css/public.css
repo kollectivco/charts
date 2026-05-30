@@ -1,3 +1,5 @@
+@import url('../fonts/din-next-lt-arabic/stylesheet.css');
+
 /**
  * Kontentainment Charts — Premium Light Mode Design System
  * Based on #f6f6f6 background and #262626 secondary palette.
@@ -24,12 +26,12 @@
 	--k-accent-soft: rgba(254, 2, 91, 0.08);
 	
 	/* Typography */
-	--k-font-ar: inherit;
-	--k-font-en: inherit;
+	--k-font-ar: 'DIN Next LT Arabic', sans-serif;
+	--k-font-en: 'DIN Next LT Arabic', sans-serif;
 	
-	--k-font-h: inherit;
-	--k-font-b: inherit;
-	--k-font-m: inherit;
+	--k-font-h: 'DIN Next LT Arabic', sans-serif;
+	--k-font-b: 'DIN Next LT Arabic', sans-serif;
+	--k-font-m: 'DIN Next LT Arabic', sans-serif;
 
 	/* Sizing */
 	--k-radius-lg: 16px;
@@ -65,7 +67,7 @@
 * { box-sizing: border-box; }
 
 .kc-root {
-	font-family: inherit;
+	font-family: var(--k-font-b);
 	background-color: var(--k-bg);
 	color: var(--k-text);
 	-webkit-font-smoothing: antialiased;
@@ -137,7 +139,7 @@
 /* 3. HERO PAGES */
 .kc-page-hero {
 	padding: 60px 0;
-	text-align: left;
+	text-align: right;
 }
 
 .kc-eyebrow {
@@ -153,7 +155,7 @@
 }
 
 .kc-page-title {
-	font-family: inherit;
+	font-family: var(--k-font-b);
 	font-size: 64px;
 	font-weight: 950;
 	letter-spacing: -0.04em;
@@ -167,7 +169,7 @@
 	font-weight: 700;
 	color: var(--k-text-muted);
 	margin-top: -8px;
-	font-family: inherit;
+	font-family: var(--k-font-b);
 }
 
 .kc-page-meta {
@@ -489,6 +491,8 @@
 	align-items: center;
 	margin-bottom: 60px;
 }
+
+
 
 .kc-profile-avatar {
 	width: 140px; height: 140px; border-radius: 50%;
@@ -1169,7 +1173,7 @@
 }
 
 .kc-bb-title {
-	font-family: inherit;
+	font-family: var(--k-font-b);
 	font-size: clamp(40px, 8vw, 92px);
 	font-weight: 950;
 	line-height: 0.95;
@@ -1381,7 +1385,7 @@
 }
 
 .kc-ps-title {
-    font-family: inherit;
+    font-family: var(--k-font-en);
     font-size: clamp(32px, 6vw, 72px);
     font-weight: 950;
     line-height: 0.95;
