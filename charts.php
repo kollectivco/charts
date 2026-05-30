@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version:           2.2.8
+ * Version:           2.2.9
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHARTS_VERSION', '2.2.8' );
+define( 'CHARTS_VERSION', '2.2.9' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -342,7 +342,7 @@ final class Charts {
 			}
 
 			// Enable checking for release assets (zips)
-			// $update_checker->getVcsApi()->enableReleaseAssets();
+			$update_checker->getVcsApi()->enableReleaseAssets();
 		}
 		
 		// Initialize Admin if we are in admin
