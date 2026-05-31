@@ -313,7 +313,20 @@ class Translation {
             }
         }
 
-        // 4. Fallback to the original key
+        // 4. Handle comma-separated lists (e.g., "Coolpix, Muslim")
+        if (strpos($key, ',') !== false) {
+            $parts = array_map('trim', explode(',', $key));
+            $translated_parts = [];
+            foreach ($parts as $part) {
+                if ($part === '') continue;
+                $translated_parts[] = self::get($part);
+            }
+            if (count($translated_parts) > 1) {
+                return implode('، ', $translated_parts);
+            }
+        }
+
+        // 5. Fallback to the original key
         return $key;
     }
 
