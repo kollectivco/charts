@@ -123,23 +123,12 @@ if ( ! $is_mobile ) {
 }
 ?>
 
-<div class="kc-root">
-	<div class="kc-container">
+<div class="kc-root kc-theme-dark kc-layout-rtl" style="background: #121212; min-height: 100vh; color: #ffffff; direction: rtl;">
+	<div class="kc-container" style="max-width: 100%; padding: 0;">
 		
 		<?php if ( $page_state === 'not_found' ) : ?>
-			<section class="kc-page-hero" style="text-align: center;"><h1>Chart Not Found</h1><p>The requested chart definition does not exist.</p></section>
+			<section class="kc-page-hero" style="text-align: center; padding: 100px;"><h1>Chart Not Found</h1><p>The requested chart definition does not exist.</p></section>
 		<?php else : ?>
-
-			<header class="kc-page-hero" style="padding: 40px 0 60px;">
-				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($definition->title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($definition->title)); ?></h1>
-				<?php if ( ! empty($definition->title_ar) ) : ?>
-					<p class="kc-page-subtitle k-font-ar"><?php echo esc_html($definition->title_ar); ?></p>
-				<?php endif; ?>
-				
-				<?php if ( ! empty($definition->chart_summary) ) : ?>
-					<p style="font-size: 13px; color: var(--k-text-dim); margin-top: 24px; max-width: 600px; font-weight: 500; font-family: inherit;"><?php echo esc_html($definition->chart_summary); ?></p>
-				<?php endif; ?>
-			</header>
 
 			<?php
 			// Detect Artist-Chart Mode
@@ -150,92 +139,76 @@ if ( ! $is_mobile ) {
 			);
 			?>
 
-			<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 100px;">
-				<!-- #1 FEATURED TRACK -->
-				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; 
-					$chart_color = $definition->accent_color ?: 'var(--k-accent)';
-				?>
-					<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative;">
-					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
-					<?php 
-						$franco_mode = $definition->franco_mode ?? 'original';
-						$resolved = \Charts\Core\Transliteration::resolve_entry_display($top, $franco_mode);
-						$top_track = $resolved['track'];
-						$top_artist = $resolved['artist'];
-					?>
-					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
-						<div style="position: relative; display: flex; align-items: center; gap: 10px;">
-							<div style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">١</div>
-							<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
+			<div class="kc-dark-hero" style="position: relative; padding: 80px 120px; background: linear-gradient(to bottom, #2a2a2a, #121212); display: flex; align-items: center; justify-content: space-between; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05);">
+				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; ?>
+					<div class="kc-hero-bg-glow" style="position: absolute; left: 0; top: 0; width: 600px; height: 600px; background: url('<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>') center/cover; opacity: 0.15; filter: blur(100px); border-radius: 50%; pointer-events: none;"></div>
+				<?php endif; ?>
+				
+				<div class="kc-hero-content" style="position: relative; z-index: 10; max-width: 600px;">
+					<span style="font-size: 14px; font-weight: 500; color: #a0a0a0; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif;">Egypt</span>
+					<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($definition->title)); ?>" style="font-size: 64px; font-weight: 950; margin: 10px 0 20px; line-height: 1.1; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5);"><?php echo esc_html(\Charts\Core\Translation::get($definition->title)); ?></h1>
+					
+					<?php if ( ! empty($definition->title_ar) && \Charts\Core\Translation::get($definition->title) !== $definition->title_ar ) : ?>
+						<p class="kc-page-subtitle k-font-ar" style="font-size: 24px; color: #a0a0a0; margin-bottom: 20px;"><?php echo esc_html($definition->title_ar); ?></p>
+					<?php endif; ?>
+					
+					<p style="font-size: 16px; color: #a0a0a0; margin-bottom: 40px; font-weight: 500;"><?php echo esc_html($definition->chart_summary ?: "Ranking of this week's most popular artists."); ?></p>
+					
+					<div class="kc-hero-actions" style="display: flex; gap: 16px;">
+						<div style="border: 1px solid rgba(255,255,255,0.2); border-radius: 30px; padding: 8px 20px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; cursor: pointer; color: #e0e0e0; transition: background 0.2s; hover:background: rgba(255,255,255,0.1);">
+							تاريخ الأسبوع <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
 						</div>
-						<div style="flex-grow: 1;">
-							<div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-								<span style="background: <?php echo esc_attr($chart_color); ?>; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#١ الأسبوع ده</span>
-								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
-									<span style="font-size: 14px; font-weight: 800; color: #2ecc71;">+<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->movement_value)); ?></span>
-								<?php endif; ?>
-							</div>
-							<?php 
-                                // Rule: In artist mode, main title is Artist Name. In song mode, it's Track Name.
-                                $display_title = $is_artist_chart ? ($top_artist ?: $top_track) : $top_track;
-                                
-                                // Auto-healing for stale "Unknown" data
-                                if ( $display_title === 'Unknown YouTube Item' && ! empty($top_artist) ) {
-                                    $display_title = $top_artist;
-                                }
-                            ?>
-                            <h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($display_title); ?>"><?php echo esc_html($display_title); ?></h2>
-							
-                            <?php 
-                            // Rule: Disable subtitle for Artist Charts to prevent duplication
-                            if ( ! $is_artist_chart && ! empty($top_artist) && strtolower($display_title) !== strtolower($top_artist) ) : ?>
-								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top_artist); ?>"><?php echo esc_html($top_artist); ?></h3>
-							<?php endif; ?>
-							
-							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
-								<span><?php echo \Charts\Core\Translation::get('Peak #'); ?><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->peak_rank ?: 1)); ?></span>
-								<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->weeks_on_chart ?: 1)); ?> <?php echo \Charts\Core\Translation::get('wks on chart'); ?></span>
-							</div>
+						<div style="border: 1px solid rgba(255,255,255,0.2); border-radius: 30px; padding: 8px 20px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; cursor: pointer; color: #e0e0e0; transition: background 0.2s;">
+							الأكثر شهرة <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+						</div>
+					</div>
+				</div>
+				
+				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; ?>
+					<div class="kc-hero-image" style="position: relative; z-index: 10;">
+						<div style="width: 320px; height: 320px; border-radius: 50%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; background: #222;">
+							<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+							<div style="position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); border-radius: 50%;"></div>
+						</div>
+						<div style="position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;">
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
 						</div>
 					</div>
 				<?php endif; ?>
 			</div>
 
 			<!-- RANKINGS TABLE -->
-			<section class="kc-section" style="padding-top: 40px; padding-bottom: 120px;">
+			<section class="kc-section" style="padding: 40px 120px 120px; background: #0a0a0a;">
 
-				<table class="kc-rankings-table">
-					<thead class="kc-table-head">
+				<table class="kc-rankings-table kc-dark-table" style="width: 100%; border-collapse: separate; border-spacing: 0 8px;">
+					<thead class="kc-table-head" style="font-size: 13px; color: #888; text-transform: uppercase;">
 						<tr>
-							<th style="width: 80px;"><?php echo \Charts\Core\Translation::get('Rank'); ?></th>
-							<th style="width: 100px;"><?php echo \Charts\Core\Translation::get('Movement'); ?></th>
-							<th><?php echo \Charts\Core\Translation::get('Artist'); ?></th>
-							<th style="text-align: right;"><?php echo \Charts\Core\Translation::get('Previous Rank'); ?></th>
-							<th style="text-align: right;">أعلى مركز</th>
-							<th style="text-align: right; width: 120px;"><?php echo \Charts\Core\Translation::get('wks on chart'); ?></th>
-							<th style="width: 60px;"></th>
+							<th style="padding: 0 24px 16px; font-weight: 500; text-align: right; width: 80px; border-bottom: 1px solid rgba(255,255,255,0.05);"><?php echo \Charts\Core\Translation::get('Rank'); ?></th>
+							<th style="padding: 0 24px 16px; font-weight: 500; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05);"><?php echo \Charts\Core\Translation::get('Artist'); ?></th>
+							<th style="padding: 0 24px 16px; font-weight: 500; text-align: right; width: 140px; border-bottom: 1px solid rgba(255,255,255,0.05);"><?php echo \Charts\Core\Translation::get('Previous Rank'); ?></th>
+							<th style="padding: 0 24px 16px; font-weight: 500; text-align: right; width: 160px; border-bottom: 1px solid rgba(255,255,255,0.05);"><?php echo \Charts\Core\Translation::get('wks on chart'); ?></th>
+							<th style="padding: 0 24px 16px; font-weight: 500; text-align: right; width: 160px; border-bottom: 1px solid rgba(255,255,255,0.05);">أعلى مركز</th>
+							<th style="padding: 0 24px 16px; font-weight: 500; text-align: center; width: 60px; border-bottom: 1px solid rgba(255,255,255,0.05);"></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $entries as $e ) : ?>
-							<tr class="kc-rank-row">
-								<td class="kc-rank-num">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></td>
-								<td>
-									<div class="kc-rank-move">
-										<?php if ( $e->rank_position < $e->previous_rank ) : ?>
-											<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank - $e->rank_position); ?></span>
-										<?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
-											<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position - $e->previous_rank); ?></span>
-										<?php elseif ( $e->previous_rank == 0 ) : ?>
-											<span class="kc-move-new"><?php echo \Charts\Core\Translation::get('NEW'); ?></span>
-										<?php else : ?>
-											<span style="opacity: 0.3;">–</span>
-										<?php endif; ?>
-									</div>
+							<tr class="kc-rank-row" style="background: #1a1a1a; transition: background 0.2s; border-radius: 12px; cursor: pointer;" onmouseover="this.style.background='#2a2a2a';" onmouseout="this.style.background='#1a1a1a';">
+								<td class="kc-rank-num" style="padding: 16px 24px; font-size: 28px; font-weight: 900; color: #fff; width: 80px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; position: relative;">
+									<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?>
+									<?php if ( $e->rank_position < $e->previous_rank ) : ?>
+										<span style="display: block; font-size: 10px; color: #2ecc71; margin-top: 4px;">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank - $e->rank_position); ?></span>
+									<?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
+										<span style="display: block; font-size: 10px; color: #e74c3c; margin-top: 4px;">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position - $e->previous_rank); ?></span>
+									<?php elseif ( $e->previous_rank == 0 ) : ?>
+										<span style="display: block; font-size: 10px; color: #f1c40f; margin-top: 4px;"><?php echo \Charts\Core\Translation::get('NEW'); ?></span>
+									<?php else : ?>
+										<span style="display: block; font-size: 10px; color: #555; margin-top: 4px;">–</span>
+									<?php endif; ?>
 								</td>
-								<td>
-										<div style="display: flex; align-items: center; gap: 16px;">
-										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
+								<td style="padding: 16px 24px;">
+										<div style="display: flex; align-items: center; gap: 20px;">
+										<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
 										<div>
 											<?php 
 												$franco_mode = $definition->franco_mode ?? 'original';
@@ -251,55 +224,28 @@ if ( ! $is_mobile ) {
                                                     $row_title = $row_artist;
                                                 }
                                              ?>
-                                             <span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($row_title); ?>"><?php echo esc_html($row_title); ?></span>
+                                             <span style="display: block; font-size: 18px; font-weight: 800; color: #fff;" class="<?php echo \Charts\Core\Typography::get_font_class($row_title); ?>"><?php echo esc_html($row_title); ?></span>
   											
                                             <?php 
                                             // Rule: Disable subtitle for Artist Charts to prevent duplication
                                             if ( ! $is_artist_chart && ! empty($row_artist) && strtolower($row_title) !== strtolower($row_artist) ) : ?>
-  												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($row_artist); ?>"><?php echo esc_html($row_artist); ?></span>
+  												<span style="font-size: 13px; font-weight: 500; color: #a0a0a0; display: block; margin-top: 4px;" class="<?php echo \Charts\Core\Typography::get_font_class($row_artist); ?>"><?php echo esc_html($row_artist); ?></span>
   											<?php endif; ?>
   										</div>
  									</div>
  								</td>
-								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank ?: '—'); ?></td>
-								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->peak_rank ?: $e->rank_position); ?></td>
-								<td style="text-align: right; font-weight: 700; color: var(--k-text-dim);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->weeks_on_chart ?: 1); ?></td>
-								<td style="text-align: right;">
-									<div class="kc-chevron-toggle" style="width: 24px; height: 24px; margin-left: auto;">
-										<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+								<td style="padding: 16px 24px; text-align: right; font-weight: 700; color: #fff; font-size: 15px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank ?: '—'); ?></td>
+								<td style="padding: 16px 24px; text-align: right; font-weight: 700; color: #fff; font-size: 15px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->weeks_on_chart ?: 1); ?></td>
+								<td style="padding: 16px 24px; text-align: right; font-weight: 700; color: #fff; font-size: 15px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->peak_rank ?: $e->rank_position); ?></td>
+								<td style="padding: 16px 24px; text-align: center; border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+									<div class="kc-share-toggle" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
 									</div>
 								</td>
 							</tr>
-							<tr class="kc-details-row">
-								<td colspan="7" style="padding: 0;">
-									<div class="kc-details-inner">
-										<div class="kc-details-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
-											<div class="kc-details-item">
-												<label><?php echo \Charts\Core\Translation::get('Current Rank'); ?></label>
-												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
-											</div>
-											<?php if ( ! empty($e->peak_rank) ) : ?>
-											<div class="kc-details-item">
-												<label>أعلى مركز</label>
-												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->peak_rank)); ?></span>
-											</div>
-											<?php endif; ?>
-											<?php if ( ! empty($e->previous_rank) ) : ?>
-											<div class="kc-details-item">
-												<label><?php echo \Charts\Core\Translation::get('Previous Rank'); ?></label>
-												<span>#<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->previous_rank)); ?></span>
-											</div>
-											<?php endif; ?>
-											<div class="kc-details-item">
-												<label><?php echo \Charts\Core\Translation::get('wks on chart'); ?></label>
-												<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->weeks_on_chart ?: 1)); ?></span>
-											</div>
-											<div class="kc-details-item" style="text-align: right; grid-column: span <?php echo (!empty($e->release_date)) ? 1 : 2; ?>;">
-												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', \Charts\Core\Translation::get('Details') . ' أكتر') . ' &larr;'); ?>
-												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all" style="font-size: 12px; margin-top: 12px;"><?php echo $label; ?></a>
-											</div>
-										</div>
-									</div>
+							<tr class="kc-details-row" style="display: none;">
+								<td colspan="6" style="padding: 0;">
+									<!-- Keep structure hidden for now, or you can drop it. Keeping it invisible for backwards compat with JS if needed -->
 								</td>
 							</tr>
 						<?php endforeach; ?>
