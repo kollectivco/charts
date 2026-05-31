@@ -163,31 +163,6 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					<?php endif; ?>
 				</div>
 
-				<div style="display: flex; flex-direction: column; gap: 16px; margin-top: 40px;">
-					<?php 
-						$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
-						$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
-						$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
-						if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
-
-						foreach ( $artist_ids as $index => $a_id ) :
-							$artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
-							if ( $artist_row ) :
-								$pa_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist_row);
-								$artist_label = ($index === 0) ? 'Primary Artist' : 'Artist';
-					?>
-					<a href="<?php echo home_url('/charts/artist/' . $artist_row->slug); ?>" class="kc-card" style="display: flex; align-items: center; gap: 24px; padding: 24px 32px; text-decoration: none;">
-						<img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
-						<div>
-							<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get($artist_label); ?></span>
-							<span style="font-size: 16px; font-weight: 900; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($pa_resolved['title'])); ?>"><?php echo esc_html(\Charts\Core\Translation::get($pa_resolved['title'])); ?></span>
-						</div>
-					</a>
-					<?php 
-							endif;
-						endforeach; 
-					?>
-				</div>
 			</div>
 
 			<!-- appearances (right) -->
@@ -255,7 +230,10 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 
 		<!-- ARTIST PROMO BAR -->
 		<?php if ( ! empty($artist_ids) ) : ?>
-			<div style="display: flex; flex-direction: column; gap: 24px; margin-top: 60px; margin-bottom: 120px;">
+			<?php 
+				$promo_layout = (count($artist_ids) > 1) ? 'grid-template-columns: 1fr 1fr;' : 'grid-template-columns: 1fr;';
+			?>
+			<div style="display: grid; <?php echo $promo_layout; ?> gap: 24px; margin-top: 60px; margin-bottom: 120px;">
 			<?php 
 				foreach ( $artist_ids as $a_id ) :
 					$artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
