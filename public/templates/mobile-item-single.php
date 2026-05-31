@@ -46,6 +46,7 @@ $appearances = $wpdb->get_results( $wpdb->prepare( "
 	ORDER BY p.period_start DESC
 ", $item->id, $type, $title_escaped, $type ) );
 
+$valid_appearances = array();
 foreach($appearances as $app) {
 	if ( strpos($app->chart_type, 'cid-') === 0 ) {
 		$def_id = (int) str_replace('cid-', '', $app->chart_type);
@@ -56,8 +57,10 @@ foreach($appearances as $app) {
 	if ($def) {
 		$app->definition_title = $def->title;
 		$app->accent_color = $def->accent_color;
+		$valid_appearances[] = $app;
 	}
 }
+$appearances = $valid_appearances;
 
 $artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
 $site_title = get_bloginfo('name');
@@ -79,7 +82,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
     
     <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--kc-divider); position:sticky; top:0; z-index:100; background:var(--kc-surface);">
         <a href="javascript:history.back()" style="color:var(--kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
-        <h1 style="font-size: 16px; margin:0; line-height:1; font-weight:800;"><?php echo strtoupper($type); ?> Analysis</h1>
+        <h1 style="font-size: 16px; margin:0; line-height:1; font-weight:800;"><?php echo \Charts\Core\Translation::get('Details'); ?></h1>
     </header>
 
     <main class="kc-content">
@@ -98,11 +101,11 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
 
         <!-- Appearances -->
         <section class="kc-section" style="padding: 0 20px 40px;">
-            <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--kc-text-muted); margin-bottom: 16px;">Chart History</h3>
+            <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--kc-text-muted); margin-bottom: 16px;"><?php echo \Charts\Core\Translation::get('Chart History'); ?></h3>
             
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 <?php if ( empty($appearances) ) : ?>
-                    <div class="kc-card" style="padding: 20px; text-align: center; color: var(--kc-text-muted); font-size: 13px;">No chart history recorded yet.</div>
+                    <div class="kc-card" style="padding: 20px; text-align: center; color: var(--kc-text-muted); font-size: 13px;"><?php echo \Charts\Core\Translation::get('No chart history recorded yet.'); ?></div>
                 <?php else : ?>
                     <?php foreach ( $appearances as $app ) : ?>
                         <div class="kc-card" style="padding: 16px; display: flex; align-items: center; justify-content: space-between;">
@@ -118,7 +121,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
                             <div style="text-align: right;">
                                 <div style="font-size: 20px; font-weight: 950; color: var(--kc-text);">#<?php echo $app->rank_position; ?></div>
                                 <?php if ( ! empty($app->peak_rank) ) : ?>
-                                    <div style="font-size: 9px; font-weight: 800; color: var(--kc-text-muted);">PEAK #<?php echo $app->peak_rank; ?></div>
+                                    <div style="font-size: 9px; font-weight: 800; color: var(--kc-text-muted);"><?php echo \Charts\Core\Translation::get('Peak #'); ?><?php echo $app->peak_rank; ?></div>
                                 <?php endif; ?>
                             </div>
                         </div>

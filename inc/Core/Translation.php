@@ -31,6 +31,20 @@ class Translation {
         'Listen' => 'استمع',
         'Watch' => 'شاهد',
         
+        // Single Item Strings
+        'Track Stats' => 'إحصائيات',
+        'Analytics still processing for this item.' => 'جاري معالجة الإحصائيات.',
+        'Primary Artist' => 'الفنان الرئيسي',
+        'Chart Appearances' => 'ظهور في القوائم',
+        'No chart appearances recorded yet.' => 'لم يتم تسجيل ظهور في القوائم بعد.',
+        'Week of' => 'أسبوع',
+        'More by' => 'المزيد من',
+        'View Artist' => 'عرض الفنان',
+        'More Charts' => 'قوائم أخرى',
+        'View All Charts' => 'عرض كل القوائم',
+        'Chart History' => 'تاريخ الظهور',
+        'No chart history recorded yet.' => 'لا يوجد تاريخ مسجل بعد.',
+        
         // Dynamic Section Names
         'Top Videos' => 'أفضل الفيديوهات',
         'Top Tracks' => 'أفضل التراكات',

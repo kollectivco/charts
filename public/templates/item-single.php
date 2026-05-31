@@ -51,6 +51,7 @@ $appearances = $wpdb->get_results( $wpdb->prepare( "
 	ORDER BY p.period_start DESC
 ", $item->id, $type, $title_escaped, $type ) );
 
+$valid_appearances = array();
 foreach($appearances as $app) {
 	if ( strpos($app->chart_type, 'cid-') === 0 ) {
 		$def_id = (int) str_replace('cid-', '', $app->chart_type);
@@ -62,8 +63,10 @@ foreach($appearances as $app) {
 	if ($def) {
 		$app->definition_title = $def->title;
 		$app->accent_color = $def->accent_color;
+		$valid_appearances[] = $app;
 	}
 }
+$appearances = $valid_appearances;
 
 // Fetch Artist info
 $artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
@@ -143,7 +146,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 60px;">
 			<!-- stats (left) -->
 			<div>
-				<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 24px;">Track Stats</h3>
+				<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 24px;"><?php echo \Charts\Core\Translation::get('Track Stats'); ?></h3>
 				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 					<?php 
 					$item_stats = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = %s AND entity_id = %d", $type, $item->id ) );
@@ -156,7 +159,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						</div>
 						<?php endif; ?>
 					<?php else : ?>
-						<p style="font-size: 11px; color: var(--k-text-muted); grid-column: span 2;">Analytics still processing for this item.</p>
+						<p style="font-size: 11px; color: var(--k-text-muted); grid-column: span 2;"><?php echo \Charts\Core\Translation::get('Analytics still processing for this item.'); ?></p
 					<?php endif; ?>
 				</div>
 
@@ -166,7 +169,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						$pa_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 					?>
 					<div>
-						<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Primary Artist</span>
+						<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get('Primary Artist'); ?></span>
 						<span style="font-size: 16px; font-weight: 900; color: var(--k-text);"><?php echo esc_html($pa_resolved['title']); ?></span>
 					</div>
 				</div>
@@ -175,12 +178,12 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 			<!-- appearances (right) -->
 			<div>
 				<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
-					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted);">Chart Appearances</h3>
+					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted);"><?php echo \Charts\Core\Translation::get('Chart Appearances'); ?></h3>
 				</div>
 
 				<div style="display: flex; flex-direction: column; gap: 16px;">
 					<?php if ( empty($appearances) ) : ?>
-						<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No chart appearances recorded yet.</p>
+						<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);"><?php echo \Charts\Core\Translation::get('No chart appearances recorded yet.'); ?></p>
 					<?php else : ?>
 						<?php foreach ( $appearances as $app ) : ?>
 							<a href="<?php echo home_url('/charts/' . sanitize_title($app->definition_title) . '/'); ?>" class="kc-card" style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; padding: 20px 32px; border-radius: 12px; transition: transform 0.2s;">
@@ -190,7 +193,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									</div>
 									<div>
 										<h4 style="font-size: 16px; font-weight: 900; margin: 0; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($app->definition_title ?: 'Standard Chart')); ?>"><?php echo esc_html(\Charts\Core\Translation::get($app->definition_title ?: 'Standard Chart')); ?></h4>
-										<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);">Week of <?php echo date('M j, Y', strtotime($app->period_start)); ?></span>
+										<span style="font-size: 11px; font-weight: 600; color: var(--k-text-muted);"><?php echo \Charts\Core\Translation::get('Week of'); ?> <?php echo date('M j, Y', strtotime($app->period_start)); ?></span>
 									</div>
 								</div>
 								<div style="display: flex; align-items: center; gap: 24px;">
@@ -199,7 +202,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 										<div style="font-size: 10px; font-weight: 900; color: <?php echo $app->movement_direction === 'up' ? 'var(--k-accent)' : ($app->movement_direction === 'down' ? '#ef4444' : 'var(--k-text-muted)'); ?>;">
 											<?php if ( $app->movement_direction === 'up' ) echo '▲ '; elseif ( $app->movement_direction === 'down' ) echo '▼ '; ?>
 											<?php echo $app->movement_value ? intval($app->movement_value) : ''; ?>
-											<?php echo !empty($app->peak_rank) ? ' Peak #' . intval($app->peak_rank) : ''; ?>
+											<?php echo !empty($app->peak_rank) ? ' ' . \Charts\Core\Translation::get('Peak #') . intval($app->peak_rank) : ''; ?>
 										</div>
 									</div>
 									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--k-accent); opacity: 0.5;"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -214,7 +217,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<!-- MORE BY ARTIST -->
 		<?php if ( ! empty($more_items) ) : ?>
 		<section class="kc-section" style="padding: 100px 0 80px;">
-			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">More by <?php echo esc_html($artist->display_name); ?></h3>
+			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;"><?php echo \Charts\Core\Translation::get('More by'); ?> <?php echo esc_html(\Charts\Core\Translation::get($artist->display_name)); ?></h3>
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 						<?php foreach ( $more_items as $mi ) : 
 							$mi_resolved = \Charts\Core\PublicIntegration::resolve_display_name($mi);
@@ -244,11 +247,11 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					<div style="display: flex; align-items: center; gap: 20px;">
 						<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
 						<div>
-							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">فنان</span>
-							<h3 style="font-size: 24px; font-weight: 900; color: white; margin: 0;"><?php echo esc_html($artist->display_name); ?></h3>
+							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get('Artist'); ?></span>
+							<h3 style="font-size: 24px; font-weight: 900; color: white; margin: 0;"><?php echo esc_html(\Charts\Core\Translation::get($artist->display_name)); ?></h3>
 						</div>
 					</div>
-					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;">View Artist &larr;</a>
+					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;"><?php echo \Charts\Core\Translation::get('View Artist'); ?> &larr;</a>
 				</div>
 			</section>
 		<?php endif; ?>
@@ -256,8 +259,8 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<!-- MORE CHARTS -->
 		<section class="kc-section">
 			<div class="kc-section-header">
-				<h2 class="kc-section-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> More Charts</h2>
-				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &larr;</a>
+				<h2 class="kc-section-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> <?php echo \Charts\Core\Translation::get('More Charts'); ?></h2>
+				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all"><?php echo \Charts\Core\Translation::get('View All Charts'); ?> &larr;</a>
 			</div>
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
 				<?php 
