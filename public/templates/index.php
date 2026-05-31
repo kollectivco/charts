@@ -108,7 +108,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
 						<?php echo esc_html(\Charts\Core\Translation::get(Settings::get('labels.top_artists_title', 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين'))); ?>
 					</h2>
-					<a href="<?php echo $top_artists_chart ? home_url('/charts/' . $top_artists_chart->slug . '/') : '#'; ?>" class="kc-view-all">القائمة كاملة &larr;</a>
+					<a href="<?php echo $top_artists_chart ? home_url('/charts/' . $top_artists_chart->slug . '/') : '#'; ?>" class="kc-view-all"><?php echo esc_html(\Charts\Core\Translation::get(Settings::get('labels.chart_cta_text', 'القائمة كاملة'))); ?> &larr;</a>
 				</div>
 
 				<div class="kc-top-artists-grid">
@@ -121,7 +121,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 								<?php 
 									// For artists row, we treat entries as artists
 									$resolved = \Charts\Core\PublicIntegration::resolve_display_name($art, $top_artists_chart);
-									$art_title = $resolved['title'];
+									$art_title = \Charts\Core\Translation::get($resolved['title']);
 									$trending_tag = \Charts\Core\Translation::get(Settings::get('labels.trending_artist_tag', 'فنان متصدر'));
 								?>
 								<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class($art_title); ?>"><?php echo esc_html($art_title); ?></h3>
@@ -141,13 +141,13 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
 						<?php echo esc_html(\Charts\Core\Translation::get(Settings::get('labels.all_charts_title', 'كل القوائم'))); ?>
 					</h2>
-					<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">تصفح الكل &larr;</a>
+					<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all"><?php echo \Charts\Core\Translation::get('View All Charts'); ?> &larr;</a>
 				</div>
 
 				<div class="kc-grid kc-grid-4" style="gap: 32px;">
 					<?php if ( empty( $definitions ) ) : ?>
 						<div style="grid-column: 1 / -1; padding: 80px; text-align: center; border: 2px dashed var(--k-border); border-radius: 24px;">
-							<p style="font-weight: 800; color: var(--k-text-muted);">لم يتم العثور على قوائم نشطة.</p>
+							<p style="font-weight: 800; color: var(--k-text-muted);"><?php echo \Charts\Core\Translation::get('No current rankings found.'); ?></p
 						</div>
 					<?php else : ?>
 						<?php foreach ( $definitions as $def ) : 
@@ -171,7 +171,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 												Synchronizing...
 											</div>
 										<?php else : ?>
-											<div style="padding: 24px; font-size: 12px; font-weight: 600; color: var(--k-text-muted); opacity: 0.5;">لا توجد بيانات متاحة بعد.</div>
+											<div style="padding: 24px; font-size: 12px; font-weight: 600; color: var(--k-text-muted); opacity: 0.5;"><?php echo \Charts\Core\Translation::get('No chart history recorded yet.'); ?></div>
 										<?php endif; ?>
 									<?php else : ?>
 										<?php foreach ( $entries as $e ) : 
@@ -188,9 +188,9 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 												<span class="kc-entry-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
 												<img class="kc-entry-art" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 												<div class="kc-entry-info">
-													<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class($e_title); ?>"><?php echo esc_html($e_title); ?></span>
+													<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($e_title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($e_title)); ?></span>
 													<?php if ( ! $is_art_entry && ! empty($resolved['subtitle']) && strtolower($e_title) !== strtolower($resolved['subtitle']) ) : ?>
-														<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class($resolved['subtitle']); ?>"><?php echo esc_html($resolved['subtitle']); ?></span>
+														<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($resolved['subtitle'])); ?>"><?php echo esc_html(\Charts\Core\Translation::get($resolved['subtitle'])); ?></span>
 													<?php endif; ?>
 												</div>
 											</div>

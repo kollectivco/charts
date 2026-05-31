@@ -45,6 +45,14 @@ class Translation {
         'Chart History' => 'تاريخ الظهور',
         'No chart history recorded yet.' => 'لا يوجد تاريخ مسجل بعد.',
         
+        // Artist Profile Strings
+        'About' => 'نبذة',
+        'Popular Tracks' => 'أشهر التراكات',
+        'No popular tracks data.' => 'لا توجد بيانات لأشهر التراكات.',
+        'Chart Rankings' => 'مراكز القوائم',
+        'No current rankings found.' => 'لم يتم العثور على مراكز حالية.',
+        'Albums' => 'ألبومات',
+        
         // Dynamic Section Names
         'Top Videos' => 'أفضل الفيديوهات',
         'Top Tracks' => 'أفضل التراكات',

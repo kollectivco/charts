@@ -96,7 +96,7 @@ $site_title = get_bloginfo('name');
                         <img src="<?php echo esc_url($resolve_art($ta)); ?>" style="width: 100%; height: 100%; object-fit: cover; border-radius: 20px;">
                         <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 70%);"></div>
                         <div style="position: absolute; bottom: 12px; left: 10px; right: 10px;">
-                             <h4 style="color:#fff; font-size: 12px; font-weight: 900; margin: 0; line-height: 1.1; text-align: center;"><?php echo esc_html($resolved_ta['title']); ?></h4>
+                             <h4 style="color:#fff; font-size: 12px; font-weight: 900; margin: 0; line-height: 1.1; text-align: center;"><?php echo esc_html(\Charts\Core\Translation::get($resolved_ta['title'])); ?></h4>
                         </div>
                         <div style="position: absolute; top: 10px; left: 10px; background: #fe025b; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 950; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #fff;">
                             <?php echo $ta->rank_position; ?>
@@ -137,8 +137,8 @@ $site_title = get_bloginfo('name');
                                 <a href="<?php echo esc_url($chart_url); ?>" class="kc-row" style="padding: 16px 24px; border-bottom: <?php echo $index === 2 ? 'none' : '1px solid var(--kc-divider)'; ?>; gap: 20px;">
                                     <span class="kc-rank" style="font-size: 18px; color: #fe025b; width: 24px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
                                     <div class="kc-row-info">
-                                        <span class="kc-row-title" style="font-size: 15px; font-weight: 900; color: #000;"><?php echo esc_html($resolved['title']); ?></span>
-                                        <span class="kc-row-sub" style="font-size: 12px; font-weight: 700; opacity: 0.6;"><?php echo esc_html($resolved['subtitle']); ?></span>
+                                        <span class="kc-row-title" style="font-size: 15px; font-weight: 900; color: #000;"><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></span>
+                                        <span class="kc-row-sub" style="font-size: 12px; font-weight: 700; opacity: 0.6;"><?php echo esc_html(\Charts\Core\Translation::get($resolved['subtitle'])); ?></span>
                                     </div>
                                 </a>
                             <?php endforeach; ?>

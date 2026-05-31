@@ -184,12 +184,12 @@ if ( ! $is_mobile ) {
                                     $display_title = $top_artist;
                                 }
                             ?>
-                            <h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class($display_title); ?>"><?php echo esc_html($display_title); ?></h2>
+                            <h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($display_title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($display_title)); ?></h2>
 							
                             <?php 
                             // Rule: Disable subtitle for Artist Charts to prevent duplication
                             if ( ! $is_artist_chart && ! empty($top_artist) && strtolower($display_title) !== strtolower($top_artist) ) : ?>
-								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class($top_artist); ?>"><?php echo esc_html($top_artist); ?></h3>
+								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($top_artist)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($top_artist)); ?></h3>
 							<?php endif; ?>
 							
 							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
@@ -251,12 +251,12 @@ if ( ! $is_mobile ) {
                                                     $row_title = $row_artist;
                                                 }
                                              ?>
-                                             <span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($row_title); ?>"><?php echo esc_html($row_title); ?></span>
+                                             <span style="display: block; font-size: 16px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($row_title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($row_title)); ?></span>
   											
                                             <?php 
                                             // Rule: Disable subtitle for Artist Charts to prevent duplication
                                             if ( ! $is_artist_chart && ! empty($row_artist) && strtolower($row_title) !== strtolower($row_artist) ) : ?>
-  												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($row_artist); ?>"><?php echo esc_html($row_artist); ?></span>
+  												<span style="font-size: 12px; font-weight: 500; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($row_artist)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($row_artist)); ?></span>
   											<?php endif; ?>
   										</div>
  									</div>

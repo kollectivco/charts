@@ -187,7 +187,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		if ( ! empty($bio) ) : 
 		?>
 		<section class="kc-card" style="margin-bottom: 60px; padding: 40px;">
-			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 20px;">About</h3>
+			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 20px;"><?php echo \Charts\Core\Translation::get('About'); ?></h3>
 			<p style="font-size: 15px; line-height: 1.7; color: var(--k-text-dim);">
 				<?php echo wp_kses_post($bio); ?>
 			</p>
@@ -202,7 +202,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 
 				<!-- POPULAR TRACKS -->
 				<section>
-					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">Popular Tracks</h3>
+					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;"><?php echo \Charts\Core\Translation::get('Popular Tracks'); ?></h3>
 					<div style="display: flex; flex-direction: column; gap: 12px;">
 						<?php if ( !empty($popular_tracks) ) : ?>
 							<?php foreach ( $popular_tracks as $pt ) : 
@@ -239,13 +239,13 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 										<img src="<?php echo esc_url(($spt['image'] ?? '') ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($spt['name']); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html($artist->display_name); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-muted);"><?php echo esc_html(\Charts\Core\Translation::get($artist->display_name)); ?></span>
 										</div>
 									</div>
 								</div>
 							<?php endforeach; ?>
 						<?php else : ?>
-							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No popular tracks data.</p>
+							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);"><?php echo \Charts\Core\Translation::get('No popular tracks data.'); ?></p
 						<?php endif; ?>
 					</div>
 				</section>
@@ -255,10 +255,10 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 			<div>
 				<!-- CHART RANKINGS -->
 				<section style="margin-bottom: 60px;">
-					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">Chart Rankings</h3>
+					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;"><?php echo \Charts\Core\Translation::get('Chart Rankings'); ?></h3>
 					<div style="display: flex; flex-direction: column; gap: 16px;">
 						<?php if ( empty($chart_rankings) ) : ?>
-							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);">No current rankings found.</p>
+							<p style="font-size: 13px; font-weight: 600; color: var(--k-text-muted);"><?php echo \Charts\Core\Translation::get('No current rankings found.'); ?></p
 						<?php else : ?>
 							<?php foreach ( $chart_rankings as $cr ) : ?>
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;">
@@ -281,7 +281,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 				if ( ! empty($albums) ) : 
 				?>
 				<section>
-					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;">Albums</h3>
+					<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 32px;"><?php echo \Charts\Core\Translation::get('Albums'); ?></h3>
 					<div style="display: flex; flex-direction: column; gap: 12px;">
 						<?php foreach ( $albums as $album ) : ?>
 						<div class="kc-card" style="display: flex; align-items: center; gap: 16px;">
@@ -304,8 +304,8 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<!-- MORE CHARTS -->
 		<section class="kc-section" style="padding-top: 100px;">
 			<div class="kc-section-header">
-				<h2 class="kc-section-title"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:12px;"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> More Charts</h2>
-				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all">View All Charts &larr;</a>
+				<h2 class="kc-section-title"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:12px;"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> <?php echo \Charts\Core\Translation::get('More Charts'); ?></h2>
+				<a href="<?php echo home_url('/charts'); ?>" class="kc-view-all"><?php echo \Charts\Core\Translation::get('View All Charts'); ?> &larr;</a>
 			</div>
 			
 			<div class="kc-grid kc-grid-4" style="gap: 32px;">
@@ -320,7 +320,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_chart_image($mdef, $mentries)); ?>">
 							<div class="kc-card-header-overlay"></div>
 							<span class="kc-card-label">قائمة الأسبوع</span>
-							<h3 class="kc-card-title"><?php echo esc_html($mdef->title); ?></h3>
+							<h3 class="kc-card-title"><?php echo esc_html(\Charts\Core\Translation::get($mdef->title)); ?></h3>
 						</div>
 						<div class="kc-card-list">
 							<?php foreach ( $mentries as $me ) : ?>
@@ -329,7 +329,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 									<img class="kc-entry-art" src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($me, $me->item_type)); ?>">
 									<div class="kc-entry-info">
 										<span class="kc-entry-name"><?php echo esc_html($me->track_name); ?></span>
-										<span class="kc-entry-artist"><?php echo esc_html($me->artist_names); ?></span>
+										<span class="kc-entry-artist"><?php echo esc_html(\Charts\Core\Translation::get($me->artist_names)); ?></span>
 									</div>
 								</div>
 							<?php endforeach; ?>
