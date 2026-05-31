@@ -286,11 +286,11 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<div class="kc-card-list">
 							<?php foreach ( $oentries as $oe ) : ?>
 								<div class="kc-card-entry">
-									<span class="kc-entry-rank"><?php echo $oe->rank_position; ?></span>
+									<span class="kc-entry-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($oe->rank_position); ?></span>
 									<img class="kc-entry-art" src="<?php echo esc_url($oe->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>">
 									<div class="kc-entry-info">
-										<span class="kc-entry-name"><?php echo esc_html($oe->track_name); ?></span>
-										<span class="kc-entry-artist"><?php echo esc_html($oe->artist_names); ?></span>
+										<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($oe->track_name)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($oe->track_name)); ?></span>
+										<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($oe->artist_names)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($oe->artist_names)); ?></span>
 									</div>
 								</div>
 							<?php endforeach; ?>

@@ -210,7 +210,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							?>
 								<a href="<?php echo home_url('/charts/' . ($pt->item_type === 'video' ? 'video' : 'track') . '/' . $pt->item_slug); ?>" class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
-										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $pt->rank_position; ?></span>
+										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($pt->rank_position); ?></span>
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<?php 
 											$pt_resolved = \Charts\Core\PublicIntegration::resolve_display_name($pt);
@@ -235,7 +235,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							?>
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; text-decoration: none;">
 									<div style="display: flex; align-items: center; gap: 20px;">
-										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo $rk++; ?></span>
+										<span style="font-size: 16px; font-weight: 900; color: var(--k-text-muted); width: 24px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($rk++); ?></span>
 										<img src="<?php echo esc_url(($spt['image'] ?? '') ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;">
 										<div>
 											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);"><?php echo esc_html($spt['name']); ?></span>
@@ -325,11 +325,11 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<div class="kc-card-list">
 							<?php foreach ( $mentries as $me ) : ?>
 								<div class="kc-card-entry">
-									<span class="kc-entry-rank"><?php echo $me->rank_position; ?></span>
+									<span class="kc-entry-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($me->rank_position); ?></span>
 									<img class="kc-entry-art" src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($me, $me->item_type)); ?>">
 									<div class="kc-entry-info">
-										<span class="kc-entry-name"><?php echo esc_html($me->track_name); ?></span>
-										<span class="kc-entry-artist"><?php echo esc_html(\Charts\Core\Translation::get($me->artist_names)); ?></span>
+										<span class="kc-entry-name <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($me->track_name)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($me->track_name)); ?></span>
+										<span class="kc-entry-artist <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($me->artist_names)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($me->artist_names)); ?></span>
 									</div>
 								</div>
 							<?php endforeach; ?>
