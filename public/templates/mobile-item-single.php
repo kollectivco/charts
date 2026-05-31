@@ -62,7 +62,11 @@ foreach($appearances as $app) {
 }
 $appearances = $valid_appearances;
 
-$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
+$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
+$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
+$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
+if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
+
 $site_title = get_bloginfo('name');
 $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item); 
 ?>
@@ -92,9 +96,22 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
                 <img src="<?php echo esc_url($item->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100px; height: 100px; border-radius: 12px; object-fit: cover; box-shadow: var(--kc-shadow-sm);">
                 <div style="flex: 1;">
                     <h2 style="font-size: 24px; font-weight: 900; margin: 0; line-height: 1.1;"><?php echo esc_html($resolved['title']); ?></h2>
-                    <?php if ( $artist ) : ?>
-                        <a href="<?php echo esc_url($link('/charts/artist/' . $artist->slug)); ?>" style="display: block; font-size: 14px; font-weight: 700; color: var(--kc-primary); margin-top: 8px; text-decoration: none;"><?php echo esc_html($artist->display_name); ?> &larr;</a>
-                    <?php endif; ?>
+                    <?php 
+                        if ( ! empty($artist_ids) ) :
+                            foreach ( $artist_ids as $a_id ) :
+                                $artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
+                                if ( $artist_row ) :
+                                    $ar_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist_row);
+                    ?>
+                        <a href="<?php echo esc_url($link('/charts/artist/' . $artist_row->slug)); ?>" style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--kc-primary); margin-top: 8px; text-decoration: none;">
+                            <img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                            <?php echo esc_html(\Charts\Core\Translation::get($ar_resolved['title'])); ?> &larr;
+                        </a>
+                    <?php 
+                                endif;
+                            endforeach; 
+                        endif; 
+                    ?>
                 </div>
             </div>
         </section>

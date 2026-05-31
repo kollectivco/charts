@@ -163,15 +163,30 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					<?php endif; ?>
 				</div>
 
-				<div class="kc-card" style="margin-top: 40px; display: flex; align-items: center; gap: 24px; padding: 24px 32px;">
-					<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
+				<div style="display: flex; flex-direction: column; gap: 16px; margin-top: 40px;">
 					<?php 
-						$pa_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
+						$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
+						$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
+						$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
+						if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
+
+						foreach ( $artist_ids as $index => $a_id ) :
+							$artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
+							if ( $artist_row ) :
+								$pa_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist_row);
+								$artist_label = ($index === 0) ? 'Primary Artist' : 'Artist';
 					?>
-					<div>
-						<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get('Primary Artist'); ?></span>
-						<span style="font-size: 16px; font-weight: 900; color: var(--k-text);"><?php echo esc_html($pa_resolved['title']); ?></span>
-					</div>
+					<a href="<?php echo home_url('/charts/artist/' . $artist_row->slug); ?>" class="kc-card" style="display: flex; align-items: center; gap: 24px; padding: 24px 32px; text-decoration: none;">
+						<img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;">
+						<div>
+							<span style="display: block; font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get($artist_label); ?></span>
+							<span style="font-size: 16px; font-weight: 900; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($pa_resolved['title'])); ?>"><?php echo esc_html(\Charts\Core\Translation::get($pa_resolved['title'])); ?></span>
+						</div>
+					</a>
+					<?php 
+							endif;
+						endforeach; 
+					?>
 				</div>
 			</div>
 
@@ -239,21 +254,35 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 		<?php endif; ?>
 
 		<!-- ARTIST PROMO BAR -->
-		<?php if ( $artist ) : ?>
-			<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; margin-top: 60px; margin-bottom: 120px; height: 120px;">
-				<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1;">
-				<div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.95), transparent);"></div>
-				<div style="position: relative; z-index: 10; display: flex; align-items: center; height: 100%; padding: 0 40px; justify-content: space-between;">
-					<div style="display: flex; align-items: center; gap: 20px;">
-						<img src="<?php echo esc_url($artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
-						<div>
-							<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get('Artist'); ?></span>
-							<h3 style="font-size: 24px; font-weight: 900; color: white; margin: 0;"><?php echo esc_html(\Charts\Core\Translation::get($artist->display_name)); ?></h3>
+		<?php if ( ! empty($artist_ids) ) : ?>
+			<div style="display: flex; flex-direction: column; gap: 24px; margin-top: 60px; margin-bottom: 120px;">
+			<?php 
+				foreach ( $artist_ids as $a_id ) :
+					$artist_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $a_id ) );
+					if ( $artist_row ) :
+						$ar_resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist_row);
+			?>
+				<section class="kc-card" style="padding: 0; overflow: hidden; position: relative; height: 120px;">
+					<img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1;">
+					<div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.95), transparent);"></div>
+					<div style="position: relative; z-index: 10; display: flex; align-items: center; height: 100%; padding: 0 40px; justify-content: space-between;">
+						<div style="display: flex; align-items: center; gap: 20px;">
+							<img src="<?php echo esc_url($artist_row->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
+							<div>
+								<span style="font-size: 9px; font-weight: 950; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;"><?php echo \Charts\Core\Translation::get('Artist'); ?></span>
+								<h3 style="font-size: 28px; font-weight: 950; margin: 0; color: #fff;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($ar_resolved['title'])); ?>"><?php echo esc_html(\Charts\Core\Translation::get($ar_resolved['title'])); ?></h3>
+							</div>
 						</div>
+						<a href="<?php echo home_url('/charts/artist/' . $artist_row->slug); ?>" class="kc-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+							<?php echo \Charts\Core\Translation::get('View Artist'); ?> &larr;
+						</a>
 					</div>
-					<a href="<?php echo home_url('/charts/artist/' . $artist->slug); ?>" class="kc-view-all" style="color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 24px; border-radius: 99px; text-decoration: none;"><?php echo \Charts\Core\Translation::get('View Artist'); ?> &larr;</a>
-				</div>
-			</section>
+				</section>
+			<?php 
+					endif;
+				endforeach; 
+			?>
+			</div>
 		<?php endif; ?>
 
 		<!-- MORE CHARTS -->
