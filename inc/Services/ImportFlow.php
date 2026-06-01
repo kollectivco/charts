@@ -116,6 +116,19 @@ class ImportFlow {
 			'last_success_at' => current_time( 'mysql' ),
 		), array( 'id' => $source_id ) );
 
+		// Auto-Translate the newly imported data
+		if ( $matched_items > 0 && class_exists('\Charts\Services\TranslationApiService') ) {
+			try {
+				$translator = new \Charts\Services\TranslationApiService();
+				if ( $translator->is_configured() ) {
+					$untranslated = $translator->get_untranslated_strings();
+					if ( !empty($untranslated) ) {
+						$translator->translate_batch($untranslated);
+					}
+				}
+			} catch (\Exception $e) {}
+		}
+
 		return $matched_items;
 	}
 
