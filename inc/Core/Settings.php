@@ -76,6 +76,7 @@ class Settings {
                 'spotify_client_id'    => '',
                 'spotify_client_secret' => '',
                 'youtube_api_key'      => '',
+                'google_translate_key' => '',
             ],
             
             // Labels & Localization

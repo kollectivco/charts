@@ -25,10 +25,24 @@ if ( ! is_array( $saved_translations ) ) {
                 <p class="kc-subtitle" style="margin: 8px 0 0; color: #64748b; font-size: 15px;">Allows you to quickly translate front-end strings to your language.</p>
             </div>
             <div class="kc-header-actions" style="display: flex; gap: 10px;">
+                <button type="button" id="kc-auto-translate-btn" class="kb-btn kb-btn-outline" style="background: transparent; color: #0f172a; border: 1px solid #cbd5e1; padding: 12px 24px; border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span class="dashicons dashicons-admin-site-alt3" style="font-size: 16px; width: 16px; height: 16px; margin-top: -2px;"></span>
+                    Auto-Translate via API
+                </button>
                 <button type="submit" name="charts_action" value="save_translations" class="kb-btn kb-btn-primary" style="background: #0f172a; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                     <span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; margin-top: -2px;"></span>
                     Save Translations
                 </button>
+            </div>
+        </div>
+
+        <div id="kc-auto-translate-progress-container" style="display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <strong style="color: #1e293b; font-size: 14px;">Translating Untranslated Tracks & Videos...</strong>
+                <span id="kc-auto-translate-status" style="color: #64748b; font-size: 13px; font-weight: 600;">0 / 0</span>
+            </div>
+            <div style="width: 100%; background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div id="kc-auto-translate-bar" style="height: 100%; background: #059669; width: 0%; transition: width 0.3s ease;"></div>
             </div>
         </div>
 

@@ -29,6 +29,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
 		add_action( 'wp_ajax_charts_save_manual_order', array( self::class, 'handle_save_manual_order' ) );
 		add_action( 'wp_ajax_charts_generate_franco', array( self::class, 'handle_generate_franco' ) );
+		add_action( 'wp_ajax_charts_api_translate_strings', array( self::class, 'handle_api_translate_strings' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1186,8 +1187,9 @@ class Bootstrap {
 	/**
 	 * Helper to safely render an admin view.
 	 */
+
 	/**
-	 * AJAX logic to search for entities to add to manual charts.
+	 * Search for missing entities and assign them.
 	 */
 	public static function handle_search_entities() {
 		check_ajax_referer( 'charts_admin_action', 'nonce' );
@@ -1200,6 +1202,36 @@ class Bootstrap {
 
 		$results = \Charts\Core\EntityManager::search_entities( $type, $query );
 		wp_send_json_success( $results );
+	}
+
+	/**
+	 * Handle API Batch Translation requests.
+	 */
+	public static function handle_api_translate_strings() {
+		check_ajax_referer( 'charts_admin_action' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permission denied.' );
+
+		require_once CHARTS_PATH . 'inc/Services/TranslationApiService.php';
+		$service = new \Charts\Services\TranslationApiService();
+
+		if ( ! $service->is_configured() ) {
+			wp_send_json_error( 'Google Translate API Key is not configured in Settings.' );
+		}
+
+		$step = sanitize_text_field( $_POST['step'] ?? 'get_strings' );
+
+		if ( $step === 'get_strings' ) {
+			$strings = $service->get_untranslated_strings();
+			wp_send_json_success( array( 'strings' => $strings ) );
+		} elseif ( $step === 'translate_chunk' ) {
+			$chunk = isset($_POST['strings']) && is_array($_POST['strings']) ? array_map('sanitize_text_field', wp_unslash($_POST['strings'])) : [];
+			if ( empty($chunk) ) wp_send_json_error( 'No strings provided.' );
+			
+			$translations = $service->translate_batch($chunk);
+			wp_send_json_success( array( 'translations' => $translations ) );
+		}
+
+		wp_send_json_error( 'Invalid step.' );
 	}
 
 	/**
