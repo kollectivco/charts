@@ -7,7 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$definitions = \Charts\Core\EntityManager::get_definitions();
+global $wpdb;
+$definitions = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_definitions ORDER BY title ASC" );
 
 // Handle messages
 $message = '';
