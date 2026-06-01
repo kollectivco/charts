@@ -10,6 +10,14 @@ $saved_translations = get_option('kcharts_translations', []);
 if ( ! is_array( $saved_translations ) ) {
     $saved_translations = [];
 }
+
+// Merge saved custom strings that aren't in default strings
+$all_strings = $registered_strings;
+foreach ($saved_translations as $k => $v) {
+    if (!isset($all_strings[$k])) {
+        $all_strings[$k] = ''; // No default for custom strings
+    }
+}
 ?>
 
 <div class="wrap kc-translation-wrap premium-bento">
@@ -68,7 +76,7 @@ if ( ! is_array( $saved_translations ) ) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($registered_strings as $english_key => $default_arabic) : 
+                    <?php foreach ($all_strings as $english_key => $default_arabic) : 
                         $current_val = isset($saved_translations[$english_key]) ? $saved_translations[$english_key] : '';
                     ?>
                     <tr>
@@ -80,6 +88,16 @@ if ( ! is_array( $saved_translations ) ) {
                         </td>
                     </tr>
                     <?php endforeach; ?>
+                    <!-- Add Custom Translation Row -->
+                    <tr style="background: #f8fafc; border-top: 2px dashed #cbd5e1;">
+                        <td style="padding: 16px 24px; border-bottom: 1px solid #f1f5f9;">
+                            <input type="text" name="kc_trans_new_key" value="" placeholder="Type exact English track name..." style="width: 100%; border: 1px solid #cbd5e1; background: #fff; font-size: 14px; color: #1e293b; font-weight: 500; outline: none; padding: 10px; border-radius: 6px;" class="kc-trans-input-new">
+                            <p style="margin: 6px 0 0; font-size: 12px; color: #64748b;">Add a new track or video name</p>
+                        </td>
+                        <td style="padding: 16px 24px; border-bottom: 1px solid #f1f5f9;">
+                            <input type="text" name="kc_trans_new_val" value="" placeholder="Type Arabic translation..." style="width: 100%; border: 1px solid #cbd5e1; background: #fff; font-size: 14px; color: #059669; font-weight: 700; outline: none; padding: 10px; border-radius: 6px;" class="kc-trans-input-new">
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

@@ -166,6 +166,14 @@ class Bootstrap {
 					$translations = array_filter( $translations, function($val) {
 						return trim($val) !== '';
 					});
+					
+					// Handle new custom translation
+					$new_key = isset($_POST['kc_trans_new_key']) ? sanitize_text_field(wp_unslash($_POST['kc_trans_new_key'])) : '';
+					$new_val = isset($_POST['kc_trans_new_val']) ? sanitize_text_field(wp_unslash($_POST['kc_trans_new_val'])) : '';
+					if (!empty($new_key) && !empty($new_val)) {
+						$translations[$new_key] = $new_val;
+					}
+					
 					update_option( 'kcharts_translations', $translations );
 					\Charts\Core\Notify::success( __( 'Translations updated successfully.', 'charts' ), __( 'Settings Saved', 'charts' ) );
 				}
