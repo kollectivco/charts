@@ -10,14 +10,6 @@ $saved_translations = get_option('kcharts_translations', []);
 if ( ! is_array( $saved_translations ) ) {
     $saved_translations = [];
 }
-
-// Merge saved custom strings that aren't in default strings
-$all_strings = $registered_strings;
-foreach ($saved_translations as $k => $v) {
-    if (!isset($all_strings[$k])) {
-        $all_strings[$k] = ''; // No default for custom strings
-    }
-}
 ?>
 
 <div class="wrap kc-translation-wrap premium-bento">
@@ -33,24 +25,10 @@ foreach ($saved_translations as $k => $v) {
                 <p class="kc-subtitle" style="margin: 8px 0 0; color: #64748b; font-size: 15px;">Allows you to quickly translate front-end strings to your language.</p>
             </div>
             <div class="kc-header-actions" style="display: flex; gap: 10px;">
-                <button type="button" id="kc-auto-translate-btn" class="kb-btn kb-btn-outline" style="background: transparent; color: #0f172a; border: 1px solid #cbd5e1; padding: 12px 24px; border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <span class="dashicons dashicons-admin-site-alt3" style="font-size: 16px; width: 16px; height: 16px; margin-top: -2px;"></span>
-                    Auto-Translate via API
-                </button>
                 <button type="submit" name="charts_action" value="save_translations" class="kb-btn kb-btn-primary" style="background: #0f172a; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                     <span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; margin-top: -2px;"></span>
                     Save Translations
                 </button>
-            </div>
-        </div>
-
-        <div id="kc-auto-translate-progress-container" style="display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <strong style="color: #1e293b; font-size: 14px;">Translating Untranslated Tracks & Videos...</strong>
-                <span id="kc-auto-translate-status" style="color: #64748b; font-size: 13px; font-weight: 600;">0 / 0</span>
-            </div>
-            <div style="width: 100%; background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden;">
-                <div id="kc-auto-translate-bar" style="height: 100%; background: #059669; width: 0%; transition: width 0.3s ease;"></div>
             </div>
         </div>
 
@@ -76,7 +54,7 @@ foreach ($saved_translations as $k => $v) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($all_strings as $english_key => $default_arabic) : 
+                    <?php foreach ($registered_strings as $english_key => $default_arabic) : 
                         $current_val = isset($saved_translations[$english_key]) ? $saved_translations[$english_key] : '';
                     ?>
                     <tr>
@@ -88,16 +66,6 @@ foreach ($saved_translations as $k => $v) {
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <!-- Add Custom Translation Row -->
-                    <tr style="background: #f8fafc; border-top: 2px dashed #cbd5e1;">
-                        <td style="padding: 16px 24px; border-bottom: 1px solid #f1f5f9;">
-                            <input type="text" name="kc_trans_new_key" value="" placeholder="Type exact English track name..." style="width: 100%; border: 1px solid #cbd5e1; background: #fff; font-size: 14px; color: #1e293b; font-weight: 500; outline: none; padding: 10px; border-radius: 6px;" class="kc-trans-input-new">
-                            <p style="margin: 6px 0 0; font-size: 12px; color: #64748b;">Add a new track or video name</p>
-                        </td>
-                        <td style="padding: 16px 24px; border-bottom: 1px solid #f1f5f9;">
-                            <input type="text" name="kc_trans_new_val" value="" placeholder="Type Arabic translation..." style="width: 100%; border: 1px solid #cbd5e1; background: #fff; font-size: 14px; color: #059669; font-weight: 700; outline: none; padding: 10px; border-radius: 6px;" class="kc-trans-input-new">
-                        </td>
-                    </tr>
                 </tbody>
             </table>
         </div>

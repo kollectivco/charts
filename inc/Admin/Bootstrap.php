@@ -29,7 +29,6 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
 		add_action( 'wp_ajax_charts_save_manual_order', array( self::class, 'handle_save_manual_order' ) );
 		add_action( 'wp_ajax_charts_generate_franco', array( self::class, 'handle_generate_franco' ) );
-		add_action( 'wp_ajax_charts_api_translate_strings', array( self::class, 'handle_api_translate_strings' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -166,14 +165,6 @@ class Bootstrap {
 					$translations = array_filter( $translations, function($val) {
 						return trim($val) !== '';
 					});
-					
-					// Handle new custom translation
-					$new_key = isset($_POST['kc_trans_new_key']) ? sanitize_text_field(wp_unslash($_POST['kc_trans_new_key'])) : '';
-					$new_val = isset($_POST['kc_trans_new_val']) ? sanitize_text_field(wp_unslash($_POST['kc_trans_new_val'])) : '';
-					if (!empty($new_key) && !empty($new_val)) {
-						$translations[$new_key] = $new_val;
-					}
-					
 					update_option( 'kcharts_translations', $translations );
 					\Charts\Core\Notify::success( __( 'Translations updated successfully.', 'charts' ), __( 'Settings Saved', 'charts' ) );
 				}
@@ -262,6 +253,11 @@ class Bootstrap {
 					wp_redirect( admin_url( 'admin.php?page=charts-import&sync_complete=1&run_id=' . $run_id ) );
 					exit;
 				}
+				$processed = true;
+				break;
+			
+			case 'import_billboard_url':
+				self::process_billboard_import();
 				$processed = true;
 				break;
 			
@@ -515,6 +511,7 @@ class Bootstrap {
 			array( 'title' => 'Quick Translation', 'slug' => 'charts-translations', 'callback' => 'render_translations' ),
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
 			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
+			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
 		);
 
 		foreach ( $menus as $m ) {
@@ -623,6 +620,10 @@ class Bootstrap {
 		self::render_view( 'import-center' );
 	}
 
+	public static function render_billboard_import() {
+		include CHARTS_PATH . 'admin/views/billboard-import.php';
+	}
+
 	public static function render_results_history() {
 		self::render_view( 'results' );
 	}
@@ -632,6 +633,30 @@ class Bootstrap {
 	 * Process Unified Import.
 	 * Routes to the correct platform handler based on selection.
 	 */
+	private static function process_billboard_import() {
+		$url           = esc_url_raw( $_POST['billboard_url'] ?? '' );
+		$definition_id = intval( $_POST['definition_id'] ?? 0 );
+		$chart_date    = sanitize_text_field( $_POST['chart_date'] ?? '' );
+
+		if ( empty($url) || empty($definition_id) || empty($chart_date) ) {
+			wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&import=failed&reason=' . urlencode('Missing required fields.') ) );
+			exit;
+		}
+
+		require_once CHARTS_PATH . 'inc/Services/BillboardImporter.php';
+		
+		$importer = new \Charts\Services\BillboardImporter();
+		$result = $importer->run( $url, $definition_id, $chart_date );
+
+		if ( is_wp_error( $result ) ) {
+			wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&import=failed&reason=' . urlencode($result->get_error_message()) ) );
+			exit;
+		}
+
+		wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&import=success&count=' . $result['saved'] ) );
+		exit;
+	}
+
 	private static function process_unified_import() {
 		$platform = sanitize_text_field( $_POST['platform'] ?? 'spotify' );
 		
@@ -1195,9 +1220,8 @@ class Bootstrap {
 	/**
 	 * Helper to safely render an admin view.
 	 */
-
 	/**
-	 * Search for missing entities and assign them.
+	 * AJAX logic to search for entities to add to manual charts.
 	 */
 	public static function handle_search_entities() {
 		check_ajax_referer( 'charts_admin_action', 'nonce' );
@@ -1210,36 +1234,6 @@ class Bootstrap {
 
 		$results = \Charts\Core\EntityManager::search_entities( $type, $query );
 		wp_send_json_success( $results );
-	}
-
-	/**
-	 * Handle API Batch Translation requests.
-	 */
-	public static function handle_api_translate_strings() {
-		check_ajax_referer( 'charts_admin_action' );
-		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permission denied.' );
-
-		require_once CHARTS_PATH . 'inc/Services/TranslationApiService.php';
-		$service = new \Charts\Services\TranslationApiService();
-
-		if ( ! $service->is_configured() ) {
-			wp_send_json_error( 'Google Translate API Key is not configured in Settings.' );
-		}
-
-		$step = sanitize_text_field( $_POST['step'] ?? 'get_strings' );
-
-		if ( $step === 'get_strings' ) {
-			$strings = $service->get_untranslated_strings();
-			wp_send_json_success( array( 'strings' => $strings ) );
-		} elseif ( $step === 'translate_chunk' ) {
-			$chunk = isset($_POST['strings']) && is_array($_POST['strings']) ? array_map('sanitize_text_field', wp_unslash($_POST['strings'])) : [];
-			if ( empty($chunk) ) wp_send_json_error( 'No strings provided.' );
-			
-			$translations = $service->translate_batch($chunk);
-			wp_send_json_success( array( 'translations' => $translations ) );
-		}
-
-		wp_send_json_error( 'Invalid step.' );
 	}
 
 	/**

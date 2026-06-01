@@ -142,13 +142,7 @@ $panel = [
             'youtube' => [
                 'title' => 'YouTube Analytics',
                 'fields' => [
-                    [ 'id' => 'api.youtube_api_key', 'type' => 'password', 'label' => 'YouTube API Key' ],
-                ]
-            ],
-            'google' => [
-                'title' => 'Google Cloud Translation',
-                'fields' => [
-                    [ 'id' => 'api.google_translate_key', 'type' => 'password', 'label' => 'Google Translate API Key', 'desc' => 'Required for automatic batch translations.' ],
+                    [ 'id' => 'api.youtube_api_key', 'type' => 'password', 'label' => 'Google Cloud API Key' ],
                 ]
             ],
             'github' => [

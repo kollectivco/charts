@@ -306,6 +306,63 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 
 		</div>
 
+		<!-- LATEST NEWS -->
+		<?php 
+		$news_args = array(
+			'post_type' => 'post',
+			'posts_per_page' => 4,
+			'tax_query' => array(
+				array(
+					'taxonomy' => 'artists', // Standard post taxonomy mapped to this
+					'field'    => 'name',
+					'terms'    => $artist->display_name,
+				),
+			),
+		);
+		$news_query = new \WP_Query( $news_args );
+
+		if ( $news_query->have_posts() ) :
+		?>
+		<section class="kc-section" style="padding-top: 80px;" dir="rtl">
+			<div class="kc-section-header" style="justify-content: flex-start; margin-bottom: 32px;">
+				<h2 class="kc-section-title" style="font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -0.02em;">آخر أخبار <?php echo esc_html(\Charts\Core\Translation::get($artist->display_name)); ?></h2>
+			</div>
+			
+			<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+				<?php while ( $news_query->have_posts() ) : $news_query->the_post(); 
+					$cats = get_the_category();
+					$cat_name = !empty($cats) ? $cats[0]->name : 'موسيقى';
+					$thumb = get_the_post_thumbnail_url(get_the_ID(), 'medium_large') ?: CHARTS_URL . 'public/assets/img/placeholder.png';
+					$author_name = get_the_author();
+					if ( empty($author_name) ) $author_name = 'بيلبورد عربية';
+				?>
+					<a href="<?php the_permalink(); ?>" style="text-decoration: none; display: flex; background: #272732; border-radius: 4px; padding: 24px; gap: 24px; transition: transform 0.2s;">
+						<!-- Image (First child in RTL = Right) -->
+						<div style="width: 180px; height: 120px; flex-shrink: 0;">
+							<img src="<?php echo esc_url($thumb); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+						</div>
+						
+						<!-- Content (Left) -->
+						<div style="flex: 1; display: flex; flex-direction: column;">
+							<div style="display: flex; justify-content: flex-start; margin-bottom: 12px;">
+								<span style="font-size: 13px; color: #cbd5e1; border-bottom: 2px solid #e11d48; padding-bottom: 6px; font-weight: 700;"><?php echo esc_html($cat_name); ?></span>
+							</div>
+							<h3 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0 0 16px; line-height: 1.5; text-align: right;"><?php the_title(); ?></h3>
+							
+							<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; color: #94a3b8; font-size: 12px; font-weight: 500;">
+								<span><?php echo esc_html($author_name); ?></span>
+								<span style="display: flex; align-items: center; gap: 8px;">
+									<?php echo get_the_date('d F Y'); ?>
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+								</span>
+							</div>
+						</div>
+					</a>
+				<?php endwhile; wp_reset_postdata(); ?>
+			</div>
+		</section>
+		<?php endif; ?>
+
 		<!-- MORE CHARTS -->
 		<section class="kc-section" style="padding-top: 100px;">
 			<div class="kc-section-header">

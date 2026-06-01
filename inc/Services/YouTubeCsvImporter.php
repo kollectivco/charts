@@ -282,18 +282,6 @@ class YouTubeCsvImporter {
 				try {
 					( new Analyzer() )->analyze_period( $period_id, $source_id );
 					\Charts\Admin\Bootstrap::clear_frontend_caches();
-					
-					// Auto-Translate the newly imported data
-					if ( class_exists('\Charts\Services\TranslationApiService') ) {
-						$translator = new \Charts\Services\TranslationApiService();
-						if ( $translator->is_configured() ) {
-							$untranslated = $translator->get_untranslated_strings();
-							if ( !empty($untranslated) ) {
-								$translator->translate_batch($untranslated);
-							}
-						}
-					}
-					
 				} catch ( \Exception $e ) {}
 			}
 
