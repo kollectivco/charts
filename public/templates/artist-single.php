@@ -127,8 +127,13 @@ foreach($popular_tracks as $pt) {
 $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
-	WHERE (e.item_id = %d AND e.item_type = 'artist')
-	   OR (e.artist_names LIKE %s AND e.item_type = 'artist')
+	INNER JOIN (
+		SELECT MAX(e2.id) as max_id 
+		FROM {$wpdb->prefix}charts_entries e2
+		WHERE (e2.item_id = %d AND e2.item_type = 'artist')
+		   OR (e2.artist_names LIKE %s AND e2.item_type = 'artist')
+		GROUP BY e2.source_id
+	) latest ON latest.max_id = e.id
 	ORDER BY e.rank_position ASC LIMIT 4
 ", $artist->id, $artist_name_escaped ) );
 
@@ -264,10 +269,10 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 								<div class="kc-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;">
 									<div style="display: flex; align-items: center; gap: 12px;">
 										<img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($artist, 'artist')); ?>" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
-										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class($cr->definition_title); ?>"><?php echo esc_html($cr->definition_title ?: 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين'); ?></span>
+										<span style="font-size: 13px; font-weight: 800;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($cr->definition_title ?: 'Top Artists')); ?>"><?php echo esc_html(\Charts\Core\Translation::get($cr->definition_title ?: 'Top Artists')); ?></span>
 									</div>
 									<div style="text-align: right;">
-										<div style="font-size: 24px; font-weight: 950; color: var(--k-text);">#<?php echo $cr->rank_position; ?></div>
+										<div style="font-size: 24px; font-weight: 950; color: var(--k-text);">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($cr->rank_position); ?></div>
 									</div>
 								</div>
 							<?php endforeach; ?>
