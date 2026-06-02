@@ -139,6 +139,42 @@ if ($has_data) {
         $market_where
         ORDER BY i.weeks_on_chart DESC LIMIT 4
     ");
+
+    // 6. Biggest Losers (Negative Momentum)
+    $biggest_losers = $wpdb->get_results("
+        SELECT i.*, 
+               CASE WHEN i.entity_type = 'artist' THEN a.display_name ELSE t.title END as asset_name,
+               CASE WHEN i.entity_type = 'artist' THEN a.image ELSE t.cover_image END as asset_img
+        FROM $intel_table i
+        LEFT JOIN $artists_table a ON i.entity_type = 'artist' AND a.id = i.entity_id
+        LEFT JOIN $tracks_table t ON (i.entity_type = 'track' OR i.entity_type = 'video') AND t.id = i.entity_id
+        $market_where AND i.trend_status = 'falling'
+        ORDER BY i.momentum_score ASC LIMIT 6
+    ");
+
+    // 7. Genre Pulse
+    $top_artists_meta = $wpdb->get_col("
+        SELECT a.metadata_json
+        FROM $intel_table i
+        JOIN $artists_table a ON a.id = i.entity_id
+        $market_where AND i.entity_type = 'artist'
+        ORDER BY i.momentum_score DESC LIMIT 50
+    ");
+
+    $genre_counts = [];
+    foreach ($top_artists_meta as $meta) {
+        if (empty($meta)) continue;
+        $data = json_decode($meta, true);
+        if (!empty($data['genres']) && is_array($data['genres'])) {
+            foreach ($data['genres'] as $genre) {
+                $g = ucwords(strtolower($genre));
+                if (!isset($genre_counts[$g])) $genre_counts[$g] = 0;
+                $genre_counts[$g]++;
+            }
+        }
+    }
+    arsort($genre_counts);
+    $genre_pulse = array_slice($genre_counts, 0, 5, true);
 }
 ?>
 
@@ -154,6 +190,10 @@ if ($has_data) {
                 <span class="sync-label"><?php _e( 'Last Pulse:', 'charts' ); ?></span>
                 <span class="sync-time"><?php echo $stats['last_sync'] ? human_time_diff(strtotime($stats['last_sync'])) . ' ago' : 'Never'; ?></span>
             </div>
+            <a href="<?php echo esc_url( wp_nonce_url( admin_url('admin-ajax.php?action=charts_export_intelligence'), 'charts_export_intelligence' ) ); ?>" class="charts-btn" style="background:#fff; color:var(--charts-primary); border:1px solid #cbd5e1; margin-right: 10px;">
+                <span class="dashicons dashicons-download" style="vertical-align:middle; margin-top:2px;"></span>
+                <?php _e( 'Export CSV', 'charts' ); ?>
+            </a>
             <button class="charts-btn-secondary premium-pulse" onclick="recalculateIntelligence()" id="intel-recalc-btn">
                 <span class="dashicons dashicons-update"></span>
                 <?php _e( 'Re-polarize Signals', 'charts' ); ?>
@@ -334,6 +374,94 @@ if ($has_data) {
                                         <td class="text-right">
                                             <div class="v-track-bg">
                                                 <div class="v-track-fill" style="width: <?php echo min(100, $t->growth_rate * 4); ?>%;"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Biggest Losers Column -->
+                <div class="intel-block-card span-6">
+                    <header class="block-header" style="background: #fef2f2;">
+                        <div class="block-title-wrap">
+                            <span class="block-tag" style="color: #ef4444;"><?php _e( 'Biggest Losers', 'charts' ); ?></span>
+                            <h3><?php _e( 'Negative Momentum', 'charts' ); ?></h3>
+                        </div>
+                    </header>
+                    <div class="block-body no-padding">
+                        <table class="intel-mini-table">
+                            <thead>
+                                <tr>
+                                    <th><?php _e( 'Asset', 'charts' ); ?></th>
+                                    <th><?php _e( 'Momentum Drop', 'charts' ); ?></th>
+                                    <th class="text-right"><?php _e( 'Status', 'charts' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($biggest_losers)) : ?>
+                                    <tr><td colspan="3" class="text-center" style="padding: 40px; color: #94a3b8;"><?php _e( 'No significant falling signals detected.', 'charts' ); ?></td></tr>
+                                <?php else : ?>
+                                    <?php foreach ($biggest_losers as $t): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="asset-flex">
+                                                <img src="<?php echo esc_url($t->asset_img ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="asset-thumb">
+                                                <div class="asset-meta">
+                                                    <span class="asset-name"><?php echo esc_html($t->asset_name); ?></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="growth-val" style="color: #ef4444;"><?php echo number_format($t->momentum_score, 1); ?></td>
+                                        <td class="text-right">
+                                            <span class="intel-status-tag is-falling">FALLING</span>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Genre Pulse Column -->
+                <div class="intel-block-card span-6">
+                    <header class="block-header" style="background: #fdf4ff;">
+                        <div class="block-title-wrap">
+                            <span class="block-tag" style="color: #d946ef;"><?php _e( 'Genre Pulse', 'charts' ); ?></span>
+                            <h3><?php _e( 'Trending Music Genres', 'charts' ); ?></h3>
+                        </div>
+                    </header>
+                    <div class="block-body no-padding">
+                        <table class="intel-mini-table">
+                            <thead>
+                                <tr>
+                                    <th><?php _e( 'Genre', 'charts' ); ?></th>
+                                    <th class="text-right"><?php _e( 'Dominance', 'charts' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($genre_pulse)) : ?>
+                                    <tr><td colspan="2" class="text-center" style="padding: 40px; color: #94a3b8;"><?php _e( 'Not enough Spotify metadata to determine genres.', 'charts' ); ?></td></tr>
+                                <?php else : 
+                                    $max_count = max($genre_pulse);
+                                ?>
+                                    <?php foreach ($genre_pulse as $genre => $count): 
+                                        $percent = min(100, ($count / $max_count) * 100);
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: 800; color: var(--charts-primary); font-size: 14px; text-transform: capitalize;"><?php echo esc_html($genre); ?></div>
+                                        </td>
+                                        <td class="text-right">
+                                            <div style="display:flex; align-items:center; justify-content: flex-end; gap: 10px;">
+                                                <span style="font-weight: 800; color: #d946ef; font-size: 12px;"><?php echo $count; ?> Artists</span>
+                                                <div class="v-track-bg" style="width: 80px; background: #fae8ff;">
+                                                    <div class="v-track-fill" style="width: <?php echo $percent; ?>%; background: #d946ef;"></div>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>

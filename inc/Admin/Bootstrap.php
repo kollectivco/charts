@@ -32,6 +32,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_process_merge', array( self::class, 'handle_process_merge' ) );
 		add_action( 'wp_ajax_charts_save_matching_id', array( self::class, 'handle_save_matching_id' ) );
 		add_action( 'wp_ajax_charts_search_spotify_matching', array( self::class, 'handle_search_spotify_matching' ) );
+		add_action( 'wp_ajax_charts_export_intelligence', array( self::class, 'handle_export_intelligence' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1511,5 +1512,42 @@ class Bootstrap {
 		} catch ( \Throwable $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+	}
+
+	/**
+	 * Export Intelligence Data as CSV.
+	 */
+	public static function handle_export_intelligence() {
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'charts_export_intelligence' ) ) {
+			wp_die( 'Security check failed.' );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Unauthorized' );
+		}
+
+		global $wpdb;
+		$intel_table = $wpdb->prefix . 'charts_intelligence';
+
+		$data = $wpdb->get_results("
+			SELECT entity_type, entity_id, momentum_score, growth_rate, trend_status, weeks_on_chart, last_calculated_at 
+			FROM $intel_table 
+			ORDER BY momentum_score DESC 
+			LIMIT 1000
+		", ARRAY_A);
+
+		header('Content-Type: text/csv; charset=utf-8');
+		header('Content-Disposition: attachment; filename=charts_intelligence_' . date('Y-m-d') . '.csv');
+
+		$output = fopen('php://output', 'w');
+		fputcsv($output, array('Entity Type', 'Entity ID', 'Momentum Score', 'Growth Rate (%)', 'Trend Status', 'Weeks On Chart', 'Calculated At'));
+
+		if (!empty($data)) {
+			foreach ($data as $row) {
+				fputcsv($output, $row);
+			}
+		}
+
+		fclose($output);
+		exit;
 	}
 }
