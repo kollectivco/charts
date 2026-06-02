@@ -147,19 +147,137 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 			<!-- stats (left) -->
 			<div>
 				<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 24px;"><?php echo \Charts\Core\Translation::get('Track Stats'); ?></h3>
+				<style>
+					@keyframes pulse-red {
+						0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+						70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+						100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+					}
+				</style>
 				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 					<?php 
 					$item_stats = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = %s AND entity_id = %d", $type, $item->id ) );
 					if ( $item_stats ) : 
+						$meta_data = !empty($item_stats->metadata_json) ? json_decode($item_stats->metadata_json, true) : [];
+						$trend_dir = $meta_data['trend_direction'] ?? 'Stable';
+						$viral_status = $meta_data['viral_status'] ?? 'None';
+						$top_10_prob = $meta_data['top_10_prob'] ?? 0;
+						$top_5_prob = $meta_data['top_5_prob'] ?? 0;
+						$no_1_prob = $meta_data['no_1_prob'] ?? 0;
+						$current_rank = 0;
+						
+						// Find latest rank position
+						$latest_rank = $wpdb->get_var($wpdb->prepare("SELECT rank_position FROM $entries_table WHERE item_type = %s AND item_id = %d ORDER BY id DESC LIMIT 1", $type, $item->id));
+						if ($latest_rank) {
+							$current_rank = intval($latest_rank);
+						}
 					?>
 						<?php if ( ! empty($item_stats->weeks_on_chart) ) : ?>
-						<div class="kc-stat-pill">
+						<div class="kc-stat-pill" style="grid-column: span 2;">
 							<label><?php echo \Charts\Core\Translation::get('wks on chart'); ?></label>
 							<span class="val"><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($item_stats->weeks_on_chart)); ?></span>
 						</div>
 						<?php endif; ?>
+
+						<!-- PREMIUM PREDICTION WIDGETS -->
+						<div class="forecast-nexus-card" style="grid-column: span 2; background: #fff; border: 1px solid var(--k-border); border-radius: 20px; padding: 24px; margin-top: 10px; box-shadow: var(--k-shadow-sm); position: relative; overflow: hidden;">
+							<div class="forecast-badge" style="background: linear-gradient(90deg, #6366f1, #fe025b); color: #fff; font-size: 9px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 30px; display: inline-block; margin-bottom: 15px; letter-spacing: 0.05em;">
+								FORECAST MATRIX
+							</div>
+
+							<!-- 1. Prediction Card -->
+							<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px; background: #fafafa; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9;">
+								<div>
+									<span style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Predicted Peak</span>
+									<span style="display:block; font-size:32px; font-weight:950; color:#6366f1; line-height: 1.1; margin-top: 4px;">#<?php echo intval($item_stats->predicted_peak ?: $peak_rank); ?></span>
+								</div>
+								<div style="text-align: right;">
+									<span style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Confidence</span>
+									<span style="display:block; font-size:20px; font-weight:900; color:#1e293b; margin-top: 4px;"><?php echo round($item_stats->confidence_score); ?>%</span>
+								</div>
+							</div>
+
+							<!-- 2. Trend Gauge & Viral Alert Status -->
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; font-size:13px; font-weight:700;">
+								<div>
+									<span style="font-size:10px; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom: 4px;">Trend Direction</span>
+									<span style="color: <?php echo $trend_dir === 'Strong Upward' || $trend_dir === 'Upward' ? '#10b981' : ($trend_dir === 'Declining' ? '#ef4444' : '#64748b'); ?>;">
+										<?php echo esc_html($trend_dir); ?>
+									</span>
+								</div>
+								<?php if ($viral_status !== 'None') : ?>
+									<div style="text-align: right;">
+										<span style="font-size:10px; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom: 4px;">Viral Alert</span>
+										<span style="background:#fef2f2; color:#ef4444; font-size:10px; font-weight:900; padding:3px 8px; border-radius:5px; display: inline-block; animation: pulse-red 2s infinite;">
+											<?php echo esc_html(strtoupper($viral_status)); ?>
+										</span>
+									</div>
+								<?php endif; ?>
+							</div>
+
+							<!-- 3. Meters Group -->
+							<div style="margin-bottom: 25px;">
+								<div style="margin-bottom: 12px;">
+									<div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom: 4px;">
+										<span style="color:#64748b;">Momentum Meter</span>
+										<span style="color:#6366f1; font-weight:800;"><?php echo round($item_stats->momentum_score); ?>/100</span>
+									</div>
+									<div style="width:100%; height:6px; background:#f1f5f9; border-radius:3px;">
+										<div style="width:<?php echo round($item_stats->momentum_score); ?>%; height:100%; background:#6366f1; border-radius:3px;"></div>
+									</div>
+								</div>
+								<div>
+									<div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom: 4px;">
+										<span style="color:#64748b;">Viral Meter</span>
+										<span style="color:#fe025b; font-weight:800;"><?php echo round($item_stats->viral_score); ?>/100</span>
+									</div>
+									<div style="width:100%; height:6px; background:#f1f5f9; border-radius:3px;">
+										<div style="width:<?php echo round($item_stats->viral_score); ?>%; height:100%; background:#fe025b; border-radius:3px;"></div>
+									</div>
+								</div>
+							</div>
+
+							<!-- 4. Forecast Timeline -->
+							<div style="margin-bottom: 25px; background: #fafafa; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9;">
+								<span style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom: 12px;">Forecast Timeline</span>
+								<div style="display:flex; justify-content:space-between; position:relative; align-items:center;">
+									<div style="position:absolute; left:15%; right:15%; height:2px; background:#cbd5e1; z-index: 1;"></div>
+									<div style="z-index: 2; text-align:center; background:#fafafa; padding: 0 5px;">
+										<span style="font-size:10px; color:#94a3b8; display:block; font-weight:700; text-transform:uppercase;">Current</span>
+										<span style="font-size:14px; font-weight:900; color:#1e293b; margin-top:2px; display:block;">#<?php echo intval($current_rank); ?></span>
+									</div>
+									<div style="z-index: 2; text-align:center; background:#fafafa; padding: 0 5px;">
+										<span style="font-size:10px; color:#94a3b8; display:block; font-weight:700; text-transform:uppercase;">Next Week</span>
+										<span style="font-size:14px; font-weight:900; color:#10b981; margin-top:2px; display:block;">#<?php echo intval($item_stats->predicted_next_week); ?></span>
+									</div>
+									<div style="z-index: 2; text-align:center; background:#fafafa; padding: 0 5px;">
+										<span style="font-size:10px; color:#94a3b8; display:block; font-weight:700; text-transform:uppercase;">Next Month</span>
+										<span style="font-size:14px; font-weight:900; color:#6366f1; margin-top:2px; display:block;">#<?php echo intval($item_stats->predicted_next_month); ?></span>
+									</div>
+								</div>
+							</div>
+
+							<!-- 5. Probability sigmoids -->
+							<div>
+								<span style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom: 12px;">Probability Metrics</span>
+								<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align:center;">
+									<div style="background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #f1f5f9;">
+										<span style="font-size:8px; color:#94a3b8; display:block; font-weight:700; text-transform:uppercase;">Top 10 Chance</span>
+										<strong style="font-size:16px; color:#1e293b; display:block; margin-top:4px; font-weight:950;"><?php echo $top_10_prob; ?>%</strong>
+									</div>
+									<div style="background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #f1f5f9;">
+										<span style="font-size:8px; color:#94a3b8; display:block; font-weight:700; text-transform:uppercase;">Top 5 Chance</span>
+										<strong style="font-size:16px; color:#6366f1; display:block; margin-top:4px; font-weight:950;"><?php echo $top_5_prob; ?>%</strong>
+									</div>
+									<div style="background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #f1f5f9;">
+										<span style="font-size:8px; color:#94a3b8; display:block; font-weight:700; text-transform:uppercase;">#1 Chance</span>
+										<strong style="font-size:16px; color:#fe025b; display:block; margin-top:4px; font-weight:950;"><?php echo $no_1_prob; ?>%</strong>
+									</div>
+								</div>
+							</div>
+						</div>
 					<?php else : ?>
-						<p style="font-size: 11px; color: var(--k-text-muted); grid-column: span 2;"><?php echo \Charts\Core\Translation::get('Analytics still processing for this item.'); ?></p
+						<p style="font-size: 11px; color: var(--k-text-muted); grid-column: span 2;"><?php echo \Charts\Core\Translation::get('Analytics still processing for this item.'); ?></p>
 					<?php endif; ?>
 				</div>
 

@@ -305,6 +305,14 @@ class Schema {
 				`entity_type` ENUM('track','video','artist','chart') NOT NULL,
 				`entity_id` BIGINT(20) UNSIGNED NOT NULL,
 				`momentum_score` DECIMAL(10,2) DEFAULT 0,
+				`viral_score` DECIMAL(10,2) DEFAULT 0,
+				`stability_score` DECIMAL(10,2) DEFAULT 0,
+				`longevity_score` DECIMAL(10,2) DEFAULT 0,
+				`predicted_peak` INT(11) DEFAULT NULL,
+				`predicted_next_week` INT(11) DEFAULT NULL,
+				`predicted_next_month` INT(11) DEFAULT NULL,
+				`confidence_score` DECIMAL(10,2) DEFAULT 0,
+				`artist_power_score` DECIMAL(10,2) DEFAULT 0,
 				`growth_rate` DECIMAL(10,2) DEFAULT 0,
 				`trend_status` VARCHAR(20) DEFAULT 'stable',
 				`total_streams` BIGINT(20) DEFAULT 0,
@@ -523,6 +531,25 @@ class Schema {
 		foreach ( $def_needed as $col => $definition ) {
 			if ( ! in_array( $col, $def_cols, true ) ) {
 				$wpdb->query( "ALTER TABLE `$definitions_tbl` ADD COLUMN `$col` $definition" );
+			}
+		}
+
+		// Upgrade intelligence table
+		$intelligence_tbl = $wpdb->prefix . 'charts_intelligence';
+		$intel_cols = $wpdb->get_col( "DESCRIBE $intelligence_tbl", 0 );
+		$intel_needed = array(
+			'viral_score'          => "DECIMAL(10,2) DEFAULT 0",
+			'stability_score'      => "DECIMAL(10,2) DEFAULT 0",
+			'longevity_score'      => "DECIMAL(10,2) DEFAULT 0",
+			'predicted_peak'       => "INT(11) DEFAULT NULL",
+			'predicted_next_week'  => "INT(11) DEFAULT NULL",
+			'predicted_next_month' => "INT(11) DEFAULT NULL",
+			'confidence_score'     => "DECIMAL(10,2) DEFAULT 0",
+			'artist_power_score'   => "DECIMAL(10,2) DEFAULT 0",
+		);
+		foreach ( $intel_needed as $col => $definition ) {
+			if ( ! in_array( $col, $intel_cols, true ) ) {
+				$wpdb->query( "ALTER TABLE `$intelligence_tbl` ADD COLUMN `$col` $definition" );
 			}
 		}
 	}

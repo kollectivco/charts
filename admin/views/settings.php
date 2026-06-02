@@ -153,6 +153,34 @@ $panel = [
             ]
         ]
     ],
+    'prediction' => [
+        'title' => 'Prediction Engine',
+        'sections' => [
+            'general' => [
+                'title' => 'Module Activation',
+                'fields' => [
+                    [ 'id' => 'prediction.enable', 'type' => 'switch', 'label' => 'Enable Prediction & Forecasting Module' ],
+                ]
+            ],
+            'weights' => [
+                'title' => 'Calculation Weights (Total = 100%)',
+                'fields' => [
+                    [ 'id' => 'prediction.weight_momentum', 'type' => 'range', 'label' => 'Momentum Weight (%)', 'min' => 0, 'max' => 100 ],
+                    [ 'id' => 'prediction.weight_stability', 'type' => 'range', 'label' => 'Stability Weight (%)', 'min' => 0, 'max' => 100 ],
+                    [ 'id' => 'prediction.weight_viral', 'type' => 'range', 'label' => 'Viral Weight (%)', 'min' => 0, 'max' => 100 ],
+                    [ 'id' => 'prediction.weight_longevity', 'type' => 'range', 'label' => 'Longevity Weight (%)', 'min' => 0, 'max' => 100 ],
+                ]
+            ],
+            'thresholds' => [
+                'title' => 'Viral Status Thresholds',
+                'fields' => [
+                    [ 'id' => 'prediction.viral_emerging_threshold', 'type' => 'number', 'label' => 'Viral Emerging Threshold (0-100)', 'min' => 0, 'max' => 100 ],
+                    [ 'id' => 'prediction.viral_rising_threshold', 'type' => 'number', 'label' => 'Viral Rising Threshold (0-100)', 'min' => 0, 'max' => 100 ],
+                    [ 'id' => 'prediction.viral_exploding_threshold', 'type' => 'number', 'label' => 'Viral Exploding Threshold (0-100)', 'min' => 0, 'max' => 100 ],
+                ]
+            ]
+        ]
+    ],
     'operations' => [
         'title' => 'Operations',
         'sections' => [

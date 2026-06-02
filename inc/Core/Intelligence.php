@@ -33,6 +33,9 @@ class Intelligence {
 
 		// 3. Process Chart Definitions
 		self::calculate_chart_intelligence();
+
+		// 4. Process Predictions
+		\Charts\Services\PredictionEngine::calculate_all();
 	}
 
 	/**

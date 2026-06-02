@@ -116,6 +116,18 @@ class Settings {
                 'cache_previews'       => 1,
                 'enable_debug_logs'    => 0,
                 'github_access_token'  => '', // Added for authorized update checks
+            ],
+
+            // Prediction Engine
+            'prediction' => [
+                'enable'                     => 1,
+                'weight_momentum'            => 35,
+                'weight_stability'           => 25,
+                'weight_viral'               => 20,
+                'weight_longevity'           => 20,
+                'viral_emerging_threshold'   => 65,
+                'viral_rising_threshold'     => 78,
+                'viral_exploding_threshold'  => 88,
             ]
         ];
     }

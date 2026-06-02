@@ -181,6 +181,37 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<?php endforeach; ?>
 					</div>
 				<?php endif; ?>
+
+				<?php 
+				$artist_stats = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'artist' AND entity_id = %d", $artist->id));
+				if ($artist_stats) :
+					$art_meta = !empty($artist_stats->metadata_json) ? json_decode($artist_stats->metadata_json, true) : [];
+					$pred_rank = $art_meta['predicted_artist_rank'] ?? $artist_stats->predicted_peak;
+				?>
+					<div class="artist-power-strip" style="display:flex; align-items:center; gap: 25px; margin-top: 25px; background: #fff; border: 1px solid var(--k-border); padding: 15px 25px; border-radius: 14px;">
+						<div>
+							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Artist Power Score</span>
+							<div style="display:flex; align-items:center; gap: 10px;">
+								<span style="font-size: 24px; font-weight:950; color:#6366f1; line-height:1;"><?php echo round($artist_stats->artist_power_score); ?></span>
+								<div class="v-track-bg" style="width: 80px; height: 5px; background:#f1f5f9; border-radius:2px; display:inline-block; position:relative;">
+									<div class="v-track-fill" style="width: <?php echo min(100, $artist_stats->artist_power_score); ?>%; height:100%; background:linear-gradient(90deg, #6366f1, #fe025b); border-radius:2px; position:absolute; top:0; left:0;"></div>
+								</div>
+							</div>
+						</div>
+						<div style="border-left: 1px solid var(--k-border); padding-left: 20px;">
+							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Predicted Artist Rank</span>
+							<span style="font-size:20px; font-weight:900; color:var(--k-text); line-height:1; display:block; margin-top:2px;">#<?php echo intval($pred_rank); ?></span>
+						</div>
+						<div style="border-left: 1px solid var(--k-border); padding-left: 20px;">
+							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Expected New Entries</span>
+							<span style="font-size:20px; font-weight:900; color:#10b981; line-height:1; display:block; margin-top:2px;"><?php echo intval($artist_stats->predicted_next_week); ?></span>
+						</div>
+						<div style="border-left: 1px solid var(--k-border); padding-left: 20px;">
+							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Expected Growth</span>
+							<span style="font-size:20px; font-weight:900; color:#fe025b; line-height:1; display:block; margin-top:2px;"><?php echo round($artist_stats->predicted_next_month); ?>%</span>
+						</div>
+					</div>
+				<?php endif; ?>
 			</div>
 		</header>
 

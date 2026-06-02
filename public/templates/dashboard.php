@@ -34,6 +34,9 @@ switch ( $module ) {
 	case 'intelligence':
 		$title = 'Intelligence & Insights';
 		break;
+	case 'forecast':
+		$title = 'Chart Performance Forecasting';
+		break;
 	case 'settings':
 		$title = 'Platform Settings';
 		break;
