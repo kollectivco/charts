@@ -29,6 +29,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
 		add_action( 'wp_ajax_charts_save_manual_order', array( self::class, 'handle_save_manual_order' ) );
 		add_action( 'wp_ajax_charts_generate_franco', array( self::class, 'handle_generate_franco' ) );
+		add_action( 'wp_ajax_charts_process_merge', array( self::class, 'handle_process_merge' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -512,6 +513,7 @@ class Bootstrap {
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
 			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
 			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
+			array( 'title' => 'Merge Center', 'slug' => 'charts-merge', 'callback' => 'render_merge_center' ),
 		);
 
 		foreach ( $menus as $m ) {
@@ -622,6 +624,10 @@ class Bootstrap {
 
 	public static function render_billboard_import() {
 		include CHARTS_PATH . 'admin/views/billboard-import.php';
+	}
+
+	public static function render_merge_center() {
+		include CHARTS_PATH . 'admin/views/merge-center.php';
 	}
 
 	public static function render_results_history() {
@@ -1404,5 +1410,43 @@ class Bootstrap {
 		wp_send_json_success( array( 
 			'franco' => ( $franco !== $text ) ? $franco : '' 
 		) );
+	}
+
+	/**
+	 * AJAX: Process Merge Operations
+	 */
+	public static function handle_process_merge() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized.' ) );
+		}
+
+		$type = sanitize_text_field( $_POST['type'] ?? '' );
+		$master_id = intval( $_POST['master_id'] ?? 0 );
+		$duplicate_ids = isset( $_POST['duplicate_ids'] ) ? array_map( 'intval', (array) $_POST['duplicate_ids'] ) : array();
+
+		if ( ! $master_id || empty( $duplicate_ids ) ) {
+			wp_send_json_error( array( 'message' => 'Missing data.' ) );
+		}
+
+		require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
+
+		if ( $type === 'artists' ) {
+			$result = \Charts\Core\MergeEngine::merge_artists( $master_id, $duplicate_ids );
+		} elseif ( $type === 'tracks' ) {
+			$result = \Charts\Core\MergeEngine::merge_tracks( $master_id, $duplicate_ids );
+		} else {
+			wp_send_json_error( array( 'message' => 'Invalid merge type.' ) );
+			return;
+		}
+
+		if ( $result['success'] ) {
+			wp_send_json_success( array( 'message' => $result['message'] ) );
+		} else {
+			wp_send_json_error( array( 'message' => $result['message'] ) );
+		}
 	}
 }
