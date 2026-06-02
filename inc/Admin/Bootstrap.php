@@ -33,6 +33,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_save_matching_id', array( self::class, 'handle_save_matching_id' ) );
 		add_action( 'wp_ajax_charts_search_spotify_matching', array( self::class, 'handle_search_spotify_matching' ) );
 		add_action( 'wp_ajax_charts_export_intelligence', array( self::class, 'handle_export_intelligence' ) );
+		add_action( 'wp_ajax_charts_scan_duplicates', array( self::class, 'handle_scan_duplicates' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1549,5 +1550,95 @@ class Bootstrap {
 
 		fclose($output);
 		exit;
+	}
+
+	/**
+	 * Scans database for potential duplicate clusters.
+	 */
+	public static function handle_scan_duplicates() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+		}
+
+		global $wpdb;
+		$type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : 'artists';
+		$table = ($type === 'artists') ? $wpdb->prefix . 'charts_artists' : $wpdb->prefix . 'charts_tracks';
+		$entries_table = $wpdb->prefix . 'charts_entries';
+		$is_artist = ($type === 'artists');
+
+		// Fetch all entities
+		if ($is_artist) {
+			$entities = $wpdb->get_results("SELECT id, display_name as name, slug FROM $table");
+		} else {
+			$entities = $wpdb->get_results("SELECT id, title as name, slug FROM $table");
+		}
+
+		$clusters = [];
+		$groups = [];
+
+		// Group by normalized name
+		foreach ($entities as $e) {
+			$norm = \Charts\Services\Normalizer::to_franko($e->name);
+			$norm = strtolower(preg_replace('/[^a-zA-Z0-9\x{0600}-\x{06FF}\s]/u', '', $norm)); // remove punctuation
+			$norm = trim(preg_replace('/\s+/', ' ', $norm)); // clean spaces
+			
+			if (empty($norm)) continue;
+			
+			if (!isset($groups[$norm])) {
+				$groups[$norm] = [];
+			}
+			
+			// Count entries for master selection logic
+			$entries_count = 0;
+			if ($is_artist) {
+				$entries_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $entries_table WHERE item_type='artist' AND item_id=%d", $e->id));
+			} else {
+				$entries_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $entries_table WHERE item_type='track' AND item_id=%d", $e->id));
+			}
+
+			$groups[$norm][] = [
+				'id' => $e->id,
+				'name' => $e->name,
+				'slug' => $e->slug,
+				'entries' => (int)$entries_count,
+				'is_master' => false
+			];
+		}
+
+		// Filter groups with > 1 entity
+		foreach ($groups as $norm => $items) {
+			if (count($items) > 1) {
+				// Select master (highest entries)
+				usort($items, function($a, $b) {
+					return $b['entries'] <=> $a['entries'];
+				});
+				
+				// In case of tie, use ID (oldest = master)
+				$max_entries = $items[0]['entries'];
+				$potential_masters = array_filter($items, function($i) use ($max_entries) { return $i['entries'] == $max_entries; });
+				
+				usort($potential_masters, function($a, $b) {
+					return $a['id'] <=> $b['id']; // lowest ID first
+				});
+				
+				$master_id = $potential_masters[0]['id'];
+				
+				foreach ($items as &$item) {
+					if ($item['id'] == $master_id) {
+						$item['is_master'] = true;
+					}
+				}
+
+				$clusters[] = [
+					'normalized_name' => $norm,
+					'entities' => $items
+				];
+			}
+		}
+
+		wp_send_json_success(array('clusters' => array_slice($clusters, 0, 100))); // Limit to 100 to avoid huge payload
 	}
 }

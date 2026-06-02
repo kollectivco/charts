@@ -166,6 +166,11 @@ $entity_type = $type;
 						<span class="dashicons dashicons-database-export"></span>
 						<?php _e( 'Sync All', 'charts' ); ?>
 					</button>
+					<div class="kc-hub-divider"></div>
+					<button type="button" class="kc-hub-btn" onclick="openSmartDeduplicatorModal()" style="color: #d946ef;">
+						<span class="dashicons dashicons-admin-generic"></span>
+						<?php _e( 'Smart Deduplicator', 'charts' ); ?>
+					</button>
 				</div>
 			<?php endif; ?>
 			
@@ -660,7 +665,116 @@ window.confirmBulkMerge = function() {
 		}
 	});
 };
+
+window.openSmartDeduplicatorModal = function() {
+	document.getElementById('smart-dedup-modal').style.display = 'flex';
+	const resultsDiv = document.getElementById('smart-dedup-results');
+	resultsDiv.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;"><span class="dashicons dashicons-update" style="animation: spin 2s linear infinite;"></span><br>Scanning database for duplicates...</div>';
+
+	const formData = new FormData();
+	formData.append('action', 'charts_scan_duplicates');
+	formData.append('_wpnonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
+	formData.append('type', bulkMergeType);
+
+	fetch(ajaxurl, {
+		method: 'POST',
+		body: formData
+	})
+	.then(res => res.json())
+	.then(res => {
+		if (res.success && res.data.clusters) {
+			const clusters = res.data.clusters;
+			if (clusters.length === 0) {
+				resultsDiv.innerHTML = '<div style="padding: 40px; text-align: center; color: #166534; background: #f0fdf4;">No duplicates found! Your database is clean.</div>';
+				return;
+			}
+
+			let html = '<p style="margin-bottom: 15px; font-size: 13px; color: #666;">We found <strong>' + clusters.length + '</strong> clusters of duplicate entities.</p>';
+			
+			clusters.forEach((cluster, idx) => {
+				html += `<div style="background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+					<h4 style="margin: 0 0 10px 0; font-size: 14px;">Cluster ${idx + 1}: <span style="color:#d946ef;">${cluster.normalized_name}</span></h4>
+					<div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 15px;">`;
+				
+				cluster.entities.forEach(ent => {
+					html += `<div style="display:flex; align-items:center; gap:10px; font-size: 12px; background: #fff; padding: 8px; border: 1px solid #e5e7eb; border-radius: 4px;">
+						<span style="color: #999;">ID: ${ent.id}</span>
+						<strong>${ent.name}</strong>
+						<span class="charts-badge charts-badge-neutral">${ent.entries} entries</span>
+						${ent.is_master ? '<span class="charts-badge" style="background:#d946ef; color:#fff;">Suggested Master</span>' : ''}
+					</div>`;
+				});
+
+				html += `</div>
+					<button class="charts-btn-primary" onclick="processSmartMerge(${idx})" id="btn-smart-merge-${idx}" style="background: #111; border-color: #111;">
+						<span class="dashicons dashicons-admin-links" style="margin-top:2px;"></span> Auto-Merge Cluster ${idx + 1}
+					</button>
+				</div>`;
+			});
+
+			// Store clusters for processing
+			window.smartClusters = clusters;
+			resultsDiv.innerHTML = html;
+
+		} else {
+			resultsDiv.innerHTML = '<div style="padding: 20px; color: red;">Failed to scan: ' + (res.data?.message || 'Unknown error') + '</div>';
+		}
+	})
+	.catch(err => {
+		resultsDiv.innerHTML = '<div style="padding: 20px; color: red;">Network error: ' + err.message + '</div>';
+	});
+};
+
+window.closeSmartDeduplicatorModal = function() {
+	document.getElementById('smart-dedup-modal').style.display = 'none';
+};
+
+window.processSmartMerge = function(clusterIndex) {
+	const cluster = window.smartClusters[clusterIndex];
+	const master = cluster.entities.find(e => e.is_master);
+	const duplicates = cluster.entities.filter(e => !e.is_master).map(e => e.id);
+
+	if (!master || duplicates.length === 0) return;
+
+	if (!confirm('Merge these ' + duplicates.length + ' duplicates into ID ' + master.id + '?')) return;
+
+	const btn = document.getElementById('btn-smart-merge-' + clusterIndex);
+	btn.disabled = true;
+	btn.innerHTML = 'Merging...';
+
+	const formData = new FormData();
+	formData.append('action', 'charts_process_merge');
+	formData.append('_wpnonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
+	formData.append('type', bulkMergeType);
+	formData.append('master_id', master.id);
+	
+	duplicates.forEach(id => {
+		formData.append('duplicate_ids[]', id);
+	});
+
+	fetch(ajaxurl, {
+		method: 'POST',
+		body: formData
+	})
+	.then(res => res.json())
+	.then(res => {
+		if (res.success) {
+			btn.innerHTML = 'Merged!';
+			btn.style.background = '#166534';
+			btn.style.borderColor = '#166534';
+		} else {
+			alert('Merge failed: ' + res.data.message);
+			btn.disabled = false;
+			btn.innerHTML = 'Retry';
+		}
+	});
+};
+
 </script>
+
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
 
 <!-- Bulk Merge Modal UI -->
 <div id="bulk-merge-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
@@ -680,6 +794,24 @@ window.confirmBulkMerge = function() {
 		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
 			<button class="charts-btn-secondary" onclick="closeBulkMergeModal()">Cancel</button>
 			<button id="bulk-merge-confirm-btn" class="charts-btn-primary" onclick="confirmBulkMerge()" style="margin-left: 10px; background: #d946ef; border-color: #d946ef;">Confirm Merge</button>
+		</div>
+	</div>
+</div>
+
+<!-- Smart Deduplicator Modal UI -->
+<div id="smart-dedup-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
+	<div style="background: #fff; width: 600px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+		<div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #111;">
+			<h3 style="margin: 0; font-size: 16px; font-weight: bold; color: #fff;">
+				<span class="dashicons dashicons-admin-generic" style="color: #d946ef;"></span> Smart Deduplicator
+			</h3>
+			<button onclick="closeSmartDeduplicatorModal()" style="background: none; border: none; cursor: pointer; font-size: 20px; color: #fff;">&times;</button>
+		</div>
+		<div id="smart-dedup-results" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+			<!-- Results dynamically injected here -->
+		</div>
+		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
+			<button class="charts-btn-secondary" onclick="window.location.reload()">Done</button>
 		</div>
 	</div>
 </div>
