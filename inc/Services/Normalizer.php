@@ -67,6 +67,7 @@ class Normalizer {
 		// We use word boundaries \b for text-based delimiters to avoid splitting names like "Alexander"
 		$delimiters = array(
 			',',
+			'،', // Arabic comma
 			';',
 			'&',
 			' \bfeat\b ',
@@ -74,8 +75,7 @@ class Normalizer {
 			' \bfeaturing\b ',
 			' \band\b ',
 			' \bx\b ',
-			// Arabic 'and' (wa) often appears as space-separated or attached, but attached is risky to split.
-			// Just handle common European/Standard characters here.
+			' و ', // Arabic and
 		);
 
 		// Normalize delimiters to a single character for easy splitting

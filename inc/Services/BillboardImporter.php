@@ -74,8 +74,21 @@ class BillboardImporter {
 			if ( $item_type === 'artist' ) {
 				$item_id = $this->ensure_artist( $entry['artist_name'], $entry['cover_image'] );
 			} else {
-				$primary_artist_id = $this->ensure_artist( $entry['artist_name'] );
+				$all_artists = \Charts\Services\Normalizer::split_artists( $entry['artist_name'] );
+				if (empty($all_artists)) $all_artists = [$entry['artist_name']];
+
+				$primary_artist_id = $this->ensure_artist( $all_artists[0] );
 				$item_id = $this->ensure_track( $entry['track_name'], $primary_artist_id, $entry['cover_image'] );
+
+				// Link all artists to the track in the junction table
+				if ($item_id && count($all_artists) > 0) {
+					$a_ids = [];
+					foreach ($all_artists as $a_name) {
+						$a_id = $this->ensure_artist($a_name);
+						if ($a_id) $a_ids[] = $a_id;
+					}
+					\Charts\Core\EntityManager::link_artists( $item_id, $a_ids, 'track' );
+				}
 			}
 
 			if ( ! $item_id ) continue;
