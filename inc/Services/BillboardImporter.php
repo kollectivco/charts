@@ -164,12 +164,28 @@ class BillboardImporter {
                     $expected_rank = $rank;
                 }
                 
+                $raw_image = '';
+                if ($is_artist) {
+                    $raw_image = isset($jm[4]) ? stripslashes(str_replace('\u002F', '/', $jm[4])) : '';
+                } else {
+                    $raw_image = isset($jm[6]) ? stripslashes(str_replace('\u002F', '/', $jm[6])) : '';
+                }
+                
+                $cover_image = $raw_image;
+                if (!empty($raw_image) && strpos($raw_image, 'http') !== 0) {
+                    if (strpos($raw_image, 'SG') === 0) {
+                        $cover_image = 'https://sys.billboardarabia.com/storage/songs/' . ltrim($raw_image, '/');
+                    } else {
+                        $cover_image = 'https://sys.billboardarabia.com/storage/artists/portrait/' . ltrim($raw_image, '/');
+                    }
+                }
+
                 if ($is_artist) {
                     $current_chart[] = array(
                         'rank' => $rank,
                         'track_name' => '',
                         'artist_name' => str_replace('\\"', '"', !empty($jm[2]) ? $jm[2] : $jm[3]),
-                        'cover_image' => isset($jm[4]) ? stripslashes($jm[4]) : '',
+                        'cover_image' => $cover_image,
                         'previous_rank' => null,
                         'peak_rank' => $rank,
                         'weeks_on_chart' => 1,
@@ -179,7 +195,7 @@ class BillboardImporter {
                         'rank' => $rank,
                         'track_name' => str_replace('\\"', '"', !empty($jm[4]) ? $jm[4] : $jm[5]),
                         'artist_name' => str_replace('\\"', '"', !empty($jm[2]) ? $jm[2] : $jm[3]),
-                        'cover_image' => isset($jm[6]) ? stripslashes(str_replace('\u002F', '/', $jm[6])) : '',
+                        'cover_image' => $cover_image,
                         'previous_rank' => null,
                         'peak_rank' => $rank,
                         'weeks_on_chart' => 1,
