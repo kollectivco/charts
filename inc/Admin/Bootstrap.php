@@ -30,6 +30,8 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_save_manual_order', array( self::class, 'handle_save_manual_order' ) );
 		add_action( 'wp_ajax_charts_generate_franco', array( self::class, 'handle_generate_franco' ) );
 		add_action( 'wp_ajax_charts_process_merge', array( self::class, 'handle_process_merge' ) );
+		add_action( 'wp_ajax_charts_save_matching_id', array( self::class, 'handle_save_matching_id' ) );
+		add_action( 'wp_ajax_charts_search_spotify_matching', array( self::class, 'handle_search_spotify_matching' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1420,6 +1422,94 @@ class Bootstrap {
 			wp_send_json_success( array( 'message' => $result['message'] ) );
 		} else {
 			wp_send_json_error( array( 'message' => $result['message'] ) );
+		}
+	}
+
+	/**
+	 * Save manually inputted Spotify ID from Matching Center.
+	 */
+	public static function handle_save_matching_id() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error();
+
+		global $wpdb;
+		$type       = sanitize_text_field( $_POST['type'] ?? '' );
+		$id         = intval( $_POST['id'] ?? 0 );
+		$spotify_id = sanitize_text_field( $_POST['spotify_id'] ?? '' );
+
+		if ( ! $id || empty( $spotify_id ) || ! in_array( $type, array( 'artist', 'track' ), true ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid parameters provided.' ) );
+		}
+
+		$table = $wpdb->prefix . 'charts_' . $type . 's';
+		$wpdb->update( $table, array( 'spotify_id' => $spotify_id ), array( 'id' => $id ) );
+
+		wp_send_json_success( array( 'message' => 'Linked successfully.' ) );
+	}
+
+	/**
+	 * Search Spotify API directly for Matching Center.
+	 */
+	public static function handle_search_spotify_matching() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error();
+
+		$query = sanitize_text_field( $_POST['query'] ?? '' );
+		$type  = sanitize_text_field( $_POST['type'] ?? 'track' );
+
+		if ( empty( $query ) ) {
+			wp_send_json_error( array( 'message' => 'Query is required.' ) );
+		}
+
+		require_once CHARTS_PATH . 'inc/Connectors/SpotifyConnector.php';
+		
+		try {
+			// Get token
+			$token = \Charts\Connectors\SpotifyConnector::get_access_token();
+			if ( ! $token || is_wp_error( $token ) ) {
+				throw new \Exception( 'Failed to authenticate with Spotify API.' );
+			}
+
+			$url = 'https://api.spotify.com/v1/search?q=' . urlencode( $query ) . '&type=' . $type . '&limit=3';
+			$args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $token,
+					'Content-Type'  => 'application/json',
+				),
+				'timeout' => 15,
+			);
+
+			$response = wp_remote_get( $url, $args );
+			if ( is_wp_error( $response ) ) {
+				throw new \Exception( $response->get_error_message() );
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+
+			if ( empty( $data ) || isset( $data['error'] ) ) {
+				throw new \Exception( 'Invalid response from Spotify API.' );
+			}
+
+			$results = array();
+			$key = $type . 's';
+			
+			if ( ! empty( $data[$key]['items'] ) ) {
+				foreach ( $data[$key]['items'] as $item ) {
+					$results[] = array(
+						'id'    => $item['id'],
+						'name'  => $item['name'],
+						'image' => !empty($item['images'][0]['url']) ? $item['images'][0]['url'] : (!empty($item['album']['images'][0]['url']) ? $item['album']['images'][0]['url'] : ''),
+						'url'   => $item['external_urls']['spotify'] ?? '',
+						'artists' => isset($item['artists']) ? implode(', ', array_column($item['artists'], 'name')) : '',
+					);
+				}
+			}
+
+			wp_send_json_success( $results );
+
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
 }
