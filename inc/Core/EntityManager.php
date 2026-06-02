@@ -260,14 +260,15 @@ class EntityManager {
 			$params[] = intval( $query );
 		}
 
-		$where .= " ORDER BY $col ASC LIMIT %d";
-		$params[] = $limit;
+		$limit = intval( $limit );
+		$where .= " ORDER BY $col ASC LIMIT $limit";
 
-		$results = $wpdb->get_results( $wpdb->prepare( "
-			SELECT id, $col as title, slug, " . ( $type === 'artist' ? "image" : "cover_image" ) . " as image 
+		$sql = "SELECT id, $col as title, slug, " . ( $type === 'artist' ? "image" : "cover_image" ) . " as image 
 			FROM $table 
-			WHERE $where 
-		", $params ) );
+			WHERE $where";
+
+		$prepared = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $sql ), $params ) );
+		$results = $wpdb->get_results( $prepared );
 		
 		// If track or video, also try to find the artist name for subtitle
 		if ( $type !== 'artist' ) {

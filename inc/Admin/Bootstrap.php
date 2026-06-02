@@ -1207,8 +1207,12 @@ class Bootstrap {
 
 		if ( strlen($query) < 2 ) wp_send_json_success( array() );
 
-		$results = \Charts\Core\EntityManager::search_entities( $type, $query );
-		wp_send_json_success( $results );
+		try {
+			$results = \Charts\Core\EntityManager::search_entities( $type, $query );
+			wp_send_json_success( $results );
+		} catch ( \Throwable $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
 	}
 
 	/**

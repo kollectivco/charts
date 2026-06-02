@@ -600,8 +600,15 @@ document.getElementById('merge-search-input')?.addEventListener('input', functio
 			method: 'POST',
 			body: searchData
 		})
-			.then(res => res.json())
 			.then(res => {
+				if (!res.ok) throw new Error('Network response was not ok');
+				return res.json();
+			})
+			.then(res => {
+				if (res.success === false) {
+					resultsDiv.innerHTML = '<div style="padding: 10px; color: red; text-align: center;">Server Error: ' + (res.data?.message || 'Unknown error') + '</div>';
+					return;
+				}
 				if (res.success && res.data && res.data.length > 0) {
 					resultsDiv.innerHTML = res.data.map(item => `
 						<div class="merge-search-item" onclick="selectMergeMaster(${item.id}, '${item.title.replace(/'/g, "\\'")}')" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px;">
@@ -612,6 +619,9 @@ document.getElementById('merge-search-input')?.addEventListener('input', functio
 				} else {
 					resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">No results found.</div>';
 				}
+			})
+			.catch(err => {
+				resultsDiv.innerHTML = '<div style="padding: 10px; color: red; text-align: center;">Failed to search: ' + err.message + '</div>';
 			});
 	}, 500);
 });
