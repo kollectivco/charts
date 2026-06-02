@@ -243,14 +243,24 @@ class EntityManager {
 		
 		$col    = ( $type === 'artist' ? 'display_name' : 'title' );
 		$search = '%' . $wpdb->esc_like( $query ) . '%';
-		
+
+		$where = "$col LIKE %s OR slug LIKE %s";
+		$params = array( $search, $search );
+
+		if ( is_numeric( $query ) ) {
+			$where .= " OR id = %d";
+			$params[] = intval( $query );
+		}
+
+		$params[] = $limit;
+
 		$results = $wpdb->get_results( $wpdb->prepare( "
 			SELECT id, $col as title, slug, " . ( $type === 'artist' ? "image" : "cover_image" ) . " as image 
 			FROM $table 
-			WHERE $col LIKE %s 
+			WHERE $where 
 			ORDER BY $col ASC
 			LIMIT %d
-		", $search, $limit ) );
+		", ...$params ) );
 		
 		// If track or video, also try to find the artist name for subtitle
 		if ( $type !== 'artist' ) {

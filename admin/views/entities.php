@@ -590,14 +590,23 @@ document.getElementById('merge-search-input')?.addEventListener('input', functio
 	resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">Searching...</div>';
 
 	mergeSearchTimeout = setTimeout(() => {
-		fetch(ajaxurl + '?action=charts_search_entities&type=' + (mergeTargetType === 'artists' ? 'artist' : 'track') + '&q=' + encodeURIComponent(query))
+		const searchData = new FormData();
+		searchData.append('action', 'charts_search_entities');
+		searchData.append('nonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
+		searchData.append('type', mergeTargetType === 'artists' ? 'artist' : 'track');
+		searchData.append('query', query);
+
+		fetch(ajaxurl, {
+			method: 'POST',
+			body: searchData
+		})
 			.then(res => res.json())
 			.then(res => {
-				if (res.success && res.data.length > 0) {
+				if (res.success && res.data && res.data.length > 0) {
 					resultsDiv.innerHTML = res.data.map(item => `
 						<div class="merge-search-item" onclick="selectMergeMaster(${item.id}, '${item.title.replace(/'/g, "\\'")}')" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px;">
 							<div style="font-weight: bold; color: #333;">${item.title}</div>
-							<div style="font-size: 11px; color: #999;">ID: ${item.id}</div>
+							<div style="font-size: 11px; color: #999;">ID: ${item.id} | Slug: ${item.slug}</div>
 						</div>
 					`).join('');
 				} else {
