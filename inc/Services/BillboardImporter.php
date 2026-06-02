@@ -32,7 +32,10 @@ class BillboardImporter {
 		}
 
 		// 4. Fetch HTML
-		$response = wp_remote_get( $url, array(
+        // Billboard Arabia now embeds all chart data into the homepage JS state.
+        // We override the URL to fetch the homepage directly to ensure we get the JSON data.
+        $fetch_url = 'https://www.billboardarabia.com/';
+		$response = wp_remote_get( $fetch_url, array(
 			'timeout' => 30,
 			'headers' => array(
 				'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -130,72 +133,82 @@ class BillboardImporter {
 	private function scrape_entries( $html, $chart_type ) {
 		$entries = array();
 		
-		// Attempt 1: Next.js JSON Extraction via Regex (More reliable for data if classes change)
-		if ( preg_match_all('/self\.__next_f\.push\(\[1,"(.*)"\]\)/U', $html, $matches) ) {
-			$raw_json = "";
-			foreach ( $matches[1] as $m ) {
-				$decoded = json_decode('"' . $m . '"'); // Decode string literal
-				if ( $decoded ) $raw_json .= $decoded;
-			}
-			
-			// Try to find Billboard items in the JSON-like structure
-			if ( preg_match_all('/"rank":(\d+),"title":"([^"]+)","artist":"([^"]+)","image":"([^"]+)"(?:,"previousRank":(\d+))?(?:,"peakRank":(\d+))?(?:,"weeksOnChart":(\d+))?/i', $raw_json, $j_matches, PREG_SET_ORDER) ) {
-				foreach ( $j_matches as $jm ) {
-					$entries[] = array(
-						'rank' => intval($jm[1]),
-						'track_name' => str_replace('\\"', '"', $jm[2]),
-						'artist_name' => str_replace('\\"', '"', $jm[3]),
-						'cover_image' => stripslashes(str_replace('\u002F', '/', $jm[4])),
-						'previous_rank' => isset($jm[5]) ? intval($jm[5]) : null,
-						'peak_rank' => isset($jm[6]) ? intval($jm[6]) : intval($jm[1]),
-						'weeks_on_chart' => isset($jm[7]) ? intval($jm[7]) : 1,
-					);
-				}
-				if ( ! empty($entries) ) return $entries;
-			}
-		}
+		$is_artist = (strpos($chart_type, 'artist') !== false);
 
-		// Attempt 2: DOM Parsing fallback
-		$dom = new \DOMDocument();
-		@$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), LIBXML_NOERROR);
-		$xpath = new \DOMXPath($dom);
-		
-		// Look for common chart row elements based on typical layout
-		// Billboard uses custom classes, but we look for elements with numbers (rank) and images
-		$rows = $xpath->query('//div[contains(@class, "chart-row") or contains(@class, "chart-item")]');
-		
-		if ( $rows->length === 0 ) {
-			// Try general divs that have an image and some text
-			$rows = $xpath->query('//div[img and .//span[contains(text(), "1") or contains(text(), "2")]]');
-		}
+        if ($is_artist) {
+            $pattern = '/\\\\?"rank\\\\?":(\d+).*?\\\\?"arabic_name\\\\?":\\\\?"([^\\\\"]*)\\\\?".*?\\\\?"english_name\\\\?":\\\\?"([^\\\\"]*)\\\\?".*?\\\\?"image\\\\?":(?:\\\\?"([^\\\\"]*)\\\\?"|null)/ui';
+        } else {
+            $pattern = '/\\\\?"rank\\\\?":(\d+).*?\\\\?"arabic_artist_name\\\\?":\\\\?"([^\\\\"]*)\\\\?".*?\\\\?"english_artist_name\\\\?":\\\\?"([^\\\\"]*)\\\\?".*?\\\\?"arabic_title\\\\?":\\\\?"([^\\\\"]*)\\\\?".*?\\\\?"english_title\\\\?":\\\\?"([^\\\\"]*)\\\\?".*?\\\\?"image\\\\?":(?:\\\\?"([^\\\\"]*)\\\\?"|null)/ui';
+        }
 
-		$rank = 1;
-		foreach ( $rows as $row ) {
-			// Extract Image
-			$img = $xpath->query('.//img', $row)->item(0);
-			$cover_image = $img ? $img->getAttribute('src') : '';
-			
-			// Extract Text
-			$texts = array();
-			$nodes = $xpath->query('.//h3 | .//span | .//p', $row);
-			foreach ($nodes as $node) {
-				$val = trim($node->textContent);
-				if (!empty($val)) $texts[] = $val;
-			}
-			
-			if ( count($texts) >= 2 ) {
-				$entries[] = array(
-					'rank' => $rank,
-					'track_name' => $texts[0] ?? 'Unknown',
-					'artist_name' => $texts[1] ?? 'Unknown',
-					'cover_image' => $cover_image,
-					'previous_rank' => null,
-					'peak_rank' => $rank,
-					'weeks_on_chart' => 1,
-				);
-				$rank++;
-			}
-		}
+		if ( preg_match_all($pattern, $html, $j_matches, PREG_SET_ORDER) ) {
+            $chart_entries = array();
+            $current_chart = array();
+            $expected_rank = 1;
+            
+            foreach ( $j_matches as $jm ) {
+                $rank = intval($jm[1]);
+                if ($rank === 1) {
+                    if (!empty($current_chart)) {
+                        $chart_entries[] = $current_chart;
+                    }
+                    $current_chart = array();
+                    $expected_rank = 1;
+                }
+                
+                if ($rank < $expected_rank && $rank !== 1) {
+                    if (!empty($current_chart)) {
+                        $chart_entries[] = $current_chart;
+                    }
+                    $current_chart = array();
+                    $expected_rank = $rank;
+                }
+                
+                if ($is_artist) {
+                    $current_chart[] = array(
+                        'rank' => $rank,
+                        'track_name' => '',
+                        'artist_name' => str_replace('\\"', '"', !empty($jm[2]) ? $jm[2] : $jm[3]),
+                        'cover_image' => isset($jm[4]) ? stripslashes($jm[4]) : '',
+                        'previous_rank' => null,
+                        'peak_rank' => $rank,
+                        'weeks_on_chart' => 1,
+                    );
+                } else {
+                    $current_chart[] = array(
+                        'rank' => $rank,
+                        'track_name' => str_replace('\\"', '"', !empty($jm[4]) ? $jm[4] : $jm[5]),
+                        'artist_name' => str_replace('\\"', '"', !empty($jm[2]) ? $jm[2] : $jm[3]),
+                        'cover_image' => isset($jm[6]) ? stripslashes(str_replace('\u002F', '/', $jm[6])) : '',
+                        'previous_rank' => null,
+                        'peak_rank' => $rank,
+                        'weeks_on_chart' => 1,
+                    );
+                }
+                $expected_rank = $rank + 1;
+            }
+            if (!empty($current_chart)) {
+                $chart_entries[] = $current_chart;
+            }
+            
+            $expected_count = (strpos($chart_type, '100') !== false) ? 100 : 50;
+            
+            foreach ($chart_entries as $ce) {
+                if (count($ce) >= $expected_count - 2 && count($ce) <= $expected_count + 5) {
+                    $entries = $ce;
+                    break;
+                }
+            }
+            
+            if (empty($entries) && !empty($chart_entries)) {
+                usort($chart_entries, function($a, $b) {
+                    return count($b) - count($a);
+                });
+                $entries = $chart_entries[0];
+            }
+            
+            return $entries;
+        }
 
 		return $entries;
 	}
