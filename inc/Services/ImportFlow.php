@@ -23,12 +23,13 @@ class ImportFlow {
 			return new \WP_Error( 'manual_only', __( 'This source requires manual file import.', 'charts' ) );
 		}
 
-		// Only YouTube live scrape
-		if ( $source->platform !== 'youtube' ) {
-			return new \WP_Error( 'not_implemented', 'Live scrape only supported for YouTube.' );
+		if ( $source->platform === 'youtube' ) {
+			$connector = new \Charts\Connectors\YouTubeConnector();
+		} elseif ( $source->platform === 'billboard' ) {
+			$connector = new \Charts\Connectors\BillboardConnector();
+		} else {
+			return new \WP_Error( 'not_implemented', 'Live scrape only supported for YouTube and Billboard.' );
 		}
-
-		$connector = new \Charts\Connectors\YouTubeConnector();
 
 		try {
 			$result = $connector->run( $source_id );

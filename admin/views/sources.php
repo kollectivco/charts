@@ -120,6 +120,7 @@ $sources = $source_manager->get_sources();
 								<select name="platform" id="platform" required>
 									<option value="spotify" <?php selected( $edit_source ? $edit_source->platform : '', 'spotify' ); ?>>Spotify</option>
 									<option value="youtube" <?php selected( $edit_source ? $edit_source->platform : '', 'youtube' ); ?>>YouTube</option>
+									<option value="billboard" <?php selected( $edit_source ? $edit_source->platform : '', 'billboard' ); ?>>Billboard Arabia</option>
 								</select>
 							</td>
 						</tr>

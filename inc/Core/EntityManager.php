@@ -242,25 +242,32 @@ class EntityManager {
 		$table  = $wpdb->prefix . 'charts_' . $suffix;
 		
 		$col    = ( $type === 'artist' ? 'display_name' : 'title' );
-		$search = '%' . $wpdb->esc_like( $query ) . '%';
+		$norm_col = ( $type === 'artist' ? 'normalized_name' : 'normalized_title' );
 
-		$where = "$col LIKE %s OR slug LIKE %s";
-		$params = array( $search, $search );
+		// Clean and generate variations for smarter search
+		$clean_query = \Charts\Services\Normalizer::normalize_title( $query );
+		$franko = \Charts\Services\Normalizer::to_franko( $clean_query );
+		
+		$search_query = '%' . $wpdb->esc_like( $query ) . '%';
+		$search_clean = '%' . $wpdb->esc_like( $clean_query ) . '%';
+		$search_franko = '%' . $wpdb->esc_like( $franko ) . '%';
+
+		$where = "$col LIKE %s OR slug LIKE %s OR $norm_col LIKE %s OR $norm_col LIKE %s";
+		$params = array( $search_query, $search_clean, $search_clean, $search_franko );
 
 		if ( is_numeric( $query ) ) {
 			$where .= " OR id = %d";
 			$params[] = intval( $query );
 		}
 
+		$where .= " ORDER BY $col ASC LIMIT %d";
 		$params[] = $limit;
 
 		$results = $wpdb->get_results( $wpdb->prepare( "
 			SELECT id, $col as title, slug, " . ( $type === 'artist' ? "image" : "cover_image" ) . " as image 
 			FROM $table 
 			WHERE $where 
-			ORDER BY $col ASC
-			LIMIT %d
-		", ...$params ) );
+		", $params ) );
 		
 		// If track or video, also try to find the artist name for subtitle
 		if ( $type !== 'artist' ) {

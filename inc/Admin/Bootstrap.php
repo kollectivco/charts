@@ -257,11 +257,6 @@ class Bootstrap {
 				$processed = true;
 				break;
 			
-			case 'import_billboard_url':
-				self::process_billboard_import();
-				$processed = true;
-				break;
-			
 			case 'save_definition':
 				$manager = new SourceManager();
 				$result = $manager->save_definition( $_POST );
@@ -512,7 +507,6 @@ class Bootstrap {
 			array( 'title' => 'Quick Translation', 'slug' => 'charts-translations', 'callback' => 'render_translations' ),
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
 			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
-			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
 		);
 
 		foreach ( $menus as $m ) {
@@ -634,28 +628,8 @@ class Bootstrap {
 	 * Process Unified Import.
 	 * Routes to the correct platform handler based on selection.
 	 */
-	private static function process_billboard_import() {
-		$url           = esc_url_raw( $_POST['billboard_url'] ?? '' );
-		$definition_id = intval( $_POST['definition_id'] ?? 0 );
-		$chart_date    = sanitize_text_field( $_POST['chart_date'] ?? '' );
-
-		if ( empty($url) || empty($definition_id) || empty($chart_date) ) {
-			wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&import=failed&reason=' . urlencode('Missing required fields.') ) );
-			exit;
-		}
-
-		require_once CHARTS_PATH . 'inc/Services/BillboardImporter.php';
-		
-		$importer = new \Charts\Services\BillboardImporter();
-		$result = $importer->run( $url, $definition_id, $chart_date );
-
-		if ( is_wp_error( $result ) ) {
-			wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&import=failed&reason=' . urlencode($result->get_error_message()) ) );
-			exit;
-		}
-
-		wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&import=success&count=' . $result['saved'] ) );
-		exit;
+	public static function render_youtube_import() {
+		include CHARTS_PATH . 'admin/views/youtube-import.php';
 	}
 
 	private static function process_unified_import() {

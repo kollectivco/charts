@@ -5,16 +5,14 @@
  */
 global $wpdb;
 
-$entries_table = $wpdb->prefix . 'charts_entries';
-
-// 1. Fetch Unmatched Entities (Tracks and Artists with item_id = 0)
-// We group by track_name/artist_names to show unique candidates
 $unmatched_candidates = $wpdb->get_results("
-	SELECT track_name, artist_names, item_type, spotify_id, youtube_id, COUNT(*) as occurrence_count
-	FROM $entries_table
-	WHERE item_id = 0
-	GROUP BY track_name, artist_names, item_type
-	ORDER BY occurrence_count DESC
+	SELECT 'artist' as item_type, id, display_name as track_name, '' as artist_names, spotify_id, NULL as youtube_id 
+	FROM {$wpdb->prefix}charts_artists 
+	WHERE spotify_id IS NULL OR spotify_id = ''
+	UNION ALL
+	SELECT 'track' as item_type, id, title as track_name, '' as artist_names, spotify_id, NULL as youtube_id 
+	FROM {$wpdb->prefix}charts_tracks 
+	WHERE (spotify_id IS NULL OR spotify_id = '') AND (youtube_id IS NULL OR youtube_id = '')
 	LIMIT 100
 ");
 
@@ -82,24 +80,16 @@ $total_unmatched = count($unmatched_candidates);
 									<span class="charts-badge charts-badge-neutral"><?php echo strtoupper( $item->item_type ); ?></span>
 								</td>
 								<td>
-									<div style="font-weight:700; color:var(--charts-primary);"><?php echo (int) $item->occurrence_count; ?> rows</div>
-									<div style="font-size:10px; color:var(--charts-text-dim);"><?php _e( 'Historical occurrences', 'charts' ); ?></div>
+									<div style="font-weight:700; color:var(--charts-primary);"><?php _e( 'Orphaned', 'charts' ); ?></div>
+									<div style="font-size:10px; color:var(--charts-text-dim);"><?php _e( 'Needs Sync', 'charts' ); ?></div>
 								</td>
 								<td>
 									<div style="display:flex; gap:10px;">
-										<?php if ( $item->spotify_id ) : ?>
-											<span title="Spotify ID" class="dashicons dashicons-spotify" style="color: #1DB954; font-size: 16px;"></span>
-										<?php endif; ?>
-										<?php if ( $item->youtube_id ) : ?>
-											<span title="YouTube ID" class="dashicons dashicons-video-alt3" style="color: #FF0000; font-size: 16px;"></span>
-										<?php endif; ?>
-										<?php if ( ! $item->spotify_id && ! $item->youtube_id ) : ?>
-											<span style="opacity: 0.3; font-size:10px; color:var(--charts-text-dim); font-weight:700;">NO_ID_DISCOVERED</span>
-										<?php endif; ?>
+										<span style="opacity: 0.3; font-size:10px; color:var(--charts-text-dim); font-weight:700;">NO_ID_DISCOVERED</span>
 									</div>
 								</td>
 								<td style="text-align: right; padding-right: 24px;">
-									<a href="<?php echo esc_url( \Charts\Core\Router::get_dashboard_url( 'entities', array( 's' => urlencode( $label ) ) ) ); ?>" class="charts-badge charts-badge-neutral" style="text-decoration: none; font-weight:700;"><?php _e( 'Run Intelligent Match', 'charts' ); ?></a>
+									<button onclick="window.location.href='<?php echo esc_url( \Charts\Core\Router::get_dashboard_url( $item->item_type === 'artist' ? 'artists' : 'tracks', array( 's' => urlencode( $label ) ) ) ); ?>'" class="charts-btn-create" style="padding: 4px 12px; font-size: 12px;"><?php _e( 'Sync Now', 'charts' ); ?></button>
 								</td>
 							</tr>
 						<?php endforeach; ?>
