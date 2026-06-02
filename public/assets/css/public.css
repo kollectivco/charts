@@ -246,8 +246,9 @@
 .kc-chart-card:hover { border-color: var(--k-accent); }
 
 .kc-card-header {
-	height: 140px;
-	padding: 32px 24px;
+	min-height: 140px;
+	height: auto;
+	padding: 24px 20px;
 	position: relative;
 	background: var(--k-chart-bg); /* Placeholder for image */
 	overflow: hidden;

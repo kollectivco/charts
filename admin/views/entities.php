@@ -368,6 +368,11 @@ $entity_type = $type;
 												<?php if ( ! empty( $item->slug ) ) : ?>
 													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
 												<?php endif; ?>
+												<?php if ( isset($item->id) && ($type === 'artist' || $type === 'track') ) : ?>
+													<button type="button" class="charts-badge" style="border:none; cursor:pointer; background:#6366f1; color:#fff;" onclick="openMergeModal(<?php echo (int) $item->id; ?>, '<?php echo esc_js( $label ); ?>', '<?php echo esc_js($type); ?>')">
+														<?php _e( 'Merge', 'charts' ); ?>
+													</button>
+												<?php endif; ?>
 												<?php if ( isset($item->id) ) : ?>
 													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
 														<?php _e( 'Delete', 'charts' ); ?>
@@ -548,4 +553,125 @@ document.addEventListener('DOMContentLoaded', function() {
 		closeBtn.addEventListener('click', () => window.location.reload());
 	}
 });
+
+// Inline Merge Feature
+let mergeTargetId = null;
+let mergeTargetType = null;
+let mergeMasterId = null;
+
+window.openMergeModal = function(id, name, type) {
+	mergeTargetId = id;
+	mergeTargetType = type + 's'; // artists or tracks
+	document.getElementById('merge-target-name').innerText = name;
+	document.getElementById('merge-modal').style.display = 'flex';
+	document.getElementById('merge-search-input').value = '';
+	document.getElementById('merge-search-results').innerHTML = '';
+	document.getElementById('merge-confirm-btn').disabled = true;
+	mergeMasterId = null;
+};
+
+window.closeMergeModal = function() {
+	document.getElementById('merge-modal').style.display = 'none';
+};
+
+let mergeSearchTimeout;
+document.getElementById('merge-search-input')?.addEventListener('input', function(e) {
+	clearTimeout(mergeSearchTimeout);
+	const query = e.target.value.trim();
+	const resultsDiv = document.getElementById('merge-search-results');
+	document.getElementById('merge-confirm-btn').disabled = true;
+	mergeMasterId = null;
+
+	if (query.length < 2) {
+		resultsDiv.innerHTML = '';
+		return;
+	}
+
+	resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">Searching...</div>';
+
+	mergeSearchTimeout = setTimeout(() => {
+		fetch(ajaxurl + '?action=charts_search_entities&type=' + (mergeTargetType === 'artists' ? 'artist' : 'track') + '&q=' + encodeURIComponent(query))
+			.then(res => res.json())
+			.then(res => {
+				if (res.success && res.data.length > 0) {
+					resultsDiv.innerHTML = res.data.map(item => `
+						<div class="merge-search-item" onclick="selectMergeMaster(${item.id}, '${item.title.replace(/'/g, "\\'")}')" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+							<div style="font-weight: bold; color: #333;">${item.title}</div>
+							<div style="font-size: 11px; color: #999;">ID: ${item.id}</div>
+						</div>
+					`).join('');
+				} else {
+					resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">No results found.</div>';
+				}
+			});
+	}, 500);
+});
+
+window.selectMergeMaster = function(id, name) {
+	if (id === mergeTargetId) {
+		alert('Cannot merge an entity into itself!');
+		return;
+	}
+	mergeMasterId = id;
+	document.getElementById('merge-search-results').innerHTML = `
+		<div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; color: #166534;">
+			<strong>Selected Master:</strong> ${name} (ID: ${id})
+		</div>
+	`;
+	document.getElementById('merge-confirm-btn').disabled = false;
+};
+
+window.confirmMerge = function() {
+	if (!mergeMasterId || !mergeTargetId) return;
+
+	if (!confirm('Are you sure you want to merge into this master? This action cannot be undone.')) return;
+
+	const btn = document.getElementById('merge-confirm-btn');
+	btn.disabled = true;
+	btn.innerText = 'Merging...';
+
+	const formData = new FormData();
+	formData.append('action', 'charts_process_merge');
+	formData.append('_wpnonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
+	formData.append('type', mergeTargetType);
+	formData.append('master_id', mergeMasterId);
+	formData.append('duplicate_ids[]', mergeTargetId);
+
+	fetch(ajaxurl, {
+		method: 'POST',
+		body: formData
+	})
+	.then(res => res.json())
+	.then(res => {
+		if (res.success) {
+			alert('Merge successful!');
+			window.location.reload();
+		} else {
+			alert('Merge failed: ' + res.data.message);
+			btn.disabled = false;
+			btn.innerText = 'Confirm Merge';
+		}
+	});
+};
 </script>
+
+<!-- Merge Modal UI -->
+<div id="merge-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
+	<div style="background: #fff; width: 400px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+		<div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+			<h3 style="margin: 0; font-size: 16px; font-weight: bold;">Merge Entity</h3>
+			<button onclick="closeMergeModal()" style="background: none; border: none; cursor: pointer; font-size: 20px; color: #999;">&times;</button>
+		</div>
+		<div style="padding: 20px;">
+			<p style="margin-top: 0; font-size: 13px; color: #666;">
+				You are merging <strong id="merge-target-name" style="color: #ef4444;"></strong> into a master entity. The current item will be deleted and all its history will move to the master.
+			</p>
+			<input type="text" id="merge-search-input" class="charts-input" placeholder="Search for master entity name..." style="width: 100%; margin-bottom: 10px;">
+			<div id="merge-search-results" style="max-height: 200px; overflow-y: auto; background: #fafafa; border-radius: 6px; border: 1px solid #eee;"></div>
+		</div>
+		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
+			<button class="charts-btn-secondary" onclick="closeMergeModal()">Cancel</button>
+			<button id="merge-confirm-btn" class="charts-btn-primary" onclick="confirmMerge()" disabled style="margin-left: 10px;">Confirm Merge</button>
+		</div>
+	</div>
+</div>

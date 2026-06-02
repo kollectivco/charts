@@ -513,7 +513,6 @@ class Bootstrap {
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
 			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
 			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
-			array( 'title' => 'Merge Center', 'slug' => 'charts-merge', 'callback' => 'render_merge_center' ),
 		);
 
 		foreach ( $menus as $m ) {
@@ -624,10 +623,6 @@ class Bootstrap {
 
 	public static function render_billboard_import() {
 		include CHARTS_PATH . 'admin/views/billboard-import.php';
-	}
-
-	public static function render_merge_center() {
-		include CHARTS_PATH . 'admin/views/merge-center.php';
 	}
 
 	public static function render_results_history() {
