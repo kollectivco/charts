@@ -245,12 +245,13 @@ $entity_type = $type;
 				<!-- Bulk Actions Header -->
 				<?php if ( ! empty( $items ) && $type !== 'advanced' ) : ?>
 					<div style="padding: 15px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; background: #fafafa;">
-						<select name="bulk_action_type" class="charts-input" style="width: 200px; margin: 0;">
+						<select name="bulk_action_type" id="bulk_action_type" class="charts-input" style="width: 200px; margin: 0;">
 							<option value=""><?php _e( 'Bulk Actions', 'charts' ); ?></option>
 							<option value="bulk_promote"><?php _e( 'Migrate to Native', 'charts' ); ?></option>
-							<option value="delete"><?php _e( 'Delete Selected', 'charts' ); ?></option>
+							<option value="bulk_merge"><?php _e( 'Merge Selected', 'charts' ); ?></option>
+							<option value="delete" style="color:red;"><?php _e( 'Delete Permanently', 'charts' ); ?></option>
 						</select>
-						<button type="submit" class="charts-btn-secondary" style="margin: 0;" onclick="return confirm('<?php _e( 'Are you sure you want to apply this action to all selected items?', 'charts' ); ?>');">
+						<button type="button" class="charts-btn-secondary" style="margin: 0;" onclick="handleBulkActionSubmit(event)">
 							<?php _e( 'Apply', 'charts' ); ?>
 						</button>
 					</div>
@@ -369,9 +370,7 @@ $entity_type = $type;
 													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
 												<?php endif; ?>
 												<?php if ( isset($item->id) && ($type === 'artist' || $type === 'track') ) : ?>
-													<button type="button" class="charts-badge" style="border:none; cursor:pointer; background:#6366f1; color:#fff;" onclick="openMergeModal(<?php echo (int) $item->id; ?>, '<?php echo esc_js( $label ); ?>', '<?php echo esc_js($type); ?>')">
-														<?php _e( 'Merge', 'charts' ); ?>
-													</button>
+													<!-- Old inline Merge button removed in favor of Bulk Merge -->
 												<?php endif; ?>
 												<?php if ( isset($item->id) ) : ?>
 													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
@@ -554,107 +553,96 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 });
 
-// Inline Merge Feature
-let mergeTargetId = null;
-let mergeTargetType = null;
-let mergeMasterId = null;
+// Bulk Merge Feature
+let bulkMergeType = '<?php echo esc_js($type); ?>s'; // artists or tracks
 
-window.openMergeModal = function(id, name, type) {
-	mergeTargetId = id;
-	mergeTargetType = type + 's'; // artists or tracks
-	document.getElementById('merge-target-name').innerText = name;
-	document.getElementById('merge-modal').style.display = 'flex';
-	document.getElementById('merge-search-input').value = '';
-	document.getElementById('merge-search-results').innerHTML = '';
-	document.getElementById('merge-confirm-btn').disabled = true;
-	mergeMasterId = null;
+window.handleBulkActionSubmit = function(e) {
+	const select = document.getElementById('bulk_action_type');
+	const action = select.value;
+	
+	if (action === 'bulk_merge') {
+		e.preventDefault();
+		openBulkMergeModal();
+		return false;
+	} else if (action !== '') {
+		if (confirm('<?php _e( "Are you sure you want to apply this action to all selected items?", "charts" ); ?>')) {
+			document.getElementById('entities-bulk-form').submit();
+		}
+	} else {
+		alert('Please select a bulk action first.');
+	}
 };
 
-window.closeMergeModal = function() {
-	document.getElementById('merge-modal').style.display = 'none';
-};
-
-let mergeSearchTimeout;
-document.getElementById('merge-search-input')?.addEventListener('input', function(e) {
-	clearTimeout(mergeSearchTimeout);
-	const query = e.target.value.trim();
-	const resultsDiv = document.getElementById('merge-search-results');
-	document.getElementById('merge-confirm-btn').disabled = true;
-	mergeMasterId = null;
-
-	if (query.length < 2) {
-		resultsDiv.innerHTML = '';
+window.openBulkMergeModal = function() {
+	// Gather all checked items
+	const checkboxes = document.querySelectorAll('.entity-checkbox:checked');
+	if (checkboxes.length < 2) {
+		alert('You must select at least TWO entities to merge.');
 		return;
 	}
 
-	resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">Searching...</div>';
+	const candidates = [];
+	checkboxes.forEach(cb => {
+		const row = cb.closest('tr');
+		const id = cb.value;
+		const name = row.querySelector('.charts-primary').innerText.trim();
+		candidates.push({ id, name });
+	});
 
-	mergeSearchTimeout = setTimeout(() => {
-		const searchData = new FormData();
-		searchData.append('action', 'charts_search_entities');
-		searchData.append('nonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
-		searchData.append('type', mergeTargetType === 'artists' ? 'artist' : 'track');
-		searchData.append('query', query);
+	// Populate the modal
+	const listDiv = document.getElementById('bulk-merge-candidates-list');
+	listDiv.innerHTML = '';
+	
+	candidates.forEach((c, index) => {
+		listDiv.innerHTML += `
+			<label style="display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+				<input type="radio" name="bulk_merge_master" value="${c.id}" ${index === 0 ? 'checked' : ''} style="margin:0;">
+				<div style="font-weight:bold; color:#333;">${c.name} <span style="font-size:11px; color:#999; font-weight:normal;">(ID: ${c.id})</span></div>
+			</label>
+		`;
+	});
 
-		fetch(ajaxurl, {
-			method: 'POST',
-			body: searchData
-		})
-			.then(res => {
-				if (!res.ok) throw new Error('Network response was not ok');
-				return res.json();
-			})
-			.then(res => {
-				if (res.success === false) {
-					resultsDiv.innerHTML = '<div style="padding: 10px; color: red; text-align: center;">Server Error: ' + (res.data?.message || 'Unknown error') + '</div>';
-					return;
-				}
-				if (res.success && res.data && res.data.length > 0) {
-					resultsDiv.innerHTML = res.data.map(item => `
-						<div class="merge-search-item" onclick="selectMergeMaster(${item.id}, '${item.title.replace(/'/g, "\\'")}')" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px;">
-							<div style="font-weight: bold; color: #333;">${item.title}</div>
-							<div style="font-size: 11px; color: #999;">ID: ${item.id} | Slug: ${item.slug}</div>
-						</div>
-					`).join('');
-				} else {
-					resultsDiv.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">No results found.</div>';
-				}
-			})
-			.catch(err => {
-				resultsDiv.innerHTML = '<div style="padding: 10px; color: red; text-align: center;">Failed to search: ' + err.message + '</div>';
-			});
-	}, 500);
-});
-
-window.selectMergeMaster = function(id, name) {
-	if (id === mergeTargetId) {
-		alert('Cannot merge an entity into itself!');
-		return;
-	}
-	mergeMasterId = id;
-	document.getElementById('merge-search-results').innerHTML = `
-		<div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; color: #166534;">
-			<strong>Selected Master:</strong> ${name} (ID: ${id})
-		</div>
-	`;
-	document.getElementById('merge-confirm-btn').disabled = false;
+	document.getElementById('bulk-merge-modal').style.display = 'flex';
 };
 
-window.confirmMerge = function() {
-	if (!mergeMasterId || !mergeTargetId) return;
+window.closeBulkMergeModal = function() {
+	document.getElementById('bulk-merge-modal').style.display = 'none';
+};
 
-	if (!confirm('Are you sure you want to merge into this master? This action cannot be undone.')) return;
+window.confirmBulkMerge = function() {
+	const masterRadio = document.querySelector('input[name="bulk_merge_master"]:checked');
+	if (!masterRadio) return;
 
-	const btn = document.getElementById('merge-confirm-btn');
+	const masterId = masterRadio.value;
+	const checkboxes = document.querySelectorAll('.entity-checkbox:checked');
+	
+	const duplicateIds = [];
+	checkboxes.forEach(cb => {
+		if (cb.value !== masterId) {
+			duplicateIds.push(cb.value);
+		}
+	});
+
+	if (duplicateIds.length === 0) {
+		alert('No duplicates selected to merge into the master.');
+		return;
+	}
+
+	if (!confirm('Are you sure? All duplicate entities will be permanently merged into the selected master.')) return;
+
+	const btn = document.getElementById('bulk-merge-confirm-btn');
 	btn.disabled = true;
 	btn.innerText = 'Merging...';
 
 	const formData = new FormData();
 	formData.append('action', 'charts_process_merge');
 	formData.append('_wpnonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
-	formData.append('type', mergeTargetType);
-	formData.append('master_id', mergeMasterId);
-	formData.append('duplicate_ids[]', mergeTargetId);
+	formData.append('type', bulkMergeType);
+	formData.append('master_id', masterId);
+	
+	duplicateIds.forEach(id => {
+		formData.append('duplicate_ids[]', id);
+	});
 
 	fetch(ajaxurl, {
 		method: 'POST',
@@ -663,7 +651,7 @@ window.confirmMerge = function() {
 	.then(res => res.json())
 	.then(res => {
 		if (res.success) {
-			alert('Merge successful!');
+			alert('Bulk Merge successful!');
 			window.location.reload();
 		} else {
 			alert('Merge failed: ' + res.data.message);
@@ -674,23 +662,24 @@ window.confirmMerge = function() {
 };
 </script>
 
-<!-- Merge Modal UI -->
-<div id="merge-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
-	<div style="background: #fff; width: 400px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
-		<div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-			<h3 style="margin: 0; font-size: 16px; font-weight: bold;">Merge Entity</h3>
-			<button onclick="closeMergeModal()" style="background: none; border: none; cursor: pointer; font-size: 20px; color: #999;">&times;</button>
+<!-- Bulk Merge Modal UI -->
+<div id="bulk-merge-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
+	<div style="background: #fff; width: 450px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+		<div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fdf4ff;">
+			<h3 style="margin: 0; font-size: 16px; font-weight: bold; color: #d946ef;">Select Master Entity</h3>
+			<button onclick="closeBulkMergeModal()" style="background: none; border: none; cursor: pointer; font-size: 20px; color: #999;">&times;</button>
 		</div>
 		<div style="padding: 20px;">
-			<p style="margin-top: 0; font-size: 13px; color: #666;">
-				You are merging <strong id="merge-target-name" style="color: #ef4444;"></strong> into a master entity. The current item will be deleted and all its history will move to the master.
+			<p style="margin-top: 0; font-size: 13px; color: #666; margin-bottom: 15px;">
+				You have selected multiple entities to merge. Please select which one should be the <strong>Master Record</strong>. The others will be merged into it and deleted.
 			</p>
-			<input type="text" id="merge-search-input" class="charts-input" placeholder="Search for master entity name..." style="width: 100%; margin-bottom: 10px;">
-			<div id="merge-search-results" style="max-height: 200px; overflow-y: auto; background: #fafafa; border-radius: 6px; border: 1px solid #eee;"></div>
+			<div id="bulk-merge-candidates-list" style="max-height: 250px; overflow-y: auto; background: #fafafa; border-radius: 6px; border: 1px solid #eee;">
+				<!-- Dynamic content here -->
+			</div>
 		</div>
 		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
-			<button class="charts-btn-secondary" onclick="closeMergeModal()">Cancel</button>
-			<button id="merge-confirm-btn" class="charts-btn-primary" onclick="confirmMerge()" disabled style="margin-left: 10px;">Confirm Merge</button>
+			<button class="charts-btn-secondary" onclick="closeBulkMergeModal()">Cancel</button>
+			<button id="bulk-merge-confirm-btn" class="charts-btn-primary" onclick="confirmBulkMerge()" style="margin-left: 10px; background: #d946ef; border-color: #d946ef;">Confirm Merge</button>
 		</div>
 	</div>
 </div>
