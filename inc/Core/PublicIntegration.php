@@ -426,6 +426,7 @@ class PublicIntegration {
 		$is_placeholder = function($url) {
 			if ( empty($url) ) return true;
 			if ( strpos($url, 'http') !== 0 && substr($url, 0, 1) !== '/' ) return true; // Reject bad/broken strings like 'SG...jpg'
+            if ( preg_match('/^https?:\/\/(sg|ar)[a-z0-9]+\.jpg/i', $url) ) return true; // Reject bad prefixed hashes
 			if ( strpos($url, 'placeholder.png') !== false ) return true;
 			if ( $url === 'Placeholder' || $url === 'N/A' ) return true;
 			return false;
@@ -438,8 +439,22 @@ class PublicIntegration {
 		if ( ! empty($target_id) ) {
 			$table = ( $target_type === 'artist' ) ? 'artists' : ( ( $target_type === 'video' ) ? 'videos' : 'tracks' );
 			$col   = ( $target_type === 'artist' ) ? 'image' : ( ( $target_type === 'video' ) ? 'thumbnail' : 'cover_image' );
-			$img = $wpdb->get_var( $wpdb->prepare( "SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $target_id ) );
-			if ( ! $is_placeholder($img) ) return $img;
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT $col, metadata_json FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $target_id ) );
+			if ( $row ) {
+				$img = $row->$col;
+				if ( ! $is_placeholder($img) ) return $img;
+
+				if ( ! empty($row->metadata_json) ) {
+					$meta = json_decode($row->metadata_json, true);
+					if ( ! empty($meta) ) {
+						if ( ! empty($meta['spotify_image']) && ! $is_placeholder($meta['spotify_image']) ) return $meta['spotify_image'];
+						if ( ! empty($meta['youtube_thumbnail']) && ! $is_placeholder($meta['youtube_thumbnail']) ) return $meta['youtube_thumbnail'];
+						if ( ! empty($meta['image']) && ! $is_placeholder($meta['image']) ) return $meta['image'];
+						if ( ! empty($meta['artwork_url']) && ! $is_placeholder($meta['artwork_url']) ) return $meta['artwork_url'];
+						if ( ! empty($meta['cover_url']) && ! $is_placeholder($meta['cover_url']) ) return $meta['cover_url'];
+					}
+				}
+			}
 		}
 
 		// 2. Fallback to legacy object properties

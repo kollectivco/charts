@@ -69,13 +69,7 @@ if ( $definition ) {
 			
 			// Resolve images and slugs from custom tables
 			foreach($entries as &$e) {
-				if ( ! empty($e->cover_image) && strpos($e->cover_image, 'http') === 0 ) {
-					$e->resolved_image = $e->cover_image;
-				} else {
-					$table = ($e->item_type === 'artist') ? 'artists' : (($e->item_type === 'video') ? 'videos' : 'tracks');
-					$col = ($e->item_type === 'artist') ? 'image' : (($e->item_type === 'video') ? 'thumbnail' : 'cover_image');
-					$e->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id));
-				}
+				$e->resolved_image = \Charts\Core\PublicIntegration::resolve_artwork($e, $e->item_type);
 
                 // Healing: If slug is generic or missing, resolve from relational table
                 if ( empty($e->item_slug) || $e->item_slug === 'unknown-youtube-item' ) {

@@ -78,16 +78,9 @@ class HomepageSlider {
             if ($submode === 'selection_top' || $submode === 'latest') {
                 // Fetch #1 item
                 $row = $wpdb->get_row($wpdb->prepare("
-                    SELECT e.*, 
-                           CASE 
-                               WHEN e.cover_image IS NOT NULL AND e.cover_image != '' AND e.cover_image LIKE 'http%%' THEN e.cover_image
-                               ELSE COALESCE(NULLIF(t.cover_image, ''), NULLIF(v.thumbnail, ''), NULLIF(a.image, ''))
-                           END as resolved_thumb 
+                    SELECT e.* 
                     FROM {$wpdb->prefix}charts_entries e
                     JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-                    LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
-                    LEFT JOIN {$wpdb->prefix}charts_videos v ON (e.item_id = v.id AND e.item_type = 'video')
-                    LEFT JOIN {$wpdb->prefix}charts_artists a ON (e.item_id = a.id AND e.item_type = 'artist')
                     WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
                     ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 1
                 ", $def->chart_type, $def->country_code));
@@ -98,7 +91,7 @@ class HomepageSlider {
                         'title'     => $resolved['title'],
                         'desc'      => $resolved['subtitle'],
                         'badge'     => '',
-                        'image_url' => $row->resolved_thumb ?: $def->cover_image_url,
+                        'image_url' => \Charts\Core\PublicIntegration::resolve_artwork($row, $row->item_type) ?: $def->cover_image_url,
                         'btn1_text' => 'View Chart',
                         'btn1_link' => home_url('/charts/' . $def->slug . '/'),
                         'btn2_text' => 'Play Song',
