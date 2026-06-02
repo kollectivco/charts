@@ -78,7 +78,11 @@ class HomepageSlider {
             if ($submode === 'selection_top' || $submode === 'latest') {
                 // Fetch #1 item
                 $row = $wpdb->get_row($wpdb->prepare("
-                    SELECT e.*, COALESCE(NULLIF(e.cover_image, ''), t.cover_image, v.thumbnail, a.image) as resolved_thumb 
+                    SELECT e.*, 
+                           CASE 
+                               WHEN e.cover_image IS NOT NULL AND e.cover_image != '' AND e.cover_image LIKE 'http%%' THEN e.cover_image
+                               ELSE COALESCE(NULLIF(t.cover_image, ''), NULLIF(v.thumbnail, ''), NULLIF(a.image, ''))
+                           END as resolved_thumb 
                     FROM {$wpdb->prefix}charts_entries e
                     JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
                     LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')

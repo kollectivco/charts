@@ -425,6 +425,7 @@ class PublicIntegration {
 		// Utility to detect and skip placeholders
 		$is_placeholder = function($url) {
 			if ( empty($url) ) return true;
+			if ( strpos($url, 'http') !== 0 && substr($url, 0, 1) !== '/' ) return true; // Reject bad/broken strings like 'SG...jpg'
 			if ( strpos($url, 'placeholder.png') !== false ) return true;
 			if ( $url === 'Placeholder' || $url === 'N/A' ) return true;
 			return false;

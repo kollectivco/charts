@@ -31,19 +31,27 @@ if ($has_data) {
     
     // C. Top Gainers (Biggest rank improvement)
     $top_gainers = $wpdb->get_results("
-        SELECT track_name, artist_names, cover_image, movement_value, rank_position
-        FROM $entries_table
-        WHERE movement_direction = 'up'
-        ORDER BY movement_value DESC
+        SELECT e.track_name, e.artist_names, 
+               CASE WHEN e.cover_image IS NOT NULL AND e.cover_image != '' AND e.cover_image LIKE 'http%' THEN e.cover_image
+               ELSE t.cover_image END as cover_image, 
+               e.movement_value, e.rank_position
+        FROM $entries_table e
+        LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+        WHERE e.movement_direction = 'up'
+        ORDER BY e.movement_value DESC
         LIMIT 5
     ");
 
     // D. Top Losers (Biggest rank drop)
     $top_losers = $wpdb->get_results("
-        SELECT track_name, artist_names, cover_image, movement_value, rank_position
-        FROM $entries_table
-        WHERE movement_direction = 'down'
-        ORDER BY movement_value DESC
+        SELECT e.track_name, e.artist_names, 
+               CASE WHEN e.cover_image IS NOT NULL AND e.cover_image != '' AND e.cover_image LIKE 'http%' THEN e.cover_image
+               ELSE t.cover_image END as cover_image, 
+               e.movement_value, e.rank_position
+        FROM $entries_table e
+        LEFT JOIN {$wpdb->prefix}charts_tracks t ON (e.item_id = t.id AND e.item_type = 'track')
+        WHERE e.movement_direction = 'down'
+        ORDER BY e.movement_value DESC
         LIMIT 5
     ");
 

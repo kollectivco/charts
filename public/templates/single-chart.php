@@ -69,7 +69,7 @@ if ( $definition ) {
 			
 			// Resolve images and slugs from custom tables
 			foreach($entries as &$e) {
-				if ( ! empty($e->cover_image) ) {
+				if ( ! empty($e->cover_image) && strpos($e->cover_image, 'http') === 0 ) {
 					$e->resolved_image = $e->cover_image;
 				} else {
 					$table = ($e->item_type === 'artist') ? 'artists' : (($e->item_type === 'video') ? 'videos' : 'tracks');
