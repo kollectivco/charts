@@ -237,4 +237,170 @@ class MergeEngine {
 			return array( 'success' => false, 'message' => 'Merge failed: ' . $e->getMessage() );
 		}
 	}
+
+	/**
+	 * Merge duplicate videos into a single master video.
+	 *
+	 * @param int   $master_id     The canonical video ID to keep.
+	 * @param array $duplicate_ids Array of video IDs to merge into the master.
+	 * @return array
+	 */
+	public static function merge_videos( $master_id, $duplicate_ids ) {
+		global $wpdb;
+		
+		$master_id = intval( $master_id );
+		if ( ! $master_id || empty( $duplicate_ids ) ) {
+			return array( 'success' => false, 'message' => 'Invalid parameters' );
+		}
+
+		$duplicate_ids = array_map( 'intval', $duplicate_ids );
+		$duplicate_ids = array_filter( $duplicate_ids, function($id) use ($master_id) {
+			return $id > 0 && $id !== $master_id;
+		});
+
+		if ( empty( $duplicate_ids ) ) {
+			return array( 'success' => false, 'message' => 'No valid duplicates provided' );
+		}
+
+		$ids_in = implode( ',', $duplicate_ids );
+
+		$wpdb->query( 'START TRANSACTION' );
+
+		try {
+			// 1. Move video_artists links
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE IGNORE {$wpdb->prefix}charts_video_artists SET video_id = %d WHERE video_id IN ($ids_in)",
+				$master_id
+			) );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_video_artists WHERE video_id IN ($ids_in)" );
+
+			// 2. Update chart entries pointing to the duplicate videos directly
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE IGNORE {$wpdb->prefix}charts_entries SET item_id = %d WHERE item_type = 'video' AND item_id IN ($ids_in)",
+				$master_id
+			) );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_entries WHERE item_type = 'video' AND item_id IN ($ids_in)" );
+
+			// 3. Update Intelligence entries
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE IGNORE {$wpdb->prefix}charts_intelligence SET entity_id = %d WHERE entity_type = 'video' AND entity_id IN ($ids_in)",
+				$master_id
+			) );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'video' AND entity_id IN ($ids_in)" );
+
+			// 4. Transfer missing metadata to master (youtube_id, thumbnail)
+			$master = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_videos WHERE id = %d", $master_id ) );
+			$duplicates = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_videos WHERE id IN ($ids_in)" );
+			
+			$update_data = array();
+			if ( empty( $master->youtube_id ) ) {
+				foreach ( $duplicates as $dup ) {
+					if ( ! empty( $dup->youtube_id ) ) {
+						$update_data['youtube_id'] = $dup->youtube_id;
+						break;
+					}
+				}
+			}
+			if ( empty( $master->thumbnail ) ) {
+				foreach ( $duplicates as $dup ) {
+					if ( ! empty( $dup->thumbnail ) ) {
+						$update_data['thumbnail'] = $dup->thumbnail;
+						break;
+					}
+				}
+			}
+
+			if ( ! empty( $update_data ) ) {
+				$wpdb->update( "{$wpdb->prefix}charts_videos", $update_data, array( 'id' => $master_id ) );
+			}
+
+			// 5. Delete duplicate video records
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_videos WHERE id IN ($ids_in)" );
+
+			$wpdb->query( 'COMMIT' );
+			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d videos into master ID %d.', count($duplicate_ids), $master_id ) );
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'success' => false, 'message' => 'Merge failed: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Merge duplicate albums into a single master album.
+	 *
+	 * @param int   $master_id     The canonical album ID to keep.
+	 * @param array $duplicate_ids Array of album IDs to merge into the master.
+	 * @return array
+	 */
+	public static function merge_albums( $master_id, $duplicate_ids ) {
+		global $wpdb;
+		
+		$master_id = intval( $master_id );
+		if ( ! $master_id || empty( $duplicate_ids ) ) {
+			return array( 'success' => false, 'message' => 'Invalid parameters' );
+		}
+
+		$duplicate_ids = array_map( 'intval', $duplicate_ids );
+		$duplicate_ids = array_filter( $duplicate_ids, function($id) use ($master_id) {
+			return $id > 0 && $id !== $master_id;
+		});
+
+		if ( empty( $duplicate_ids ) ) {
+			return array( 'success' => false, 'message' => 'No valid duplicates provided' );
+		}
+
+		$ids_in = implode( ',', $duplicate_ids );
+
+		$wpdb->query( 'START TRANSACTION' );
+
+		try {
+			// 1. Move related tracks to master album
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->prefix}charts_tracks SET album_id = %d WHERE album_id IN ($ids_in)",
+				$master_id
+			) );
+
+			// 2. Update chart entries pointing to the duplicate albums directly
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE IGNORE {$wpdb->prefix}charts_entries SET item_id = %d WHERE item_type = 'album' AND item_id IN ($ids_in)",
+				$master_id
+			) );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_entries WHERE item_type = 'album' AND item_id IN ($ids_in)" );
+
+			// 3. Transfer missing metadata to master (spotify_id, cover_image)
+			$master = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_albums WHERE id = %d", $master_id ) );
+			$duplicates = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}charts_albums WHERE id IN ($ids_in)" );
+			
+			$update_data = array();
+			if ( empty( $master->spotify_id ) ) {
+				foreach ( $duplicates as $dup ) {
+					if ( ! empty( $dup->spotify_id ) ) {
+						$update_data['spotify_id'] = $dup->spotify_id;
+						break;
+					}
+				}
+			}
+			if ( empty( $master->cover_image ) ) {
+				foreach ( $duplicates as $dup ) {
+					if ( ! empty( $dup->cover_image ) ) {
+						$update_data['cover_image'] = $dup->cover_image;
+						break;
+					}
+				}
+			}
+
+			if ( ! empty( $update_data ) ) {
+				$wpdb->update( "{$wpdb->prefix}charts_albums", $update_data, array( 'id' => $master_id ) );
+			}
+
+			// 4. Delete duplicate album records
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_albums WHERE id IN ($ids_in)" );
+
+			$wpdb->query( 'COMMIT' );
+			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d albums into master ID %d.', count($duplicate_ids), $master_id ) );
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			return array( 'success' => false, 'message' => 'Merge failed: ' . $e->getMessage() );
+		}
+	}
 }

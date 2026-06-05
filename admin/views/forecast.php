@@ -1,368 +1,1007 @@
 <?php
 /**
- * Kontentainment Charts — Forecast Dashboard View
- * Displays rule-based weekly & monthly forecasting metrics.
+ * Kontentainment Charts — Forecast Engine
+ * Bloomberg Terminal Monochrome Dashboard
+ * Predictive analytics, viral radar, and probability projections.
  */
 
 global $wpdb;
 
-$intel_table = $wpdb->prefix . 'charts_intelligence';
+$intel_table   = $wpdb->prefix . 'charts_intelligence';
 $entries_table = $wpdb->prefix . 'charts_entries';
-$tracks_table = $wpdb->prefix . 'charts_tracks';
+$tracks_table  = $wpdb->prefix . 'charts_tracks';
 $artists_table = $wpdb->prefix . 'charts_artists';
 
-// Filters
-$filter_market = sanitize_text_field($_GET['forecast_market'] ?? 'all');
+// ─── SUMMARY METRICS ───────────────────────────────────────────────
+$expected_risers = (int) $wpdb->get_var("
+	SELECT COUNT(*) FROM $intel_table i
+	WHERE i.entity_type = 'track'
+	AND i.predicted_next_week < (
+		SELECT rank_position FROM $entries_table
+		WHERE item_id = i.entity_id AND item_type = 'track'
+		ORDER BY id DESC LIMIT 1
+	)
+");
 
-// Build query conditions
-$where_track = "WHERE i.entity_type = 'track'";
-$where_artist = "WHERE i.entity_type = 'artist'";
+$potential_no1 = (int) $wpdb->get_var("
+	SELECT COUNT(*) FROM $intel_table i
+	WHERE i.entity_type = 'track'
+	AND i.predicted_next_week = 1
+	AND i.predicted_next_week < (
+		SELECT rank_position FROM $entries_table
+		WHERE item_id = i.entity_id AND item_type = 'track'
+		ORDER BY id DESC LIMIT 1
+	)
+");
 
-if ($filter_market !== 'all') {
-	$market_condition = $wpdb->prepare(" AND i.entity_id IN (
-		SELECT DISTINCT e.item_id FROM $entries_table e 
-		JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id 
-		WHERE s.country_code = %s AND e.item_type = i.entity_type
-	)", $filter_market);
-	
-	$where_track .= $market_condition;
-	$where_artist .= $market_condition;
+$viral_candidates_count = (int) $wpdb->get_var("
+	SELECT COUNT(*) FROM $intel_table
+	WHERE entity_type = 'track' AND viral_score >= 65
+");
+
+$forecast_confidence_avg = (float) $wpdb->get_var("
+	SELECT AVG(confidence_score) FROM $intel_table
+	WHERE entity_type = 'track' AND confidence_score > 0
+");
+
+// ─── SONGS TO WATCH ────────────────────────────────────────────────
+$songs_to_watch = $wpdb->get_results("
+	SELECT i.*, t.title AS track_name, art.display_name AS artist_name,
+	       t.cover_image, i.momentum_score, i.confidence_score,
+	       i.predicted_next_week, i.predicted_peak, i.metadata_json,
+	(
+		SELECT rank_position FROM $entries_table
+		WHERE item_id = i.entity_id AND item_type = 'track'
+		ORDER BY id DESC LIMIT 1
+	) AS current_rank
+	FROM $intel_table i
+	JOIN $tracks_table t ON t.id = i.entity_id
+	LEFT JOIN $artists_table art ON art.id = t.primary_artist_id
+	WHERE i.entity_type = 'track'
+	AND i.predicted_next_week < (
+		SELECT rank_position FROM $entries_table
+		WHERE item_id = i.entity_id AND item_type = 'track'
+		ORDER BY id DESC LIMIT 1
+	)
+	ORDER BY i.confidence_score DESC, (
+		(SELECT rank_position FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track' ORDER BY id DESC LIMIT 1)
+		- i.predicted_next_week
+	) DESC
+	LIMIT 10
+");
+
+// ─── FUTURE TOP 10 PROJECTIONS ─────────────────────────────────────
+$future_top10 = $wpdb->get_results("
+	SELECT i.*, t.title AS track_name, art.display_name AS artist_name,
+	       t.cover_image, i.predicted_next_week, i.predicted_next_month,
+	       i.confidence_score
+	FROM $intel_table i
+	JOIN $tracks_table t ON t.id = i.entity_id
+	LEFT JOIN $artists_table art ON art.id = t.primary_artist_id
+	WHERE i.entity_type = 'track'
+	AND i.predicted_next_week <= 10
+	ORDER BY i.predicted_next_week ASC
+	LIMIT 10
+");
+
+// ─── VIRAL CANDIDATES ──────────────────────────────────────────────
+$viral_all = $wpdb->get_results("
+	SELECT i.*, t.title AS track_name, art.display_name AS artist_name,
+	       t.cover_image, i.viral_score, i.metadata_json
+	FROM $intel_table i
+	JOIN $tracks_table t ON t.id = i.entity_id
+	LEFT JOIN $artists_table art ON art.id = t.primary_artist_id
+	WHERE i.entity_type = 'track' AND i.viral_score >= 65
+	ORDER BY i.viral_score DESC
+	LIMIT 18
+");
+
+$viral_emerging = [];
+$viral_rising   = [];
+$viral_exploding = [];
+foreach ($viral_all as $v) {
+	if ($v->viral_score >= 88)      $viral_exploding[] = $v;
+	elseif ($v->viral_score >= 78)  $viral_rising[]    = $v;
+	else                            $viral_emerging[]   = $v;
 }
 
-// 1. Get Songs to Watch (predicted to rise)
-$songs_to_watch = $wpdb->get_results("
-	SELECT i.*, t.title as track_name, art.display_name as artist_name, t.cover_image, (
-		SELECT rank_position FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track' ORDER BY id DESC LIMIT 1
-	) as current_rank
+// ─── PROBABILITY DATA (TOP 5) ──────────────────────────────────────
+$probability_tracks = $wpdb->get_results("
+	SELECT i.*, t.title AS track_name, art.display_name AS artist_name,
+	       t.cover_image, i.metadata_json, i.confidence_score
 	FROM $intel_table i
 	JOIN $tracks_table t ON t.id = i.entity_id
 	LEFT JOIN $artists_table art ON art.id = t.primary_artist_id
-	$where_track AND i.predicted_next_week < (
-		SELECT rank_position FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track' ORDER BY id DESC LIMIT 1
-	)
-	ORDER BY ( (SELECT rank_position FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track' ORDER BY id DESC LIMIT 1) - i.predicted_next_week ) DESC, i.confidence_score DESC
+	WHERE i.entity_type = 'track'
+	AND i.metadata_json IS NOT NULL
+	AND i.metadata_json != ''
+	ORDER BY i.confidence_score DESC
 	LIMIT 5
 ");
-
-// 2. Get Viral Alerts (Emerging, Rising, Exploding)
-$viral_alerts = $wpdb->get_results("
-	SELECT i.*, t.title as track_name, art.display_name as artist_name, t.cover_image, (
-		SELECT rank_position FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track' ORDER BY id DESC LIMIT 1
-	) as current_rank
-	FROM $intel_table i
-	JOIN $tracks_table t ON t.id = i.entity_id
-	LEFT JOIN $artists_table art ON art.id = t.primary_artist_id
-	$where_track AND i.viral_score >= 65
-	ORDER BY i.viral_score DESC LIMIT 6
-");
-
-// 3. Get Forecast List (Tracks)
-$forecast_tracks = $wpdb->get_results("
-	SELECT i.*, t.title as track_name, art.display_name as artist_name, t.cover_image, (
-		SELECT rank_position FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track' ORDER BY id DESC LIMIT 1
-	) as current_rank
-	FROM $intel_table i
-	JOIN $tracks_table t ON t.id = i.entity_id
-	LEFT JOIN $artists_table art ON art.id = t.primary_artist_id
-	$where_track
-	ORDER BY current_rank ASC LIMIT 25
-");
-
-// 4. Get Artist Forecast List
-$forecast_artists = $wpdb->get_results("
-	SELECT i.*, a.display_name, a.image
-	FROM $intel_table i
-	JOIN $artists_table a ON a.id = i.entity_id
-	$where_artist
-	ORDER BY i.artist_power_score DESC LIMIT 10
-");
-
-// 5. Generate insights dynamically
-$editorial_insights = \Charts\Services\PredictionEngine::generate_editorial_insights();
 ?>
 
-<div class="charts-admin-wrap premium-light">
-	<header class="charts-admin-header intel-nexus-header">
-		<div class="header-main">
-			<div class="intel-badge"><?php _e( 'Intelligence → Prediction Engine', 'charts' ); ?></div>
-			<h1 class="charts-admin-title"><?php _e( 'Chart Performance Forecast', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle"><?php _e( 'Bloomberg-style predictive indicators, weekly/monthly targets, and artist authority forecasting.', 'charts' ); ?></p>
-		</div>
-		<div class="charts-admin-actions">
-			<form method="get" action="" class="filter-nexus-form" style="display:inline-block; margin-right: 15px;">
-				<input type="hidden" name="page" value="charts-forecast">
-				<select name="forecast_market" onchange="this.form.submit()" class="kb-input" style="height: 40px; line-height: 1; padding: 0 15px; font-weight:800; background:#fff; border-radius:8px;">
-					<option value="all"><?php _e( 'Global Market Signal', 'charts' ); ?></option>
-					<?php 
-					$markets = get_option('charts_markets', []);
-					foreach ($markets as $m) : ?>
-						<option value="<?php echo esc_attr($m['code']); ?>" <?php selected($filter_market, $m['code']); ?>>
-							<?php echo esc_html($m['name']); ?>
-						</option>
-					<?php endforeach; ?>
-				</select>
-			</form>
-			<button class="charts-btn-secondary premium-pulse" onclick="recalculateIntelligence()" id="intel-recalc-btn">
-				<span class="dashicons dashicons-update"></span>
-				<?php _e( 'Re-polarize Engine', 'charts' ); ?>
-			</button>
-		</div>
-	</header>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   FORECAST ENGINE — BLOOMBERG TERMINAL MONOCHROME
+   ═══════════════════════════════════════════════════════════════════ */
+.kc-terminal-wrap {
+	background: #000000;
+	color: #c8ccd0;
+	font-family: 'Courier New', Courier, monospace, -apple-system;
+	padding: 32px;
+	min-height: 100vh;
+	-webkit-font-smoothing: antialiased;
+}
+.kc-terminal-wrap * { box-sizing: border-box; }
 
-	<!-- EDITORIAL INSIGHTS STRIP -->
-	<div class="editorial-insights-strip" style="background: linear-gradient(135deg, #1e1b4b, #311042); color: #fff; padding: 20px 30px; border-radius: 16px; margin-bottom: 32px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(49, 16, 66, 0.15);">
-		<div class="insights-icon" style="background: rgba(255,255,255,0.1); width: 44px; height: 44px; border-radius: 12px; display:flex; align-items:center; justify-content:center; flex-shrink: 0;">
-			<span class="dashicons dashicons-text-page" style="font-size:22px; width:22px; height:22px; color: #a5b4fc;"></span>
+/* Header */
+.kc-terminal-header {
+	border-bottom: 1px solid #1c1e22;
+	padding-bottom: 20px;
+	margin-bottom: 28px;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+}
+.kc-terminal-header h1 {
+	font-family: 'Courier New', Courier, monospace;
+	color: #00ff66;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	margin: 0;
+	text-shadow: 0 0 20px rgba(0, 255, 102, 0.15);
+}
+.kc-terminal-header .kc-terminal-ts {
+	font-size: 11px;
+	color: #7c8087;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Summary Bar */
+.kc-terminal-summary {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 16px;
+	margin-bottom: 32px;
+}
+.kc-terminal-stat {
+	background: #0b0c0d;
+	border: 1px solid #1c1e22;
+	border-radius: 3px;
+	padding: 20px 22px;
+	position: relative;
+	overflow: hidden;
+}
+.kc-terminal-stat::before {
+	content: '';
+	position: absolute;
+	top: 0; left: 0;
+	width: 100%; height: 2px;
+	background: #1c1e22;
+}
+.kc-terminal-stat.stat-green::before { background: #00ff66; }
+.kc-terminal-stat.stat-amber::before { background: #ffaa00; }
+.kc-terminal-stat.stat-red::before   { background: #ff3366; }
+.kc-terminal-stat-label {
+	font-size: 9px;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: #7c8087;
+	margin-bottom: 10px;
+	font-weight: 700;
+}
+.kc-terminal-stat-value {
+	font-size: 32px;
+	font-weight: 700;
+	color: #e8eaed;
+	line-height: 1;
+	font-family: 'Courier New', Courier, monospace;
+}
+.kc-terminal-stat-value.val-green { color: #00ff66; }
+.kc-terminal-stat-value.val-amber { color: #ffaa00; }
+
+/* Section Headers */
+.kc-terminal-section {
+	margin-bottom: 32px;
+}
+.kc-terminal-section-title {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.15em;
+	color: #00ff66;
+	margin: 0 0 18px 0;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #1c1e22;
+	font-weight: 700;
+	font-family: 'Courier New', Courier, monospace;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.kc-terminal-section-title .kc-section-count {
+	color: #7c8087;
+	font-size: 9px;
+}
+
+/* Cards Grid */
+.kc-terminal-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 14px;
+}
+.kc-terminal-card {
+	background: #0b0c0d;
+	border: 1px solid #1c1e22;
+	border-radius: 3px;
+	padding: 18px;
+	transition: border-color 0.2s;
+}
+.kc-terminal-card:hover { border-color: #2a2d33; }
+
+.kc-card-top {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.kc-card-thumb {
+	width: 44px;
+	height: 44px;
+	border-radius: 3px;
+	object-fit: cover;
+	border: 1px solid #1c1e22;
+	flex-shrink: 0;
+}
+.kc-card-info { overflow: hidden; flex: 1; }
+.kc-card-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: #e8eaed;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: block;
+	margin-bottom: 2px;
+}
+.kc-card-artist {
+	font-size: 10px;
+	color: #7c8087;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: block;
+}
+
+/* Rank Flow */
+.kc-rank-flow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+	font-family: 'Courier New', Courier, monospace;
+}
+.kc-rank-current {
+	font-size: 16px;
+	font-weight: 700;
+	color: #7c8087;
+}
+.kc-rank-arrow {
+	font-size: 14px;
+	font-weight: 700;
+}
+.kc-rank-arrow.arrow-up   { color: #00ff66; }
+.kc-rank-arrow.arrow-down { color: #ff3366; }
+.kc-rank-arrow.arrow-flat { color: #e8eaed; }
+.kc-rank-predicted {
+	font-size: 16px;
+	font-weight: 700;
+	color: #00ff66;
+}
+.kc-rank-peak {
+	margin-left: auto;
+	font-size: 10px;
+	color: #ffaa00;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Confidence Gauge */
+.kc-gauge-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 6px;
+}
+.kc-gauge-label {
+	font-size: 9px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #7c8087;
+	width: 80px;
+	flex-shrink: 0;
+	font-weight: 700;
+}
+.kc-gauge-track {
+	flex: 1;
+	height: 6px;
+	background: #1c1e22;
+	border-radius: 2px;
+	overflow: hidden;
+}
+.kc-gauge-fill {
+	height: 100%;
+	border-radius: 2px;
+	transition: width 0.6s ease;
+}
+.kc-gauge-fill.gauge-confidence {
+	background: linear-gradient(90deg, #ff3366 0%, #ffaa00 40%, #00ff66 80%);
+}
+.kc-gauge-fill.gauge-momentum {
+	background: #00ff66;
+}
+.kc-gauge-fill.gauge-viral {
+	background: #ff3366;
+}
+.kc-gauge-fill.gauge-top10 {
+	background: #00ff66;
+}
+.kc-gauge-fill.gauge-top5 {
+	background: #ffaa00;
+}
+.kc-gauge-fill.gauge-no1 {
+	background: #ff3366;
+}
+.kc-gauge-value {
+	font-size: 11px;
+	font-weight: 700;
+	color: #e8eaed;
+	width: 36px;
+	text-align: right;
+	font-family: 'Courier New', Courier, monospace;
+	flex-shrink: 0;
+}
+
+/* Future Top 10 Table */
+.kc-terminal-table-wrap {
+	background: #0b0c0d;
+	border: 1px solid #1c1e22;
+	border-radius: 3px;
+	overflow: hidden;
+}
+.kc-terminal-dual {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+}
+.kc-terminal-dual-col {
+	padding: 0;
+}
+.kc-terminal-dual-col + .kc-terminal-dual-col {
+	border-left: 1px solid #1c1e22;
+}
+.kc-terminal-col-header {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: #00ff66;
+	padding: 14px 18px;
+	border-bottom: 1px solid #1c1e22;
+	font-weight: 700;
+	font-family: 'Courier New', Courier, monospace;
+	background: #08090a;
+}
+.kc-terminal-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.kc-terminal-table th {
+	font-size: 9px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: #7c8087;
+	padding: 10px 18px;
+	text-align: left;
+	border-bottom: 1px solid #1c1e22;
+	font-weight: 700;
+}
+.kc-terminal-table td {
+	font-size: 12px;
+	padding: 10px 18px;
+	border-bottom: 1px solid #0f1012;
+	color: #c8ccd0;
+	font-family: 'Courier New', Courier, monospace;
+}
+.kc-terminal-table tr:hover td {
+	background: #0e0f11;
+}
+.kc-terminal-table .td-rank {
+	font-weight: 700;
+	color: #00ff66;
+	font-size: 13px;
+}
+.kc-terminal-table .td-name {
+	max-width: 160px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: #e8eaed;
+	font-weight: 600;
+}
+.kc-terminal-table .td-artist {
+	color: #7c8087;
+	font-size: 11px;
+	max-width: 120px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.kc-terminal-table .td-confidence {
+	text-align: right;
+	font-weight: 700;
+}
+
+/* Viral Radar */
+.kc-viral-radar {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+.kc-viral-column {
+	background: #0b0c0d;
+	border: 1px solid #1c1e22;
+	border-radius: 3px;
+	overflow: hidden;
+}
+.kc-viral-col-header {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	padding: 12px 16px;
+	border-bottom: 1px solid #1c1e22;
+	font-weight: 700;
+	font-family: 'Courier New', Courier, monospace;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.kc-viral-col-header.tier-emerging { color: #ffaa00; background: rgba(255, 170, 0, 0.03); }
+.kc-viral-col-header.tier-rising   { color: #00ff66; background: rgba(0, 255, 102, 0.03); }
+.kc-viral-col-header.tier-exploding { color: #ff3366; background: rgba(255, 51, 102, 0.03); }
+.kc-viral-col-header .tier-count {
+	font-size: 9px;
+	color: #7c8087;
+}
+.kc-viral-item {
+	padding: 14px 16px;
+	border-bottom: 1px solid #0f1012;
+	transition: background 0.2s;
+}
+.kc-viral-item:hover { background: #0e0f11; }
+.kc-viral-item:last-child { border-bottom: none; }
+.kc-viral-item-top {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+.kc-viral-thumb {
+	width: 36px;
+	height: 36px;
+	border-radius: 3px;
+	object-fit: cover;
+	border: 1px solid #1c1e22;
+	flex-shrink: 0;
+}
+.kc-viral-meta { overflow: hidden; flex: 1; }
+.kc-viral-name {
+	font-size: 12px;
+	font-weight: 700;
+	color: #e8eaed;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: block;
+}
+.kc-viral-artist {
+	font-size: 9px;
+	color: #7c8087;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: block;
+}
+.kc-viral-score-badge {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 13px;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+.kc-viral-score-badge.score-emerging { color: #ffaa00; }
+.kc-viral-score-badge.score-rising   { color: #00ff66; }
+.kc-viral-score-badge.score-exploding { color: #ff3366; }
+.kc-viral-trend {
+	font-size: 9px;
+	color: #7c8087;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	margin-top: 2px;
+}
+
+/* Probability Section */
+.kc-probability-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+	gap: 14px;
+}
+.kc-prob-card {
+	background: #0b0c0d;
+	border: 1px solid #1c1e22;
+	border-radius: 3px;
+	padding: 18px;
+}
+.kc-prob-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #1c1e22;
+}
+.kc-prob-thumb {
+	width: 40px;
+	height: 40px;
+	border-radius: 3px;
+	object-fit: cover;
+	border: 1px solid #1c1e22;
+}
+.kc-prob-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: #e8eaed;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: block;
+}
+.kc-prob-artist {
+	font-size: 10px;
+	color: #7c8087;
+	display: block;
+}
+.kc-prob-gauges { display: flex; flex-direction: column; gap: 8px; }
+
+/* Empty State */
+.kc-terminal-empty {
+	padding: 40px;
+	text-align: center;
+	color: #7c8087;
+	font-size: 12px;
+	font-family: 'Courier New', Courier, monospace;
+	letter-spacing: 0.05em;
+}
+
+/* Recalc Button */
+.kc-terminal-btn {
+	background: #0b0c0d;
+	border: 1px solid #1c1e22;
+	color: #00ff66;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	padding: 8px 18px;
+	border-radius: 2px;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+.kc-terminal-btn:hover {
+	background: #00ff66;
+	color: #000000;
+	border-color: #00ff66;
+}
+.kc-terminal-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+	.kc-terminal-summary { grid-template-columns: repeat(2, 1fr); }
+	.kc-viral-radar { grid-template-columns: 1fr; }
+	.kc-terminal-dual { grid-template-columns: 1fr; }
+	.kc-terminal-dual-col + .kc-terminal-dual-col { border-left: none; border-top: 1px solid #1c1e22; }
+}
+@media (max-width: 768px) {
+	.kc-terminal-summary { grid-template-columns: 1fr; }
+	.kc-terminal-cards { grid-template-columns: 1fr; }
+	.kc-terminal-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+	.kc-probability-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="kc-terminal-wrap">
+
+	<!-- ═══ HEADER ═══ -->
+	<div class="kc-terminal-header">
+		<div>
+			<h1>> FORECAST ENGINE</h1>
+			<div class="kc-terminal-ts"><?php echo date('Y-m-d H:i:s T'); ?> &mdash; PREDICTIVE ANALYTICS MODULE</div>
 		</div>
-		<div class="insights-ticker" style="flex-grow: 1;">
-			<strong style="display:block; text-transform: uppercase; font-size:11px; letter-spacing:0.1em; color: #a5b4fc; margin-bottom: 2px;">Editorial Insights</strong>
-			<div class="insights-text-container" style="font-size: 14px; font-weight: 600;">
-				<?php echo esc_html($editorial_insights[0] ?? ''); ?>
-			</div>
+		<button class="kc-terminal-btn" onclick="recalculateForecast()" id="kc-recalc-btn">
+			&#x21bb; RE-CALCULATE
+		</button>
+	</div>
+
+	<!-- ═══ SUMMARY BAR ═══ -->
+	<div class="kc-terminal-summary">
+		<div class="kc-terminal-stat stat-green">
+			<div class="kc-terminal-stat-label">EXPECTED RISERS</div>
+			<div class="kc-terminal-stat-value val-green"><?php echo $expected_risers; ?></div>
 		</div>
-		<div class="insights-secondary" style="font-size: 13px; color: #cbd5e1; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 20px; display:none; md-display:block;">
-			<?php echo esc_html($editorial_insights[1] ?? ''); ?>
+		<div class="kc-terminal-stat stat-amber">
+			<div class="kc-terminal-stat-label">POTENTIAL #1 SHIFTS</div>
+			<div class="kc-terminal-stat-value val-amber"><?php echo $potential_no1; ?></div>
+		</div>
+		<div class="kc-terminal-stat stat-red">
+			<div class="kc-terminal-stat-label">VIRAL CANDIDATES</div>
+			<div class="kc-terminal-stat-value"><?php echo $viral_candidates_count; ?></div>
+		</div>
+		<div class="kc-terminal-stat">
+			<div class="kc-terminal-stat-label">FORECAST CONFIDENCE</div>
+			<div class="kc-terminal-stat-value"><?php echo round($forecast_confidence_avg, 1); ?>%</div>
 		</div>
 	</div>
 
-	<div class="intel-workspace">
-		<div class="intel-main-grid">
+	<!-- ═══ SONGS TO WATCH ═══ -->
+	<div class="kc-terminal-section">
+		<div class="kc-terminal-section-title">
+			&#x25B6; SONGS TO WATCH
+			<span class="kc-section-count">[<?php echo count($songs_to_watch); ?> SIGNALS]</span>
+		</div>
 
-			<!-- SONGS TO WATCH SLIDER (SPAN 8) -->
-			<div class="intel-block-card span-8">
-				<header class="block-header">
-					<div class="block-title-wrap">
-						<span class="block-tag purple"><?php _e( '🔥 Songs To Watch', 'charts' ); ?></span>
-						<h3><?php _e( 'Next Period High-Velocity Rising Songs', 'charts' ); ?></h3>
+		<?php if (empty($songs_to_watch)) : ?>
+			<div class="kc-terminal-empty">NO RISING SIGNALS DETECTED. RUN INTELLIGENCE CALCULATIONS TO POPULATE.</div>
+		<?php else : ?>
+			<div class="kc-terminal-cards">
+				<?php foreach ($songs_to_watch as $song) :
+					$conf = round($song->confidence_score);
+					$mom  = round($song->momentum_score);
+					$predicted = intval($song->predicted_next_week);
+					$current   = intval($song->current_rank);
+					$peak      = intval($song->predicted_peak);
+
+					if ($predicted < $current) {
+						$arrow_class = 'arrow-up';
+						$arrow_char  = '&#x2191;';
+					} elseif ($predicted > $current) {
+						$arrow_class = 'arrow-down';
+						$arrow_char  = '&#x2193;';
+					} else {
+						$arrow_class = 'arrow-flat';
+						$arrow_char  = '&#x2192;';
+					}
+				?>
+					<div class="kc-terminal-card">
+						<div class="kc-card-top">
+							<img class="kc-card-thumb" src="<?php echo esc_url($song->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="">
+							<div class="kc-card-info">
+								<span class="kc-card-title"><?php echo esc_html($song->track_name); ?></span>
+								<span class="kc-card-artist"><?php echo esc_html($song->artist_name); ?></span>
+							</div>
+						</div>
+
+						<div class="kc-rank-flow">
+							<span class="kc-rank-current">#<?php echo $current; ?></span>
+							<span class="kc-rank-arrow <?php echo $arrow_class; ?>"><?php echo $arrow_char; ?></span>
+							<span class="kc-rank-predicted">#<?php echo $predicted; ?></span>
+							<span class="kc-rank-peak">PEAK #<?php echo $peak; ?></span>
+						</div>
+
+						<div class="kc-gauge-row">
+							<span class="kc-gauge-label">CONFIDENCE</span>
+							<div class="kc-gauge-track">
+								<div class="kc-gauge-fill gauge-confidence" style="width: <?php echo min(100, $conf); ?>%;"></div>
+							</div>
+							<span class="kc-gauge-value"><?php echo $conf; ?>%</span>
+						</div>
+						<div class="kc-gauge-row">
+							<span class="kc-gauge-label">MOMENTUM</span>
+							<div class="kc-gauge-track">
+								<div class="kc-gauge-fill gauge-momentum" style="width: <?php echo min(100, $mom); ?>%;"></div>
+							</div>
+							<span class="kc-gauge-value"><?php echo $mom; ?></span>
+						</div>
 					</div>
-				</header>
-				<div class="block-body" style="padding: 24px;">
-					<?php if (empty($songs_to_watch)) : ?>
-						<div style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 700;"><?php _e( 'No rising songs detected yet. Try importing more historical cycles.', 'charts' ); ?></div>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+	</div>
+
+	<!-- ═══ FUTURE TOP 10 PANEL ═══ -->
+	<div class="kc-terminal-section">
+		<div class="kc-terminal-section-title">
+			&#x25B6; FUTURE TOP 10 PROJECTIONS
+			<span class="kc-section-count">[<?php echo count($future_top10); ?> ENTRIES]</span>
+		</div>
+
+		<?php if (empty($future_top10)) : ?>
+			<div class="kc-terminal-table-wrap">
+				<div class="kc-terminal-empty">NO TOP 10 PROJECTIONS AVAILABLE. AWAITING SUFFICIENT DATA.</div>
+			</div>
+		<?php else : ?>
+			<div class="kc-terminal-table-wrap">
+				<div class="kc-terminal-dual">
+					<!-- Next Week -->
+					<div class="kc-terminal-dual-col">
+						<div class="kc-terminal-col-header">NEXT WEEK PROJECTION</div>
+						<table class="kc-terminal-table">
+							<thead>
+								<tr>
+									<th>RNK</th>
+									<th>TRACK</th>
+									<th>ARTIST</th>
+									<th style="text-align:right;">CONF %</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($future_top10 as $ft) : ?>
+									<tr>
+										<td class="td-rank">#<?php echo intval($ft->predicted_next_week); ?></td>
+										<td class="td-name"><?php echo esc_html($ft->track_name); ?></td>
+										<td class="td-artist"><?php echo esc_html($ft->artist_name); ?></td>
+										<td class="td-confidence" style="color: <?php echo $ft->confidence_score >= 70 ? '#00ff66' : ($ft->confidence_score >= 40 ? '#ffaa00' : '#ff3366'); ?>;">
+											<?php echo round($ft->confidence_score); ?>%
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+					<!-- Next Month -->
+					<div class="kc-terminal-dual-col">
+						<div class="kc-terminal-col-header">NEXT MONTH PROJECTION</div>
+						<table class="kc-terminal-table">
+							<thead>
+								<tr>
+									<th>RNK</th>
+									<th>TRACK</th>
+									<th>ARTIST</th>
+									<th style="text-align:right;">CONF %</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ($future_top10 as $ft) : ?>
+									<tr>
+										<td class="td-rank" style="color: <?php echo intval($ft->predicted_next_month) <= 10 ? '#00ff66' : '#ffaa00'; ?>;">
+											#<?php echo intval($ft->predicted_next_month); ?>
+										</td>
+										<td class="td-name"><?php echo esc_html($ft->track_name); ?></td>
+										<td class="td-artist"><?php echo esc_html($ft->artist_name); ?></td>
+										<td class="td-confidence" style="color: <?php echo $ft->confidence_score >= 70 ? '#00ff66' : ($ft->confidence_score >= 40 ? '#ffaa00' : '#ff3366'); ?>;">
+											<?php echo round($ft->confidence_score * 0.85); ?>%
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		<?php endif; ?>
+	</div>
+
+	<!-- ═══ VIRAL CANDIDATES RADAR ═══ -->
+	<div class="kc-terminal-section">
+		<div class="kc-terminal-section-title">
+			&#x25B6; VIRAL CANDIDATES RADAR
+			<span class="kc-section-count">[<?php echo count($viral_all); ?> DETECTED]</span>
+		</div>
+
+		<?php if (empty($viral_all)) : ?>
+			<div class="kc-terminal-table-wrap">
+				<div class="kc-terminal-empty">NO VIRAL SIGNALS IN CURRENT DATASET.</div>
+			</div>
+		<?php else : ?>
+			<div class="kc-viral-radar">
+				<!-- EMERGING 65-78 -->
+				<div class="kc-viral-column">
+					<div class="kc-viral-col-header tier-emerging">
+						EMERGING (65-78)
+						<span class="tier-count"><?php echo count($viral_emerging); ?></span>
+					</div>
+					<?php if (empty($viral_emerging)) : ?>
+						<div class="kc-terminal-empty">NO EMERGING SIGNALS</div>
 					<?php else : ?>
-						<div class="songs-to-watch-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
-							<?php foreach ($songs_to_watch as $song) : 
-								$growth_pct = round((($song->current_rank - $song->predicted_next_week) / max(1, $song->current_rank)) * 100);
-							?>
-								<div class="watch-card" style="background: #fafafa; border: 1px solid #f1f5f9; border-radius: 14px; padding: 15px; position: relative; overflow: hidden; transition: all 0.3s ease;">
-									<div class="watch-rank-badge" style="position: absolute; top: 12px; right: 12px; background: #6366f1; color: #fff; font-size:10px; font-weight: 900; padding: 2px 6px; border-radius: 4px;">
-										<?php echo '+' . $growth_pct . '%'; ?>
+						<?php foreach ($viral_emerging as $ve) :
+							$meta = !empty($ve->metadata_json) ? json_decode($ve->metadata_json, true) : [];
+							$trend_dir = $meta['viral_status'] ?? $meta['trend_direction'] ?? '—';
+						?>
+							<div class="kc-viral-item">
+								<div class="kc-viral-item-top">
+									<img class="kc-viral-thumb" src="<?php echo esc_url($ve->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="">
+									<div class="kc-viral-meta">
+										<span class="kc-viral-name"><?php echo esc_html($ve->track_name); ?></span>
+										<span class="kc-viral-artist"><?php echo esc_html($ve->artist_name); ?></span>
 									</div>
-									<img src="<?php echo esc_url($song->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
-									<strong style="display:block; font-size:14px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--charts-primary);"><?php echo esc_html($song->track_name); ?></strong>
-									<span style="display:block; font-size:11px; color:#64748b; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($song->artist_name); ?></span>
-									
-									<div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:10px; margin-top:5px; font-size:11px; font-weight:700;">
-										<div>
-											<span style="color:#94a3b8; display:block; font-size:9px; text-transform:uppercase;">Current</span>
-											<span style="font-size:13px; color:#1e293b;">#<?php echo intval($song->current_rank); ?></span>
-										</div>
-										<div style="text-align: right;">
-											<span style="color:#94a3b8; display:block; font-size:9px; text-transform:uppercase;">Predicted</span>
-											<span style="font-size:13px; color:#10b981;">#<?php echo intval($song->predicted_next_week); ?></span>
-										</div>
-									</div>
-									
-									<div style="margin-top: 10px; display:flex; align-items:center; justify-content:space-between; font-size:10px; color:#64748b; font-weight: 700;">
-										<span>Confidence:</span>
-										<span style="color:#6366f1; font-weight:800;"><?php echo round($song->confidence_score); ?>%</span>
+									<span class="kc-viral-score-badge score-emerging"><?php echo round($ve->viral_score); ?></span>
+								</div>
+								<div class="kc-gauge-row">
+									<span class="kc-gauge-label" style="width:50px;">VIRAL</span>
+									<div class="kc-gauge-track">
+										<div class="kc-gauge-fill" style="width: <?php echo min(100, $ve->viral_score); ?>%; background: #ffaa00;"></div>
 									</div>
 								</div>
-							<?php endforeach; ?>
-						</div>
+								<div class="kc-viral-trend"><?php echo esc_html(strtoupper($trend_dir)); ?></div>
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+
+				<!-- RISING 78-88 -->
+				<div class="kc-viral-column">
+					<div class="kc-viral-col-header tier-rising">
+						RISING (78-88)
+						<span class="tier-count"><?php echo count($viral_rising); ?></span>
+					</div>
+					<?php if (empty($viral_rising)) : ?>
+						<div class="kc-terminal-empty">NO RISING SIGNALS</div>
+					<?php else : ?>
+						<?php foreach ($viral_rising as $vr) :
+							$meta = !empty($vr->metadata_json) ? json_decode($vr->metadata_json, true) : [];
+							$trend_dir = $meta['viral_status'] ?? $meta['trend_direction'] ?? '—';
+						?>
+							<div class="kc-viral-item">
+								<div class="kc-viral-item-top">
+									<img class="kc-viral-thumb" src="<?php echo esc_url($vr->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="">
+									<div class="kc-viral-meta">
+										<span class="kc-viral-name"><?php echo esc_html($vr->track_name); ?></span>
+										<span class="kc-viral-artist"><?php echo esc_html($vr->artist_name); ?></span>
+									</div>
+									<span class="kc-viral-score-badge score-rising"><?php echo round($vr->viral_score); ?></span>
+								</div>
+								<div class="kc-gauge-row">
+									<span class="kc-gauge-label" style="width:50px;">VIRAL</span>
+									<div class="kc-gauge-track">
+										<div class="kc-gauge-fill" style="width: <?php echo min(100, $vr->viral_score); ?>%; background: #00ff66;"></div>
+									</div>
+								</div>
+								<div class="kc-viral-trend"><?php echo esc_html(strtoupper($trend_dir)); ?></div>
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+
+				<!-- EXPLODING 88+ -->
+				<div class="kc-viral-column">
+					<div class="kc-viral-col-header tier-exploding">
+						EXPLODING (88+)
+						<span class="tier-count"><?php echo count($viral_exploding); ?></span>
+					</div>
+					<?php if (empty($viral_exploding)) : ?>
+						<div class="kc-terminal-empty">NO EXPLODING SIGNALS</div>
+					<?php else : ?>
+						<?php foreach ($viral_exploding as $vx) :
+							$meta = !empty($vx->metadata_json) ? json_decode($vx->metadata_json, true) : [];
+							$trend_dir = $meta['viral_status'] ?? $meta['trend_direction'] ?? '—';
+						?>
+							<div class="kc-viral-item">
+								<div class="kc-viral-item-top">
+									<img class="kc-viral-thumb" src="<?php echo esc_url($vx->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="">
+									<div class="kc-viral-meta">
+										<span class="kc-viral-name"><?php echo esc_html($vx->track_name); ?></span>
+										<span class="kc-viral-artist"><?php echo esc_html($vx->artist_name); ?></span>
+									</div>
+									<span class="kc-viral-score-badge score-exploding"><?php echo round($vx->viral_score); ?></span>
+								</div>
+								<div class="kc-gauge-row">
+									<span class="kc-gauge-label" style="width:50px;">VIRAL</span>
+									<div class="kc-gauge-track">
+										<div class="kc-gauge-fill" style="width: <?php echo min(100, $vx->viral_score); ?>%; background: #ff3366;"></div>
+									</div>
+								</div>
+								<div class="kc-viral-trend"><?php echo esc_html(strtoupper($trend_dir)); ?></div>
+							</div>
+						<?php endforeach; ?>
 					<?php endif; ?>
 				</div>
 			</div>
-
-			<!-- VIRAL ALERT SYSTEM (SPAN 4) -->
-			<div class="intel-block-card span-4">
-				<header class="block-header">
-					<div class="block-title-wrap">
-						<span class="block-tag" style="color: #fe025b;"><?php _e( '⚡ Viral Alert System', 'charts' ); ?></span>
-						<h3><?php _e( 'Real-time Signal Spikes', 'charts' ); ?></h3>
-					</div>
-				</header>
-				<div class="block-body no-padding">
-					<div class="viral-alerts-list" style="padding: 10px 24px 24px;">
-						<?php if (empty($viral_alerts)) : ?>
-							<div style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 700;"><?php _e( 'No active viral alerts in this market.', 'charts' ); ?></div>
-						<?php else : ?>
-							<?php foreach ($viral_alerts as $alert) : 
-								$meta_data = !empty($alert->metadata_json) ? json_decode($alert->metadata_json, true) : [];
-								$status = $meta_data['viral_status'] ?? 'Viral Emerging';
-								$class = 'is-stable';
-								if ($status === 'Viral Exploding') $class = 'is-falling'; // red
-								elseif ($status === 'Viral Rising') $class = 'is-new'; // blue
-								elseif ($status === 'Viral Emerging') $class = 'is-rising'; // green
-							?>
-								<div class="viral-alert-item" style="display:flex; align-items:center; gap: 12px; padding: 15px 0; border-bottom: 1px solid #f8fafc;">
-									<img src="<?php echo esc_url($alert->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 42px; height: 42px; border-radius: 8px; object-fit: cover;">
-									<div style="flex-grow: 1; overflow:hidden;">
-										<strong style="display:block; font-size:13px; color: var(--charts-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo esc_html($alert->track_name); ?></strong>
-										<span style="font-size:10px; color:#94a3b8; font-weight:700;"><?php echo esc_html($alert->artist_name); ?></span>
-									</div>
-									<div style="text-align: right; flex-shrink: 0;">
-										<span class="intel-status-tag <?php echo $class; ?>" style="font-size:8px; padding:3px 6px; font-weight:900;"><?php echo esc_html(strtoupper($status)); ?></span>
-										<span style="display:block; font-size:10px; font-weight:800; color:#64748b; margin-top:3px;"><?php echo round($alert->viral_score); ?> pts</span>
-									</div>
-								</div>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</div>
-				</div>
-			</div>
-
-			<!-- CORE FORECAST LIST (SPAN 12) -->
-			<div class="intel-block-card span-12">
-				<header class="block-header">
-					<div class="block-title-wrap">
-						<span class="block-tag success"><?php _e( 'Forecasting Matrix', 'charts' ); ?></span>
-						<h3><?php _e( 'Historical Stability & Future Expected Ranks', 'charts' ); ?></h3>
-					</div>
-				</header>
-				<div class="block-body no-padding">
-					<table class="intel-mini-table is-wide">
-						<thead>
-							<tr>
-								<th><?php _e( 'Track Detail', 'charts' ); ?></th>
-								<th><?php _e( 'Current Rank', 'charts' ); ?></th>
-								<th><?php _e( 'Expected Next Week', 'charts' ); ?></th>
-								<th><?php _e( 'Expected Next Month', 'charts' ); ?></th>
-								<th><?php _e( 'Peak Position', 'charts' ); ?></th>
-								<th><?php _e( 'Trend Direction', 'charts' ); ?></th>
-								<th><?php _e( 'Confidence', 'charts' ); ?></th>
-								<th class="text-right"><?php _e( 'Momentum / Viral Meters', 'charts' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php if (empty($forecast_tracks)) : ?>
-								<tr><td colspan="8" class="text-center" style="padding: 50px; color: #94a3b8;"><?php _e( 'Run calculations or import CSV charts to populate the forecasting matrix.', 'charts' ); ?></td></tr>
-							<?php else : ?>
-								<?php foreach ($forecast_tracks as $t) : 
-									$meta_data = !empty($t->metadata_json) ? json_decode($t->metadata_json, true) : [];
-									$trend_dir = $meta_data['trend_direction'] ?? 'Stable';
-									
-									$dir_class = 'is-stable';
-									if ($trend_dir === 'Strong Upward') $dir_class = 'is-rising';
-									elseif ($trend_dir === 'Upward') $dir_class = 'is-new';
-									elseif ($trend_dir === 'Declining') $dir_class = 'is-falling';
-								?>
-									<tr>
-										<td>
-											<div class="asset-flex">
-												<img src="<?php echo esc_url($t->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" class="asset-thumb">
-												<div class="asset-meta">
-													<span class="asset-name" style="font-weight: 800; font-size:13px;"><?php echo esc_html($t->track_name); ?></span>
-													<span class="asset-sub"><?php echo esc_html($t->artist_name); ?></span>
-												</div>
-											</div>
-										</td>
-										<td style="font-weight: 900; font-size:14px; color:#1e293b;">#<?php echo intval($t->current_rank); ?></td>
-										<td style="font-weight: 900; font-size:14px; color:#10b981;">
-											#<?php echo intval($t->predicted_next_week); ?>
-											<?php if ($t->predicted_next_week < $t->current_rank) : ?>
-												<span class="dashicons dashicons-arrow-up-alt2" style="font-size:14px; width:14px; height:14px; color:#10b981; vertical-align:middle;"></span>
-											<?php elseif ($t->predicted_next_week > $t->current_rank) : ?>
-												<span class="dashicons dashicons-arrow-down-alt2" style="font-size:14px; width:14px; height:14px; color:#ef4444; vertical-align:middle;"></span>
-											<?php endif; ?>
-										</td>
-										<td style="font-weight: 800; font-size:14px; color:#6366f1;">#<?php echo intval($t->predicted_next_month); ?></td>
-										<td>
-											<span style="background: rgba(99, 102, 241, 0.1); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.2); font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px;">
-												PEAK #<?php echo intval($t->predicted_peak); ?>
-											</span>
-										</td>
-										<td>
-											<span class="intel-status-tag <?php echo $dir_class; ?>" style="font-size:9px; padding:4px 8px;">
-												<?php echo esc_html(strtoupper($trend_dir)); ?>
-											</span>
-										</td>
-										<td style="font-weight: 800; font-size: 13px; color:#1e293b;">
-											<?php echo round($t->confidence_score); ?>%
-										</td>
-										<td class="text-right">
-											<div style="display:flex; flex-direction:column; align-items:flex-end; gap: 4px;">
-												<div style="display:flex; align-items:center; gap:8px;">
-													<span style="font-size:9px; color:#94a3b8; font-weight:700;">Momentum</span>
-													<div class="v-track-bg" style="width: 60px; height: 4px; background:#f1f5f9;">
-														<div class="v-track-fill" style="width: <?php echo min(100, $t->momentum_score); ?>%; height:100%; background:#6366f1;"></div>
-													</div>
-												</div>
-												<div style="display:flex; align-items:center; gap:8px;">
-													<span style="font-size:9px; color:#94a3b8; font-weight:700;">Viral</span>
-													<div class="v-track-bg" style="width: 60px; height: 4px; background:#f1f5f9;">
-														<div class="v-track-fill" style="width: <?php echo min(100, $t->viral_score); ?>%; height:100%; background:#fe025b;"></div>
-													</div>
-												</div>
-											</div>
-										</td>
-									</tr>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</tbody>
-					</table>
-				</div>
-			</div>
-
-			<!-- ARTIST FORECASTS PANEL (SPAN 12) -->
-			<div class="intel-block-card span-12">
-				<header class="block-header">
-					<div class="block-title-wrap">
-						<span class="block-tag" style="color: #6366f1;"><?php _e( 'Verification & Ranks', 'charts' ); ?></span>
-						<h3><?php _e( 'Artist Authority Rank & Expected New Entries', 'charts' ); ?></h3>
-					</div>
-				</header>
-				<div class="block-body no-padding">
-					<table class="intel-mini-table is-wide">
-						<thead>
-							<tr>
-								<th><?php _e( 'Artist Profile', 'charts' ); ?></th>
-								<th><?php _e( 'Predicted Rank', 'charts' ); ?></th>
-								<th><?php _e( 'Artist Power Score', 'charts' ); ?></th>
-								<th><?php _e( 'Expected New Entries', 'charts' ); ?></th>
-								<th class="text-right"><?php _e( 'Expected Growth %', 'charts' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php if (empty($forecast_artists)) : ?>
-								<tr><td colspan="5" class="text-center" style="padding: 50px; color: #94a3b8;"><?php _e( 'Calculate intelligence data to forecast artist dominance.', 'charts' ); ?></td></tr>
-							<?php else : ?>
-								<?php foreach ($forecast_artists as $art) : 
-									$meta_data = !empty($art->metadata_json) ? json_decode($art->metadata_json, true) : [];
-									$pred_rank = $meta_data['predicted_artist_rank'] ?? $art->predicted_peak;
-								?>
-									<tr>
-										<td>
-											<div class="asset-flex">
-												<img src="<?php echo esc_url($art->image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width:36px; height:36px; border-radius:50%; object-fit:cover;">
-												<div class="asset-meta">
-													<span class="asset-name" style="font-weight:800; font-size:13px;"><?php echo esc_html($art->display_name); ?></span>
-												</div>
-											</div>
-										</td>
-										<td style="font-weight:900; font-size:14px; color:#1e293b;">#<?php echo intval($pred_rank); ?></td>
-										<td>
-											<div style="display:flex; align-items:center; gap:10px;">
-												<span style="font-weight: 900; font-size:14px; color:#6366f1; min-width:30px;"><?php echo round($art->artist_power_score); ?></span>
-												<div class="v-track-bg" style="width: 100px; height: 6px; background:#f1f5f9; border-radius:3px;">
-													<div class="v-track-fill" style="width: <?php echo min(100, $art->artist_power_score); ?>%; height:100%; background:linear-gradient(90deg, #6366f1, #fe025b); border-radius:3px;"></div>
-												</div>
-											</div>
-										</td>
-										<td style="font-weight:800; font-size:13px; color:#1e293b;">
-											<?php echo intval($art->predicted_next_week); ?> new entries
-										</td>
-										<td class="text-right" style="font-weight:900; font-size:14px; color:#10b981;">
-											<?php echo round($art->predicted_next_month); ?>%
-										</td>
-									</tr>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</tbody>
-					</table>
-				</div>
-			</div>
-
-		</div>
+		<?php endif; ?>
 	</div>
+
+	<!-- ═══ PREDICTION PROBABILITY ═══ -->
+	<div class="kc-terminal-section">
+		<div class="kc-terminal-section-title">
+			&#x25B6; PREDICTION PROBABILITY MATRIX
+			<span class="kc-section-count">[TOP <?php echo count($probability_tracks); ?> TRACKS]</span>
+		</div>
+
+		<?php if (empty($probability_tracks)) : ?>
+			<div class="kc-terminal-table-wrap">
+				<div class="kc-terminal-empty">NO PROBABILITY DATA AVAILABLE. METADATA CALCULATIONS REQUIRED.</div>
+			</div>
+		<?php else : ?>
+			<div class="kc-probability-grid">
+				<?php foreach ($probability_tracks as $pt) :
+					$meta = !empty($pt->metadata_json) ? json_decode($pt->metadata_json, true) : [];
+					$top10_prob = round($meta['top_10_prob'] ?? 0);
+					$top5_prob  = round($meta['top_5_prob']  ?? 0);
+					$no1_prob   = round($meta['no_1_prob']   ?? 0);
+				?>
+					<div class="kc-prob-card">
+						<div class="kc-prob-header">
+							<img class="kc-prob-thumb" src="<?php echo esc_url($pt->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="">
+							<div style="overflow:hidden; flex:1;">
+								<span class="kc-prob-title"><?php echo esc_html($pt->track_name); ?></span>
+								<span class="kc-prob-artist"><?php echo esc_html($pt->artist_name); ?></span>
+							</div>
+							<span style="font-size:11px; color:#7c8087; font-weight:700; font-family:'Courier New',monospace;"><?php echo round($pt->confidence_score); ?>% CONF</span>
+						</div>
+						<div class="kc-prob-gauges">
+							<div class="kc-gauge-row">
+								<span class="kc-gauge-label">TOP 10 %</span>
+								<div class="kc-gauge-track">
+									<div class="kc-gauge-fill gauge-top10" style="width: <?php echo min(100, $top10_prob); ?>%;"></div>
+								</div>
+								<span class="kc-gauge-value" style="color:#00ff66;"><?php echo $top10_prob; ?>%</span>
+							</div>
+							<div class="kc-gauge-row">
+								<span class="kc-gauge-label">TOP 5 %</span>
+								<div class="kc-gauge-track">
+									<div class="kc-gauge-fill gauge-top5" style="width: <?php echo min(100, $top5_prob); ?>%;"></div>
+								</div>
+								<span class="kc-gauge-value" style="color:#ffaa00;"><?php echo $top5_prob; ?>%</span>
+							</div>
+							<div class="kc-gauge-row">
+								<span class="kc-gauge-label">#1 %</span>
+								<div class="kc-gauge-track">
+									<div class="kc-gauge-fill gauge-no1" style="width: <?php echo min(100, $no1_prob); ?>%;"></div>
+								</div>
+								<span class="kc-gauge-value" style="color:#ff3366;"><?php echo $no1_prob; ?>%</span>
+							</div>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
+	</div>
+
 </div>
+
+<script>
+function recalculateForecast() {
+	const btn = document.getElementById('kc-recalc-btn');
+	if (!btn) return;
+
+	btn.disabled = true;
+	const orig = btn.innerHTML;
+	btn.innerHTML = '&#x21bb; CALCULATING...';
+
+	jQuery.post(ajaxurl, {
+		action: 'charts_recalculate_intel',
+		nonce: '<?php echo wp_create_nonce("charts_admin_action"); ?>'
+	}, function(res) {
+		if (res.success) {
+			if (window.ChartsToast) {
+				window.ChartsToast.show('success', 'Forecast engine recalibrated successfully.', 'Forecast Engine');
+			}
+			setTimeout(() => location.reload(), 800);
+		} else {
+			if (window.ChartsToast) {
+				window.ChartsToast.show('error', res.data.message || 'Recalculation failed.', 'Forecast Error');
+			}
+			btn.disabled = false;
+			btn.innerHTML = orig;
+		}
+	}).fail(function() {
+		if (window.ChartsToast) {
+			window.ChartsToast.show('error', 'Connection lost during forecast sync.', 'Link Failure');
+		}
+		btn.disabled = false;
+		btn.innerHTML = orig;
+	});
+}
+</script>

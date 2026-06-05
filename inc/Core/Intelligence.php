@@ -34,6 +34,9 @@ class Intelligence {
 		// 3. Process Chart Definitions
 		self::calculate_chart_intelligence();
 
+		// 3.5. Process Advanced Intelligence Metrics (Velocity, Volatility, Retention, etc.)
+		\Charts\Services\IntelligenceEngine::calculate_all();
+
 		// 4. Process Predictions
 		\Charts\Services\PredictionEngine::calculate_all();
 	}

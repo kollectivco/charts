@@ -34,6 +34,10 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_search_spotify_matching', array( self::class, 'handle_search_spotify_matching' ) );
 		add_action( 'wp_ajax_charts_export_intelligence', array( self::class, 'handle_export_intelligence' ) );
 		add_action( 'wp_ajax_charts_scan_duplicates', array( self::class, 'handle_scan_duplicates' ) );
+		add_action( 'wp_ajax_charts_resolve_potential_duplicates', array( self::class, 'handle_resolve_potential_duplicates' ) );
+		add_action( 'wp_ajax_charts_bulk_action_ajax', array( self::class, 'handle_bulk_action_ajax' ) );
+		add_action( 'wp_ajax_charts_auto_reconcile', array( self::class, 'handle_auto_reconcile' ) );
+		add_action( 'wp_ajax_charts_update_artist_identity', array( self::class, 'handle_update_artist_identity' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -1420,6 +1424,10 @@ class Bootstrap {
 			$result = \Charts\Core\MergeEngine::merge_artists( $master_id, $duplicate_ids );
 		} elseif ( $type === 'tracks' ) {
 			$result = \Charts\Core\MergeEngine::merge_tracks( $master_id, $duplicate_ids );
+		} elseif ( $type === 'videos' ) {
+			$result = \Charts\Core\MergeEngine::merge_videos( $master_id, $duplicate_ids );
+		} elseif ( $type === 'albums' ) {
+			$result = \Charts\Core\MergeEngine::merge_albums( $master_id, $duplicate_ids );
 		} else {
 			wp_send_json_error( array( 'message' => 'Invalid merge type.' ) );
 			return;
@@ -1645,5 +1653,402 @@ class Bootstrap {
 		}
 
 		wp_send_json_success(array('clusters' => array_slice($clusters, 0, 100))); // Limit to 100 to avoid huge payload
+	}
+
+	/**
+	 * Helper: Compute similarity between two strings.
+	 */
+	private static function get_similarity_pct( $str1, $str2 ) {
+		$str1 = mb_strtolower( trim( $str1 ) );
+		$str2 = mb_strtolower( trim( $str2 ) );
+		if ( $str1 === $str2 ) return 100;
+		
+		$len1 = mb_strlen( $str1 );
+		$len2 = mb_strlen( $str2 );
+		if ( $len1 === 0 || $len2 === 0 ) return 0;
+		
+		$lev = levenshtein( $str1, $str2 );
+		$max_len = max( $len1, $len2 );
+		$similarity = ( 1 - $lev / $max_len ) * 100;
+		return round( $similarity, 2 );
+	}
+
+	/**
+	 * Helper: Generate blocking key for duplicate matching.
+	 */
+	private static function generate_blocking_key( $name ) {
+		$franko = mb_strtolower( \Charts\Services\Normalizer::to_franco( $name ) );
+		// Replace typical Arabizi numbers with latin approximations
+		$franko = str_replace( array('3', '7', '2', '5', '9'), array('e', 'h', 'a', 'kh', 'k'), $franko );
+		// Strip vowels and spaces and reduce duplicate characters
+		$franko = preg_replace( '/[aeiou\s]/', '', $franko );
+		$franko = preg_replace( '/(.)\1+/', '$1', $franko );
+		return trim( $franko );
+	}
+
+	/**
+	 * AJAX: Smart Entity Resolution & Matching Center clustering scanner.
+	 */
+	public static function handle_resolve_potential_duplicates() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+		}
+
+		global $wpdb;
+		$type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : 'artists';
+		
+		if ( $type === 'artists' ) {
+			$table = $wpdb->prefix . 'charts_artists';
+			$entities = $wpdb->get_results("SELECT id, display_name as name, display_name_en as name_en, spotify_id, metadata_json FROM $table");
+		} elseif ( $type === 'tracks' ) {
+			$table = $wpdb->prefix . 'charts_tracks';
+			$entities = $wpdb->get_results("SELECT id, title as name, title_en as name_en, spotify_id, youtube_id, cover_image as image, metadata_json FROM $table");
+		} elseif ( $type === 'videos' ) {
+			$table = $wpdb->prefix . 'charts_videos';
+			$entities = $wpdb->get_results("SELECT id, title as name, thumbnail as image, youtube_id, metadata_json FROM $table");
+		} elseif ( $type === 'albums' ) {
+			$table = $wpdb->prefix . 'charts_albums';
+			$entities = $wpdb->get_results("SELECT id, title as name, spotify_id, cover_image as image, metadata_json FROM $table");
+		} else {
+			wp_send_json_error( array( 'message' => 'Invalid entity type.' ) );
+		}
+
+		if (empty($entities)) {
+			wp_send_json_success(array('clusters' => []));
+			return;
+		}
+
+		$groups = [];
+		$clusters = [];
+
+		// Group by blocking key
+		foreach ($entities as $e) {
+			$blocking_key = self::generate_blocking_key($e->name);
+			if (empty($blocking_key)) continue;
+
+			if (!isset($groups[$blocking_key])) {
+				$groups[$blocking_key] = [];
+			}
+			$groups[$blocking_key][] = $e;
+		}
+
+		// Process groups to build clusters with confidence scores
+		foreach ($groups as $key => $items) {
+			if (count($items) < 2) continue;
+
+			// Sort to find master
+			usort($items, function($a, $b) {
+				$scoreA = (!empty($a->spotify_id) || !empty($a->youtube_id)) ? 2 : 0;
+				$scoreB = (!empty($b->spotify_id) || !empty($b->youtube_id)) ? 2 : 0;
+				if ($scoreA !== $scoreB) return $scoreB <=> $scoreA;
+				return $a->id <=> $b->id;
+			});
+
+			$master = $items[0];
+			$cluster_duplicates = [];
+
+			for ($i = 1; $i < count($items); $i++) {
+				$dup = $items[$i];
+				$sim = self::get_similarity_pct($master->name, $dup->name);
+				
+				$exact_id_match = false;
+				if (!empty($master->spotify_id) && !empty($dup->spotify_id) && $master->spotify_id === $dup->spotify_id) {
+					$exact_id_match = true;
+				}
+				if (!empty($master->youtube_id) && !empty($dup->youtube_id) && $master->youtube_id === $dup->youtube_id) {
+					$exact_id_match = true;
+				}
+
+				if ($exact_id_match) {
+					$confidence = 100;
+				} else {
+					$confidence = $sim;
+					if (!empty($master->name_en) && !empty($dup->name_en) && mb_strtolower($master->name_en) === mb_strtolower($dup->name_en)) {
+						$confidence = max($confidence, 95);
+					}
+					$master_trans = \Charts\Core\Translation::get($master->name);
+					$dup_trans = \Charts\Core\Translation::get($dup->name);
+					if ($master_trans === $dup->name || $dup_trans === $master->name || ($master_trans !== $master->name && $master_trans === $dup_trans)) {
+						$confidence = max($confidence, 98);
+					}
+				}
+
+				$status = 'Manual Review';
+				if ($confidence >= 95) {
+					$status = 'Auto Merge Candidate';
+				} elseif ($confidence >= 80) {
+					$status = 'Review Required';
+				}
+
+				$cluster_duplicates[] = [
+					'id' => $dup->id,
+					'name' => $dup->name,
+					'name_en' => $dup->name_en ?? '',
+					'image' => $dup->image ?? ($dup->thumbnail ?? ($dup->cover_image ?? '')),
+					'spotify_id' => $dup->spotify_id ?? '',
+					'youtube_id' => $dup->youtube_id ?? '',
+					'similarity' => $sim,
+					'confidence' => $confidence,
+					'status' => $status
+				];
+			}
+
+			$clusters[] = [
+				'master' => [
+					'id' => $master->id,
+					'name' => $master->name,
+					'name_en' => $master->name_en ?? '',
+					'image' => $master->image ?? ($master->thumbnail ?? ($master->cover_image ?? '')),
+					'spotify_id' => $master->spotify_id ?? '',
+					'youtube_id' => $master->youtube_id ?? '',
+				],
+				'duplicates' => $cluster_duplicates
+			];
+		}
+
+		wp_send_json_success(array('clusters' => array_slice($clusters, 0, 50)));
+	}
+
+	/**
+	 * AJAX: Bulk resolve center operations (Approve, Ignore, Merge, Delete)
+	 */
+	public static function handle_bulk_action_ajax() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+		}
+
+		$action_type = sanitize_text_field( $_POST['action_type'] ?? '' );
+		$entity_type = sanitize_text_field( $_POST['entity_type'] ?? '' );
+		
+		if ( $action_type === 'merge' ) {
+			$master_id = intval( $_POST['master_id'] ?? 0 );
+			$duplicate_ids = isset( $_POST['duplicate_ids'] ) ? array_map( 'intval', (array) $_POST['duplicate_ids'] ) : array();
+
+			if ( !$master_id || empty($duplicate_ids) ) {
+				wp_send_json_error( array( 'message' => 'Missing master or duplicate IDs.' ) );
+			}
+
+			require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
+			if ( $entity_type === 'artists' ) {
+				$result = \Charts\Core\MergeEngine::merge_artists( $master_id, $duplicate_ids );
+			} elseif ( $entity_type === 'tracks' ) {
+				$result = \Charts\Core\MergeEngine::merge_tracks( $master_id, $duplicate_ids );
+			} elseif ( $entity_type === 'videos' ) {
+				$result = \Charts\Core\MergeEngine::merge_videos( $master_id, $duplicate_ids );
+			} elseif ( $entity_type === 'albums' ) {
+				$result = \Charts\Core\MergeEngine::merge_albums( $master_id, $duplicate_ids );
+			} else {
+				wp_send_json_error( array( 'message' => 'Invalid entity type for merge.' ) );
+				return;
+			}
+
+			if ($result['success']) {
+				wp_send_json_success( array( 'message' => $result['message'] ) );
+			} else {
+				wp_send_json_error( array( 'message' => $result['message'] ) );
+			}
+		} elseif ( $action_type === 'delete' ) {
+			$ids = isset( $_POST['ids'] ) ? array_map( 'intval', (array) $_POST['ids'] ) : array();
+			if ( empty($ids) ) {
+				wp_send_json_error( array( 'message' => 'No IDs specified.' ) );
+			}
+
+			$singular_type = rtrim($entity_type, 's');
+			if ($singular_type === 'clip') $singular_type = 'video';
+
+			foreach ( $ids as $id ) {
+				self::delete_single_entity( $id, $singular_type );
+			}
+
+			wp_send_json_success( array( 'message' => sprintf('Successfully deleted %d entities.', count($ids)) ) );
+		} else {
+			wp_send_json_error( array( 'message' => 'Invalid action type.' ) );
+		}
+	}
+
+	/**
+	 * AJAX: Perform Auto Reconciliation for confident matches.
+	 */
+	public static function handle_auto_reconcile() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+		}
+
+		global $wpdb;
+		$entity_types = ['artists', 'tracks', 'videos', 'albums'];
+		$total_merged = 0;
+
+		require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
+
+		foreach ($entity_types as $type) {
+			if ( $type === 'artists' ) {
+				$table = $wpdb->prefix . 'charts_artists';
+				$entities = $wpdb->get_results("SELECT id, display_name as name, display_name_en as name_en, spotify_id, metadata_json FROM $table");
+			} elseif ( $type === 'tracks' ) {
+				$table = $wpdb->prefix . 'charts_tracks';
+				$entities = $wpdb->get_results("SELECT id, title as name, title_en as name_en, spotify_id, youtube_id, metadata_json FROM $table");
+			} elseif ( $type === 'videos' ) {
+				$table = $wpdb->prefix . 'charts_videos';
+				$entities = $wpdb->get_results("SELECT id, title as name, youtube_id, metadata_json FROM $table");
+			} elseif ( $type === 'albums' ) {
+				$table = $wpdb->prefix . 'charts_albums';
+				$entities = $wpdb->get_results("SELECT id, title as name, spotify_id, metadata_json FROM $table");
+			}
+
+			if (empty($entities)) continue;
+
+			// Group by blocking key
+			$groups = [];
+			foreach ($entities as $e) {
+				$blocking_key = self::generate_blocking_key($e->name);
+				if (empty($blocking_key)) continue;
+
+				if (!isset($groups[$blocking_key])) {
+					$groups[$blocking_key] = [];
+				}
+				$groups[$blocking_key][] = $e;
+			}
+
+			// Find auto-merge groups (confidence >= 95%)
+			foreach ($groups as $key => $items) {
+				if (count($items) < 2) continue;
+
+				// Sort to find master
+				usort($items, function($a, $b) {
+					$scoreA = (!empty($a->spotify_id) || !empty($a->youtube_id)) ? 2 : 0;
+					$scoreB = (!empty($b->spotify_id) || !empty($b->youtube_id)) ? 2 : 0;
+					if ($scoreA !== $scoreB) return $scoreB <=> $scoreA;
+					return $a->id <=> $b->id;
+				});
+
+				$master = $items[0];
+				$to_merge = [];
+
+				for ($i = 1; $i < count($items); $i++) {
+					$dup = $items[$i];
+					$sim = self::get_similarity_pct($master->name, $dup->name);
+					
+					$exact_id_match = false;
+					if (!empty($master->spotify_id) && !empty($dup->spotify_id) && $master->spotify_id === $dup->spotify_id) {
+						$exact_id_match = true;
+					}
+					if (!empty($master->youtube_id) && !empty($dup->youtube_id) && $master->youtube_id === $dup->youtube_id) {
+						$exact_id_match = true;
+					}
+
+					$confidence = $sim;
+					if ($exact_id_match) {
+						$confidence = 100;
+					} else {
+						if (!empty($master->name_en) && !empty($dup->name_en) && mb_strtolower($master->name_en) === mb_strtolower($dup->name_en)) {
+							$confidence = max($confidence, 95);
+						}
+						$master_trans = \Charts\Core\Translation::get($master->name);
+						$dup_trans = \Charts\Core\Translation::get($dup->name);
+						if ($master_trans === $dup->name || $dup_trans === $master->name || ($master_trans !== $master->name && $master_trans === $dup_trans)) {
+							$confidence = max($confidence, 98);
+						}
+					}
+
+					if ($confidence >= 95) {
+						$to_merge[] = $dup->id;
+					}
+				}
+
+				if (!empty($to_merge)) {
+					if ( $type === 'artists' ) {
+						$res = \Charts\Core\MergeEngine::merge_artists( $master->id, $to_merge );
+					} elseif ( $type === 'tracks' ) {
+						$res = \Charts\Core\MergeEngine::merge_tracks( $master->id, $to_merge );
+					} elseif ( $type === 'videos' ) {
+						$res = \Charts\Core\MergeEngine::merge_videos( $master->id, $to_merge );
+					} elseif ( $type === 'albums' ) {
+						$res = \Charts\Core\MergeEngine::merge_albums( $master->id, $to_merge );
+					}
+					if (isset($res['success']) && $res['success']) {
+						$total_merged += count($to_merge);
+					}
+				}
+			}
+		}
+
+		if ($total_merged > 0) {
+			\Charts\Core\Intelligence::recalculate_all();
+		}
+
+		wp_send_json_success( array( 'message' => sprintf( 'Auto-reconciliation complete. Merged %d duplicate records.', $total_merged ) ) );
+	}
+
+	/**
+	 * AJAX: Save metadata configuration profile for Artist Identity Center.
+	 */
+	public static function handle_update_artist_identity() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+		}
+
+		global $wpdb;
+		$id = intval( $_POST['id'] ?? 0 );
+		$primary_name = sanitize_text_field( $_POST['primary_name'] ?? '' );
+		$name_en = sanitize_text_field( $_POST['name_en'] ?? '' );
+		$spotify_id = sanitize_text_field( $_POST['spotify_id'] ?? '' );
+		$youtube_id = sanitize_text_field( $_POST['youtube_id'] ?? '' );
+		$apple_music_id = sanitize_text_field( $_POST['apple_music_id'] ?? '' );
+		$tiktok_id = sanitize_text_field( $_POST['tiktok_id'] ?? '' );
+		$instagram_id = sanitize_text_field( $_POST['instagram_id'] ?? '' );
+		$aliases_str = sanitize_text_field( $_POST['aliases'] ?? '' );
+
+		if ( !$id || empty($primary_name) ) {
+			wp_send_json_error( array( 'message' => 'Artist ID and display name are required.' ) );
+		}
+
+		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $id ) );
+		if ( !$artist ) {
+			wp_send_json_error( array( 'message' => 'Artist not found.' ) );
+		}
+
+		$meta = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : [];
+		
+		$aliases = array_filter(array_map('trim', explode(',', $aliases_str)));
+		$meta['aliases'] = $aliases;
+		$meta['youtube_id'] = $youtube_id;
+		$meta['apple_music_id'] = $apple_music_id;
+		$meta['tiktok_id'] = $tiktok_id;
+		$meta['instagram_id'] = $instagram_id;
+
+		$normalized = mb_strtolower($primary_name);
+
+		$wpdb->update(
+			"{$wpdb->prefix}charts_artists",
+			array(
+				'display_name' => $primary_name,
+				'display_name_en' => $name_en,
+				'normalized_name' => $normalized,
+				'spotify_id' => $spotify_id,
+				'metadata_json' => json_encode($meta),
+				'updated_at' => current_time('mysql')
+			),
+			array( 'id' => $id )
+		);
+
+		$wpdb->update(
+			"{$wpdb->prefix}charts_entries",
+			array( 'artist_names' => $primary_name, 'artist_names_en' => $name_en ),
+			array( 'item_type' => 'artist', 'item_id' => $id )
+		);
+
+		wp_send_json_success( array( 'message' => 'Artist identity updated successfully.' ) );
 	}
 }
