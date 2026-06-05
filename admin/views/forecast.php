@@ -125,8 +125,8 @@ $probability_tracks = $wpdb->get_results("
    FORECAST ENGINE — BLOOMBERG TERMINAL MONOCHROME
    ═══════════════════════════════════════════════════════════════════ */
 .kc-terminal-wrap {
-	background: #000000;
-	color: #c8ccd0;
+	background: #f1f5f9;
+	color: #334155;
 	font-family: 'Courier New', Courier, monospace, -apple-system;
 	padding: 32px;
 	min-height: 100vh;
@@ -136,7 +136,7 @@ $probability_tracks = $wpdb->get_results("
 
 /* Header */
 .kc-terminal-header {
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	padding-bottom: 20px;
 	margin-bottom: 28px;
 	display: flex;
@@ -145,17 +145,17 @@ $probability_tracks = $wpdb->get_results("
 }
 .kc-terminal-header h1 {
 	font-family: 'Courier New', Courier, monospace;
-	color: #00ff66;
+	color: #059669;
 	font-size: 22px;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	margin: 0;
-	text-shadow: 0 0 20px rgba(0, 255, 102, 0.15);
+	text-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
 }
 .kc-terminal-header .kc-terminal-ts {
 	font-size: 11px;
-	color: #7c8087;
+	color: #64748b;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
@@ -168,8 +168,8 @@ $probability_tracks = $wpdb->get_results("
 	margin-bottom: 32px;
 }
 .kc-terminal-stat {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 3px;
 	padding: 20px 22px;
 	position: relative;
@@ -180,28 +180,28 @@ $probability_tracks = $wpdb->get_results("
 	position: absolute;
 	top: 0; left: 0;
 	width: 100%; height: 2px;
-	background: #1c1e22;
+	background: #e2e8f0;
 }
-.kc-terminal-stat.stat-green::before { background: #00ff66; }
-.kc-terminal-stat.stat-amber::before { background: #ffaa00; }
-.kc-terminal-stat.stat-red::before   { background: #ff3366; }
+.kc-terminal-stat.stat-green::before { background: #10b981; }
+.kc-terminal-stat.stat-amber::before { background: #f59e0b; }
+.kc-terminal-stat.stat-red::before   { background: #f43f5e; }
 .kc-terminal-stat-label {
 	font-size: 9px;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
-	color: #7c8087;
+	color: #64748b;
 	margin-bottom: 10px;
 	font-weight: 700;
 }
 .kc-terminal-stat-value {
 	font-size: 32px;
 	font-weight: 700;
-	color: #e8eaed;
+	color: #0f172a;
 	line-height: 1;
 	font-family: 'Courier New', Courier, monospace;
 }
-.kc-terminal-stat-value.val-green { color: #00ff66; }
-.kc-terminal-stat-value.val-amber { color: #ffaa00; }
+.kc-terminal-stat-value.val-green { color: #059669; }
+.kc-terminal-stat-value.val-amber { color: #d97706; }
 
 /* Section Headers */
 .kc-terminal-section {
@@ -211,10 +211,10 @@ $probability_tracks = $wpdb->get_results("
 	font-size: 11px;
 	text-transform: uppercase;
 	letter-spacing: 0.15em;
-	color: #00ff66;
+	color: #059669;
 	margin: 0 0 18px 0;
 	padding-bottom: 10px;
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	font-weight: 700;
 	font-family: 'Courier New', Courier, monospace;
 	display: flex;
@@ -222,7 +222,7 @@ $probability_tracks = $wpdb->get_results("
 	gap: 10px;
 }
 .kc-terminal-section-title .kc-section-count {
-	color: #7c8087;
+	color: #64748b;
 	font-size: 9px;
 }
 
@@ -233,13 +233,13 @@ $probability_tracks = $wpdb->get_results("
 	gap: 14px;
 }
 .kc-terminal-card {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 3px;
 	padding: 18px;
 	transition: border-color 0.2s;
 }
-.kc-terminal-card:hover { border-color: #2a2d33; }
+.kc-terminal-card:hover { border-color: #94a3b8; }
 
 .kc-card-top {
 	display: flex;
@@ -252,14 +252,14 @@ $probability_tracks = $wpdb->get_results("
 	height: 44px;
 	border-radius: 3px;
 	object-fit: cover;
-	border: 1px solid #1c1e22;
+	border: 1px solid #cbd5e1;
 	flex-shrink: 0;
 }
 .kc-card-info { overflow: hidden; flex: 1; }
 .kc-card-title {
 	font-size: 13px;
 	font-weight: 700;
-	color: #e8eaed;
+	color: #0f172a;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -268,7 +268,7 @@ $probability_tracks = $wpdb->get_results("
 }
 .kc-card-artist {
 	font-size: 10px;
-	color: #7c8087;
+	color: #64748b;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -286,24 +286,24 @@ $probability_tracks = $wpdb->get_results("
 .kc-rank-current {
 	font-size: 16px;
 	font-weight: 700;
-	color: #7c8087;
+	color: #64748b;
 }
 .kc-rank-arrow {
 	font-size: 14px;
 	font-weight: 700;
 }
-.kc-rank-arrow.arrow-up   { color: #00ff66; }
-.kc-rank-arrow.arrow-down { color: #ff3366; }
-.kc-rank-arrow.arrow-flat { color: #e8eaed; }
+.kc-rank-arrow.arrow-up   { color: #059669; }
+.kc-rank-arrow.arrow-down { color: #e11d48; }
+.kc-rank-arrow.arrow-flat { color: #0f172a; }
 .kc-rank-predicted {
 	font-size: 16px;
 	font-weight: 700;
-	color: #00ff66;
+	color: #059669;
 }
 .kc-rank-peak {
 	margin-left: auto;
 	font-size: 10px;
-	color: #ffaa00;
+	color: #d97706;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
@@ -320,7 +320,7 @@ $probability_tracks = $wpdb->get_results("
 	font-size: 9px;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
-	color: #7c8087;
+	color: #64748b;
 	width: 80px;
 	flex-shrink: 0;
 	font-weight: 700;
@@ -328,7 +328,7 @@ $probability_tracks = $wpdb->get_results("
 .kc-gauge-track {
 	flex: 1;
 	height: 6px;
-	background: #1c1e22;
+	background: #e2e8f0;
 	border-radius: 2px;
 	overflow: hidden;
 }
@@ -341,24 +341,24 @@ $probability_tracks = $wpdb->get_results("
 	background: linear-gradient(90deg, #ff3366 0%, #ffaa00 40%, #00ff66 80%);
 }
 .kc-gauge-fill.gauge-momentum {
-	background: #00ff66;
+	background: #10b981;
 }
 .kc-gauge-fill.gauge-viral {
-	background: #ff3366;
+	background: #f43f5e;
 }
 .kc-gauge-fill.gauge-top10 {
-	background: #00ff66;
+	background: #10b981;
 }
 .kc-gauge-fill.gauge-top5 {
-	background: #ffaa00;
+	background: #f59e0b;
 }
 .kc-gauge-fill.gauge-no1 {
-	background: #ff3366;
+	background: #f43f5e;
 }
 .kc-gauge-value {
 	font-size: 11px;
 	font-weight: 700;
-	color: #e8eaed;
+	color: #0f172a;
 	width: 36px;
 	text-align: right;
 	font-family: 'Courier New', Courier, monospace;
@@ -367,8 +367,8 @@ $probability_tracks = $wpdb->get_results("
 
 /* Future Top 10 Table */
 .kc-terminal-table-wrap {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 3px;
 	overflow: hidden;
 }
@@ -380,18 +380,18 @@ $probability_tracks = $wpdb->get_results("
 	padding: 0;
 }
 .kc-terminal-dual-col + .kc-terminal-dual-col {
-	border-left: 1px solid #1c1e22;
+	border-left: 1px solid #cbd5e1;
 }
 .kc-terminal-col-header {
 	font-size: 10px;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
-	color: #00ff66;
+	color: #059669;
 	padding: 14px 18px;
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	font-weight: 700;
 	font-family: 'Courier New', Courier, monospace;
-	background: #08090a;
+	background: #f8fafc;
 }
 .kc-terminal-table {
 	width: 100%;
@@ -401,25 +401,25 @@ $probability_tracks = $wpdb->get_results("
 	font-size: 9px;
 	text-transform: uppercase;
 	letter-spacing: 0.1em;
-	color: #7c8087;
+	color: #64748b;
 	padding: 10px 18px;
 	text-align: left;
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	font-weight: 700;
 }
 .kc-terminal-table td {
 	font-size: 12px;
 	padding: 10px 18px;
-	border-bottom: 1px solid #0f1012;
-	color: #c8ccd0;
+	border-bottom: 1px solid #e2e8f0;
+	color: #334155;
 	font-family: 'Courier New', Courier, monospace;
 }
 .kc-terminal-table tr:hover td {
-	background: #0e0f11;
+	background: #f8fafc;
 }
 .kc-terminal-table .td-rank {
 	font-weight: 700;
-	color: #00ff66;
+	color: #059669;
 	font-size: 13px;
 }
 .kc-terminal-table .td-name {
@@ -427,11 +427,11 @@ $probability_tracks = $wpdb->get_results("
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	color: #e8eaed;
+	color: #0f172a;
 	font-weight: 600;
 }
 .kc-terminal-table .td-artist {
-	color: #7c8087;
+	color: #64748b;
 	font-size: 11px;
 	max-width: 120px;
 	white-space: nowrap;
@@ -450,8 +450,8 @@ $probability_tracks = $wpdb->get_results("
 	gap: 16px;
 }
 .kc-viral-column {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 3px;
 	overflow: hidden;
 }
@@ -460,26 +460,26 @@ $probability_tracks = $wpdb->get_results("
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
 	padding: 12px 16px;
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	font-weight: 700;
 	font-family: 'Courier New', Courier, monospace;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 }
-.kc-viral-col-header.tier-emerging { color: #ffaa00; background: rgba(255, 170, 0, 0.03); }
-.kc-viral-col-header.tier-rising   { color: #00ff66; background: rgba(0, 255, 102, 0.03); }
-.kc-viral-col-header.tier-exploding { color: #ff3366; background: rgba(255, 51, 102, 0.03); }
+.kc-viral-col-header.tier-emerging { color: #d97706; background: rgba(245, 158, 11, 0.1); }
+.kc-viral-col-header.tier-rising   { color: #059669; background: rgba(16, 185, 129, 0.1); }
+.kc-viral-col-header.tier-exploding { color: #e11d48; background: rgba(244, 63, 94, 0.1); }
 .kc-viral-col-header .tier-count {
 	font-size: 9px;
-	color: #7c8087;
+	color: #64748b;
 }
 .kc-viral-item {
 	padding: 14px 16px;
-	border-bottom: 1px solid #0f1012;
+	border-bottom: 1px solid #e2e8f0;
 	transition: background 0.2s;
 }
-.kc-viral-item:hover { background: #0e0f11; }
+.kc-viral-item:hover { background: #f8fafc; }
 .kc-viral-item:last-child { border-bottom: none; }
 .kc-viral-item-top {
 	display: flex;
@@ -492,14 +492,14 @@ $probability_tracks = $wpdb->get_results("
 	height: 36px;
 	border-radius: 3px;
 	object-fit: cover;
-	border: 1px solid #1c1e22;
+	border: 1px solid #cbd5e1;
 	flex-shrink: 0;
 }
 .kc-viral-meta { overflow: hidden; flex: 1; }
 .kc-viral-name {
 	font-size: 12px;
 	font-weight: 700;
-	color: #e8eaed;
+	color: #0f172a;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -507,7 +507,7 @@ $probability_tracks = $wpdb->get_results("
 }
 .kc-viral-artist {
 	font-size: 9px;
-	color: #7c8087;
+	color: #64748b;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -519,12 +519,12 @@ $probability_tracks = $wpdb->get_results("
 	font-weight: 700;
 	flex-shrink: 0;
 }
-.kc-viral-score-badge.score-emerging { color: #ffaa00; }
-.kc-viral-score-badge.score-rising   { color: #00ff66; }
-.kc-viral-score-badge.score-exploding { color: #ff3366; }
+.kc-viral-score-badge.score-emerging { color: #d97706; }
+.kc-viral-score-badge.score-rising   { color: #059669; }
+.kc-viral-score-badge.score-exploding { color: #e11d48; }
 .kc-viral-trend {
 	font-size: 9px;
-	color: #7c8087;
+	color: #64748b;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
 	margin-top: 2px;
@@ -537,8 +537,8 @@ $probability_tracks = $wpdb->get_results("
 	gap: 14px;
 }
 .kc-prob-card {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 3px;
 	padding: 18px;
 }
@@ -548,19 +548,19 @@ $probability_tracks = $wpdb->get_results("
 	gap: 12px;
 	margin-bottom: 16px;
 	padding-bottom: 12px;
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 }
 .kc-prob-thumb {
 	width: 40px;
 	height: 40px;
 	border-radius: 3px;
 	object-fit: cover;
-	border: 1px solid #1c1e22;
+	border: 1px solid #cbd5e1;
 }
 .kc-prob-title {
 	font-size: 13px;
 	font-weight: 700;
-	color: #e8eaed;
+	color: #0f172a;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -568,7 +568,7 @@ $probability_tracks = $wpdb->get_results("
 }
 .kc-prob-artist {
 	font-size: 10px;
-	color: #7c8087;
+	color: #64748b;
 	display: block;
 }
 .kc-prob-gauges { display: flex; flex-direction: column; gap: 8px; }
@@ -577,7 +577,7 @@ $probability_tracks = $wpdb->get_results("
 .kc-terminal-empty {
 	padding: 40px;
 	text-align: center;
-	color: #7c8087;
+	color: #64748b;
 	font-size: 12px;
 	font-family: 'Courier New', Courier, monospace;
 	letter-spacing: 0.05em;
@@ -585,9 +585,9 @@ $probability_tracks = $wpdb->get_results("
 
 /* Recalc Button */
 .kc-terminal-btn {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
-	color: #00ff66;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	color: #059669;
 	font-family: 'Courier New', Courier, monospace;
 	font-size: 11px;
 	font-weight: 700;
@@ -599,9 +599,9 @@ $probability_tracks = $wpdb->get_results("
 	transition: all 0.2s;
 }
 .kc-terminal-btn:hover {
-	background: #00ff66;
+	background: #10b981;
 	color: #000000;
-	border-color: #00ff66;
+	border-color: #059669;
 }
 .kc-terminal-btn:disabled {
 	opacity: 0.4;
@@ -613,7 +613,7 @@ $probability_tracks = $wpdb->get_results("
 	.kc-terminal-summary { grid-template-columns: repeat(2, 1fr); }
 	.kc-viral-radar { grid-template-columns: 1fr; }
 	.kc-terminal-dual { grid-template-columns: 1fr; }
-	.kc-terminal-dual-col + .kc-terminal-dual-col { border-left: none; border-top: 1px solid #1c1e22; }
+	.kc-terminal-dual-col + .kc-terminal-dual-col { border-left: none; border-top: 1px solid #cbd5e1; }
 }
 @media (max-width: 768px) {
 	.kc-terminal-summary { grid-template-columns: 1fr; }
@@ -832,7 +832,7 @@ $probability_tracks = $wpdb->get_results("
 								<div class="kc-gauge-row">
 									<span class="kc-gauge-label" style="width:50px;">VIRAL</span>
 									<div class="kc-gauge-track">
-										<div class="kc-gauge-fill" style="width: <?php echo min(100, $ve->viral_score); ?>%; background: #ffaa00;"></div>
+										<div class="kc-gauge-fill" style="width: <?php echo min(100, $ve->viral_score); ?>%; background: #f59e0b;"></div>
 									</div>
 								</div>
 								<div class="kc-viral-trend"><?php echo esc_html(strtoupper($trend_dir)); ?></div>
@@ -866,7 +866,7 @@ $probability_tracks = $wpdb->get_results("
 								<div class="kc-gauge-row">
 									<span class="kc-gauge-label" style="width:50px;">VIRAL</span>
 									<div class="kc-gauge-track">
-										<div class="kc-gauge-fill" style="width: <?php echo min(100, $vr->viral_score); ?>%; background: #00ff66;"></div>
+										<div class="kc-gauge-fill" style="width: <?php echo min(100, $vr->viral_score); ?>%; background: #10b981;"></div>
 									</div>
 								</div>
 								<div class="kc-viral-trend"><?php echo esc_html(strtoupper($trend_dir)); ?></div>
@@ -900,7 +900,7 @@ $probability_tracks = $wpdb->get_results("
 								<div class="kc-gauge-row">
 									<span class="kc-gauge-label" style="width:50px;">VIRAL</span>
 									<div class="kc-gauge-track">
-										<div class="kc-gauge-fill" style="width: <?php echo min(100, $vx->viral_score); ?>%; background: #ff3366;"></div>
+										<div class="kc-gauge-fill" style="width: <?php echo min(100, $vx->viral_score); ?>%; background: #f43f5e;"></div>
 									</div>
 								</div>
 								<div class="kc-viral-trend"><?php echo esc_html(strtoupper($trend_dir)); ?></div>
@@ -938,7 +938,7 @@ $probability_tracks = $wpdb->get_results("
 								<span class="kc-prob-title"><?php echo esc_html($pt->track_name); ?></span>
 								<span class="kc-prob-artist"><?php echo esc_html($pt->artist_name); ?></span>
 							</div>
-							<span style="font-size:11px; color:#7c8087; font-weight:700; font-family:'Courier New',monospace;"><?php echo round($pt->confidence_score); ?>% CONF</span>
+							<span style="font-size:11px; color: #64748b; font-weight:700; font-family:'Courier New',monospace;"><?php echo round($pt->confidence_score); ?>% CONF</span>
 						</div>
 						<div class="kc-prob-gauges">
 							<div class="kc-gauge-row">
@@ -946,21 +946,21 @@ $probability_tracks = $wpdb->get_results("
 								<div class="kc-gauge-track">
 									<div class="kc-gauge-fill gauge-top10" style="width: <?php echo min(100, $top10_prob); ?>%;"></div>
 								</div>
-								<span class="kc-gauge-value" style="color:#00ff66;"><?php echo $top10_prob; ?>%</span>
+								<span class="kc-gauge-value" style="color: #059669;"><?php echo $top10_prob; ?>%</span>
 							</div>
 							<div class="kc-gauge-row">
 								<span class="kc-gauge-label">TOP 5 %</span>
 								<div class="kc-gauge-track">
 									<div class="kc-gauge-fill gauge-top5" style="width: <?php echo min(100, $top5_prob); ?>%;"></div>
 								</div>
-								<span class="kc-gauge-value" style="color:#ffaa00;"><?php echo $top5_prob; ?>%</span>
+								<span class="kc-gauge-value" style="color: #d97706;"><?php echo $top5_prob; ?>%</span>
 							</div>
 							<div class="kc-gauge-row">
 								<span class="kc-gauge-label">#1 %</span>
 								<div class="kc-gauge-track">
 									<div class="kc-gauge-fill gauge-no1" style="width: <?php echo min(100, $no1_prob); ?>%;"></div>
 								</div>
-								<span class="kc-gauge-value" style="color:#ff3366;"><?php echo $no1_prob; ?>%</span>
+								<span class="kc-gauge-value" style="color: #e11d48;"><?php echo $no1_prob; ?>%</span>
 							</div>
 						</div>
 					</div>

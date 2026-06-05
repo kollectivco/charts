@@ -197,8 +197,8 @@ $nonce   = wp_create_nonce('charts_admin_action');
    INTELLIGENCE NEXUS — Bloomberg Terminal Design
    ═══════════════════════════════════════════════════════ */
 .kc-terminal-wrap {
-    background: #000000;
-    color: #c8ccd0;
+    background: #f1f5f9;
+    color: #334155;
     font-family: 'Courier New', Courier, monospace, -apple-system, sans-serif;
     padding: 24px;
     min-height: 100vh;
@@ -212,8 +212,8 @@ $nonce   = wp_create_nonce('charts_admin_action');
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 3px;
     margin-bottom: 20px;
 }
@@ -221,14 +221,14 @@ $nonce   = wp_create_nonce('charts_admin_action');
     font-family: 'Courier New', Courier, monospace;
     font-size: 20px;
     font-weight: 700;
-    color: #00ff66;
+    color: #059669;
     margin: 0;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 .kc-terminal-header .kc-terminal-sub {
     font-size: 11px;
-    color: #7c8087;
+    color: #64748b;
     margin-top: 4px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -239,9 +239,9 @@ $nonce   = wp_create_nonce('charts_admin_action');
     align-items: center;
 }
 .kc-terminal-btn {
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
-    color: #00ff66;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #059669;
     padding: 8px 16px;
     font-family: 'Courier New', Courier, monospace;
     font-size: 11px;
@@ -256,29 +256,29 @@ $nonce   = wp_create_nonce('charts_admin_action');
     align-items: center;
     gap: 6px;
 }
-.kc-terminal-btn:hover { background: #141518; border-color: #00ff66; color: #00ff66; }
-.kc-terminal-btn:active { background: #00ff66; color: #000; }
-.kc-terminal-btn.btn-red { color: #ff3366; }
-.kc-terminal-btn.btn-red:hover { border-color: #ff3366; }
-.kc-terminal-btn.btn-amber { color: #ffaa00; }
-.kc-terminal-btn.btn-amber:hover { border-color: #ffaa00; }
+.kc-terminal-btn:hover { background: #141518; border-color: #059669; color: #059669; }
+.kc-terminal-btn:active { background: #10b981; color: #000; }
+.kc-terminal-btn.btn-red { color: #e11d48; }
+.kc-terminal-btn.btn-red:hover { border-color: #e11d48; }
+.kc-terminal-btn.btn-amber { color: #d97706; }
+.kc-terminal-btn.btn-amber:hover { border-color: #d97706; }
 .kc-terminal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .kc-terminal-sync {
     font-size: 10px;
-    color: #7c8087;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-right: 12px;
 }
-.kc-terminal-sync strong { color: #00ff66; }
+.kc-terminal-sync strong { color: #059669; }
 
 /* Filter Bar */
 .kc-terminal-filters {
     display: flex;
     gap: 20px;
     padding: 14px 24px;
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 3px;
     margin-bottom: 20px;
     align-items: center;
@@ -287,15 +287,15 @@ $nonce   = wp_create_nonce('charts_admin_action');
     font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
-    color: #7c8087;
+    color: #64748b;
     letter-spacing: 0.1em;
     display: block;
     margin-bottom: 4px;
 }
 .kc-terminal-filters select {
     background: #000;
-    border: 1px solid #1c1e22;
-    color: #00ff66;
+    border: 1px solid #cbd5e1;
+    color: #059669;
     font-family: 'Courier New', Courier, monospace;
     font-size: 12px;
     font-weight: 700;
@@ -305,7 +305,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
     outline: none;
     min-width: 160px;
 }
-.kc-terminal-filters select:focus { border-color: #00ff66; }
+.kc-terminal-filters select:focus { border-color: #059669; }
 
 /* KPI Cards Grid */
 .kc-terminal-kpi-grid {
@@ -315,8 +315,8 @@ $nonce   = wp_create_nonce('charts_admin_action');
     margin-bottom: 20px;
 }
 .kc-terminal-kpi {
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 3px;
     padding: 16px 18px;
     position: relative;
@@ -328,22 +328,22 @@ $nonce   = wp_create_nonce('charts_admin_action');
     top: 0; left: 0;
     width: 3px; height: 100%;
 }
-.kc-terminal-kpi.kpi-green::before { background: #00ff66; }
-.kc-terminal-kpi.kpi-red::before { background: #ff3366; }
-.kc-terminal-kpi.kpi-amber::before { background: #ffaa00; }
-.kc-terminal-kpi.kpi-cyan::before { background: #00ccff; }
+.kc-terminal-kpi.kpi-green::before { background: #10b981; }
+.kc-terminal-kpi.kpi-red::before { background: #f43f5e; }
+.kc-terminal-kpi.kpi-amber::before { background: #f59e0b; }
+.kc-terminal-kpi.kpi-cyan::before { background: #0ea5e9; }
 .kc-terminal-kpi-label {
     font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #7c8087;
+    color: #64748b;
     margin-bottom: 8px;
 }
 .kc-terminal-kpi-value {
     font-size: 22px;
     font-weight: 700;
-    color: #fff;
+    color: #0f172a;
     letter-spacing: -0.02em;
     line-height: 1;
     margin-bottom: 6px;
@@ -353,7 +353,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
 }
 .kc-terminal-kpi-name {
     font-size: 11px;
-    color: #7c8087;
+    color: #64748b;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -361,20 +361,20 @@ $nonce   = wp_create_nonce('charts_admin_action');
 
 /* Trend Radar */
 .kc-terminal-radar {
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 3px;
     margin-bottom: 20px;
     overflow: hidden;
 }
 .kc-terminal-radar-header {
     padding: 14px 24px;
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
 }
 .kc-terminal-radar-header h2 {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
-    color: #00ff66;
+    color: #059669;
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -385,7 +385,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
 }
 .kc-terminal-radar-col {
     padding: 16px 20px;
-    border-right: 1px solid #1c1e22;
+    border-right: 1px solid #cbd5e1;
 }
 .kc-terminal-radar-col:last-child { border-right: none; }
 .kc-terminal-radar-col-title {
@@ -395,12 +395,12 @@ $nonce   = wp_create_nonce('charts_admin_action');
     letter-spacing: 0.08em;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
 }
-.kc-terminal-radar-col-title.col-exploding { color: #ff3366; }
-.kc-terminal-radar-col-title.col-rising { color: #00ff66; }
-.kc-terminal-radar-col-title.col-stable { color: #ffaa00; }
-.kc-terminal-radar-col-title.col-falling { color: #7c8087; }
+.kc-terminal-radar-col-title.col-exploding { color: #e11d48; }
+.kc-terminal-radar-col-title.col-rising { color: #059669; }
+.kc-terminal-radar-col-title.col-stable { color: #d97706; }
+.kc-terminal-radar-col-title.col-falling { color: #64748b; }
 .kc-terminal-radar-item {
     display: flex;
     justify-content: space-between;
@@ -409,7 +409,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
     font-size: 11px;
 }
 .kc-terminal-radar-item-name {
-    color: #c8ccd0;
+    color: #334155;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -430,15 +430,15 @@ $nonce   = wp_create_nonce('charts_admin_action');
 
 /* Data Table */
 .kc-terminal-panel {
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 3px;
     margin-bottom: 20px;
     overflow: hidden;
 }
 .kc-terminal-panel-header {
     padding: 14px 24px;
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -446,7 +446,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
 .kc-terminal-panel-header h2 {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
-    color: #00ff66;
+    color: #059669;
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -462,9 +462,9 @@ $nonce   = wp_create_nonce('charts_admin_action');
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #7c8087;
-    border-bottom: 1px solid #1c1e22;
-    background: #08090a;
+    color: #64748b;
+    border-bottom: 1px solid #cbd5e1;
+    background: #f8fafc;
     white-space: nowrap;
 }
 .kc-terminal-table tbody td {
@@ -475,7 +475,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
 }
 .kc-terminal-table tbody tr:hover { background: #0e1012; }
 .kc-terminal-table .td-name {
-    color: #fff;
+    color: #0f172a;
     font-weight: 700;
     max-width: 200px;
     white-space: nowrap;
@@ -491,8 +491,8 @@ $nonce   = wp_create_nonce('charts_admin_action');
     border-radius: 2px;
     display: inline-block;
 }
-.kc-terminal-table .td-type.type-track { background: #0d1f17; color: #00ff66; }
-.kc-terminal-table .td-type.type-artist { background: #1f0d1a; color: #ff3366; }
+.kc-terminal-table .td-type.type-track { background: #0d1f17; color: #059669; }
+.kc-terminal-table .td-type.type-artist { background: #1f0d1a; color: #e11d48; }
 .kc-terminal-table .td-right { text-align: right; }
 
 /* Mini Bar Graphs */
@@ -504,14 +504,14 @@ $nonce   = wp_create_nonce('charts_admin_action');
 .kc-terminal-bar-val {
     font-size: 11px;
     font-weight: 700;
-    color: #c8ccd0;
+    color: #334155;
     min-width: 32px;
     text-align: right;
 }
 .kc-terminal-bar-track {
     width: 60px;
     height: 5px;
-    background: #1c1e22;
+    background: #e2e8f0;
     border-radius: 1px;
     overflow: hidden;
     flex-shrink: 0;
@@ -521,10 +521,10 @@ $nonce   = wp_create_nonce('charts_admin_action');
     border-radius: 1px;
     transition: width 0.4s ease;
 }
-.bar-green .kc-terminal-bar-fill { background: #00ff66; }
-.bar-red .kc-terminal-bar-fill { background: #ff3366; }
-.bar-amber .kc-terminal-bar-fill { background: #ffaa00; }
-.bar-cyan .kc-terminal-bar-fill { background: #00ccff; }
+.bar-green .kc-terminal-bar-fill { background: #10b981; }
+.bar-red .kc-terminal-bar-fill { background: #f43f5e; }
+.bar-amber .kc-terminal-bar-fill { background: #f59e0b; }
+.bar-cyan .kc-terminal-bar-fill { background: #0ea5e9; }
 
 /* Market Health Gauges */
 .kc-terminal-health-grid {
@@ -541,13 +541,13 @@ $nonce   = wp_create_nonce('charts_admin_action');
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #7c8087;
+    color: #64748b;
     margin-bottom: 10px;
 }
 .kc-terminal-gauge-bar-wrap {
     width: 100%;
     height: 8px;
-    background: #1c1e22;
+    background: #e2e8f0;
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -560,12 +560,12 @@ $nonce   = wp_create_nonce('charts_admin_action');
 .kc-terminal-gauge-value {
     font-size: 18px;
     font-weight: 700;
-    color: #fff;
+    color: #0f172a;
     line-height: 1;
 }
 .kc-terminal-gauge-unit {
     font-size: 10px;
-    color: #7c8087;
+    color: #64748b;
     margin-left: 2px;
 }
 
@@ -573,10 +573,10 @@ $nonce   = wp_create_nonce('charts_admin_action');
 .kc-terminal-empty {
     text-align: center;
     padding: 80px 40px;
-    color: #7c8087;
+    color: #64748b;
 }
 .kc-terminal-empty h2 {
-    color: #00ff66;
+    color: #059669;
     font-family: 'Courier New', Courier, monospace;
     font-size: 16px;
     text-transform: uppercase;
@@ -848,7 +848,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
         </thead>
         <tbody>
             <?php if (empty($entity_rows)) : ?>
-                <tr><td colspan="8" style="text-align:center; padding:40px; color:#7c8087;"><?php _e('No entity data found for current filters.', 'charts'); ?></td></tr>
+                <tr><td colspan="8" style="text-align:center; padding:40px; color: #64748b;"><?php _e('No entity data found for current filters.', 'charts'); ?></td></tr>
             <?php else : ?>
                 <?php foreach ($entity_rows as $row) :
                     $meta = !empty($row->metadata_json) ? json_decode($row->metadata_json, true) : [];
@@ -942,7 +942,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
         </thead>
         <tbody>
             <?php if (empty($artist_rows)) : ?>
-                <tr><td colspan="6" style="text-align:center; padding:40px; color:#7c8087;"><?php _e('No artist intelligence data.', 'charts'); ?></td></tr>
+                <tr><td colspan="6" style="text-align:center; padding:40px; color: #64748b;"><?php _e('No artist intelligence data.', 'charts'); ?></td></tr>
             <?php else : ?>
                 <?php foreach ($artist_rows as $art) :
                     $meta = !empty($art->metadata_json) ? json_decode($art->metadata_json, true) : [];

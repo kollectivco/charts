@@ -15,8 +15,8 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 ?>
 <style>
 .kc-terminal-wrap {
-	background: #000000;
-	color: #ffffff;
+	background: #f1f5f9;
+	color: #0f172a;
 	font-family: 'Courier New', Courier, monospace, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 	padding: 24px;
 	min-height: 100vh;
@@ -33,13 +33,13 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	font-family: inherit;
 	font-size: 24px;
 	font-weight: bold;
-	color: #00ff66;
+	color: #059669;
 	text-transform: uppercase;
 	margin: 0 0 6px 0;
 	letter-spacing: 1px;
 }
 .kc-terminal-subtitle {
-	color: #7c8087;
+	color: #64748b;
 	font-size: 13px;
 	margin: 0;
 }
@@ -50,15 +50,15 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	margin-bottom: 24px;
 }
 .kc-terminal-stat-card {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	padding: 16px;
 	border-radius: 4px;
 	position: relative;
 }
 .kc-terminal-stat-label {
 	font-size: 11px;
-	color: #7c8087;
+	color: #64748b;
 	text-transform: uppercase;
 	margin-bottom: 8px;
 	letter-spacing: 0.5px;
@@ -66,22 +66,22 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 .kc-terminal-stat-val {
 	font-size: 22px;
 	font-weight: bold;
-	color: #ffffff;
+	color: #0f172a;
 }
 .kc-terminal-stat-val.highlight {
-	color: #00ff66;
+	color: #059669;
 }
 .kc-terminal-tabs {
 	display: flex;
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	margin-bottom: 20px;
 	gap: 4px;
 }
 .kc-terminal-tab {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-bottom: none;
-	color: #7c8087;
+	color: #64748b;
 	padding: 10px 20px;
 	font-size: 12px;
 	font-weight: bold;
@@ -91,17 +91,17 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	border-radius: 4px 4px 0 0;
 }
 .kc-terminal-tab:hover {
-	color: #ffffff;
+	color: #0f172a;
 	background: #121416;
 }
 .kc-terminal-tab.active {
-	color: #00ff66;
+	color: #059669;
 	background: #121416;
 	border-top: 2px solid #00ff66;
 }
 .kc-terminal-panel {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 4px;
 	padding: 20px;
 	margin-bottom: 24px;
@@ -112,8 +112,8 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	border-collapse: collapse;
 }
 .kc-terminal-table th {
-	border-bottom: 1px solid #1c1e22;
-	color: #7c8087;
+	border-bottom: 1px solid #cbd5e1;
+	color: #64748b;
 	font-size: 11px;
 	text-transform: uppercase;
 	padding: 10px 12px;
@@ -126,9 +126,9 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	vertical-align: middle;
 }
 .kc-terminal-btn {
-	background: #000000;
+	background: #f1f5f9;
 	border: 1px solid #00ff66;
-	color: #00ff66;
+	color: #059669;
 	padding: 6px 14px;
 	font-size: 11px;
 	font-family: inherit;
@@ -139,19 +139,19 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	transition: all 0.2s;
 }
 .kc-terminal-btn:hover {
-	background: #00ff66;
+	background: #10b981;
 	color: #000000;
 }
 .kc-terminal-btn.danger {
-	border-color: #ff3366;
-	color: #ff3366;
+	border-color: #e11d48;
+	color: #e11d48;
 }
 .kc-terminal-btn.danger:hover {
-	background: #ff3366;
-	color: #ffffff;
+	background: #f43f5e;
+	color: #0f172a;
 }
 .kc-terminal-btn.primary {
-	background: #00ff66;
+	background: #10b981;
 	color: #000000;
 }
 .kc-terminal-btn.primary:hover {
@@ -165,9 +165,9 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	text-transform: uppercase;
 	border-radius: 2px;
 }
-.kc-badge-auto { background: rgba(0, 255, 102, 0.1); color: #00ff66; border: 1px solid #00ff66; }
-.kc-badge-review { background: rgba(255, 170, 0, 0.1); color: #ffaa00; border: 1px solid #ffaa00; }
-.kc-badge-manual { background: rgba(255, 51, 102, 0.1); color: #ff3366; border: 1px solid #ff3366; }
+.kc-badge-auto { background: rgba(0, 255, 102, 0.1); color: #059669; border: 1px solid #00ff66; }
+.kc-badge-review { background: rgba(255, 170, 0, 0.1); color: #d97706; border: 1px solid #ffaa00; }
+.kc-badge-manual { background: rgba(255, 51, 102, 0.1); color: #e11d48; border: 1px solid #ff3366; }
 
 /* Modal overlay */
 .kc-modal {
@@ -183,8 +183,8 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	justify-content: center;
 }
 .kc-modal-content {
-	background: #0b0c0d;
-	border: 1px solid #1c1e22;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
 	border-radius: 4px;
 	width: 600px;
 	max-width: 95%;
@@ -192,7 +192,7 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	overflow: hidden;
 }
 .kc-modal-header {
-	border-bottom: 1px solid #1c1e22;
+	border-bottom: 1px solid #cbd5e1;
 	padding: 16px 20px;
 	display: flex;
 	justify-content: space-between;
@@ -201,17 +201,17 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 .kc-modal-title {
 	font-size: 16px;
 	font-weight: bold;
-	color: #00ff66;
+	color: #059669;
 	text-transform: uppercase;
 	margin: 0;
 }
 .kc-modal-close {
-	color: #7c8087;
+	color: #64748b;
 	cursor: pointer;
 	font-size: 24px;
 }
 .kc-modal-close:hover {
-	color: #ffffff;
+	color: #0f172a;
 }
 .kc-modal-body {
 	padding: 20px;
@@ -224,16 +224,16 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 .kc-form-group label {
 	display: block;
 	font-size: 11px;
-	color: #7c8087;
+	color: #64748b;
 	text-transform: uppercase;
 	margin-bottom: 6px;
 	font-weight: bold;
 }
 .kc-form-control {
 	width: 100%;
-	background: #000000;
-	border: 1px solid #1c1e22;
-	color: #ffffff;
+	background: #f1f5f9;
+	border: 1px solid #cbd5e1;
+	color: #0f172a;
 	padding: 8px 12px;
 	font-family: inherit;
 	font-size: 13px;
@@ -241,7 +241,7 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	box-sizing: border-box;
 }
 .kc-form-control:focus {
-	border-color: #00ff66;
+	border-color: #059669;
 	outline: none;
 }
 /* Floating bulk actions bar */
@@ -250,19 +250,19 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	bottom: 24px;
 	left: 50%;
 	transform: translateX(-50%);
-	background: #0b0c0d;
+	background: #ffffff;
 	border: 1px solid #00ff66;
 	border-radius: 4px;
 	padding: 12px 24px;
 	display: none;
 	align-items: center;
 	gap: 16px;
-	box-shadow: 0 10px 30px rgba(0,255,102,0.15);
+	box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);
 	z-index: 999;
 }
 .kc-bulk-text {
 	font-size: 12px;
-	color: #00ff66;
+	color: #059669;
 	font-weight: bold;
 }
 .kc-terminal-loader {
@@ -270,7 +270,7 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	align-items: center;
 	justify-content: center;
 	height: 200px;
-	color: #7c8087;
+	color: #64748b;
 	font-size: 13px;
 	gap: 10px;
 }
@@ -278,7 +278,7 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 	width: 16px;
 	height: 16px;
 	border: 2px solid transparent;
-	border-top-color: #00ff66;
+	border-top-color: #059669;
 	border-radius: 50%;
 	animation: kc-spin 1s infinite linear;
 }
@@ -318,7 +318,7 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 		</div>
 		<div class="kc-terminal-stat-card">
 			<div class="kc-terminal-stat-label">Resolution Rate</div>
-			<div class="kc-terminal-stat-val" style="color: #00ff66;">89.2%</div>
+			<div class="kc-terminal-stat-val" style="color: #059669;">89.2%</div>
 		</div>
 	</section>
 
@@ -385,7 +385,7 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 					<input type="text" id="edit-artist-instagram" name="instagram_id" class="kc-form-control">
 				</div>
 			</div>
-			<div style="padding: 16px 20px; border-top: 1px solid #1c1e22; display:flex; justify-content:flex-end; gap:10px;">
+			<div style="padding: 16px 20px; border-top: 1px solid #cbd5e1; display:flex; justify-content:flex-end; gap:10px;">
 				<button type="button" class="kc-terminal-btn danger" onclick="closeArtistModal()">Cancel</button>
 				<button type="submit" class="kc-terminal-btn primary">Save Identity</button>
 			</div>
@@ -438,11 +438,11 @@ function loadClusters() {
 				activeClusters = res.data.clusters || [];
 				renderClusters();
 			} else {
-				contentDiv.innerHTML = `<div style="color: #ff3366; text-align:center; padding: 40px;">Failed to scan database: ${res.data?.message || 'Unknown error'}</div>`;
+				contentDiv.innerHTML = `<div style="color: #e11d48; text-align:center; padding: 40px;">Failed to scan database: ${res.data?.message || 'Unknown error'}</div>`;
 			}
 		})
 		.catch(err => {
-			contentDiv.innerHTML = `<div style="color: #ff3366; text-align:center; padding: 40px;">Error communicating with server.</div>`;
+			contentDiv.innerHTML = `<div style="color: #e11d48; text-align:center; padding: 40px;">Error communicating with server.</div>`;
 		});
 }
 
@@ -461,9 +461,9 @@ function renderClusters() {
 
 	if (activeClusters.length === 0) {
 		contentDiv.innerHTML = `
-			<div style="text-align: center; padding: 60px 0; color: #7c8087;">
-				<div style="font-size: 36px; color: #00ff66; margin-bottom: 20px;">✓</div>
-				<h3 style="color: #ffffff; text-transform: uppercase;">Full Data Integrity</h3>
+			<div style="text-align: center; padding: 60px 0; color: #64748b;">
+				<div style="font-size: 36px; color: #059669; margin-bottom: 20px;">✓</div>
+				<h3 style="color: #0f172a; text-transform: uppercase;">Full Data Integrity</h3>
 				<p style="font-size: 12px; margin-top: 6px;">No potential duplicates detected for this category.</p>
 			</div>
 		`;
@@ -507,13 +507,13 @@ function renderClusters() {
 
 			if (isFirst) {
 				html += `
-					<td rowspan="${rowSpan}" style="border-right: 1px solid #1c1e22; vertical-align: top; background: #070809;">
+					<td rowspan="${rowSpan}" style="border-right: 1px solid #cbd5e1; vertical-align: top; background: #070809;">
 						<div style="display:flex; align-items:center; gap:10px;">
 							${master.image ? `<img src="${master.image}" style="width:28px; height:28px; border-radius:2px; object-fit:cover; border:1px solid #1c1e22;">` : `<div style="width:28px; height:28px; background:#121416; border:1px solid #1c1e22; display:flex; align-items:center; justify-content:center; font-size:10px;">?</div>`}
 							<div>
-								<div style="font-weight:bold; color:#00ff66;">${master.name}</div>
-								${master.name_en ? `<div style="font-size:10px; color:#7c8087;">EN: ${master.name_en}</div>` : ''}
-								<div style="font-size:9px; color:#7c8087; margin-top:2px;">ID: ${master.id} | Spot: ${master.spotify_id || 'None'}</div>
+								<div style="font-weight:bold; color: #059669;">${master.name}</div>
+								${master.name_en ? `<div style="font-size:10px; color: #64748b;">EN: ${master.name_en}</div>` : ''}
+								<div style="font-size:9px; color: #64748b; margin-top:2px;">ID: ${master.id} | Spot: ${master.spotify_id || 'None'}</div>
 							</div>
 						</div>
 						${currentEntityType === 'artists' ? `
@@ -529,15 +529,15 @@ function renderClusters() {
 						${dup.image ? `<img src="${dup.image}" style="width:28px; height:28px; border-radius:2px; object-fit:cover; border:1px solid #1c1e22;">` : `<div style="width:28px; height:28px; background:#121416; border:1px solid #1c1e22; display:flex; align-items:center; justify-content:center; font-size:10px;">?</div>`}
 						<div>
 							<div style="font-weight:bold;">${dup.name}</div>
-							${dup.name_en ? `<div style="font-size:10px; color:#7c8087;">EN: ${dup.name_en}</div>` : ''}
-							<div style="font-size:9px; color:#7c8087; margin-top:2px;">ID: ${dup.id} | Spot: ${dup.spotify_id || 'None'}</div>
+							${dup.name_en ? `<div style="font-size:10px; color: #64748b;">EN: ${dup.name_en}</div>` : ''}
+							<div style="font-size:9px; color: #64748b; margin-top:2px;">ID: ${dup.id} | Spot: ${dup.spotify_id || 'None'}</div>
 						</div>
 					</div>
 				</td>
 				<td>
 					<div style="display:flex; align-items:center; gap:8px;">
 						<span class="kc-terminal-badge ${badgeClass}">${dup.confidence}%</span>
-						<span style="font-size:10px; color:#7c8087;">${dup.status}</span>
+						<span style="font-size:10px; color: #64748b;">${dup.status}</span>
 					</div>
 				</td>
 				<td style="text-align: right; padding-right: 20px;">
@@ -698,10 +698,10 @@ function triggerAutoReconcile() {
 	loaderDiv.className = 'kc-modal';
 	loaderDiv.style.display = 'flex';
 	loaderDiv.innerHTML = `
-		<div style="background:#0b0c0d; border:1px solid #00ff66; padding:40px; border-radius:4px; text-align:center; color:#ffffff;">
+		<div style="background: #ffffff; border:1px solid #00ff66; padding:40px; border-radius:4px; text-align:center; color: #0f172a;">
 			<div class="kc-terminal-spin" style="margin: 0 auto 20px auto; width:30px; height:30px;"></div>
-			<div style="color:#00ff66; font-weight:bold; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Reconciling Ecosystem Database</div>
-			<div style="font-size:11px; color:#7c8087;">Auto-merging spelling variations & transliterated alternates...</div>
+			<div style="color: #059669; font-weight:bold; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Reconciling Ecosystem Database</div>
+			<div style="font-size:11px; color: #64748b;">Auto-merging spelling variations & transliterated alternates...</div>
 		</div>
 	`;
 	document.body.appendChild(loaderDiv);

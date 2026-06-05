@@ -94,8 +94,8 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
    INSIGHTS ENGINE — BLOOMBERG TERMINAL MONOCHROME DESIGN SYSTEM
    ═══════════════════════════════════════════════════════════════════════════════ */
 .kc-terminal-wrap {
-    background: #000000;
-    color: #c8ccd0;
+    background: #f1f5f9;
+    color: #334155;
     font-family: 'Courier New', Courier, monospace, -apple-system, BlinkMacSystemFont, sans-serif;
     padding: 0;
     min-height: 100vh;
@@ -107,14 +107,14 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 
 /* ── HEADER ─────────────────────────────────────────────────────────────────── */
 .kc-terminal-header {
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
     padding-bottom: 20px;
     margin-bottom: 32px;
 }
 .kc-terminal-header-title {
     font-size: 15px;
     font-weight: 700;
-    color: #00ff66;
+    color: #059669;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin: 0 0 6px;
@@ -126,13 +126,13 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     display: inline-block;
     width: 8px;
     height: 15px;
-    background: #00ff66;
+    background: #10b981;
     animation: kc-blink 1s step-end infinite;
 }
 @keyframes kc-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 .kc-terminal-header-meta {
     font-size: 11px;
-    color: #7c8087;
+    color: #64748b;
     letter-spacing: 0.04em;
     display: flex;
     gap: 24px;
@@ -144,18 +144,18 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-section-header {
     font-size: 12px;
     font-weight: 700;
-    color: #00ff66;
+    color: #059669;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     margin: 0 0 16px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 .kc-section-header .kc-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: #00ff66;
+    width: 6px; height: 6px; border-radius: 50%; background: #10b981;
     animation: kc-pulse-dot 2s infinite;
 }
 @keyframes kc-pulse-dot {
@@ -166,8 +166,8 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 
 /* ── CARDS ──────────────────────────────────────────────────────────────────── */
 .kc-terminal-card {
-    background: #0b0c0d;
-    border: 1px solid #1c1e22;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 3px;
     padding: 20px 24px;
     margin-bottom: 24px;
@@ -191,7 +191,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-bulletin-item:last-child { margin-bottom: 0; }
 .kc-bulletin-ts {
     font-size: 10px;
-    color: #7c8087;
+    color: #64748b;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -203,8 +203,8 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     line-height: 1.55;
     font-weight: 500;
 }
-.kc-bulletin-item:nth-child(2) { border-left-color: #ffaa00; background: rgba(255,170,0,0.02); }
-.kc-bulletin-item:nth-child(3) { border-left-color: #ff3366; background: rgba(255,51,102,0.02); }
+.kc-bulletin-item:nth-child(2) { border-left-color: #d97706; background: rgba(255,170,0,0.02); }
+.kc-bulletin-item:nth-child(3) { border-left-color: #e11d48; background: rgba(255,51,102,0.02); }
 
 /* ── WEEKLY HIGHLIGHTS ──────────────────────────────────────────────────────── */
 .kc-highlight-row {
@@ -218,7 +218,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-highlight-rank {
     font-size: 11px;
     font-weight: 700;
-    color: #00ff66;
+    color: #059669;
     min-width: 38px;
     font-family: 'Courier New', monospace;
 }
@@ -226,8 +226,8 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     font-size: 14px;
     min-width: 16px;
 }
-.kc-highlight-arrow.up { color: #00ff66; }
-.kc-highlight-arrow.down { color: #ff3366; }
+.kc-highlight-arrow.up { color: #059669; }
+.kc-highlight-arrow.down { color: #e11d48; }
 .kc-highlight-info { flex: 1; min-width: 0; }
 .kc-highlight-track {
     font-size: 12px;
@@ -239,7 +239,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 }
 .kc-highlight-artist {
     font-size: 10px;
-    color: #7c8087;
+    color: #64748b;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -247,7 +247,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-highlight-move {
     font-size: 13px;
     font-weight: 900;
-    color: #00ff66;
+    color: #059669;
     min-width: 45px;
     text-align: right;
     font-family: 'Courier New', monospace;
@@ -265,7 +265,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-health-label {
     font-size: 10px;
     font-weight: 700;
-    color: #7c8087;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     min-width: 90px;
@@ -289,7 +289,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-health-val {
     font-size: 12px;
     font-weight: 900;
-    color: #00ff66;
+    color: #059669;
     min-width: 48px;
     text-align: right;
     font-family: 'Courier New', monospace;
@@ -328,7 +328,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-spotlight-gauge-val {
     font-size: 22px;
     font-weight: 900;
-    color: #00ff66;
+    color: #059669;
     font-family: 'Courier New', monospace;
     z-index: 2;
     position: relative;
@@ -340,7 +340,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     transform: translateX(-50%);
     font-size: 8px;
     text-transform: uppercase;
-    color: #7c8087;
+    color: #64748b;
     letter-spacing: 0.1em;
     white-space: nowrap;
 }
@@ -348,7 +348,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 .kc-spotlight-name {
     font-size: 18px;
     font-weight: 900;
-    color: #00ff66;
+    color: #059669;
     margin-bottom: 4px;
     letter-spacing: 0.02em;
 }
@@ -360,14 +360,14 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 }
 .kc-spotlight-stat-label {
     font-size: 9px;
-    color: #7c8087;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
 .kc-spotlight-stat-val {
     font-size: 15px;
     font-weight: 900;
-    color: #c8ccd0;
+    color: #334155;
     font-family: 'Courier New', monospace;
 }
 
@@ -384,18 +384,18 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     letter-spacing: 0.1em;
     text-align: left;
     padding: 8px 10px;
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
 }
 .kc-terminal-table td {
     font-size: 12px;
     padding: 9px 10px;
     border-bottom: 1px solid #0e0f11;
-    color: #c8ccd0;
+    color: #334155;
 }
 .kc-terminal-table tr:hover td { background: rgba(0,255,102,0.02); }
 .kc-terminal-table .td-rank {
     font-weight: 900;
-    color: #00ff66;
+    color: #059669;
     font-family: 'Courier New', monospace;
 }
 .kc-terminal-table .td-track {
@@ -407,7 +407,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     text-overflow: ellipsis;
 }
 .kc-terminal-table .td-artist {
-    color: #7c8087;
+    color: #64748b;
     font-size: 11px;
     max-width: 140px;
     white-space: nowrap;
@@ -416,17 +416,17 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 }
 .kc-terminal-table .td-val-up {
     font-weight: 900;
-    color: #00ff66;
+    color: #059669;
     font-family: 'Courier New', monospace;
 }
 .kc-terminal-table .td-val-down {
     font-weight: 900;
-    color: #ff3366;
+    color: #e11d48;
     font-family: 'Courier New', monospace;
 }
 .kc-terminal-table .td-weeks {
     font-weight: 700;
-    color: #ffaa00;
+    color: #d97706;
     font-family: 'Courier New', monospace;
 }
 .kc-direction-pill {
@@ -438,22 +438,22 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
-.kc-direction-pill.rising { background: rgba(0,255,102,0.12); color: #00ff66; }
-.kc-direction-pill.falling { background: rgba(255,51,102,0.12); color: #ff3366; }
-.kc-direction-pill.stable { background: rgba(124,128,135,0.12); color: #7c8087; }
-.kc-direction-pill.new-entry { background: rgba(255,170,0,0.12); color: #ffaa00; }
+.kc-direction-pill.rising { background: rgba(0,255,102,0.12); color: #059669; }
+.kc-direction-pill.falling { background: rgba(255,51,102,0.12); color: #e11d48; }
+.kc-direction-pill.stable { background: rgba(124,128,135,0.12); color: #64748b; }
+.kc-direction-pill.new-entry { background: rgba(255,170,0,0.12); color: #d97706; }
 
 /* ── RECORD BREAKERS ────────────────────────────────────────────────────────── */
 .kc-records-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .kc-records-col-title {
     font-size: 10px;
     font-weight: 700;
-    color: #ffaa00;
+    color: #d97706;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin-bottom: 12px;
     padding-bottom: 6px;
-    border-bottom: 1px solid #1c1e22;
+    border-bottom: 1px solid #cbd5e1;
 }
 
 /* ── EMPTY STATE ────────────────────────────────────────────────────────────── */
@@ -468,8 +468,8 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 /* ── REFRESH BTN ────────────────────────────────────────────────────────────── */
 .kc-terminal-btn {
     background: transparent;
-    border: 1px solid #1c1e22;
-    color: #00ff66;
+    border: 1px solid #cbd5e1;
+    color: #059669;
     font-family: 'Courier New', monospace;
     font-size: 11px;
     padding: 6px 14px;
@@ -481,7 +481,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 }
 .kc-terminal-btn:hover {
     background: rgba(0,255,102,0.08);
-    border-color: #00ff66;
+    border-color: #059669;
 }
 .kc-terminal-btn:disabled {
     opacity: 0.4;
@@ -533,7 +533,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
                 <div class="kc-terminal-header-meta">
                     <span>WEEK: <?php echo esc_html($week_start . ' — ' . $week_end); ?></span>
                     <span>GENERATED: <?php echo esc_html($report_ts); ?></span>
-                    <span>STATUS: <span style="color:#00ff66;">● LIVE</span></span>
+                    <span>STATUS: <span style="color: #059669;">● LIVE</span></span>
                 </div>
             </div>
             <button class="kc-terminal-btn" onclick="recalculateInsights()" id="insights-refresh-btn">
@@ -547,7 +547,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
         <div class="kc-terminal-card">
             <div class="kc-empty-state">
                 <div style="font-size: 36px; margin-bottom: 16px; color: #1c1e22;">⌁</div>
-                <div style="color: #7c8087; font-size: 13px; font-style: normal;">INTELLIGENCE ENGINE OFFLINE</div>
+                <div style="color: #64748b; font-size: 13px; font-style: normal;">INTELLIGENCE ENGINE OFFLINE</div>
                 <div style="margin-top: 6px; font-size: 11px;">Run calculations or import chart data to populate the intelligence brief.</div>
                 <div style="margin-top: 20px;">
                     <a href="<?php echo admin_url('admin.php?page=charts-import'); ?>" class="kc-terminal-btn" style="text-decoration:none;">
