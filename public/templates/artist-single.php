@@ -223,7 +223,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					$art_meta = !empty($artist_stats->metadata_json) ? json_decode($artist_stats->metadata_json, true) : [];
 					$pred_rank = $art_meta['predicted_artist_rank'] ?? $artist_stats->predicted_peak;
 				?>
-					<div class="artist-power-strip" style="display:flex; align-items:center; gap: 25px; margin-top: 25px; background: #fff; border: 1px solid var(--k-border); padding: 15px 25px; border-radius: 14px;">
+					<div class="artist-power-strip" dir="ltr" style="display:flex; align-items:center; gap: 25px; margin-top: 25px; background: #fff; border: 1px solid var(--k-border); padding: 15px 25px; border-radius: 14px;">
 						<div>
 							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Artist Power Score</span>
 							<div style="display:flex; align-items:center; gap: 10px;">
