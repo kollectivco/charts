@@ -24,7 +24,7 @@ $link = function($path) {
 };
 
 // Popular tracks
-$popular_tracks = $wpdb->get_results( $wpdb->prepare( "
+$popular_tracks_raw = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
 	WHERE e.item_type != 'artist' AND (
@@ -32,24 +32,53 @@ $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
 		OR (e.artist_names LIKE %s AND e.item_type IN ('track', 'video'))
 	)
-	GROUP BY e.item_type, e.item_id
-	ORDER BY e.rank_position ASC LIMIT 10
+	ORDER BY e.rank_position ASC LIMIT 50
 ", $artist->id, $artist->id, $artist_name_escaped ) );
 
+$unique_tracks = array();
+foreach($popular_tracks_raw as $pt) {
+    $pt_resolved = \Charts\Core\PublicIntegration::resolve_display_name($pt);
+    $title_key = strtolower(trim($pt_resolved['title']));
+    
+    if ( ! isset($unique_tracks[$title_key]) ) {
+        $unique_tracks[$title_key] = $pt;
+    } else {
+        if ( $pt->rank_position < $unique_tracks[$title_key]->rank_position ) {
+            $unique_tracks[$title_key]->rank_position = $pt->rank_position;
+        }
+    }
+}
+$popular_tracks = array_slice(array_values($unique_tracks), 0, 10);
+
 // Chart Rankings
-$chart_rankings = $wpdb->get_results( $wpdb->prepare( "
+$chart_rankings_raw = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
 	WHERE (e.item_id = %d AND e.item_type = 'artist')
 	   OR (e.artist_names LIKE %s AND e.item_type = 'artist')
-	ORDER BY e.rank_position ASC LIMIT 5
+	ORDER BY e.rank_position ASC LIMIT 20
 ", $artist->id, $artist_name_escaped ) );
 
-foreach($chart_rankings as $cr) {
+$unique_charts = array();
+foreach($chart_rankings_raw as $cr) {
 	$row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON (s.chart_type = CONCAT('cid-', d.id)) WHERE s.id = %d LIMIT 1", $cr->source_id));
 	if (!$row) $row = $wpdb->get_row($wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_definitions d JOIN {$wpdb->prefix}charts_sources s ON (s.chart_type = d.chart_type AND s.country_code = d.country_code) WHERE s.id = %d LIMIT 1", $cr->source_id));
 	$cr->definition_title = $row ? $row->title : 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين';
+	
+	$title_key = strtolower(trim($cr->definition_title));
+	if ( ! isset($unique_charts[$title_key]) ) {
+	    $unique_charts[$title_key] = $cr;
+	} else {
+	    if ( $cr->rank_position < $unique_charts[$title_key]->rank_position ) {
+	        $unique_charts[$title_key] = $cr;
+	    }
+	}
 }
+
+usort($unique_charts, function($a, $b) {
+    return $a->rank_position <=> $b->rank_position;
+});
+$chart_rankings = array_slice($unique_charts, 0, 5);
 
 $site_title = get_bloginfo('name');
 $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);

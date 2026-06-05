@@ -105,7 +105,7 @@ $artist_name_escaped = '%' . $wpdb->esc_like( $artist->display_name ) . '%';
 
 
 // Popular tracks (Improved with string fallback & type enforcement)
-$popular_tracks = $wpdb->get_results( $wpdb->prepare( "
+$popular_tracks_raw = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
 	WHERE e.item_type != 'artist' AND (
@@ -113,18 +113,37 @@ $popular_tracks = $wpdb->get_results( $wpdb->prepare( "
 		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
 		OR (e.artist_names LIKE %s AND e.item_type IN ('track', 'video'))
 	)
-	GROUP BY e.item_type, e.item_id
-	ORDER BY e.rank_position ASC LIMIT 5
+	ORDER BY e.rank_position ASC LIMIT 50
 ", $artist->id, $artist->id, $artist_name_escaped ) );
 
-foreach($popular_tracks as $pt) {
-	$table = ($pt->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
-	$col   = ($pt->item_type === 'video') ? 'thumbnail' : 'cover_image';
-	$pt->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
+$unique_tracks = array();
+foreach($popular_tracks_raw as $pt) {
+    $pt_resolved = \Charts\Core\PublicIntegration::resolve_display_name($pt);
+    $title_key = strtolower(trim($pt_resolved['title']));
+    
+    if ( ! isset($unique_tracks[$title_key]) ) {
+        $table = ($pt->item_type === 'video') ? 'charts_videos' : 'charts_tracks';
+        $col   = ($pt->item_type === 'video') ? 'thumbnail' : 'cover_image';
+        $pt->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT $col FROM {$wpdb->prefix}{$table} WHERE id = %d", $pt->item_id));
+        $unique_tracks[$title_key] = $pt;
+    } else {
+        // Merge views if missing
+        if ( empty($unique_tracks[$title_key]->views_count) && !empty($pt->views_count) ) {
+            $unique_tracks[$title_key]->views_count = $pt->views_count;
+        }
+        if ( empty($unique_tracks[$title_key]->streams_count) && !empty($pt->streams_count) ) {
+            $unique_tracks[$title_key]->streams_count = $pt->streams_count;
+        }
+        // Keep the best rank
+        if ( $pt->rank_position < $unique_tracks[$title_key]->rank_position ) {
+            $unique_tracks[$title_key]->rank_position = $pt->rank_position;
+        }
+    }
 }
+$popular_tracks = array_slice(array_values($unique_tracks), 0, 5);
 
 // Chart Rankings for the Artist Profile itself
-$chart_rankings = $wpdb->get_results( $wpdb->prepare( "
+$chart_rankings_raw = $wpdb->get_results( $wpdb->prepare( "
 	SELECT e.*
 	FROM {$wpdb->prefix}charts_entries e
 	INNER JOIN (
@@ -134,10 +153,11 @@ $chart_rankings = $wpdb->get_results( $wpdb->prepare( "
 		   OR (e2.artist_names LIKE %s AND e2.item_type = 'artist')
 		GROUP BY e2.source_id
 	) latest ON latest.max_id = e.id
-	ORDER BY e.rank_position ASC LIMIT 4
+	ORDER BY e.rank_position ASC LIMIT 20
 ", $artist->id, $artist_name_escaped ) );
 
-foreach($chart_rankings as $cr) {
+$unique_charts = array();
+foreach($chart_rankings_raw as $cr) {
 	// Resolve parent chart title for this source.
 	$row = $wpdb->get_row($wpdb->prepare("
 		SELECT d.title FROM {$wpdb->prefix}charts_definitions d
@@ -154,7 +174,22 @@ foreach($chart_rankings as $cr) {
 		", $cr->source_id));
 	}
 	$cr->definition_title = $row ? $row->title : 'أفضل ' . \Charts\Core\Translation::get('Artist') . 'ين';
+	
+	$title_key = strtolower(trim($cr->definition_title));
+	if ( ! isset($unique_charts[$title_key]) ) {
+	    $unique_charts[$title_key] = $cr;
+	} else {
+	    if ( $cr->rank_position < $unique_charts[$title_key]->rank_position ) {
+	        $unique_charts[$title_key] = $cr;
+	    }
+	}
 }
+
+// Sort by rank position and limit to 4
+usort($unique_charts, function($a, $b) {
+    return $a->rank_position <=> $b->rank_position;
+});
+$chart_rankings = array_slice($unique_charts, 0, 4);
 
 if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 ?>
