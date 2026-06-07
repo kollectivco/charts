@@ -217,36 +217,59 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					</div>
 				<?php endif; ?>
 
-				<?php 
-				$artist_stats = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'artist' AND entity_id = %d", $artist->id));
-				if ($artist_stats) :
-					$art_meta = !empty($artist_stats->metadata_json) ? json_decode($artist_stats->metadata_json, true) : [];
-					$pred_rank = $art_meta['predicted_artist_rank'] ?? $artist_stats->predicted_peak;
-				?>
-					<div class="artist-power-strip" dir="ltr" style="display:flex; align-items:center; gap: 25px; margin-top: 25px; background: #fff; border: 1px solid var(--k-border); padding: 15px 25px; border-radius: 14px;">
-						<div>
-							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Artist Power Score</span>
-							<div style="display:flex; align-items:center; gap: 10px;">
-								<span style="font-size: 24px; font-weight:950; color:#6366f1; line-height:1;"><?php echo round($artist_stats->artist_power_score); ?></span>
-								<div class="v-track-bg" style="width: 80px; height: 5px; background:#f1f5f9; border-radius:2px; display:inline-block; position:relative;">
-									<div class="v-track-fill" style="width: <?php echo min(100, $artist_stats->artist_power_score); ?>%; height:100%; background:linear-gradient(90deg, #6366f1, #fe025b); border-radius:2px; position:absolute; top:0; left:0;"></div>
-								</div>
+		<?php 
+			$artist_stats = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}charts_intelligence WHERE entity_type = 'artist' AND entity_id = %d", $artist->id));
+			if ($artist_stats) :
+				$art_meta = !empty($artist_stats->metadata_json) ? json_decode($artist_stats->metadata_json, true) : [];
+				$pred_rank   = intval($art_meta['predicted_artist_rank'] ?? $artist_stats->predicted_peak ?? 0);
+				$power_score = round(floatval($artist_stats->artist_power_score ?? 0));
+				$pred_next   = intval($artist_stats->predicted_next_week ?? 0);
+				$exp_growth  = round(floatval($artist_stats->growth_rate ?? $artist_stats->predicted_next_month ?? 0), 1);
+
+				// Only show the strip if there's at least one meaningful value
+				$has_stats = ($power_score > 0 || $pred_rank > 0 || $pred_next > 0 || $exp_growth != 0);
+			?>
+				<?php if ($has_stats) : ?>
+				<div class="artist-power-strip" dir="ltr" style="display:flex; align-items:center; gap: 0; margin-top: 25px; background: #fff; border: 1px solid var(--k-border); padding: 0; border-radius: 14px; overflow:hidden;">
+
+					<?php if ($power_score > 0) : ?>
+					<div style="padding: 16px 24px; flex:1; text-align:center;">
+						<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 6px; letter-spacing:0.05em;">قوة الفنان</span>
+						<div style="display:flex; align-items:center; justify-content:center; gap: 10px;">
+							<span style="font-size: 26px; font-weight:900; color:#6366f1; line-height:1;"><?php echo $power_score; ?></span>
+							<div style="width: 60px; height: 5px; background:#f1f5f9; border-radius:2px; position:relative; overflow:hidden;">
+								<div style="width: <?php echo min(100, $power_score); ?>%; height:100%; background:linear-gradient(90deg, #6366f1, #fe025b); border-radius:2px; position:absolute; top:0; left:0;"></div>
 							</div>
 						</div>
-						<div style="border-left: 1px solid var(--k-border); padding-left: 20px;">
-							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Predicted Artist Rank</span>
-							<span style="font-size:20px; font-weight:900; color:var(--k-text); line-height:1; display:block; margin-top:2px;">#<?php echo intval($pred_rank); ?></span>
-						</div>
-						<div style="border-left: 1px solid var(--k-border); padding-left: 20px;">
-							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Expected New Entries</span>
-							<span style="font-size:20px; font-weight:900; color:#10b981; line-height:1; display:block; margin-top:2px;"><?php echo intval($artist_stats->predicted_next_week); ?></span>
-						</div>
-						<div style="border-left: 1px solid var(--k-border); padding-left: 20px;">
-							<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 2px;">Expected Growth</span>
-							<span style="font-size:20px; font-weight:900; color:#fe025b; line-height:1; display:block; margin-top:2px;"><?php echo round($artist_stats->predicted_next_month); ?>%</span>
-						</div>
 					</div>
+					<?php endif; ?>
+
+					<?php if ($pred_rank > 0) : ?>
+					<div style="padding: 16px 24px; flex:1; text-align:center; border-right: 1px solid var(--k-border);">
+						<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 6px; letter-spacing:0.05em;">توقع المركز</span>
+						<span style="font-size:24px; font-weight:900; color:var(--k-text); line-height:1; display:block;">#<?php echo $pred_rank; ?></span>
+					</div>
+					<?php endif; ?>
+
+					<?php if ($exp_growth != 0) : ?>
+					<div style="padding: 16px 24px; flex:1; text-align:center; border-right: 1px solid var(--k-border);">
+						<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 6px; letter-spacing:0.05em;">النمو المتوقع</span>
+						<span style="font-size:24px; font-weight:900; color:<?php echo $exp_growth >= 0 ? '#10b981' : '#fe025b'; ?>; line-height:1; display:block;">
+							<?php echo ($exp_growth >= 0 ? '+' : '') . $exp_growth; ?>%
+						</span>
+					</div>
+					<?php endif; ?>
+
+					<?php if ($pred_next > 0) : ?>
+					<div style="padding: 16px 24px; flex:1; text-align:center; border-right: 1px solid var(--k-border);">
+						<span style="font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; display:block; margin-bottom: 6px; letter-spacing:0.05em;">توقع الأسبوع</span>
+						<span style="font-size:24px; font-weight:900; color:#10b981; line-height:1; display:block;">#<?php echo $pred_next; ?></span>
+					</div>
+					<?php endif; ?>
+
+				</div>
 				<?php endif; ?>
+			<?php endif; ?>
 			</div>
 		</header>
 
