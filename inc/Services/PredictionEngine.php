@@ -454,7 +454,7 @@ class PredictionEngine {
 			SELECT i.*, t.title as track_name, art.display_name as artist_name, t.cover_image, e.rank_position as current_rank
 			FROM $intel_table i
 			JOIN $tracks_table t ON t.id = i.entity_id AND i.entity_type = 'track'
-			LEFT JOIN $wpdb->prefix . 'charts_artists art ON art.id = t.primary_artist_id
+			LEFT JOIN {$wpdb->prefix}charts_artists art ON art.id = t.primary_artist_id
 			JOIN $entries_table e ON e.id = (
 				SELECT MAX(id) FROM $entries_table WHERE item_id = i.entity_id AND item_type = 'track'
 			)
