@@ -181,6 +181,29 @@ $panel = [
             ]
         ]
     ],
+    'markets' => [
+        'title' => 'Territories',
+        'sections' => [
+            'markets_config' => [
+                'title' => 'Market Configuration',
+                'fields' => [
+                    [ 'id' => 'custom_markets', 'type' => 'custom', 'html' => '
+                        <label style="display:block; font-weight:700; margin-bottom:8px;">Define Markets (Code: Name)</label>
+                        <p class="kb-field-desc" style="margin-bottom:12px;">Enter one market per line, using the format "CODE: Country Name" (e.g. "US: United States"). These will appear in the Intelligence and Forecast dropdowns.</p>
+                        <textarea name="charts_markets_raw" class="kb-input" style="height: 150px; padding: 12px; font-family: monospace;">' . esc_textarea( (function() {
+                            $raw = "";
+                            foreach (get_option("charts_markets", []) as $m) {
+                                if (isset($m["code"]) && isset($m["name"])) {
+                                    $raw .= strtoupper($m["code"]) . ": " . $m["name"] . "\n";
+                                }
+                            }
+                            return trim($raw);
+                        })() ) . '</textarea>
+                    ' ],
+                ]
+            ]
+        ]
+    ],
     'operations' => [
         'title' => 'Operations',
         'sections' => [

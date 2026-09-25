@@ -102,8 +102,25 @@ class Bootstrap {
 
 				if ( isset( $_POST['kc_opt'] ) && is_array( $_POST['kc_opt'] ) ) {
 					\Charts\Core\Settings::update_all( $_POST['kc_opt'] );
-					\Charts\Core\Notify::success( __( 'Global settings nexus synchronized successfully.', 'charts' ), __( 'Configuration Saved', 'charts' ) );
 				}
+
+				if ( isset( $_POST['charts_markets_raw'] ) ) {
+					$raw = sanitize_textarea_field( $_POST['charts_markets_raw'] );
+					$lines = explode( "\n", str_replace("\r", "", $raw) );
+					$markets = [];
+					foreach ($lines as $line) {
+						$parts = explode(':', $line, 2);
+						if (count($parts) === 2) {
+							$markets[] = [
+								'code' => trim($parts[0]),
+								'name' => trim($parts[1])
+							];
+						}
+					}
+					update_option('charts_markets', $markets);
+				}
+
+				\Charts\Core\Notify::success( __( 'Global settings nexus synchronized successfully.', 'charts' ), __( 'Configuration Saved', 'charts' ) );
 				$processed = true;
 				break;
 
