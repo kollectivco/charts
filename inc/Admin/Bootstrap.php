@@ -1692,6 +1692,10 @@ class Bootstrap {
 		$len2 = mb_strlen( $str2 );
 		if ( $len1 === 0 || $len2 === 0 ) return 0;
 		
+		// levenshtein() has a 255 character limit in PHP < 8.0, and can be slow for very long strings.
+		if ($len1 > 250) { $str1 = mb_substr($str1, 0, 250); $len1 = 250; }
+		if ($len2 > 250) { $str2 = mb_substr($str2, 0, 250); $len2 = 250; }
+		
 		$lev = levenshtein( $str1, $str2 );
 		$max_len = max( $len1, $len2 );
 		$similarity = ( 1 - $lev / $max_len ) * 100;
@@ -1766,8 +1770,13 @@ class Bootstrap {
 
 			// Sort to find master
 			usort($items, function($a, $b) {
-				$scoreA = (!empty($a->spotify_id) || !empty($a->youtube_id)) ? 2 : 0;
-				$scoreB = (!empty($b->spotify_id) || !empty($b->youtube_id)) ? 2 : 0;
+				$a_spot = isset($a->spotify_id) ? $a->spotify_id : '';
+				$a_tube = isset($a->youtube_id) ? $a->youtube_id : '';
+				$b_spot = isset($b->spotify_id) ? $b->spotify_id : '';
+				$b_tube = isset($b->youtube_id) ? $b->youtube_id : '';
+
+				$scoreA = (!empty($a_spot) || !empty($a_tube)) ? 2 : 0;
+				$scoreB = (!empty($b_spot) || !empty($b_tube)) ? 2 : 0;
 				if ($scoreA !== $scoreB) return $scoreB <=> $scoreA;
 				return $a->id <=> $b->id;
 			});
@@ -1779,11 +1788,16 @@ class Bootstrap {
 				$dup = $items[$i];
 				$sim = self::get_similarity_pct($master->name, $dup->name);
 				
+				$m_spot = isset($master->spotify_id) ? $master->spotify_id : '';
+				$m_tube = isset($master->youtube_id) ? $master->youtube_id : '';
+				$d_spot = isset($dup->spotify_id) ? $dup->spotify_id : '';
+				$d_tube = isset($dup->youtube_id) ? $dup->youtube_id : '';
+
 				$exact_id_match = false;
-				if (!empty($master->spotify_id) && !empty($dup->spotify_id) && $master->spotify_id === $dup->spotify_id) {
+				if (!empty($m_spot) && !empty($d_spot) && $m_spot === $d_spot) {
 					$exact_id_match = true;
 				}
-				if (!empty($master->youtube_id) && !empty($dup->youtube_id) && $master->youtube_id === $dup->youtube_id) {
+				if (!empty($m_tube) && !empty($d_tube) && $m_tube === $d_tube) {
 					$exact_id_match = true;
 				}
 
@@ -1791,7 +1805,9 @@ class Bootstrap {
 					$confidence = 100;
 				} else {
 					$confidence = $sim;
-					if (!empty($master->name_en) && !empty($dup->name_en) && mb_strtolower($master->name_en) === mb_strtolower($dup->name_en)) {
+					$m_en = isset($master->name_en) ? $master->name_en : '';
+					$d_en = isset($dup->name_en) ? $dup->name_en : '';
+					if (!empty($m_en) && !empty($d_en) && mb_strtolower($m_en) === mb_strtolower($d_en)) {
 						$confidence = max($confidence, 95);
 					}
 					$master_trans = \Charts\Core\Translation::get($master->name);
