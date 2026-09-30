@@ -105,15 +105,23 @@ class Bootstrap {
 				}
 
 				if ( isset( $_POST['charts_markets_raw'] ) ) {
-					$raw = sanitize_textarea_field( $_POST['charts_markets_raw'] );
+					$raw = sanitize_textarea_field( wp_unslash( $_POST['charts_markets_raw'] ) );
 					$lines = explode( "\n", str_replace("\r", "", $raw) );
 					$markets = [];
 					foreach ($lines as $line) {
+						$line = trim($line);
+						if (empty($line)) continue;
+						
 						$parts = explode(':', $line, 2);
 						if (count($parts) === 2) {
 							$markets[] = [
 								'code' => trim($parts[0]),
 								'name' => trim($parts[1])
+							];
+						} else {
+							$markets[] = [
+								'code' => strtoupper(substr(sanitize_title($line), 0, 3)),
+								'name' => trim($line)
 							];
 						}
 					}

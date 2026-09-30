@@ -187,6 +187,7 @@ $total_records = $wpdb->get_var("SELECT COUNT(*) FROM $intel_table");
 $has_data = ($total_records > 0);
 
 $markets = get_option('charts_markets', []);
+if (!is_array($markets)) $markets = [];
 $nonce   = wp_create_nonce('charts_admin_action');
 ?>
 

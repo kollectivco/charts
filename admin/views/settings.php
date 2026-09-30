@@ -192,8 +192,10 @@ $panel = [
                         <p class="kb-field-desc" style="margin-bottom:12px;">Enter one market per line, using the format "CODE: Country Name" (e.g. "US: United States"). These will appear in the Intelligence and Forecast dropdowns.</p>
                         <textarea name="charts_markets_raw" class="kb-input" style="height: 150px; padding: 12px; font-family: monospace;">' . esc_textarea( (function() {
                             $raw = "";
-                            foreach (get_option("charts_markets", []) as $m) {
-                                if (isset($m["code"]) && isset($m["name"])) {
+                            $markets = get_option("charts_markets", []);
+                            if (!is_array($markets)) $markets = [];
+                            foreach ($markets as $m) {
+                                if (is_array($m) && isset($m["code"]) && isset($m["name"])) {
                                     $raw .= strtoupper($m["code"]) . ": " . $m["name"] . "\n";
                                 }
                             }
