@@ -72,6 +72,8 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartLeader.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartList.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/PremiumHeroSlider.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/SidebarTop1.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/DynamicChartGrid.php';
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
@@ -81,5 +83,7 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\ChartLeader() );
 		$widgets_manager->register( new Widgets\ChartList() );
 		$widgets_manager->register( new Widgets\PremiumHeroSlider() );
+		$widgets_manager->register( new Widgets\SidebarTop1() );
+		$widgets_manager->register( new Widgets\DynamicChartGrid() );
 	}
 }
