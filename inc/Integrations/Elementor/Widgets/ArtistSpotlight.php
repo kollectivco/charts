@@ -26,6 +26,26 @@ class ArtistSpotlight extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_section', [
+			'label' => __( 'Styling', 'charts' ),
+			'tab' => Controls_Manager::TAB_STYLE,
+		] );
+
+		$this->add_control( 'card_bg', [
+			'label' => __( 'Background Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-as-wrap' => 'background: {{VALUE}};' ],
+		] );
+
+		$this->add_control( 'card_radius', [
+			'label' => __( 'Border Radius', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 50 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-as-wrap' => 'border-radius: {{SIZE}}{{UNIT}};' ],
+		] );
+
+		$this->end_controls_section();
 	}
 
 	protected function render() {
@@ -33,24 +53,19 @@ class ArtistSpotlight extends Widget_Base {
 		$intel_table = $wpdb->prefix . 'charts_intelligence';
 		$artists_table = $wpdb->prefix . 'charts_artists';
 		
-		$artist = $wpdb->get_row("
-			SELECT i.*, a.display_name, a.image
-			FROM $intel_table i
-			JOIN $artists_table a ON a.id = i.entity_id
-			WHERE i.entity_type = 'artist' AND i.artist_power_score > 0
-			ORDER BY i.artist_power_score DESC
-			LIMIT 1
-		");
+		$artist = $wpdb->get_row("SELECT i.*, a.display_name, a.image FROM $intel_table i JOIN $artists_table a ON a.id = i.entity_id WHERE i.entity_type = 'artist' AND i.artist_power_score > 0 ORDER BY i.artist_power_score DESC LIMIT 1");
 
+		echo '<div class="kc-widget-wrap">';
 		if (!$artist) {
 			echo '<div style="padding:20px; text-align:center; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1; color:#64748b; font-size:13px;">No artist intelligence data available.</div>';
+			echo '</div>';
 			return;
 		}
 
 		$uid = 'kc-as-' . $this->get_id();
 		$img = $artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 		$score = intval($artist->artist_power_score);
-		$max_score = 1000; // Assuming power score normalizes around 1000 for the gauge
+		$max_score = 1000;
 		$pct = min(100, max(0, ($score / $max_score) * 100));
 		$dasharray = 283;
 		$dashoffset = $dasharray - ($dasharray * $pct / 100);
@@ -62,8 +77,8 @@ class ArtistSpotlight extends Widget_Base {
 		.' . $uid . '-img { position: absolute; top: 15px; left: 15px; width: 130px; height: 130px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 		.' . $uid . '-svg { transform: rotate(-90deg); width: 160px; height: 160px; }
 		.' . $uid . '-circle-bg { fill: none; stroke: #f1f5f9; stroke-width: 6; }
-		.' . $uid . '-circle-fill { fill: none; stroke: url(#grad-' . $uid . '); stroke-width: 6; stroke-linecap: round; stroke-dasharray: ' . $dasharray . '; stroke-dashoffset: ' . $dashoffset . '; animation: kc-fill-gauge 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-		@keyframes kc-fill-gauge { from { stroke-dashoffset: ' . $dasharray . '; } }
+		.' . $uid . '-circle-fill { fill: none; stroke: url(#grad-' . $uid . '); stroke-width: 6; stroke-linecap: round; stroke-dasharray: ' . $dasharray . '; stroke-dashoffset: ' . $dashoffset . '; animation: kc-fill-gauge-' . $uid . ' 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+		@keyframes kc-fill-gauge-' . $uid . ' { from { stroke-dashoffset: ' . $dasharray . '; } }
 		.' . $uid . '-badge { display: inline-flex; align-items: center; gap: 6px; background: #fef2f2; color: #ef4444; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; margin-bottom: 16px; }
 		.' . $uid . '-name { font-size: 28px; font-weight: 900; color: #0f172a; margin: 0 0 4px 0; letter-spacing: -0.02em; }
 		.' . $uid . '-sub { font-size: 14px; color: #64748b; margin: 0 0 24px 0; }
@@ -74,29 +89,23 @@ class ArtistSpotlight extends Widget_Base {
 		.' . $uid . '-stat-lbl { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
 		</style>';
 
-		echo '<div class="' . $uid . '-wrap">';
+		echo '<div class="' . $uid . '-wrap kc-as-wrap">';
 		echo '<div class="' . $uid . '-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Top Artist Authority</div>';
-		
 		echo '<div class="' . $uid . '-gauge-box">';
 		echo '<img src="' . esc_url($img) . '" class="' . $uid . '-img">';
 		echo '<svg class="' . $uid . '-svg" viewBox="0 0 100 100">';
 		echo '<defs><linearGradient id="grad-' . $uid . '" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6366f1" /><stop offset="100%" stop-color="#ec4899" /></linearGradient></defs>';
 		echo '<circle class="' . $uid . '-circle-bg" cx="50" cy="50" r="45"></circle>';
 		echo '<circle class="' . $uid . '-circle-fill" cx="50" cy="50" r="45"></circle>';
-		echo '</svg>';
-		echo '</div>';
-
+		echo '</svg></div>';
 		echo '<h2 class="' . $uid . '-name">' . esc_html($artist->display_name) . '</h2>';
 		echo '<p class="' . $uid . '-sub">Composite Power Score: <strong style="color:#6366f1;">' . number_format($score) . '</strong></p>';
-
 		echo '<div class="' . $uid . '-stats">';
 		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . intval($artist->weeks_on_chart) . '</div><div class="' . $uid . '-stat-lbl">Chart Wks</div></div>';
 		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">#' . intval($artist->peaks_count) . '</div><div class="' . $uid . '-stat-lbl">Peak Rank</div></div>';
 		$streams = intval($artist->total_streams);
 		$streams_fmt = $streams > 1000000 ? round($streams/1000000, 1) . 'M' : ($streams > 1000 ? round($streams/1000, 1) . 'K' : $streams);
 		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . $streams_fmt . '</div><div class="' . $uid . '-stat-lbl">Index Vol</div></div>';
-		echo '</div>';
-
-		echo '</div>';
+		echo '</div></div></div>';
 	}
 }

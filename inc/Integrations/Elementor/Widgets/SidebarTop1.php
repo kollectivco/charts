@@ -19,8 +19,8 @@ class SidebarTop1 extends Widget_Base {
 			'tab' => Controls_Manager::TAB_CONTENT,
 		] );
 
-		global $wpdb;
-		$defs = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}charts_definitions ORDER BY id ASC");
+		$manager = new \Charts\Admin\SourceManager();
+		$defs = $manager->get_definitions(true);
 		$chart_options = [];
 		if ($defs) {
 			foreach ($defs as $d) {
@@ -33,7 +33,7 @@ class SidebarTop1 extends Widget_Base {
 			'type' => Controls_Manager::SELECT2,
 			'multiple' => true,
 			'options' => $chart_options,
-			'default' => array_keys(array_slice($chart_options, 0, 3, true)),
+			'default' => !empty($chart_options) ? array_keys(array_slice($chart_options, 0, 3, true)) : [],
 		] );
 
 		$this->add_control( 'layout_style', [
@@ -47,14 +47,36 @@ class SidebarTop1 extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_section', [
+			'label' => __( 'Card Styling', 'charts' ),
+			'tab' => Controls_Manager::TAB_STYLE,
+		] );
+
+		$this->add_control( 'card_radius', [
+			'label' => __( 'Border Radius', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 50 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-st1-card' => 'border-radius: {{SIZE}}{{UNIT}};', '{{WRAPPER}} .kc-st1-face' => 'border-radius: {{SIZE}}{{UNIT}};' ],
+		] );
+
+		$this->add_control( 'overlay_color', [
+			'label' => __( 'Overlay Gradient Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-st1-overlay' => 'background: linear-gradient(to top, {{VALUE}} 0%, rgba(15,23,42,0.2) 100%);' ],
+			'condition' => [ 'layout_style' => 'crown_stack' ]
+		] );
+
+		$this->end_controls_section();
 	}
 
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 		$chart_ids = $settings['chart_ids'];
 		
+		echo '<div class="kc-widget-wrap">';
 		if (empty($chart_ids)) {
-			echo '<div class="kc-empty">Please select at least one chart.</div>';
+			echo '<div class="kc-empty" style="padding:20px; background:#f8fafc; text-align:center; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">Please select at least one chart.</div></div>';
 			return;
 		}
 
@@ -124,11 +146,11 @@ class SidebarTop1 extends Widget_Base {
 		if ($layout === 'crown_stack') {
 			echo '<div class="' . $uid . '-stack">';
 			foreach ($charts_data as $c) {
-				echo '<div class="' . $uid . '-card">';
+				echo '<div class="' . $uid . '-card kc-st1-card">';
 				echo '<div class="' . $uid . '-bg" style="background-image:url(\'' . esc_url($c['image']) . '\');"></div>';
 				echo '<div class="' . $uid . '-num">1</div>';
 				echo '<div class="' . $uid . '-stats"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 6 12 12 16 14"/><circle cx="12" cy="12" r="10"/></svg> ' . $c['weeks'] . ' Wks</div>';
-				echo '<div class="' . $uid . '-overlay">';
+				echo '<div class="' . $uid . '-overlay kc-st1-overlay">';
 				echo '<div class="' . $uid . '-ch-name"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ' . esc_html($c['chart_name']) . '</div>';
 				echo '<div class="' . $uid . '-title">' . esc_html($c['track']) . '</div>';
 				echo '<div class="' . $uid . '-artist">' . esc_html($c['artist']) . '</div>';
@@ -138,12 +160,12 @@ class SidebarTop1 extends Widget_Base {
 		} else {
 			echo '<div class="' . $uid . '-flip-grid">';
 			foreach ($charts_data as $c) {
-				echo '<div class="' . $uid . '-flip-card">';
-				echo '<div class="' . $uid . '-face ' . $uid . '-front">';
+				echo '<div class="' . $uid . '-flip-card kc-st1-card">';
+				echo '<div class="' . $uid . '-face kc-st1-face ' . $uid . '-front">';
 				echo '<div class="' . $uid . '-front-icon">👑</div>';
 				echo '<div class="' . $uid . '-front-title">' . esc_html($c['chart_name']) . '</div>';
 				echo '</div>';
-				echo '<div class="' . $uid . '-face ' . $uid . '-back">';
+				echo '<div class="' . $uid . '-face kc-st1-face ' . $uid . '-back">';
 				echo '<div class="' . $uid . '-back-bg" style="background-image:url(\'' . esc_url($c['image']) . '\');"></div>';
 				echo '<div class="' . $uid . '-back-content">';
 				echo '<div class="' . $uid . '-back-badge">#1</div>';
@@ -153,5 +175,6 @@ class SidebarTop1 extends Widget_Base {
 			}
 			echo '</div>';
 		}
+		echo '</div>';
 	}
 }

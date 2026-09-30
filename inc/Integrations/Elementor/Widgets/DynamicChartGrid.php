@@ -3,6 +3,8 @@ namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
+use Elementor\Group_Control_Typography;
+use Elementor\Core\Kits\Documents\Tabs\Global_Colors;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -20,8 +22,8 @@ class DynamicChartGrid extends Widget_Base {
 			'tab' => Controls_Manager::TAB_CONTENT,
 		] );
 
-		global $wpdb;
-		$defs = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}charts_definitions ORDER BY id ASC");
+		$manager = new \Charts\Admin\SourceManager();
+		$defs = $manager->get_definitions(true);
 		$chart_options = [];
 		if ($defs) {
 			foreach ($defs as $d) {
@@ -57,6 +59,27 @@ class DynamicChartGrid extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_section', [
+			'label' => __( 'Card Styling', 'charts' ),
+			'tab' => Controls_Manager::TAB_STYLE,
+		] );
+
+		$this->add_control( 'card_radius', [
+			'label' => __( 'Border Radius', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'size_units' => [ 'px', '%' ],
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 50 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-dyn-item' => 'border-radius: {{SIZE}}{{UNIT}};' ],
+		] );
+
+		$this->add_control( 'overlay_color', [
+			'label' => __( 'Overlay Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-dyn-overlay' => 'background: linear-gradient(to top, {{VALUE}} 0%, rgba(0,0,0,0) 100%);' ],
+		] );
+
+		$this->end_controls_section();
 	}
 
 	protected function render() {
@@ -64,7 +87,7 @@ class DynamicChartGrid extends Widget_Base {
 		$chart_id = $settings['chart_id'];
 		
 		if (empty($chart_id)) {
-			echo '<div class="kc-empty">Please select a chart.</div>';
+			echo '<div class="kc-empty" style="padding:20px; background:#f8fafc; text-align:center; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">Please select a chart in the settings.</div>';
 			return;
 		}
 
@@ -74,36 +97,40 @@ class DynamicChartGrid extends Widget_Base {
 		
 		$manager = new \Charts\Admin\SourceManager();
 		$def = $manager->get_definition($chart_id);
-		if (!$def) return;
+		if (!$def) {
+			echo '<div class="kc-empty" style="padding:20px; background:#fef2f2; text-align:center; border:1px dashed #ef4444; border-radius:12px; color:#991b1b;">Chart definition not found.</div>';
+			return;
+		}
 		
 		$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, $limit);
-		if (empty($entries)) return;
+		if (empty($entries)) {
+			echo '<div class="kc-empty" style="padding:20px; background:#f8fafc; text-align:center; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">No tracks found for this chart.</div>';
+			return;
+		}
 
 		// CSS output
-		echo '<style>';
-		
-		// Common Overlay Styles
-		echo '
-		.' . $uid . '-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; opacity: 0; transform: translateY(20px); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+		echo '<style>
+		.' . $uid . '-wrap { width: 100%; position: relative; }
+		.' . $uid . '-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; opacity: 0; transform: translateY(20px); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 2; }
 		.' . $uid . '-item:hover .' . $uid . '-overlay { opacity: 1; transform: translateY(0); }
-		.' . $uid . '-rank { position: absolute; top: 16px; left: 16px; font-size: 24px; font-weight: 900; color: #fff; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); z-index: 2; }
+		.' . $uid . '-rank { position: absolute; top: 16px; left: 16px; font-size: 24px; font-weight: 900; color: #fff; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); z-index: 3; }
 		.' . $uid . '-title { color: #fff; font-size: 18px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
 		.' . $uid . '-artist { color: #cbd5e1; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 		.' . $uid . '-meta { display: flex; gap: 8px; margin-top: 12px; }
 		.' . $uid . '-badge { background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; }
+		.' . $uid . '-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.8; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1; }
+		.' . $uid . '-item { background: #0f172a; border-radius: 16px; position: relative; overflow: hidden; cursor: pointer; }
 		';
 
 		if ($layout === 'bento') {
 			echo '
-			.' . $uid . '-bento { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 180px; gap: 16px; }
-			.' . $uid . '-item { position: relative; border-radius: 16px; overflow: hidden; background: #000; cursor: pointer; }
-			.' . $uid . '-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.8; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+			.' . $uid . '-bento { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 200px; gap: 16px; }
 			.' . $uid . '-item:hover .' . $uid . '-bg { transform: scale(1.05); opacity: 0.6; }
 			
-			/* Item Sizing */
 			.' . $uid . '-item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
 			.' . $uid . '-item:nth-child(2) { grid-column: span 2; grid-row: span 1; }
 			.' . $uid . '-item:nth-child(3) { grid-column: span 2; grid-row: span 1; }
+			.' . $uid . '-item:nth-child(n+4) { grid-column: span 1; grid-row: span 1; }
 			
 			@media (max-width: 768px) {
 				.' . $uid . '-bento { grid-template-columns: repeat(2, 1fr); }
@@ -113,12 +140,9 @@ class DynamicChartGrid extends Widget_Base {
 		} elseif ($layout === 'accordion') {
 			echo '
 			.' . $uid . '-accordion { display: flex; height: 500px; gap: 12px; }
-			.' . $uid . '-item { flex: 1; position: relative; border-radius: 16px; overflow: hidden; background: #000; cursor: pointer; transition: flex 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+			.' . $uid . '-item { flex: 1; transition: flex 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 			.' . $uid . '-item:hover { flex: 4; }
-			.' . $uid . '-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.6; transition: opacity 0.4s; }
 			.' . $uid . '-item:hover .' . $uid . '-bg { opacity: 0.8; }
-			.' . $uid . '-title { font-size: 24px; }
-			.' . $uid . '-artist { font-size: 16px; }
 			@media (max-width: 768px) {
 				.' . $uid . '-accordion { flex-direction: column; height: 800px; }
 			}
@@ -126,25 +150,28 @@ class DynamicChartGrid extends Widget_Base {
 		} elseif ($layout === 'coverflow') {
 			echo '
 			.' . $uid . '-coverflow { width: 100%; padding: 40px 0; overflow: hidden; }
-			.' . $uid . '-item { width: 300px; height: 400px; position: relative; border-radius: 20px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-			.' . $uid . '-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.8; }
+			.' . $uid . '-item { width: 300px; height: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
 			.' . $uid . '-item:hover .' . $uid . '-bg { opacity: 1; }
 			.' . $uid . '-rank { width: 50px; height: 50px; font-size: 28px; }
 			';
 		}
 		echo '</style>';
 
-		$render_item = function($entry, $def) use ($uid) {
+		echo '<div class="' . $uid . '-wrap">';
+		
+		$render_item = function($entry, $def) use ($uid, $layout) {
 			$img = $entry->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($entry, $def);
 			$rank = $entry->rank_position;
 			$weeks = $entry->weeks_on_chart ?? 1;
 			$peak = $entry->peak_rank ?? $rank;
 			
-			echo '<div class="' . $uid . '-item swiper-slide">';
+			$slide_class = ($layout === 'coverflow') ? 'swiper-slide' : '';
+			
+			echo '<div class="' . $uid . '-item kc-dyn-item ' . $slide_class . '">';
 			echo '<div class="' . $uid . '-bg" style="background-image:url(\'' . esc_url($img) . '\');"></div>';
 			echo '<div class="' . $uid . '-rank">' . $rank . '</div>';
-			echo '<div class="' . $uid . '-overlay">';
+			echo '<div class="' . $uid . '-overlay kc-dyn-overlay">';
 			echo '<div class="' . $uid . '-title">' . esc_html($resolved['title']) . '</div>';
 			echo '<div class="' . $uid . '-artist">' . esc_html($resolved['subtitle']) . '</div>';
 			echo '<div class="' . $uid . '-meta">';
@@ -164,16 +191,15 @@ class DynamicChartGrid extends Widget_Base {
 			foreach ($entries as $e) $render_item($e, $def);
 			echo '</div>';
 		} elseif ($layout === 'coverflow') {
-			echo '<div class="swiper-container ' . $uid . '-coverflow" id="' . $uid . '-swiper">';
+			echo '<div class="swiper ' . $uid . '-coverflow" id="' . $uid . '-swiper">';
 			echo '<div class="swiper-wrapper">';
 			foreach ($entries as $e) $render_item($e, $def);
 			echo '</div>';
 			echo '<div class="swiper-pagination"></div>';
 			echo '</div>';
 			
-			// Initialize Swiper Coverflow
 			echo '<script>
-			document.addEventListener("DOMContentLoaded", function() {
+			function initCoverflow_' . str_replace("-", "_", $uid) . '() {
 				if(typeof Swiper !== "undefined") {
 					new Swiper("#' . $uid . '-swiper", {
 						effect: "coverflow",
@@ -181,17 +207,18 @@ class DynamicChartGrid extends Widget_Base {
 						centeredSlides: true,
 						slidesPerView: "auto",
 						loop: true,
-						coverflowEffect: {
-							rotate: 30,
-							stretch: 0,
-							depth: 100,
-							modifier: 1,
-							slideShadows: true,
-						}
+						coverflowEffect: { rotate: 30, stretch: 0, depth: 100, modifier: 1, slideShadows: true }
 					});
 				}
-			});
+			}
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", initCoverflow_' . str_replace("-", "_", $uid) . ');
+			} else {
+				setTimeout(initCoverflow_' . str_replace("-", "_", $uid) . ', 100);
+			}
 			</script>';
 		}
+		
+		echo '</div>';
 	}
 }

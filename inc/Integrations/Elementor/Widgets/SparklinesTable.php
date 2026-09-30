@@ -19,8 +19,8 @@ class SparklinesTable extends Widget_Base {
 			'tab' => Controls_Manager::TAB_CONTENT,
 		] );
 
-		global $wpdb;
-		$defs = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}charts_definitions ORDER BY id ASC");
+		$manager = new \Charts\Admin\SourceManager();
+		$defs = $manager->get_definitions(true);
 		$chart_options = [];
 		if ($defs) {
 			foreach ($defs as $d) {
@@ -44,14 +44,35 @@ class SparklinesTable extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_section', [
+			'label' => __( 'Table Styling', 'charts' ),
+			'tab' => Controls_Manager::TAB_STYLE,
+		] );
+
+		$this->add_control( 'table_bg', [
+			'label' => __( 'Background Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-spt-wrap' => 'background: {{VALUE}};' ],
+		] );
+
+		$this->add_control( 'table_radius', [
+			'label' => __( 'Border Radius', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'min' => 0, 'max' => 50 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-spt-wrap' => 'border-radius: {{SIZE}}{{UNIT}};' ],
+		] );
+
+		$this->end_controls_section();
 	}
 
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 		$chart_id = $settings['chart_id'];
 		
+		echo '<div class="kc-widget-wrap">';
 		if (empty($chart_id)) {
-			echo '<div class="kc-empty">Please select a chart.</div>';
+			echo '<div class="kc-empty" style="padding:20px; background:#f8fafc; text-align:center; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">Please select a chart in the settings.</div></div>';
 			return;
 		}
 
@@ -60,10 +81,16 @@ class SparklinesTable extends Widget_Base {
 		
 		$manager = new \Charts\Admin\SourceManager();
 		$def = $manager->get_definition($chart_id);
-		if (!$def) return;
+		if (!$def) {
+			echo '<div class="kc-empty" style="padding:20px; background:#fef2f2; text-align:center; border:1px dashed #ef4444; border-radius:12px; color:#991b1b;">Chart definition not found.</div></div>';
+			return;
+		}
 		
 		$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, $limit);
-		if (empty($entries)) return;
+		if (empty($entries)) {
+			echo '<div class="kc-empty" style="padding:20px; background:#f8fafc; text-align:center; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">No tracks found for this chart.</div></div>';
+			return;
+		}
 
 		global $wpdb;
 		$entries_table = $wpdb->prefix . 'charts_entries';
@@ -96,7 +123,7 @@ class SparklinesTable extends Widget_Base {
 		.' . $uid . '-badge-new { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px; }
 		</style>';
 
-		echo '<div class="' . $uid . '-wrap">';
+		echo '<div class="' . $uid . '-wrap kc-spt-wrap">';
 		echo '<table class="' . $uid . '-table">';
 		echo '<thead><tr>';
 		echo '<th class="' . $uid . '-rank-col">#</th>';
@@ -109,15 +136,12 @@ class SparklinesTable extends Widget_Base {
 			$img = $e->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 			
-			// Fetch last 4 weeks of data for sparkline
 			$history = $wpdb->get_col($wpdb->prepare("SELECT rank_position FROM $entries_table WHERE item_id = %d AND source_id = %d ORDER BY created_at DESC LIMIT 5", $e->item_id, $e->source_id));
-			$history = array_reverse($history); // chronological
+			$history = array_reverse($history);
 			
 			if (empty($history)) $history = [$e->rank_position];
-			if (count($history) == 1) array_unshift($history, 100); // fake previous if new
+			if (count($history) == 1) array_unshift($history, 100);
 
-			// Calculate SVG path
-			// Y goes from 0 (top of graph = rank 1) to 30 (bottom of graph = rank 100)
 			$points = [];
 			$max_rank = 100;
 			$width = 100;
@@ -126,7 +150,6 @@ class SparklinesTable extends Widget_Base {
 			
 			foreach ($history as $idx => $r) {
 				$x = $idx * $step;
-				// Invert Y: rank 1 = 0px, rank 100 = 30px
 				$y = ($r / $max_rank) * $height;
 				$points[] = "$x,$y";
 			}
@@ -180,6 +203,6 @@ class SparklinesTable extends Widget_Base {
 			echo '</tr>';
 		}
 
-		echo '</tbody></table></div>';
+		echo '</tbody></table></div></div>';
 	}
 }

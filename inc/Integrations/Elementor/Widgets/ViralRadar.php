@@ -28,6 +28,19 @@ class ViralRadar extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_section', [
+			'label' => __( 'Styling', 'charts' ),
+			'tab' => Controls_Manager::TAB_STYLE,
+		] );
+
+		$this->add_control( 'bg_color', [
+			'label' => __( 'Column Background', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-vr-col' => 'background: {{VALUE}};' ],
+		] );
+
+		$this->end_controls_section();
 	}
 
 	protected function render() {
@@ -38,17 +51,13 @@ class ViralRadar extends Widget_Base {
 		$tracks = $wpdb->prefix . 'charts_tracks';
 		$artists = $wpdb->prefix . 'charts_artists';
 
-		// Query Exploding (momentum >= 80)
 		$exploding = $wpdb->get_results($wpdb->prepare("SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 80 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
-		
-		// Query Rising (60-79)
 		$rising = $wpdb->get_results($wpdb->prepare("SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 60 AND i.momentum_score < 80 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
-		
-		// Query Emerging (40-59)
 		$emerging = $wpdb->get_results($wpdb->prepare("SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 40 AND i.momentum_score < 60 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
 
 		$uid = 'kc-vr-' . $this->get_id();
 
+		echo '<div class="kc-widget-wrap">';
 		echo '<style>
 		.' . $uid . '-wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 		@media (max-width: 900px) { .' . $uid . '-wrap { grid-template-columns: 1fr; } }
@@ -78,7 +87,7 @@ class ViralRadar extends Widget_Base {
 		</style>';
 
 		$render_col = function($title, $icon, $class, $data) use ($uid) {
-			echo '<div class="' . $uid . '-col ' . $class . '">';
+			echo '<div class="' . $uid . '-col kc-vr-col ' . $class . '">';
 			echo '<div class="' . $uid . '-header">';
 			echo '<h3 class="' . $uid . '-title"><span class="' . $uid . '-icon">' . $icon . '</span> ' . $title . '</h3>';
 			echo '<span class="' . $uid . '-count">' . count($data) . '</span>';
@@ -92,7 +101,7 @@ class ViralRadar extends Widget_Base {
 					echo '<div class="' . $uid . '-item">';
 					echo '<img src="' . esc_url($img) . '" class="' . $uid . '-img">';
 					echo '<div class="' . $uid . '-text">';
-					echo '<span class="' . $uid . '-trk">' . esc_html($d->track) . '</span>';
+					echo '<span class="' . $uid . '-trk">' . esc_html($d->title) . '</span>';
 					echo '<span class="' . $uid . '-art">' . esc_html($d->artist) . '</span>';
 					echo '</div>';
 					echo '<div class="' . $uid . '-score">';
@@ -109,6 +118,6 @@ class ViralRadar extends Widget_Base {
 		$render_col('Exploding', '🔥', 'col-exp', $exploding);
 		$render_col('Rising', '📈', 'col-ris', $rising);
 		$render_col('Emerging', '🌱', 'col-emg', $emerging);
-		echo '</div>';
+		echo '</div></div>';
 	}
 }
