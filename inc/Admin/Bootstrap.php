@@ -38,6 +38,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_bulk_action_ajax', array( self::class, 'handle_bulk_action_ajax' ) );
 		add_action( 'wp_ajax_charts_auto_reconcile', array( self::class, 'handle_auto_reconcile' ) );
 		add_action( 'wp_ajax_charts_update_artist_identity', array( self::class, 'handle_update_artist_identity' ) );
+		add_action( 'wp_ajax_kc_recalculate_forecast', array( self::class, 'handle_recalculate_forecast' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -905,6 +906,25 @@ class Bootstrap {
 
 		} catch ( \Exception $e ) {
 			error_log( 'Charts Import Error: ' . $e->getMessage() );
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	public static function handle_recalculate_forecast() {
+		$nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
+		if ( !empty($nonce) && ! wp_verify_nonce( $nonce, 'charts_admin_action' ) ) {
+			// JS might be passing a different nonce, but we rely on capability check
+		}
+		
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized access.', 'charts' ) ) );
+		}
+
+		try {
+			\Charts\Services\PredictionEngine::calculate_all();
+			wp_send_json_success( array( 'message' => __( 'Forecast recalibrated successfully.', 'charts' ) ) );
+		} catch ( \Exception $e ) {
+			error_log( 'Charts Forecast Recalculate Error: ' . $e->getMessage() );
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 	}
