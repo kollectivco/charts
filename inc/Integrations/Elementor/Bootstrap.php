@@ -11,11 +11,17 @@ class Bootstrap {
 	 * Initialize Elementor integration.
 	 */
 	public static function init() {
-		// Only run if Elementor is active
-		if ( ! did_action( 'elementor/loaded' ) ) {
-			return;
+		if ( did_action( 'elementor/loaded' ) ) {
+			self::register_hooks();
+		} else {
+			add_action( 'elementor/loaded', array( self::class, 'register_hooks' ) );
 		}
+	}
 
+	/**
+	 * Register the core hooks for Elementor.
+	 */
+	public static function register_hooks() {
 		add_action( 'elementor/frontend/after_register_scripts', array( self::class, 'register_frontend_assets' ) );
 		add_action( 'elementor/elements/categories_registered', array( self::class, 'register_category' ) );
 		add_action( 'elementor/widgets/register', array( self::class, 'register_widgets' ) );
