@@ -74,6 +74,9 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/PremiumHeroSlider.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/SidebarTop1.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/DynamicChartGrid.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ArtistSpotlight.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ViralRadar.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ViralRadar.php';
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
@@ -85,5 +88,7 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\PremiumHeroSlider() );
 		$widgets_manager->register( new Widgets\SidebarTop1() );
 		$widgets_manager->register( new Widgets\DynamicChartGrid() );
+		$widgets_manager->register( new Widgets\ArtistSpotlight() );
+		$widgets_manager->register( new Widgets\ViralRadar() );
 	}
 }
