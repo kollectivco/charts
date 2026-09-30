@@ -76,7 +76,9 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/DynamicChartGrid.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ArtistSpotlight.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ViralRadar.php';
-		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ViralRadar.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ForecastTicker.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/SparklinesTable.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/BentoIntelligence.php';
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
@@ -90,5 +92,8 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\DynamicChartGrid() );
 		$widgets_manager->register( new Widgets\ArtistSpotlight() );
 		$widgets_manager->register( new Widgets\ViralRadar() );
+		$widgets_manager->register( new Widgets\ForecastTicker() );
+		$widgets_manager->register( new Widgets\SparklinesTable() );
+		$widgets_manager->register( new Widgets\BentoIntelligence() );
 	}
 }
