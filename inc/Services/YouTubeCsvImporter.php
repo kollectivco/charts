@@ -325,9 +325,9 @@ class YouTubeCsvImporter {
 		$slug = $this->unique_slug( $table, $slug );
 
 		$wpdb->insert( $table, array(
-			'display_name'    => $display_name,
-			'display_name_en' => $franko !== $display_name ? $franko : null,
-			'normalized_name' => $normalized,
+			'display_name'        => $display_name,
+			'display_name_franko' => $franko !== $display_name ? $franko : null,
+			'normalized_name'     => $normalized,
 			'slug'                => $slug,
 			'image'               => $image,
 			'created_at'          => current_time( 'mysql' ),
@@ -361,7 +361,7 @@ class YouTubeCsvImporter {
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
-			'title_en'          => $franko !== $title ? $franko : null,
+			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,

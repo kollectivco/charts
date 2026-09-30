@@ -40,16 +40,8 @@ foreach ($definitions as $def) {
 }
 $featured_artists = array();
 if ( $top_artists_chart ) {
-	$sources = \Charts\Core\PublicIntegration::get_sources_for_chart($top_artists_chart);
-	if ( ! empty($sources) ) {
-		$s_ids = array_column($sources, 'id');
-		$phs = implode(',', array_fill(0, count($s_ids), '%d'));
-		$featured_artists = $wpdb->get_results( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			WHERE e.source_id IN ($phs)
-			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 5
-		", ...$s_ids ) );
-		
+	$featured_artists = \Charts\Core\PublicIntegration::get_preview_entries($top_artists_chart, 5);
+	if ( ! empty($featured_artists) ) {
 		foreach($featured_artists as &$art) {
 			$art->resolved_image = $wpdb->get_var($wpdb->prepare("SELECT image FROM {$wpdb->prefix}charts_artists WHERE id = %d", $art->item_id));
 		}
