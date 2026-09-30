@@ -61,9 +61,10 @@ class SidebarTop1 extends Widget_Base {
 		$layout = $settings['layout_style'];
 		$uid = 'kc-st1-' . $this->get_id();
 		
+		$manager = new \Charts\Admin\SourceManager();
 		$charts_data = [];
 		foreach ($chart_ids as $cid) {
-			$def = \Charts\Core\PublicIntegration::get_definition_by_id($cid);
+			$def = $manager->get_definition($cid);
 			if (!$def) continue;
 			$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 1);
 			if (empty($entries)) continue;

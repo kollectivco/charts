@@ -58,7 +58,8 @@ class SparklinesTable extends Widget_Base {
 		$limit = $settings['limit'];
 		$uid = 'kc-spt-' . $this->get_id();
 		
-		$def = \Charts\Core\PublicIntegration::get_definition_by_id($chart_id);
+		$manager = new \Charts\Admin\SourceManager();
+		$def = $manager->get_definition($chart_id);
 		if (!$def) return;
 		
 		$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, $limit);
@@ -109,7 +110,7 @@ class SparklinesTable extends Widget_Base {
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 			
 			// Fetch last 4 weeks of data for sparkline
-			$history = $wpdb->get_col($wpdb->prepare("SELECT rank_position FROM $entries_table WHERE item_id = %d AND chart_id = %d ORDER BY created_at DESC LIMIT 5", $e->item_id, $def->id));
+			$history = $wpdb->get_col($wpdb->prepare("SELECT rank_position FROM $entries_table WHERE item_id = %d AND source_id = %d ORDER BY created_at DESC LIMIT 5", $e->item_id, $e->source_id));
 			$history = array_reverse($history); // chronological
 			
 			if (empty($history)) $history = [$e->rank_position];

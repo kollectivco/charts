@@ -72,7 +72,8 @@ class DynamicChartGrid extends Widget_Base {
 		$layout = $settings['layout_style'];
 		$uid = 'kc-dyn-' . $this->get_id();
 		
-		$def = \Charts\Core\PublicIntegration::get_definition_by_id($chart_id);
+		$manager = new \Charts\Admin\SourceManager();
+		$def = $manager->get_definition($chart_id);
 		if (!$def) return;
 		
 		$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, $limit);
