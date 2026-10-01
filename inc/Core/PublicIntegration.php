@@ -419,7 +419,27 @@ class PublicIntegration {
 	 * Centralized resolver for track/video/artist artwork.
 	 * Priorities: Enriched Canonical > Entry-level Metadata > Source-specific Thumbs > Placeholder
 	 */
+		public static function maximize_image($url) {
+		if (empty($url) || strpos($url, 'placeholder.png') !== false) return $url;
+		if (strpos($url, 'i.scdn.co') !== false) {
+			$url = str_replace(['1e02', '4851'], 'b273', $url);
+		} elseif (strpos($url, 'mzstatic.com') !== false) {
+			$url = preg_replace('/[0-9]+x[0-9]+([a-zA-Z]*)\.(jpg|png|webp)/i', '1000x1000$1.$2', $url);
+		} elseif (strpos($url, 'wp-content/uploads') !== false) {
+			$url = preg_replace('/-[0-9]{2,4}x[0-9]{2,4}\.(jpg|jpeg|png|webp)$/i', '.$1', $url);
+		}
+		return $url;
+	}
+
 	public static function resolve_artwork( $item, $type = 'track' ) {
+		return self::maximize_image(self::resolve_artwork_raw($item, $type));
+	}
+
+	public static function resolve_chart_image( $def, $preview_rows = [] ) {
+		return self::maximize_image(self::resolve_chart_image_raw($def, $preview_rows));
+	}
+
+	public static function resolve_artwork_raw( $item, $type = 'track' ) {
 		global $wpdb;
 
 		// Utility to detect and skip placeholders
@@ -481,7 +501,7 @@ class PublicIntegration {
 	 * Centralized resolver for chart card images.
 	 * Priorities: Chart-level cover > First item artwork > Placeholder
 	 */
-	public static function resolve_chart_image( $def, $entries = array() ) {
+	public static function resolve_chart_image_raw( $def, $entries = array() ) {
 		// 1. Convert to unified object if array
 		$obj = (object) $def;
 
