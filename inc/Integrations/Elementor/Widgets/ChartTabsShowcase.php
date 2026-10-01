@@ -239,6 +239,47 @@ class ChartTabsShowcase extends Widget_Base {
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-title { font-size: 16px; font-weight: 800; margin: 0 0 4px 0; white-space: normal; line-height: 1.3; }
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-artist { font-size: 13px; font-weight: 600; color: #64748b; margin: 0; white-space: normal; }
 
+		/* Circles: Classic Tab Nav (matching reference image) */
+		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-nav-wrap {
+			background: #ededf3;
+			padding: 8px;
+			border-radius: 60px;
+			display: inline-flex;
+			position: relative;
+			border-top: 3px solid transparent;
+			background-clip: padding-box;
+		}
+		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-nav-wrap::before {
+			content: '';
+			position: absolute;
+			top: -3px; left: 0; right: 0;
+			height: 3px;
+			border-radius: 60px 60px 0 0;
+			background: linear-gradient(to left, var(--kc-ring-1, #FF8000), var(--kc-ring-2, #FF2E93));
+		}
+		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-nav {
+			display: flex;
+			gap: 4px;
+			margin-bottom: 0;
+			flex-wrap: nowrap;
+		}
+		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-tab {
+			padding: 14px 32px;
+			border-radius: 50px;
+			font-size: 18px;
+			font-weight: 700;
+			color: #64748b;
+			transition: all 0.25s;
+			white-space: nowrap;
+		}
+		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-tab.is-active {
+			background: #ffffff;
+			color: #1e293b;
+			font-weight: 900;
+			box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+		}
+
+
 		/* Style 6: Cards Overlay */
 		.<?php echo $uid; ?>-cards_overlay .<?php echo $uid; ?>-rank-list { display: none; }
 		.<?php echo $uid; ?>-cards_overlay .<?php echo $uid; ?>-content.is-active { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; }
