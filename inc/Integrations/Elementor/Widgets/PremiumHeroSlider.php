@@ -3,6 +3,7 @@ namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
+use Elementor\Repeater;
 use Elementor\Group_Control_Typography;
 use Charts\Integrations\Elementor\PremiumWidgetTrait;
 
@@ -25,6 +26,7 @@ class PremiumHeroSlider extends Widget_Base {
 			'type' => Controls_Manager::SELECT,
 			'options' => [
 				'auto' => __( 'Auto (Latest Charts)', 'charts' ),
+				'manual' => __( 'Manual Selection', 'charts' ),
 			],
 			'default' => 'auto',
 		] );
@@ -33,8 +35,54 @@ class PremiumHeroSlider extends Widget_Base {
 			'label' => __( 'Number of Slides', 'charts' ),
 			'type' => Controls_Manager::NUMBER,
 			'default' => 5,
+			'condition' => [ 'source_mode' => 'auto' ],
 		] );
 
+		$repeater = new Repeater();
+		$repeater->add_control( 'title', [ 'label' => __( 'Title', 'charts' ), 'type' => Controls_Manager::TEXT, 'default' => 'New Slide' ] );
+		$repeater->add_control( 'subtitle', [ 'label' => __( 'Subtitle', 'charts' ), 'type' => Controls_Manager::TEXT ] );
+		$repeater->add_control( 'badge', [ 'label' => __( 'Badge Text', 'charts' ), 'type' => Controls_Manager::TEXT, 'default' => '#1 TRENDING' ] );
+		$repeater->add_control( 'image', [ 'label' => __( 'Featured Image', 'charts' ), 'type' => Controls_Manager::MEDIA ] );
+		$repeater->add_control( 'btn_text', [ 'label' => __( 'Button Text', 'charts' ), 'type' => Controls_Manager::TEXT, 'default' => 'View Chart' ] );
+		$repeater->add_control( 'btn_link', [ 'label' => __( 'Button Link', 'charts' ), 'type' => Controls_Manager::URL ] );
+		
+		$this->add_control( 'manual_slides', [
+			'label' => __( 'Manual Slides', 'charts' ),
+			'type' => Controls_Manager::REPEATER,
+			'fields' => $repeater->get_controls(),
+			'default' => [
+				[ 'title' => 'Top 50 Global', 'subtitle' => 'Explore the biggest hits this week.', 'badge' => 'GLOBAL' ]
+			],
+			'title_field' => '{{{ title }}}',
+			'condition' => [ 'source_mode' => 'manual' ],
+		] );
+
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'section_image_settings', [ 'label' => __( 'Image Settings', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'overlay_opacity', [
+			'label' => __( 'Overlay Darkness', 'charts' ),
+			'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'max' => 1, 'min' => 0, 'step' => 0.05 ] ],
+			'default' => [ 'size' => 0.5 ],
+			'selectors' => [ '{{WRAPPER}} .kc-phs-overlay' => 'background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,{{SIZE}}) 40%, rgba(0,0,0,0.1) 100%);' ],
+		] );
+		$this->add_control( 'enable_zoom', [
+			'label' => __( 'Enable Zoom Animation', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
+		$this->add_control( 'bg_position', [
+			'label' => __( 'Image Position', 'charts' ),
+			'type' => Controls_Manager::SELECT,
+			'options' => [
+				'center' => 'Center Center',
+				'top' => 'Top Center',
+				'bottom' => 'Bottom Center',
+			],
+			'default' => 'center',
+			'selectors' => [ '{{WRAPPER}} .kc-phs-bg' => 'background-position: {{VALUE}};' ],
+		] );
 		$this->end_controls_section();
 
 		$this->start_controls_section( 'section_slider', [ 'label' => __( 'Slider Settings', 'charts' ) ] );
@@ -64,8 +112,25 @@ class PremiumHeroSlider extends Widget_Base {
 
 	protected function render() {
 		$settings = $this->get_settings_for_display();
-		$count = intval($settings['slide_count'] ?: 5);
-		$slides_data = \Charts\Core\HomepageSlider::get_slides_data($count);
+		
+		$slides_data = [];
+		if ( $settings['source_mode'] === 'auto' ) {
+			$count = intval($settings['slide_count'] ?: 5);
+			$slides_data = \Charts\Core\HomepageSlider::get_slides_data($count);
+		} else {
+			if (!empty($settings['manual_slides'])) {
+				foreach ($settings['manual_slides'] as $m) {
+					$slides_data[] = [
+						'title' => $m['title'],
+						'desc' => $m['subtitle'],
+						'badge' => $m['badge'],
+						'image_url' => $m['image']['url'] ?? '',
+						'btn1_text' => $m['btn_text'],
+						'btn1_link' => $m['btn_link']['url'] ?? '#',
+					];
+				}
+			}
+		}
 
 		// Force maximum quality images by removing thumbnail sizes and requesting highest CDN resolution
 		$maximize_image = function($url) {
@@ -97,7 +162,7 @@ class PremiumHeroSlider extends Widget_Base {
 		.<?php echo $uid; ?>-wrap { position: relative; width: 100%; height: 500px; border-radius: 24px; overflow: hidden; --phs-accent: <?php echo $settings['accent_color'] ?: '#ff0055'; ?>; direction: rtl; font-family: "Cairo", sans-serif; }
 		.<?php echo $uid; ?>-wrap .swiper { width: 100%; height: 100%; }
 		.<?php echo $uid; ?>-slide { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; padding: 60px; }
-		.<?php echo $uid; ?>-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transform: scale(1.05); transition: transform 6s linear; }
+		.<?php echo $uid; ?>-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; <?php echo $settings['enable_zoom'] === 'yes' ? 'transform: scale(1.05); transition: transform 6s linear;' : ''; ?> }
 		.<?php echo $uid; ?>-wrap .swiper-slide-active .<?php echo $uid; ?>-bg { transform: scale(1); }
 		.<?php echo $uid; ?>-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%); z-index: 2; }
 		.<?php echo $uid; ?>-content { position: relative; z-index: 3; color: #fff; max-width: 800px; }
