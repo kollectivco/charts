@@ -4,158 +4,94 @@ namespace Charts\Integrations\Elementor\Widgets;
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
-use Elementor\Group_Control_Box_Shadow;
-use Elementor\Group_Control_Border;
-use Elementor\Group_Control_Background;
+use Charts\Integrations\Elementor\PremiumWidgetTrait;
+
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 class ChartTable extends Widget_Base {
+	use PremiumWidgetTrait;
 
-	public function get_name() { return 'charts_table'; }
+	public function get_name() { return 'kc_chart_table'; }
 	public function get_title() { return __( 'Charts: Intelligence Table', 'charts' ); }
 	public function get_icon() { return 'eicon-table'; }
 	public function get_categories() { return [ 'charts' ]; }
 
 	protected function register_controls() {
-		// --- 1. CONTENT TAB ---
-		$this->start_controls_section( 'section_content', [ 'label' => __( 'Intelligence Config', 'charts' ), 'tab' => Controls_Manager::TAB_CONTENT ] );
-		
-		$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
-		$options = ["0" => __("Current Chart (Dynamic)", "charts")];
-		foreach ( $definitions as $def ) { $options[$def->id] = $def->title; }
+		$this->start_controls_section( 'section_query', [ 'label' => __( 'Query Settings', 'charts' ), 'tab' => Controls_Manager::TAB_CONTENT ] );
+
+		$manager = new \Charts\Admin\SourceManager();
+		$defs = $manager->get_definitions(true);
+		$chart_options = ['0' => __( 'Current Chart (Dynamic)', 'charts' )];
+		if ($defs) { foreach ($defs as $d) { $chart_options[$d->id] = $d->title; } }
 
 		$this->add_control( 'chart_id', [
 			'label' => __( 'Select Chart', 'charts' ),
 			'type' => Controls_Manager::SELECT,
-			'options' => $options,
-			'default' => !empty($options) ? array_key_first($options) : ''
+			'options' => $chart_options,
+			'default' => '0',
 		] );
+
 		$this->add_control( 'limit', [
-			'label' => __( 'No. of Items', 'charts' ),
+			'label' => __( 'Number of Tracks', 'charts' ),
 			'type' => Controls_Manager::NUMBER,
-			'default' => 20
+			'default' => 10,
 		] );
+
 		$this->add_control( 'style_variant', [
 			'label' => __( 'Layout Style', 'charts' ),
 			'type' => Controls_Manager::SELECT,
-			'options' => [ 'featured' => 'Show #1 Featured', 'compact' => 'Compact Clean List' ],
-			'default' => 'featured',
+			'options' => [ 
+				'list' => 'Modern Minimal List', 
+				'cards' => 'Floating Separate Cards', 
+				'featured' => 'Top #1 Hero + List',
+				'glass' => 'Glassmorphism Blurred',
+				'terminal' => 'Retro Terminal Data'
+			],
+			'default' => 'list',
 		] );
 		$this->end_controls_section();
 
 		$this->start_controls_section( 'section_visibility', [ 'label' => __( 'Visibility', 'charts' ), 'tab' => Controls_Manager::TAB_CONTENT ] );
 		$this->add_control( 'show_cover', [ 'label' => 'Show Image', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
 		$this->add_control( 'show_artist', [ 'label' => 'Show Artist', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
-		$this->add_control( 'show_movement', [ 'label' => 'Show Movement', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
-		$this->add_control( 'badge_new_text', [ 'label' => 'New Entry Text', 'type' => Controls_Manager::TEXT, 'default' => 'جديد', 'condition' => [ 'show_movement' => 'yes' ] ] );
+		$this->add_control( 'show_movement', [ 'label' => 'Show Movement Indicator', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
+		$this->add_control( 'badge_new_text', [ 'label' => 'New Entry Text', 'type' => Controls_Manager::TEXT, 'default' => 'جديد' ] );
 		$this->end_controls_section();
 
-		// --- 2. STYLE TAB ---
-		// Container Box
-		$this->start_controls_section( 'style_container', [ 'label' => __( 'Container Box', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_group_control( Group_Control_Background::get_type(), [ 'name' => 'container_bg', 'selector' => '{{WRAPPER}} .kc-widget-card' ] );
-		$this->add_group_control( Group_Control_Border::get_type(), [ 'name' => 'container_border', 'selector' => '{{WRAPPER}} .kc-widget-card' ] );
-		$this->add_control( 'container_radius', [
-			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
-			'selectors' => [ '{{WRAPPER}} .kc-widget-card' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
-		]);
-		$this->add_group_control( Group_Control_Box_Shadow::get_type(), [ 'name' => 'container_shadow', 'selector' => '{{WRAPPER}} .kc-widget-card' ] );
-		$this->add_responsive_control( 'container_padding', [
-			'label' => __( 'Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
-			'selectors' => [ '{{WRAPPER}} .kc-widget-card' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
-		]);
-		$this->end_controls_section();
-
-		// Rows & Dividers
-		$this->start_controls_section( 'style_rows', [ 'label' => __( 'Rows & Layout', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_control( 'row_bg_hover', [
-			'label' => __( 'Row Hover Background', 'charts' ), 'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-row-item:hover' => 'background-color: {{VALUE}};' ],
-		]);
-		$this->add_control( 'row_divider_color', [
-			'label' => __( 'Divider Color', 'charts' ), 'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-row-item' => 'border-bottom-color: {{VALUE}};' ],
-		]);
-		$this->add_control( 'featured_bg', [
-			'label' => __( 'Featured #1 Background', 'charts' ), 'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-row-featured' => 'background-color: {{VALUE}};' ],
-			'condition' => [ 'style_variant' => 'featured' ]
-		]);
+		// Styles
+		$this->start_controls_section( 'style_layout', [ 'label' => __( 'Layout Spacing', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_responsive_control( 'row_gap', [
-			'label' => __( 'Internal Gap (Spacing)', 'charts' ), 'type' => Controls_Manager::SLIDER,
-			'selectors' => [ '{{WRAPPER}} .kc-row-item' => 'gap: {{SIZE}}{{UNIT}};' ],
+			'label' => __( 'Gap Between Rows (Cards)', 'charts' ), 'type' => Controls_Manager::SLIDER,
+			'condition' => [ 'style_variant' => ['cards', 'glass'] ],
+			'selectors' => [ '{{WRAPPER}} .kc-table-wrap' => 'gap: {{SIZE}}{{UNIT}}; display: flex; flex-direction: column;' ],
 		]);
 		$this->add_responsive_control( 'row_padding', [
-			'label' => __( 'Row Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'label' => __( 'Row Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
 			'selectors' => [ '{{WRAPPER}} .kc-row-item' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
 		]);
+		$this->add_control( 'bg_color', [
+			'label' => __( 'Background Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-row-item, {{WRAPPER}} .kc-table-wrap.is-list' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'border_color', [
+			'label' => __( 'Border/Divider Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ 
+				'{{WRAPPER}} .kc-table-wrap.is-list .kc-row-item' => 'border-bottom-color: {{VALUE}};',
+				'{{WRAPPER}} .kc-table-wrap.is-cards .kc-row-item' => 'border-color: {{VALUE}};',
+				'{{WRAPPER}} .kc-table-wrap.is-terminal .kc-row-item' => 'border-bottom-color: {{VALUE}};',
+			],
+		]);
 		$this->end_controls_section();
 
-		// Rank Number
-		$this->start_controls_section( 'style_rank', [ 'label' => __( 'Rank Number', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_control( 'rank_color', [ 'label' => __( 'Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-rank' => 'color: {{VALUE}};' ] ] );
+		$this->start_controls_section( 'style_text', [ 'label' => __( 'Typography', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'title_color', [ 'label' => 'Title Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-title' => 'color: {{VALUE}};' ] ] );
+		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'title_typo', 'selector' => '{{WRAPPER}} .kc-row-title' ] );
+		$this->add_control( 'artist_color', [ 'label' => 'Artist Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-artist' => 'color: {{VALUE}};' ] ] );
+		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'artist_typo', 'selector' => '{{WRAPPER}} .kc-row-artist' ] );
+		$this->add_control( 'rank_color', [ 'label' => 'Rank Number Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-rank' => 'color: {{VALUE}};' ] ] );
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'rank_typo', 'selector' => '{{WRAPPER}} .kc-row-rank' ] );
 		$this->end_controls_section();
-
-		// Typography (Title & Meta)
-		$this->start_controls_section( 'style_typography', [ 'label' => __( 'Track Info', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_control( 'title_color', [ 'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-title' => 'color: {{VALUE}};' ] ] );
-		$this->add_control( 'title_color_hover', [ 'label' => __( 'Title Hover Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-item:hover .kc-row-title' => 'color: {{VALUE}};' ] ] );
-		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'title_typo', 'label' => 'Title Typography', 'selector' => '{{WRAPPER}} .kc-row-title' ] );
 		
-		$this->add_control( 'meta_color', [ 'label' => __( 'Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-row-subtitle' => 'color: {{VALUE}};' ], 'separator' => 'before' ] );
-		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'meta_typo', 'label' => 'Artist Typography', 'selector' => '{{WRAPPER}} .kc-row-subtitle' ] );
-		$this->end_controls_section();
-
-		// Featured Image
-		$this->start_controls_section( 'style_image', [ 'label' => __( 'Featured Image', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE, 'condition' => [ 'show_cover' => 'yes' ] ] );
-		
-		$this->add_responsive_control( 'img_width', [
-			'label' => __( 'Image Width', 'charts' ), 'type' => Controls_Manager::SLIDER,
-			'size_units' => [ 'px', '%', 'vw' ],
-			'range' => [ 'px' => [ 'min' => 20, 'max' => 300, 'step' => 1 ] ],
-			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'width: {{SIZE}}{{UNIT}};', '{{WRAPPER}} .kc-row-img-wrap' => 'width: {{SIZE}}{{UNIT}};' ],
-		]);
-		
-		$this->add_responsive_control( 'img_height', [
-			'label' => __( 'Image Height', 'charts' ), 'type' => Controls_Manager::SLIDER,
-			'size_units' => [ 'px', 'vh' ],
-			'range' => [ 'px' => [ 'min' => 20, 'max' => 300, 'step' => 1 ] ],
-			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'height: {{SIZE}}{{UNIT}};' ],
-		]);
-
-		$this->add_control( 'img_position', [
-			'label' => __( 'Image Position', 'charts' ), 'type' => Controls_Manager::SELECT,
-			'options' => [ '2' => 'Left / Default', '4' => 'Right / After Text' ],
-			'default' => '2',
-			'selectors' => [ '{{WRAPPER}} .kc-row-img-wrap' => 'order: {{VALUE}};' ],
-		]);
-		
-		$this->add_responsive_control( 'img_margin', [
-			'label' => __( 'Custom Featured Margin', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
-			'selectors' => [ '{{WRAPPER}} .kc-row-img-wrap' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
-		]);
-
-		$this->add_responsive_control( 'img_radius', [
-			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
-			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
-		]);
-		
-		$this->add_control( 'img_hover_effect', [
-			'label' => __( 'Hover Effect', 'charts' ), 'type' => Controls_Manager::SELECT,
-			'options' => [ '' => '- Disable -', 'zoom' => 'Zoom In', 'lift' => 'Lift Up', 'grayscale' => 'Grayscale to Color' ],
-			'default' => '',
-		]);
-
-		$this->add_control( 'img_align', [
-			'label' => __( 'Align', 'charts' ), 'type' => Controls_Manager::SELECT,
-			'options' => [ '' => '- Default -', 'flex-start' => 'Top', 'center' => 'Middle', 'flex-end' => 'Bottom' ],
-			'default' => '',
-			'selectors' => [ '{{WRAPPER}} .kc-row-img-wrap' => 'align-self: {{VALUE}};' ],
-		]);
-
-		$this->end_controls_section();
-
-		// Movement Badges
 		$this->start_controls_section( 'style_movement', [ 'label' => __( 'Movement Badges', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE, 'condition' => [ 'show_movement' => 'yes' ] ] );
 		$this->add_control( 'up_color', [ 'label' => __( 'Up (▲) Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-move-up' => 'color: {{VALUE}};' ] ] );
 		$this->add_control( 'down_color', [ 'label' => __( 'Down (▼) Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-move-down' => 'color: {{VALUE}};' ] ] );
@@ -168,174 +104,122 @@ class ChartTable extends Widget_Base {
 		$settings = $this->get_settings_for_display();
 		$manager = new \Charts\Admin\SourceManager();
 		
-		if ( empty($settings['chart_id']) ) {
-			echo '<div style="padding:20px; text-align:center; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">Please select a chart.</div>';
-			return;
-		}
-		
 		$def = (empty($settings["chart_id"]) || $settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
 		if ( ! $def ) return;
 
-		global $wpdb;
-		$limit = !empty($settings['limit']) ? intval($settings['limit']) : 20;
+		$limit = !empty($settings['limit']) ? intval($settings['limit']) : 10;
 		$rows = \Charts\Core\PublicIntegration::get_preview_entries( $def, $limit );
 		if ( empty($rows) ) return;
 
-		$style_variant = $settings['style_variant'] ?? 'featured';
-		$show_cover    = $settings['show_cover'] !== 'yes' && $settings['show_cover'] !== 'no' ? true : $settings['show_cover'] === 'yes';
-		$show_artist   = $settings['show_artist'] !== 'yes' && $settings['show_artist'] !== 'no' ? true : $settings['show_artist'] === 'yes';
-		$show_movement = $settings['show_movement'] !== 'yes' && $settings['show_movement'] !== 'no' ? true : $settings['show_movement'] === 'yes';
-		$badge_new_text = $settings['badge_new_text'] ?? 'جديد';
+		$variant = $settings['style_variant'] ?? 'list';
+		$uid = 'kc-it-' . $this->get_id();
 		
-		$uid = 'kc-tbl-' . $this->get_id();
+		// Map variants to classes
+		$wrap_classes = "kc-table-wrap is-{$variant}";
+		if ($variant === 'list' || $variant === 'featured') {
+			$wrap_classes .= ' kc-has-box-shadow';
+		}
 
-?>
-		<div class="kc-root <?php echo $uid; ?>">
-			<style>
-			:where(.<?php echo $uid; ?>) .kc-widget-card {
-				background-color: var(--k-surface, #ffffff);
-				border: 1px solid var(--k-border, #e2e8f0);
-				border-radius: var(--k-radius-lg, 16px);
-				overflow: hidden;
-				box-shadow: var(--k-shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+		echo '<style>
+		.' . $uid . ' { direction: rtl; font-family: "Cairo", "Inter", sans-serif; }
+		.' . $uid . ' .kc-table-wrap { width: 100%; border-radius: 16px; overflow: hidden; }
+		.' . $uid . ' .kc-has-box-shadow { background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
+		
+		.' . $uid . ' .kc-row-item { display: flex; align-items: center; gap: 20px; padding: 16px 24px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+		.' . $uid . ' .is-list .kc-row-item { border-bottom: 1px solid #f1f5f9; }
+		.' . $uid . ' .is-list .kc-row-item:last-child { border-bottom: none; }
+		.' . $uid . ' .is-list .kc-row-item:hover { background: rgba(0,0,0,0.02); padding-right: 32px; }
+		
+		.' . $uid . ' .is-cards .kc-row-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+		.' . $uid . ' .is-cards .kc-row-item:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); border-color: #cbd5e1; }
+		
+		.' . $uid . ' .is-glass { gap: 12px; display: flex; flex-direction: column; }
+		.' . $uid . ' .is-glass .kc-row-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); border-radius: 16px; color: #fff; }
+		.' . $uid . ' .is-glass .kc-row-item:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+		
+		.' . $uid . ' .is-terminal { background: #000; border: 1px solid #333; padding: 12px; }
+		.' . $uid . ' .is-terminal .kc-row-item { border-bottom: 1px solid #222; font-family: monospace; color: #00ff66; padding: 12px 16px; }
+		.' . $uid . ' .is-terminal .kc-row-item:hover { background: rgba(0,255,102,0.1); }
+		
+		.' . $uid . ' .kc-row-rank { font-size: 24px; font-weight: 900; width: 40px; text-align: center; flex-shrink: 0; }
+		.' . $uid . ' .kc-row-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+		.' . $uid . ' .is-terminal .kc-row-img { border-radius: 0; filter: grayscale(100%) contrast(150%); }
+		
+		.' . $uid . ' .kc-row-info { flex: 1; min-width: 0; }
+		.' . $uid . ' .kc-row-title { font-size: 17px; font-weight: 800; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.' . $uid . ' .kc-row-artist { font-size: 14px; font-weight: 600; color: #64748b; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.' . $uid . ' .is-glass .kc-row-artist { color: rgba(255,255,255,0.7); }
+		.' . $uid . ' .is-terminal .kc-row-title, .' . $uid . ' .is-terminal .kc-row-artist { color: #00ff66; font-weight: normal; }
+		
+		.' . $uid . ' .kc-row-move { font-size: 14px; font-weight: 800; font-family: "Inter", sans-serif; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+		.' . $uid . ' .kc-move-up { color: #10b981; }
+		.' . $uid . ' .kc-move-down { color: #f43f5e; }
+		.' . $uid . ' .kc-move-new { background: #f59e0b; color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
+		
+		/* HERO FEATURED ROW (#1) */
+		.' . $uid . ' .kc-row-featured { padding: 40px; background: linear-gradient(135deg, rgba(0,0,0,0.03), transparent); position: relative; border-bottom: 2px solid #e2e8f0; }
+		.' . $uid . ' .kc-row-featured .kc-row-rank { font-size: 60px; width: 70px; color: #e11d48; text-shadow: 2px 2px 0 rgba(225,29,72,0.2); }
+		.' . $uid . ' .kc-row-featured .kc-row-img { width: 120px; height: 120px; border-radius: 16px; }
+		.' . $uid . ' .kc-row-featured .kc-row-title { font-size: 32px; white-space: normal; line-height: 1.2; margin-bottom: 8px; }
+		.' . $uid . ' .kc-row-featured .kc-row-artist { font-size: 18px; }
+		.' . $uid . ' .kc-row-featured .kc-row-move { font-size: 20px; }
+		
+		@media (max-width: 768px) {
+			.' . $uid . ' .kc-row-item { gap: 12px; padding: 12px 16px; }
+			.' . $uid . ' .kc-row-img { width: 48px; height: 48px; }
+			.' . $uid . ' .kc-row-rank { font-size: 20px; width: 30px; }
+			.' . $uid . ' .kc-row-featured { flex-direction: column; text-align: center; padding: 24px; }
+			.' . $uid . ' .kc-row-featured .kc-row-info { text-align: center; }
+		}
+		</style>';
+		
+		echo '<div class="' . $uid . ' kc-widget-wrap">';
+		echo '<div class="' . $wrap_classes . '">';
+		
+		foreach ( $rows as $idx => $row ) {
+			$is_featured = ($variant === 'featured' && $idx === 0);
+			$res = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
+			
+			$img = '';
+			if ($settings['show_cover'] === 'yes') {
+				$img = \Charts\Core\PublicIntegration::resolve_chart_image($def, [$row]);
+				if (empty($img) && !empty($row->resolved_image)) $img = $row->resolved_image;
+				if (empty($img)) $img = CHARTS_URL . 'public/assets/img/placeholder.png';
 			}
-			:where(.<?php echo $uid; ?>) .kc-row-item {
-				display: flex;
-				align-items: center;
-				gap: 16px;
-				border-bottom: 1px solid var(--k-divider, #f1f5f9);
-				padding: 16px 24px;
-				transition: background-color 0.2s;
-			}
-			:where(.<?php echo $uid; ?> .kc-row-item:last-child) {
-				border-bottom: none;
-			}
-			:where(.<?php echo $uid; ?> .kc-row-featured) {
-				padding: 32px 40px;
-				background-color: var(--k-surface-alt, #f8fafc);
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-rank {
-				font-weight: 900;
-				color: var(--k-text, #0f172a);
-				width: 40px;
-				font-size: 1.5rem;
-				flex-shrink: 0;
-				text-align: center;
-			}
-			:where(.<?php echo $uid; ?> .kc-row-featured) .kc-row-rank {
-				width: 60px;
-				font-size: 3rem;
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-img-wrap {
-				flex-shrink: 0;
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-art {
-				border-radius: var(--k-radius-sm, 8px);
-				object-fit: cover;
-				width: 48px;
-				height: 48px;
-			}
-			:where(.<?php echo $uid; ?> .kc-row-featured) .kc-row-art {
-				width: 80px;
-				height: 80px;
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-info {
-				flex-grow: 1;
-				min-width: 0;
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-title {
-				margin: 0;
-				font-weight: 800;
-				color: var(--k-text, #0f172a);
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				font-size: 16px;
-				line-height: 1.2;
-				transition: color 0.2s;
-			}
-			:where(.<?php echo $uid; ?> .kc-row-featured) .kc-row-title {
-				font-size: 24px;
-				white-space: normal;
-				display: -webkit-box;
-				-webkit-line-clamp: 2;
-				-webkit-box-orient: vertical;
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-subtitle {
-				margin: 4px 0 0;
-				font-weight: 600;
-				color: var(--k-text-muted, #64748b);
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				font-size: 13px;
-			}
-			:where(.<?php echo $uid; ?> .kc-row-featured) .kc-row-subtitle {
-				font-size: 15px;
-			}
-			:where(.<?php echo $uid; ?>) .kc-row-movement {
-				flex-shrink: 0;
-				margin-inline-start: auto;
-				font-size: 12px;
-				display: flex;
-				align-items: center;
-			}
-			:where(.<?php echo $uid; ?>) .kc-move-up { color: var(--k-success, #10b981); font-weight: 850; letter-spacing: 0.05em; }
-			:where(.<?php echo $uid; ?>) .kc-move-down { color: var(--k-error, #ef4444); font-weight: 850; letter-spacing: 0.05em; }
-			:where(.<?php echo $uid; ?>) .kc-move-new { background-color: #f59e0b; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 900; font-size: 10px; letter-spacing: 0.1em; }
-			:where(.<?php echo $uid; ?>) .kc-row-art {
-				transition: all 0.3s ease;
-			}
-			<?php if ($settings['img_hover_effect'] === 'zoom'): ?>
-			:where(.<?php echo $uid; ?>) .kc-row-item:hover .kc-row-art { transform: scale(1.1); }
-			<?php elseif ($settings['img_hover_effect'] === 'lift'): ?>
-			:where(.<?php echo $uid; ?>) .kc-row-item:hover .kc-row-img-wrap { transform: translateY(-5px); }
-			<?php elseif ($settings['img_hover_effect'] === 'grayscale'): ?>
-			:where(.<?php echo $uid; ?>) .kc-row-art { filter: grayscale(100%); }
-			:where(.<?php echo $uid; ?>) .kc-row-item:hover .kc-row-art { filter: grayscale(0%); }
-			<?php endif; ?>
-			</style>
 
-			<div class="kc-chart-table kc-variant-<?php echo esc_attr($style_variant); ?> kc-widget-card">
-				<?php foreach ( $rows as $idx => $row ) : 
-					$is_featured = ($style_variant === 'featured' && $idx === 0);
-					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
-				?>
-					<div class="kc-row-item kc-rank-row <?php echo $is_featured ? 'kc-row-featured' : ''; ?>">
-						
-						<div class="kc-row-rank" style="order:1;">
-							<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position); ?>
-						</div>
-						
-						<?php if ( $show_cover ) : ?>
-						<div class="kc-row-img-wrap" style="order:2;">
-							<img src="<?php echo esc_url((!empty($row->resolved_image) ? $row->resolved_image : $row->cover_image)); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>">
-						</div>
-						<?php endif; ?>
-
-						<div class="kc-row-info" style="order:3;">
-							<h4 class="kc-row-title kc-title"><?php echo esc_html($resolved['title']); ?></h4>
-							<?php if ( $show_artist && !empty($resolved['subtitle']) ) : ?>
-								<p class="kc-row-subtitle kc-meta"><?php echo esc_html($resolved['subtitle']); ?></p>
-							<?php endif; ?>
-						</div>
-
-						<?php if ( $show_movement ) : ?>
-						<div class="kc-row-movement stat-opt" style="order:5;">
-							<?php if ($row->movement_direction === 'up'): ?>
-								<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
-							<?php elseif ($row->movement_direction === 'down'): ?>
-								<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
-							<?php elseif ($row->movement_direction === 'new'): ?>
-								<span class="kc-move-new"><?php echo esc_html($badge_new_text); ?></span>
-							<?php endif; ?>
-						</div>
-						<?php endif; ?>
-
-					</div>
-				<?php endforeach; ?>
-			</div>
-		</div>
-<?php
+			echo '<div class="kc-row-item ' . ($is_featured ? 'kc-row-featured' : '') . '">';
+			
+			// Rank
+			echo '<div class="kc-row-rank">' . \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position) . '</div>';
+			
+			// Movement
+			if ($settings['show_movement'] === 'yes') {
+				$dir = $row->movement_direction;
+				$val = $row->movement_value;
+				echo '<div class="kc-row-move">';
+				if ($dir === 'up') echo '<span class="kc-move-up">↑ ' . \Charts\Core\Transliteration::to_arabic_numerals($val) . '</span>';
+				elseif ($dir === 'down') echo '<span class="kc-move-down">↓ ' . \Charts\Core\Transliteration::to_arabic_numerals($val) . '</span>';
+				elseif ($dir === 'new') echo '<span class="kc-move-new">' . esc_html($settings['badge_new_text']) . '</span>';
+				else echo '<span style="color:#94a3b8;">-</span>';
+				echo '</div>';
+			}
+			
+			// Cover
+			if ($settings['show_cover'] === 'yes') {
+				echo '<img src="' . esc_url($img) . '" class="kc-row-img" alt="">';
+			}
+			
+			// Info
+			echo '<div class="kc-row-info">';
+			echo '<h4 class="kc-row-title">' . esc_html($res['title']) . '</h4>';
+			if ($settings['show_artist'] === 'yes' && !empty($res['subtitle'])) {
+				echo '<p class="kc-row-artist">' . esc_html($res['subtitle']) . '</p>';
+			}
+			echo '</div>';
+			
+			echo '</div>'; // End Row
+		}
+		
+		echo '</div></div>';
 	}
 }
