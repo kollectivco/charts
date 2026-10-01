@@ -112,6 +112,23 @@ if ( $definition ) {
 	}
 }
 
+
+// -------------------------------------------------------------------
+// CUSTOM ELEMENTOR TEMPLATE INJECTION
+// -------------------------------------------------------------------
+$custom_template_id = \Charts\Core\Settings::get('single.elementor_template', 0);
+if ( $page_state === 'ready' && !empty($custom_template_id) && class_exists('\Elementor\Plugin') && ! $is_mobile ) {
+    \Charts\Core\PublicIntegration::get_header();
+    
+    // Inject Elementor Content
+    $elementor = \Elementor\Plugin::instance();
+    echo $elementor->frontend->get_builder_content_for_display( $custom_template_id );
+    
+    \Charts\Core\PublicIntegration::get_footer();
+    exit;
+}
+// -------------------------------------------------------------------
+
 if ( ! $is_mobile ) {
 	if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 }

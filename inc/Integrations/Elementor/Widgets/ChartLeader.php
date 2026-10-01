@@ -19,7 +19,7 @@ class ChartLeader extends Widget_Base {
 		$this->start_controls_section( 'section_content', [ 'label' => __( 'Hero Config', 'charts' ) ] );
 		
 		$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
-		$options = [];
+		$options = ["0" => __("Current Chart (Dynamic)", "charts")];
 		foreach ( $definitions as $def ) { $options[$def->id] = $def->title; }
 
 		$this->add_control( 'chart_id', [
@@ -49,7 +49,7 @@ class ChartLeader extends Widget_Base {
 		
 		if ( empty($settings['chart_id']) ) return;
 
-		$def = $manager->get_definition( $settings['chart_id'] );
+		$def = (empty($settings["chart_id"]) || $settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
 		if ( ! $def ) return;
 
 		global $wpdb;

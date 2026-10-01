@@ -141,7 +141,7 @@ $this->end_controls_section();
 		$manager = new \Charts\Admin\SourceManager();
 		$charts_data = [];
 		foreach ($chart_ids as $cid) {
-			$def = $manager->get_definition($cid);
+			$def = (empty($cid) || $cid === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($cid);
 			if (!$def) continue;
 			$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, $limit);
 			if (empty($entries)) continue;

@@ -22,7 +22,18 @@ $panel = [
                     [ 'id' => 'homepage.show_charts_grid', 'type' => 'switch', 'label' => 'Show Public Charts Browse Grid' ],
                 ]
             ],
-            'design' => [
+            'single' => [
+        'title' => 'Single Chart Page',
+        'sections' => [
+            'layout' => [
+                'title' => 'Template Strategy',
+                'fields' => [
+                    [ 'id' => 'single.elementor_template', 'type' => 'select', 'label' => 'Elementor Design Template', 'options' => \Charts\Core\Templates::get_options(), 'desc' => 'Select a custom Elementor template. If selected, it completely replaces the native Single Chart page layout.' ],
+                ]
+            ]
+        ]
+    ],
+    'design' => [
                 'title' => 'Aesthetic Spacing',
                 'fields' => [
                     [ 'id' => 'homepage.padding_top', 'type' => 'number', 'label' => 'Top Buffer (px)', 'max' => 200 ],
@@ -76,6 +87,17 @@ $panel = [
                     [ 'id' => 'slider.pause_on_hover', 'type' => 'switch', 'label' => 'Pause Motion on Hover' ],
                     [ 'id' => 'slider.delay_ms', 'type' => 'number', 'label' => 'Slide Dwell Time (ms)', 'min' => 1000, 'max' => 30000 ],
                     [ 'id' => 'slider.speed_ms', 'type' => 'number', 'label' => 'Transition Velocity (ms)', 'min' => 200, 'max' => 2000 ],
+                ]
+            ]
+        ]
+    ],
+    'single' => [
+        'title' => 'Single Chart Page',
+        'sections' => [
+            'layout' => [
+                'title' => 'Template Strategy',
+                'fields' => [
+                    [ 'id' => 'single.elementor_template', 'type' => 'select', 'label' => 'Elementor Design Template', 'options' => \Charts\Core\Templates::get_options(), 'desc' => 'Select a custom Elementor template. If selected, it completely replaces the native Single Chart page layout.' ],
                 ]
             ]
         ]

@@ -46,7 +46,7 @@ class ChartGrid extends Widget_Base {
 		]);
 
 		$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
-		$options = [];
+		$options = ["0" => __("Current Chart (Dynamic)", "charts")];
 		foreach ( $definitions as $def ) { $options[$def->id] = $def->title; }
 
 		$this->add_control( 'selected_charts', [
@@ -149,7 +149,7 @@ class ChartGrid extends Widget_Base {
 		if ( $settings['chart_selection_mode'] === 'manual' && !empty($settings['selected_charts']) ) {
 			$definitions = array();
 			foreach($settings['selected_charts'] as $cid) {
-				$def = $manager->get_definition($cid);
+				$def = (empty($cid) || $cid === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($cid);
 				if($def) $definitions[] = $def;
 			}
 		} else {

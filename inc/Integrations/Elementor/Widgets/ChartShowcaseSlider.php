@@ -84,7 +84,7 @@ class ChartShowcaseSlider extends Widget_Base {
 		if (empty($settings['chart_id'])) return;
 
 		$manager = new \Charts\Admin\SourceManager();
-		$def = $manager->get_definition($settings['chart_id']);
+		$def = (empty($settings["chart_id"]) || $settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
 		if (!$def) return;
 
 		$limit = $settings['limit'] ?? 8;

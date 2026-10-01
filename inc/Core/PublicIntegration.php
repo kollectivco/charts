@@ -616,4 +616,13 @@ class PublicIntegration {
 
 		return $definitions;
 	}
+	
+    public static function get_current_chart_definition() {
+        $slug = get_query_var( 'charts_definition_slug' );
+        if ( !empty($slug) ) {
+            $manager = new \Charts\Admin\SourceManager();
+            return $manager->get_definition_by_slug( $slug );
+        }
+        return null;
+    }
 }
