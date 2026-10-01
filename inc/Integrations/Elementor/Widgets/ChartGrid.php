@@ -11,7 +11,7 @@ use Elementor\Controls_Manager;
 class ChartGrid extends Widget_Base {
 
 	public function get_name() { return 'charts_grid'; }
-	public function get_title() { return __( 'Intelligence Grid', 'charts' ); }
+	public function get_title() { return __( 'Charts: Intelligence Grid', 'charts' ); }
 	public function get_icon() { return 'eicon-apps'; }
 	public function get_categories() { return [ 'charts' ]; }
 

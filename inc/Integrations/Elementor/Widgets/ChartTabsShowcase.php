@@ -11,7 +11,7 @@ class ChartTabsShowcase extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_chart_tabs_showcase'; }
-	public function get_title() { return __( 'Chart Tabs Showcase', 'charts' ); }
+	public function get_title() { return __( 'Charts: Tabs Showcase', 'charts' ); }
 	public function get_icon() { return 'eicon-tabs'; }
 	public function get_categories() { return [ 'charts' ]; }
 

@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class ChartShowcaseSlider extends Widget_Base {
 
 	public function get_name() { return 'kc_chart_showcase_slider'; }
-	public function get_title() { return __( 'Premium Showcase Slider', 'charts' ); }
+	public function get_title() { return __( 'Charts: Premium Showcase Slider', 'charts' ); }
 	public function get_icon() { return 'eicon-slider-push'; }
 	public function get_categories() { return [ 'charts' ]; }
 

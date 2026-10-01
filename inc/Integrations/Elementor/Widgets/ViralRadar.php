@@ -11,7 +11,7 @@ class ViralRadar extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_viral_radar'; }
-	public function get_title() { return __( 'Viral Radar Heatmap', 'charts' ); }
+	public function get_title() { return __( 'Charts: Viral Radar Heatmap', 'charts' ); }
 	public function get_icon() { return 'eicon-wifi'; }
 	public function get_categories() { return [ 'charts' ]; }
 

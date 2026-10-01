@@ -11,7 +11,7 @@ class BentoIntelligence extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_bento_intelligence'; }
-	public function get_title() { return __( 'Bento Intelligence Hub', 'charts' ); }
+	public function get_title() { return __( 'Charts: Bento Intelligence Hub', 'charts' ); }
 	public function get_icon() { return 'eicon-dashboard'; }
 	public function get_categories() { return [ 'charts' ]; }
 

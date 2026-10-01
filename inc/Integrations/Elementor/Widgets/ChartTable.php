@@ -11,7 +11,7 @@ use Elementor\Group_Control_Background;
 class ChartTable extends Widget_Base {
 
 	public function get_name() { return 'charts_table'; }
-	public function get_title() { return __( 'Intelligence Table', 'charts' ); }
+	public function get_title() { return __( 'Charts: Intelligence Table', 'charts' ); }
 	public function get_icon() { return 'eicon-table'; }
 	public function get_categories() { return [ 'charts' ]; }
 

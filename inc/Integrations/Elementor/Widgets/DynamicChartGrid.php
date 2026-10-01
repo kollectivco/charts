@@ -11,7 +11,7 @@ class DynamicChartGrid extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_dynamic_chart_grid'; }
-	public function get_title() { return __( 'Dynamic Chart Grid', 'charts' ); }
+	public function get_title() { return __( 'Charts: Dynamic Chart Grid', 'charts' ); }
 	public function get_icon() { return 'eicon-gallery-grid'; }
 	public function get_categories() { return [ 'charts' ]; }
 	public function get_script_depends() { return [ 'swiper' ]; }

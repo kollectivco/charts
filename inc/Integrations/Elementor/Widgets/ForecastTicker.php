@@ -11,7 +11,7 @@ class ForecastTicker extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_forecast_ticker'; }
-	public function get_title() { return __( 'Forecast Ticker', 'charts' ); }
+	public function get_title() { return __( 'Charts: Forecast Ticker', 'charts' ); }
 	public function get_icon() { return 'eicon-marquee'; }
 	public function get_categories() { return [ 'charts' ]; }
 

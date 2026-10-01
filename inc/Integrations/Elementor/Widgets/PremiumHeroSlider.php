@@ -13,7 +13,7 @@ use Elementor\Repeater;
 class PremiumHeroSlider extends Widget_Base {
 
 	public function get_name() { return 'premium_hero_slider'; }
-	public function get_title() { return __( 'KCharts Premium Hero Slider', 'charts' ); }
+	public function get_title() { return __( 'Charts: Premium Hero Slider', 'charts' ); }
 	public function get_icon() { return 'eicon-slideshow'; }
 	public function get_categories() { return [ 'charts' ]; }
 

@@ -11,7 +11,7 @@ use Elementor\Controls_Manager;
 class ChartLeader extends Widget_Base {
 
 	public function get_name() { return 'chart_leader'; }
-	public function get_title() { return __( 'Chart Leader Hero', 'charts' ); }
+	public function get_title() { return __( 'Charts: Leader Hero', 'charts' ); }
 	public function get_icon() { return 'eicon-info-box'; }
 	public function get_categories() { return [ 'charts' ]; }
 

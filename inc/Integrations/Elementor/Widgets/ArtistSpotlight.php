@@ -11,7 +11,7 @@ class ArtistSpotlight extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_artist_spotlight'; }
-	public function get_title() { return __( 'Artist Power Spotlight', 'charts' ); }
+	public function get_title() { return __( 'Charts: Artist Power Spotlight', 'charts' ); }
 	public function get_icon() { return 'eicon-person'; }
 	public function get_categories() { return [ 'charts' ]; }
 

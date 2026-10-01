@@ -11,7 +11,7 @@ use Elementor\Controls_Manager;
 class FeaturedChart extends Widget_Base {
 
 	public function get_name() { return 'featured_chart'; }
-	public function get_title() { return __( 'Featured Chart List', 'charts' ); }
+	public function get_title() { return __( 'Charts: Featured Chart List', 'charts' ); }
 	public function get_icon() { return 'eicon-post-list'; }
 	public function get_categories() { return [ 'charts' ]; }
 

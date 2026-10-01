@@ -11,7 +11,7 @@ class SparklinesTable extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_sparklines_table'; }
-	public function get_title() { return __( 'Trajectory Sparklines Table', 'charts' ); }
+	public function get_title() { return __( 'Charts: Trajectory Sparklines Table', 'charts' ); }
 	public function get_icon() { return 'eicon-table'; }
 	public function get_categories() { return [ 'charts' ]; }
 

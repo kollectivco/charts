@@ -12,7 +12,7 @@ use Elementor\Group_Control_Typography;
 class ChartList extends Widget_Base {
 
 	public function get_name() { return 'chart_list'; }
-	public function get_title() { return __( 'Chart Intelligence List', 'charts' ); }
+	public function get_title() { return __( 'Charts: Intelligence List', 'charts' ); }
 	public function get_icon() { return 'eicon-editor-list-ul'; }
 	public function get_categories() { return [ 'charts' ]; }
 

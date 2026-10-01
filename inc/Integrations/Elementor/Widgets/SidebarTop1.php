@@ -11,7 +11,7 @@ class SidebarTop1 extends Widget_Base {
 	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_sidebar_top1'; }
-	public function get_title() { return __( 'Sidebar Top 1 Cards', 'charts' ); }
+	public function get_title() { return __( 'Charts: Sidebar Top 1 Cards', 'charts' ); }
 	public function get_icon() { return 'eicon-gallery-grid'; }
 	public function get_categories() { return [ 'charts' ]; }
 
