@@ -207,7 +207,7 @@ class ChartTabsShowcase extends Widget_Base {
 				echo '<div class="' . $uid . '-img-wrap">';
 				echo '<img src="' . esc_url($trk['image']) . '" class="' . $uid . '-img kc-elm-img">';
 				
-				$badge_content = '#' . $trk['rank'];
+				$badge_content = '#' . \Charts\Core\Transliteration::to_arabic_numerals($trk['rank']);
 				if ($settings['show_badges'] === 'yes' && $trk['is_new']) {
 					$badge_content = '🌟 ' . esc_html($settings['badge_new_text']);
 				}

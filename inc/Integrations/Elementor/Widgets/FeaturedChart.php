@@ -129,7 +129,7 @@ class FeaturedChart extends Widget_Base {
 						$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 					?>
 						<div class="kc-preview-row" style="<?php echo $style_variant === 'compact' ? 'padding: 12px 24px;' : 'padding: 16px 40px;'; ?> display: flex; align-items: center; border-bottom: 1px solid var(--k-divider);">
-							<span class="kc-preview-rank" style="font-size: 1.1rem; font-weight: 900; width: 30px; <?php echo ($idx === 0) ? 'color: var(--k-accent); font-size: 1.5rem;' : 'color: var(--k-text);'; ?>"><?php echo $row->rank_position; ?></span>
+							<span class="kc-preview-rank" style="font-size: 1.1rem; font-weight: 900; width: 30px; <?php echo ($idx === 0) ? 'color: var(--k-accent); font-size: 1.5rem;' : 'color: var(--k-text);'; ?>"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position); ?></span>
 							<div class="kc-preview-info" style="flex-grow: 1; padding: 0 16px;">
 								<span class="kc-preview-name kc-title" style="font-size: 15px; display: block; <?php echo ($idx === 0) ? 'font-weight: 850;' : 'font-weight: 700;'; ?>"><?php echo esc_html($resolved['title']); ?></span>
 								<?php if ( $show_artist ) : ?>
@@ -140,9 +140,9 @@ class FeaturedChart extends Widget_Base {
 							<?php if ( $show_movement ) : ?>
 							<div style="text-align: right; flex-shrink: 0;">
 								<?php if ($row->movement_direction === 'up'): ?>
-									<span style="color: var(--k-success, #2ecc71); font-weight: 800; font-size: 12px;">▲ <?php echo $row->movement_value; ?></span>
+									<span style="color: var(--k-success, #2ecc71); font-weight: 800; font-size: 12px;">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
 								<?php elseif ($row->movement_direction === 'down'): ?>
-									<span style="color: var(--k-error, #e74c3c); font-weight: 800; font-size: 12px;">▼ <?php echo $row->movement_value; ?></span>
+									<span style="color: var(--k-error, #e74c3c); font-weight: 800; font-size: 12px;">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
 								<?php elseif ($row->movement_direction === 'new'): ?>
 									<span class="kc-badge kc-badge-accent" style="font-size: 9px; padding: 3px 8px; background: #f1c40f; color: #000; border-radius: 4px; font-weight: 800;">جديد</span>
 								<?php endif; ?>

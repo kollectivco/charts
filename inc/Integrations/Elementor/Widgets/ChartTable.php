@@ -256,7 +256,7 @@ class ChartTable extends Widget_Base {
 					<div class="kc-row-item kc-rank-row <?php echo $is_featured ? 'kc-row-featured' : ''; ?>">
 						
 						<div class="kc-row-rank">
-							<?php echo $row->rank_position; ?>
+							<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position); ?>
 						</div>
 						
 						<?php if ( $show_cover ) : ?>
@@ -275,9 +275,9 @@ class ChartTable extends Widget_Base {
 						<?php if ( $show_movement ) : ?>
 						<div class="kc-row-movement stat-opt">
 							<?php if ($row->movement_direction === 'up'): ?>
-								<span class="kc-move-up">▲ <?php echo $row->movement_value; ?></span>
+								<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
 							<?php elseif ($row->movement_direction === 'down'): ?>
-								<span class="kc-move-down">▼ <?php echo $row->movement_value; ?></span>
+								<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
 							<?php elseif ($row->movement_direction === 'new'): ?>
 								<span class="kc-move-new"><?php echo esc_html($badge_new_text); ?></span>
 							<?php endif; ?>
