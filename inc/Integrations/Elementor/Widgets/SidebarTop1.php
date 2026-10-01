@@ -169,7 +169,7 @@ class SidebarTop1 extends Widget_Base {
 			$top = $entries[0];
 			
 			$img = \Charts\Core\PublicIntegration::resolve_chart_image($def, [$top]);
-			if (empty($img) && !empty($top->cover_image)) $img = $top->cover_image;
+			if (empty($img) && !empty((!empty($top->resolved_image) ? $top->resolved_image : $top->cover_image))) $img = (!empty($top->resolved_image) ? $top->resolved_image : $top->cover_image);
 			if (empty($img)) $img = CHARTS_URL . 'public/assets/img/placeholder.png';
 			
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($top, $def);

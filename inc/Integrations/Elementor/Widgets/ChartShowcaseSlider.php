@@ -186,7 +186,7 @@ class ChartShowcaseSlider extends Widget_Base {
 		foreach ($entries as $index => $e) {
 			$bg_idx = $index % 4;
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
-			$img = $e->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
+			$img = (!empty($e->resolved_image) ? $e->resolved_image : $e->cover_image) ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 			$num = \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position);
 			
 			$display_text = ($def->entity_type === 'track' && !empty($resolved['subtitle'])) ? $resolved['subtitle'] : $resolved['title'];

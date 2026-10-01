@@ -138,7 +138,7 @@ class DynamicChartGrid extends Widget_Base {
 		echo '<div class="' . $uid . '-wrap">';
 		
 		$render_item = function($entry, $def) use ($uid, $layout, $settings) {
-			$img = $entry->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
+			$img = (!empty($entry->resolved_image) ? $entry->resolved_image : $entry->cover_image) ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($entry, $def);
 			$rank = $entry->rank_position;
 			$is_new = ($entry->movement_direction === 'new');

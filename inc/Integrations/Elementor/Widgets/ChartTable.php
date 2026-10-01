@@ -309,7 +309,7 @@ class ChartTable extends Widget_Base {
 						
 						<?php if ( $show_cover ) : ?>
 						<div class="kc-row-img-wrap" style="order:2;">
-							<img src="<?php echo esc_url($row->cover_image); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>">
+							<img src="<?php echo esc_url((!empty($row->resolved_image) ? $row->resolved_image : $row->cover_image)); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>">
 						</div>
 						<?php endif; ?>
 

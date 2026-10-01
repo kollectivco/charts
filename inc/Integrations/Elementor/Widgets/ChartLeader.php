@@ -106,7 +106,7 @@ class ChartLeader extends Widget_Base {
 						<?php if ( $show_cover ) : ?>
 						<div class="hero-art" style="position:relative; flex:1; min-width:300px;">
 							<span class="kc-row-rank" style="position:absolute; top:24px; left:24px; font-size:4rem; font-weight:900; line-height:1; color:#fff; text-shadow:0 4px 12px rgba(0,0,0,0.5); z-index:10;">١</span>
-							<img src="<?php echo esc_url($row->cover_image); ?>" alt="<?php echo esc_attr($row->track_name); ?>" style="width:100%; height:100%; min-height:400px; object-fit:cover;">
+							<img src="<?php echo esc_url((!empty($row->resolved_image) ? $row->resolved_image : $row->cover_image)); ?>" alt="<?php echo esc_attr($row->track_name); ?>" style="width:100%; height:100%; min-height:400px; object-fit:cover;">
 						</div>
 						<?php endif; ?>
 						<div class="hero-info" style="flex:1.5; padding:48px; min-width:300px;">

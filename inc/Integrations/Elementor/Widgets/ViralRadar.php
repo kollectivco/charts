@@ -94,7 +94,7 @@ class ViralRadar extends Widget_Base {
 				echo '<div style="text-align:center; color:#94a3b8; font-size:13px; padding:24px 0;">No tracks in this zone.</div>';
 			} else {
 				foreach ($data as $d) {
-					$img = $d->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
+					$img = (!empty($d->resolved_image) ? $d->resolved_image : $d->cover_image) ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 					echo '<div class="' . $uid . '-item kc-elm-card">';
 					echo '<img src="' . esc_url($img) . '" class="' . $uid . '-img kc-elm-img">';
 					echo '<div class="' . $uid . '-text">';
