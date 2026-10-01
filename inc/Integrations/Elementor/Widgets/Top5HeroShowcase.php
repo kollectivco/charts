@@ -444,16 +444,16 @@ class Top5HeroShowcase extends Widget_Base {
 		}
 		</style>';
 
-		echo '<div class="' . $uid . '-wrap">';
+		echo '<div class="' . $uid . '-wrap kc-t5-wrap">';
 		if (!empty($settings['bg_text'])) {
-			echo '<div class="' . $uid . '-bg-text">' . esc_html($settings['bg_text']) . '</div>';
+			echo '<div class="' . $uid . '-bg-text kc-t5-bg-text">' . esc_html($settings['bg_text']) . '</div>';
 		}
 		
 		// Header
-		echo '<div class="' . $uid . '-header">';
-		echo '<div class="' . $uid . '-title-group">';
-		echo '<svg class="' . $uid . '-eq-icon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10h3v4H4v-4zm5-4h3v12H9V6zm5 6h3v6h-3v-6zm5-2h3v4h-3v-4z"/></svg>';
-		echo '<div class="' . $uid . '-titles">';
+		echo '<div class="' . $uid . '-header kc-t5-header">';
+		echo '<div class="' . $uid . '-title-group kc-t5-title-group">';
+		echo '<svg class="' . $uid . '-eq-icon kc-t5-eq-icon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10h3v4H4v-4zm5-4h3v12H9V6zm5 6h3v6h-3v-6zm5-2h3v4h-3v-4z"/></svg>';
+		echo '<div class="' . $uid . '-titles kc-t5-titles">';
 		echo '<h2>' . esc_html($settings['title']) . '</h2>';
 		if (!empty($settings['subtitle'])) {
 			echo '<p>' . esc_html($settings['subtitle']) . '</p>';
@@ -462,11 +462,11 @@ class Top5HeroShowcase extends Widget_Base {
 		
 		if (!empty($settings['link_text'])) {
 			$url = !empty($settings['link_url']['url']) ? $settings['link_url']['url'] : home_url('/charts/' . $def->slug);
-			echo '<a href="' . esc_url($url) . '" class="' . $uid . '-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> ' . esc_html($settings['link_text']) . '</a>';
+			echo '<a href="' . esc_url($url) . '" class="' . $uid . '-link kc-t5-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> ' . esc_html($settings['link_text']) . '</a>';
 		}
 		echo '</div>'; // End Header
 
-		echo '<div class="' . $uid . '-grid">';
+		echo '<div class="' . $uid . '-grid kc-t5-grid">';
 		
 		// RIGHT COLUMN (HERO #1)
 		$hero = $entries[0];
@@ -475,25 +475,25 @@ class Top5HeroShowcase extends Widget_Base {
 		if (empty($h_img)) $h_img = CHARTS_URL . 'public/assets/img/placeholder.png';
 		$h_res = \Charts\Core\PublicIntegration::resolve_display_name($hero, $def);
 		
-		echo '<div class="' . $uid . '-hero" style="--bg-img: url(\'' . esc_url($h_img) . '\');">';
-		echo '<div class="' . $uid . '-hero-bg"></div>';
-		echo '<div class="' . $uid . '-hero-overlay"></div>';
-		echo '<div class="' . $uid . '-hero-scribble" style="position:absolute; inset:0; z-index:2; mix-blend-mode: overlay; opacity: 0.6; background: radial-gradient(circle at top left, var(--t5-accent) 0%, transparent 50%), radial-gradient(circle at bottom right, #0000ff 0%, transparent 50%);"></div>';
+		echo '<div class="' . $uid . '-hero kc-t5-hero" style="--bg-img: url(\'' . esc_url($h_img) . '\');">';
+		echo '<div class="' . $uid . '-hero-bg kc-t5-hero-bg"></div>';
+		echo '<div class="' . $uid . '-hero-overlay kc-t5-hero-overlay"></div>';
+		echo '<div class="' . $uid . '-hero-scribble kc-t5-hero-scribble" style="position:absolute; inset:0; z-index:2; mix-blend-mode: overlay; opacity: 0.6; background: radial-gradient(circle at top left, var(--t5-accent) 0%, transparent 50%), radial-gradient(circle at bottom right, #0000ff 0%, transparent 50%);"></div>';
 		
-		echo '<div class="' . $uid . '-badge">#1</div>';
-		echo '<div class="' . $uid . '-rank-big">' . \Charts\Core\Transliteration::to_arabic_numerals(1) . '</div>';
+		echo '<div class="' . $uid . '-badge kc-t5-badge">#1</div>';
+		echo '<div class="' . $uid . '-rank-big kc-t5-rank-big">' . \Charts\Core\Transliteration::to_arabic_numerals(1) . '</div>';
 		
-		echo '<div class="' . $uid . '-hero-content">';
-		echo '<div class="' . $uid . '-hero-text">';
+		echo '<div class="' . $uid . '-hero-content kc-t5-hero-content">';
+		echo '<div class="' . $uid . '-hero-text kc-t5-hero-text">';
 		echo '<h3>' . esc_html($h_res['title']) . '</h3>';
 		echo '<p>' . esc_html($h_res['subtitle']) . '</p>';
 		echo '</div>';
-		echo '<div class="' . $uid . '-play-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+		echo '<div class="' . $uid . '-play-btn kc-t5-play-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
 		echo '</div>';
 		echo '</div>'; // End Hero
 		
 		// LEFT COLUMN (LIST #2-#5)
-		echo '<div class="' . $uid . '-list">';
+		echo '<div class="' . $uid . '-list kc-t5-list">';
 		for ($i = 1; $i < count($entries); $i++) {
 			$e = $entries[$i];
 			$r_img = \Charts\Core\PublicIntegration::resolve_chart_image($def, [$e]);
@@ -504,19 +504,19 @@ class Top5HeroShowcase extends Widget_Base {
 			$move = $e->movement_value;
 			$dir = $e->movement_direction;
 			$move_html = '';
-			if ($dir === 'up') $move_html = '<span class="' . $uid . '-move-up">↑<br>+' . \Charts\Core\Transliteration::to_arabic_numerals($move) . '</span>';
-			elseif ($dir === 'down') $move_html = '<span class="' . $uid . '-move-down">↓<br>-' . \Charts\Core\Transliteration::to_arabic_numerals($move) . '</span>';
-			else $move_html = '<span class="' . $uid . '-move-new">→<br>-</span>';
+			if ($dir === 'up') $move_html = '<span class="' . $uid . '-move-up kc-t5-move-up">↑<br>+' . \Charts\Core\Transliteration::to_arabic_numerals($move) . '</span>';
+			elseif ($dir === 'down') $move_html = '<span class="' . $uid . '-move-down kc-t5-move-down">↓<br>-' . \Charts\Core\Transliteration::to_arabic_numerals($move) . '</span>';
+			else $move_html = '<span class="' . $uid . '-move-new kc-t5-move-new">→<br>-</span>';
 			
-			echo '<div class="' . $uid . '-row">';
-			echo '<div class="' . $uid . '-r-rank">' . \Charts\Core\Transliteration::to_arabic_numerals($i + 1) . '</div>';
-			echo '<div class="' . $uid . '-r-move">' . $move_html . '</div>';
-			echo '<img src="' . esc_url($r_img) . '" class="' . $uid . '-r-img">';
-			echo '<div class="' . $uid . '-r-info">';
+			echo '<div class="' . $uid . '-row kc-t5-row">';
+			echo '<div class="' . $uid . '-r-rank kc-t5-r-rank">' . \Charts\Core\Transliteration::to_arabic_numerals($i + 1) . '</div>';
+			echo '<div class="' . $uid . '-r-move kc-t5-r-move">' . $move_html . '</div>';
+			echo '<img src="' . esc_url($r_img) . '" class="' . $uid . '-r-img kc-t5-r-img">';
+			echo '<div class="' . $uid . '-r-info kc-t5-r-info">';
 			echo '<h4>' . esc_html($r_res['title']) . '</h4>';
 			echo '<p>' . esc_html($r_res['subtitle']) . '</p>';
 			echo '</div>';
-			echo '<div class="' . $uid . '-r-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+			echo '<div class="' . $uid . '-r-play kc-t5-r-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
 			echo '</div>';
 		}
 		echo '</div>'; // End List

@@ -190,19 +190,19 @@ class PremiumHeroSlider extends Widget_Base {
 		}
 		</style>
 
-		<div class="<?php echo $uid; ?>-wrap kc-widget-wrap">
+		<div class="<?php echo $uid; ?>-wrap kc-phs-wrap kc-widget-wrap">
 			<div class="swiper" id="<?php echo $uid; ?>-swiper">
 				<div class="swiper-wrapper">
 					<?php foreach ($slides_data as $s) : ?>
 					<div class="swiper-slide">
-						<div class="<?php echo $uid; ?>-slide">
-							<div class="<?php echo $uid; ?>-bg" style="background-image: url('<?php echo esc_url($s['image_url'] ?? CHARTS_URL . 'public/assets/img/placeholder.png'); ?>');"></div>
-							<div class="<?php echo $uid; ?>-overlay"></div>
-							<div class="<?php echo $uid; ?>-content">
-								<div class="<?php echo $uid; ?>-badge"><?php echo __('#1 TRENDING', 'charts'); ?></div>
-								<h2 class="<?php echo $uid; ?>-title"><?php echo esc_html($s['title']); ?></h2>
-								<p class="<?php echo $uid; ?>-desc"><?php echo esc_html(!empty($s['desc']) ? $s['desc'] : 'أقوى الإصدارات المتصدرة للسباق هذا الأسبوع.'); ?></p>
-								<a href="<?php echo esc_url($s['btn1_link'] ?? '#'); ?>" class="<?php echo $uid; ?>-btn">
+						<div class="<?php echo $uid; ?>-slide kc-phs-slide">
+							<div class="<?php echo $uid; ?>-bg kc-phs-bg" style="background-image: url('<?php echo esc_url($s['image_url'] ?? CHARTS_URL . 'public/assets/img/placeholder.png'); ?>');"></div>
+							<div class="<?php echo $uid; ?>-overlay kc-phs-overlay"></div>
+							<div class="<?php echo $uid; ?>-content kc-phs-content">
+								<div class="<?php echo $uid; ?>-badge kc-phs-badge"><?php echo __('#1 TRENDING', 'charts'); ?></div>
+								<h2 class="<?php echo $uid; ?>-title kc-phs-title"><?php echo esc_html($s['title']); ?></h2>
+								<p class="<?php echo $uid; ?>-desc kc-phs-desc"><?php echo esc_html(!empty($s['desc']) ? $s['desc'] : 'أقوى الإصدارات المتصدرة للسباق هذا الأسبوع.'); ?></p>
+								<a href="<?php echo esc_url($s['btn1_link'] ?? '#'); ?>" class="<?php echo $uid; ?>-btn kc-phs-btn">
 									<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
 									<?php echo esc_html($s['btn1_text'] ?? __('استكشف الشارت', 'charts')); ?>
 								</a>
@@ -212,11 +212,11 @@ class PremiumHeroSlider extends Widget_Base {
 					<?php endforeach; ?>
 				</div>
 				<?php if ($settings['show_arrows'] === 'yes') : ?>
-					<div class="<?php echo $uid; ?>-next"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></div>
-					<div class="<?php echo $uid; ?>-prev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+					<div class="<?php echo $uid; ?>-next kc-phs-next"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></div>
+					<div class="<?php echo $uid; ?>-prev kc-phs-prev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
 				<?php endif; ?>
 				<?php if ($settings['show_dots'] === 'yes') : ?>
-					<div class="<?php echo $uid; ?>-pagination swiper-pagination"></div>
+					<div class="<?php echo $uid; ?>-pagination kc-phs-pagination swiper-pagination"></div>
 				<?php endif; ?>
 			</div>
 		</div>

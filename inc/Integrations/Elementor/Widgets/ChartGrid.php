@@ -158,11 +158,14 @@ class ChartGrid extends Widget_Base {
 		}
 
 		if ( empty( $definitions ) ) {
-			echo '<div class="kc-empty">No intelligence charts found.</div>';
+			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				echo '<div style="padding:40px;text-align:center;background:#0f172a;color:#fff;border-radius:20px;border:2px dashed #eab308;direction:ltr;"><h3>Charts: Intelligence Grid</h3><p>No chart data found. Check your selection settings.</p></div>';
+			}
 			return;
 		}
 
 		// 2. Structural Classes
+		$uid = 'kc-cg-' . $this->get_id();
 		$style_variant = $settings['style_variant'] ?? 'standard';
 		$shadow_class = "kc-shadow-" . ($settings['card_shadow'] ?? 'sm');
 		$gap = $settings['gap']['size'] ?? 30;
@@ -173,15 +176,15 @@ class ChartGrid extends Widget_Base {
 			'm' => $settings['columns_mobile'] ?: 1,
 		];
 ?>
-		<div class="kc-widget-root">
+		<div class="kc-widget-wrap kc-cg-wrap" id="<?php echo $uid; ?>">
 			<style>
-				.kc-intelligence-grid { 
+				#<?php echo $uid; ?> .kc-intelligence-grid { 
 					display: grid; 
 					grid-template-columns: repeat(<?php echo $cols['d']; ?>, 1fr); 
 					gap: <?php echo $gap; ?>px; 
 				}
-				@media (max-width: 1024px) { .kc-intelligence-grid { grid-template-columns: repeat(<?php echo $cols['t']; ?>, 1fr); } }
-				@media (max-width: 768px) { .kc-intelligence-grid { grid-template-columns: repeat(<?php echo $cols['m']; ?>, 1fr); } }
+				@media (max-width: 1024px) { #<?php echo $uid; ?> .kc-intelligence-grid { grid-template-columns: repeat(<?php echo $cols['t']; ?>, 1fr); } }
+				@media (max-width: 768px) { #<?php echo $uid; ?> .kc-intelligence-grid { grid-template-columns: repeat(<?php echo $cols['m']; ?>, 1fr); } }
 			</style>
 
 			<div class="kc-intelligence-grid">

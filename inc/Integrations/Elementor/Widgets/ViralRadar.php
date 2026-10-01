@@ -21,6 +21,19 @@ class ViralRadar extends Widget_Base {
 			'tab' => Controls_Manager::TAB_CONTENT,
 		] );
 
+		$manager = new \Charts\Admin\SourceManager();
+		$defs = $manager->get_definitions(true);
+		$chart_options = [ '' => __( '— All Charts —', 'charts' ) ];
+		if ($defs) { foreach ($defs as $d) { $chart_options[$d->id] = $d->title; } }
+
+		$this->add_control( 'chart_id', [
+			'label' => __( 'Filter by Chart', 'charts' ),
+			'type' => Controls_Manager::SELECT,
+			'options' => $chart_options,
+			'default' => '',
+			'description' => __( 'Leave blank to show tracks from all charts.', 'charts' ),
+		] );
+
 		$this->add_control( 'limit_per_col', [
 			'label' => __( 'Tracks Per Column', 'charts' ),
 			'type' => Controls_Manager::NUMBER,
@@ -40,19 +53,46 @@ class ViralRadar extends Widget_Base {
 		global $wpdb;
 		$limit = $this->get_settings_for_display('limit_per_col') ?: 4;
 		$settings = $this->get_settings_for_display();
+		$chart_id = $settings['chart_id'] ?? '';
 		
-		$intel = $wpdb->prefix . 'charts_intelligence';
-		$tracks = $wpdb->prefix . 'charts_tracks';
+		$intel   = $wpdb->prefix . 'charts_intelligence';
+		$tracks  = $wpdb->prefix . 'charts_tracks';
 		$artists = $wpdb->prefix . 'charts_artists';
+		$entries_tbl = $wpdb->prefix . 'charts_entries';
 
-		$exploding = $wpdb->get_results($wpdb->prepare("SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 80 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
-		$rising = $wpdb->get_results($wpdb->prepare("SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 60 AND i.momentum_score < 80 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
-		$emerging = $wpdb->get_results($wpdb->prepare("SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 40 AND i.momentum_score < 60 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
+		// Build optional chart-scoped JOIN + WHERE fragment.
+		$chart_join  = '';
+		$chart_where = '';
+		if ( ! empty( $chart_id ) ) {
+			$chart_join  = " JOIN $entries_tbl ce ON ce.track_id = t.id AND ce.chart_id = " . intval($chart_id);
+			$chart_where = '';
+		}
+
+		$base_select = "SELECT i.momentum_score, t.title, t.cover_image, a.display_name as artist
+			FROM $intel i
+			JOIN $tracks t ON t.id = i.entity_id{$chart_join}
+			LEFT JOIN $artists a ON a.id = t.primary_artist_id
+			WHERE i.entity_type = 'track'";
+
+		$exploding = $wpdb->get_results($wpdb->prepare("{$base_select} AND i.momentum_score >= 80 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
+		$rising    = $wpdb->get_results($wpdb->prepare("{$base_select} AND i.momentum_score >= 60 AND i.momentum_score < 80 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
+		$emerging  = $wpdb->get_results($wpdb->prepare("{$base_select} AND i.momentum_score >= 40 AND i.momentum_score < 60 ORDER BY i.momentum_score DESC LIMIT %d", $limit));
+
+		// Editor placeholder when no data exists at all.
+		if ( empty($exploding) && empty($rising) && empty($emerging) ) {
+			echo '<div style="padding:32px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:2px dashed #cbd5e1; color:#64748b; font-size:14px; line-height:1.6;">'
+				. '<div style="font-size:36px; margin-bottom:12px;">📡</div>'
+				. '<strong style="display:block; color:#334155; font-size:15px; margin-bottom:6px;">Viral Radar Heatmap</strong>'
+				. 'No momentum data found. Run the intelligence processor or adjust the chart filter.'
+				. '</div>';
+			return;
+		}
 
 		$uid = 'kc-vr-' . $this->get_id();
 		$hover_anim = $settings['hover_animation'] ?? 'zoom';
 
 		echo '<div class="kc-widget-wrap">';
+
 		echo '<style>
 		.' . $uid . '-wrap { display: grid; }
 		.' . $uid . '-col { background: #f8fafc; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }

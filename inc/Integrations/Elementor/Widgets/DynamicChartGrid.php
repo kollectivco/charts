@@ -97,7 +97,14 @@ class DynamicChartGrid extends Widget_Base {
 		
 		$def = (new \Charts\Admin\SourceManager())->get_definition($chart_id);
 		$entries = $def ? \Charts\Core\PublicIntegration::get_preview_entries($def, $limit) : [];
-		if (empty($entries)) return;
+		if (empty($entries)) {
+			echo '<div style="padding:32px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:2px dashed #cbd5e1; color:#64748b; font-size:14px; line-height:1.6;">'
+				. '<div style="font-size:36px; margin-bottom:12px;">🎵</div>'
+				. '<strong style="display:block; color:#334155; font-size:15px; margin-bottom:6px;">Dynamic Chart Grid</strong>'
+				. ( $def ? 'No chart entries found for the selected chart. Make sure the chart has been processed and has entries.' : 'Selected chart definition could not be loaded.' )
+				. '</div>';
+			return;
+		}
 
 		$hover_anim = $settings['hover_animation'] ?? 'zoom';
 

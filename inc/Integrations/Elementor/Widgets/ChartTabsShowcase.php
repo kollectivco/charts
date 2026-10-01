@@ -261,10 +261,10 @@ class ChartTabsShowcase extends Widget_Base {
 		<div class="<?php echo esc_attr($wrap_class); ?>">
 			<?php if ($settings['show_tabs'] === 'yes' && count($charts_data) > 1) : ?>
 			<div style="text-align: center;">
-				<div class="<?php echo $uid; ?>-nav-wrap">
-					<div class="<?php echo $uid; ?>-nav">
+				<div class="<?php echo $uid; ?>-nav-wrap kc-ts-nav-wrap">
+					<div class="<?php echo $uid; ?>-nav kc-ts-nav">
 						<?php foreach ($charts_data as $i => $c) : ?>
-							<div class="<?php echo $uid; ?>-tab <?php echo $i === 0 ? 'is-active' : ''; ?>" data-target="<?php echo $uid; ?>-c-<?php echo $i; ?>">
+							<div class="<?php echo $uid; ?>-tab kc-ts-tab <?php echo $i === 0 ? 'is-active' : ''; ?>" data-target="<?php echo $uid; ?>-c-<?php echo $i; ?>">
 								<?php echo esc_html($c['title']); ?>
 							</div>
 						<?php endforeach; ?>
@@ -273,22 +273,22 @@ class ChartTabsShowcase extends Widget_Base {
 			</div>
 			<?php endif; ?>
 
-			<div class="<?php echo $uid; ?>-panels">
+			<div class="<?php echo $uid; ?>-panels kc-ts-panels">
 				<?php foreach ($charts_data as $i => $c) : ?>
-					<div id="<?php echo $uid; ?>-c-<?php echo $i; ?>" class="<?php echo $uid; ?>-content <?php echo $i === 0 ? 'is-active' : ''; ?>">
+					<div id="<?php echo $uid; ?>-c-<?php echo $i; ?>" class="<?php echo $uid; ?>-content kc-ts-content <?php echo $i === 0 ? 'is-active' : ''; ?>">
 						<?php foreach ($c['tracks'] as $track) : ?>
-							<div class="<?php echo $uid; ?>-row">
-								<div class="<?php echo $uid; ?>-rank-list"><?php echo $track['rank']; ?></div>
+							<div class="<?php echo $uid; ?>-row kc-ts-row">
+								<div class="<?php echo $uid; ?>-rank-list kc-ts-rank-list"><?php echo $track['rank']; ?></div>
 								
-								<div class="<?php echo $uid; ?>-img-wrap">
-									<img src="<?php echo esc_url($track['image']); ?>" class="<?php echo $uid; ?>-img" alt="">
-									<div class="<?php echo $uid; ?>-rank-badge kc-ts-rank-badge"><?php echo $track['rank']; ?></div>
-									<div class="<?php echo $uid; ?>-overlay"></div>
+								<div class="<?php echo $uid; ?>-img-wrap kc-ts-img-wrap">
+									<img src="<?php echo esc_url($track['image']); ?>" class="<?php echo $uid; ?>-img kc-ts-img" alt="">
+									<div class="<?php echo $uid; ?>-rank-badge kc-ts-rank-badge kc-ts-rank-badge"><?php echo $track['rank']; ?></div>
+									<div class="<?php echo $uid; ?>-overlay kc-ts-overlay"></div>
 								</div>
 								
-								<div class="<?php echo $uid; ?>-info">
-									<h4 class="<?php echo $uid; ?>-title kc-ts-title"><?php echo esc_html($track['title']); ?></h4>
-									<p class="<?php echo $uid; ?>-artist kc-ts-artist"><?php echo esc_html($track['artist']); ?></p>
+								<div class="<?php echo $uid; ?>-info kc-ts-info">
+									<h4 class="<?php echo $uid; ?>-title kc-ts-title kc-ts-title"><?php echo esc_html($track['title']); ?></h4>
+									<p class="<?php echo $uid; ?>-artist kc-ts-artist kc-ts-artist"><?php echo esc_html($track['artist']); ?></p>
 								</div>
 							</div>
 						<?php endforeach; ?>

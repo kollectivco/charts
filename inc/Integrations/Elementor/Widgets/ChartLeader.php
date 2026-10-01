@@ -125,35 +125,35 @@ class ChartLeader extends Widget_Base {
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-btn { align-self: center; margin: 32px auto 0 auto; }
 		</style>
 
-		<div class="<?php echo $uid; ?>-wrap kc-widget-wrap">
+		<div class="<?php echo $uid; ?>-wrap kc-cl-wrap kc-widget-wrap">
 			<?php if ($variant === 'standard') : ?>
-				<div class="<?php echo $uid; ?>-standard">
+				<div class="<?php echo $uid; ?>-standard kc-cl-standard">
 					<?php if ($settings['show_cover'] === 'yes') : ?>
-					<div class="<?php echo $uid; ?>-img-wrap">
-						<span class="<?php echo $uid; ?>-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals(1); ?></span>
-						<img src="<?php echo esc_url($img); ?>" class="<?php echo $uid; ?>-img" alt="">
+					<div class="<?php echo $uid; ?>-img-wrap kc-cl-img-wrap">
+						<span class="<?php echo $uid; ?>-rank kc-cl-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals(1); ?></span>
+						<img src="<?php echo esc_url($img); ?>" class="<?php echo $uid; ?>-img kc-cl-img" alt="">
 					</div>
 					<?php endif; ?>
-					<div class="<?php echo $uid; ?>-info">
-						<span class="<?php echo $uid; ?>-meta-tag">👑 متصدر الشارت • <?php echo esc_html($def->title); ?></span>
-						<h1 class="<?php echo $uid; ?>-title"><?php echo esc_html($res['title']); ?></h1>
+					<div class="<?php echo $uid; ?>-info kc-cl-info">
+						<span class="<?php echo $uid; ?>-meta-tag kc-cl-meta-tag">👑 متصدر الشارت • <?php echo esc_html($def->title); ?></span>
+						<h1 class="<?php echo $uid; ?>-title kc-cl-title"><?php echo esc_html($res['title']); ?></h1>
 						<?php if ($settings['show_artist'] === 'yes') : ?>
-							<p class="<?php echo $uid; ?>-artist"><?php echo esc_html($res['subtitle']); ?></p>
+							<p class="<?php echo $uid; ?>-artist kc-cl-artist"><?php echo esc_html($res['subtitle']); ?></p>
 						<?php endif; ?>
 						
 						<?php if ($settings['show_meta'] === 'yes') : ?>
-						<div class="<?php echo $uid; ?>-stats">
-							<div class="<?php echo $uid; ?>-stat">
-								<span class="<?php echo $uid; ?>-stat-lbl">أسابيع في الشارت</span>
-								<span class="<?php echo $uid; ?>-stat-val"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->weeks_on_chart ?: 1); ?></span>
+						<div class="<?php echo $uid; ?>-stats kc-cl-stats">
+							<div class="<?php echo $uid; ?>-stat kc-cl-stat">
+								<span class="<?php echo $uid; ?>-stat-lbl kc-cl-stat-lbl">أسابيع في الشارت</span>
+								<span class="<?php echo $uid; ?>-stat-val kc-cl-stat-val"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->weeks_on_chart ?: 1); ?></span>
 							</div>
-							<div class="<?php echo $uid; ?>-stat">
-								<span class="<?php echo $uid; ?>-stat-lbl">أعلى مركز</span>
-								<span class="<?php echo $uid; ?>-stat-val">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->peak_rank ?: 1); ?></span>
+							<div class="<?php echo $uid; ?>-stat kc-cl-stat">
+								<span class="<?php echo $uid; ?>-stat-lbl kc-cl-stat-lbl">أعلى مركز</span>
+								<span class="<?php echo $uid; ?>-stat-val kc-cl-stat-val">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->peak_rank ?: 1); ?></span>
 							</div>
-							<div class="<?php echo $uid; ?>-stat">
-								<span class="<?php echo $uid; ?>-stat-lbl">التريند</span>
-								<span class="<?php echo $uid; ?>-stat-val" style="color: <?php echo ($row->movement_direction === 'up' ? '#10b981' : ($row->movement_direction === 'down' ? '#f43f5e' : '#f59e0b')); ?>; font-size:18px;">
+							<div class="<?php echo $uid; ?>-stat kc-cl-stat">
+								<span class="<?php echo $uid; ?>-stat-lbl kc-cl-stat-lbl">التريند</span>
+								<span class="<?php echo $uid; ?>-stat-val kc-cl-stat-val" style="color: <?php echo ($row->movement_direction === 'up' ? '#10b981' : ($row->movement_direction === 'down' ? '#f43f5e' : '#f59e0b')); ?>; font-size:18px;">
 									<?php echo ($row->movement_direction === 'up' ? '▲' : ($row->movement_direction === 'down' ? '▼' : 'جديد')); ?>
 								</span>
 							</div>
@@ -162,11 +162,11 @@ class ChartLeader extends Widget_Base {
 					</div>
 				</div>
 			<?php else : ?>
-				<div class="<?php echo $uid; ?>-minimal">
-					<span class="<?php echo $uid; ?>-meta-tag">👑 متصدر الشارت • <?php echo esc_html($def->title); ?></span>
-					<h1 class="<?php echo $uid; ?>-title"><?php echo esc_html($res['title']); ?></h1>
+				<div class="<?php echo $uid; ?>-minimal kc-cl-minimal">
+					<span class="<?php echo $uid; ?>-meta-tag kc-cl-meta-tag">👑 متصدر الشارت • <?php echo esc_html($def->title); ?></span>
+					<h1 class="<?php echo $uid; ?>-title kc-cl-title"><?php echo esc_html($res['title']); ?></h1>
 					<?php if ($settings['show_artist'] === 'yes') : ?>
-						<p class="<?php echo $uid; ?>-artist"><?php echo esc_html($res['subtitle']); ?></p>
+						<p class="<?php echo $uid; ?>-artist kc-cl-artist"><?php echo esc_html($res['subtitle']); ?></p>
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>

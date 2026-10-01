@@ -104,23 +104,23 @@ class FeaturedChart extends Widget_Base {
 		.<?php echo $uid; ?>-move { font-size: 13px; font-weight: 800; font-family: "Inter", sans-serif; }
 		</style>
 
-		<div class="<?php echo $uid; ?>-wrap kc-widget-wrap">
-			<div class="<?php echo $uid; ?>-header">
-				<span class="<?php echo $uid; ?>-meta">القائمة المميزة • <?php echo esc_html(strtoupper($def->country_code)); ?></span>
-				<h3 class="<?php echo $uid; ?>-title"><?php echo esc_html($def->title); ?></h3>
-				<p class="<?php echo $uid; ?>-desc">تحديث أسبوعي حصري</p>
+		<div class="<?php echo $uid; ?>-wrap kc-fc-wrap kc-widget-wrap">
+			<div class="<?php echo $uid; ?>-header kc-fc-header">
+				<span class="<?php echo $uid; ?>-meta kc-fc-meta">القائمة المميزة • <?php echo esc_html(strtoupper($def->country_code)); ?></span>
+				<h3 class="<?php echo $uid; ?>-title kc-fc-title"><?php echo esc_html($def->title); ?></h3>
+				<p class="<?php echo $uid; ?>-desc kc-fc-desc">تحديث أسبوعي حصري</p>
 			</div>
-			<div class="<?php echo $uid; ?>-list">
+			<div class="<?php echo $uid; ?>-list kc-fc-list">
 				<?php foreach ($rows as $idx => $row) : 
 					$res = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 				?>
-				<div class="<?php echo $uid; ?>-row">
-					<div class="<?php echo $uid; ?>-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position); ?></div>
-					<div class="<?php echo $uid; ?>-info">
-						<h4 class="<?php echo $uid; ?>-song"><?php echo esc_html($res['title']); ?></h4>
-						<p class="<?php echo $uid; ?>-artist"><?php echo esc_html($res['subtitle']); ?></p>
+				<div class="<?php echo $uid; ?>-row kc-fc-row">
+					<div class="<?php echo $uid; ?>-rank kc-fc-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position); ?></div>
+					<div class="<?php echo $uid; ?>-info kc-fc-info">
+						<h4 class="<?php echo $uid; ?>-song kc-fc-song"><?php echo esc_html($res['title']); ?></h4>
+						<p class="<?php echo $uid; ?>-artist kc-fc-artist"><?php echo esc_html($res['subtitle']); ?></p>
 					</div>
-					<div class="<?php echo $uid; ?>-move">
+					<div class="<?php echo $uid; ?>-move kc-fc-move">
 						<?php if ($row->movement_direction === 'up'): ?>
 							<span style="color: #10b981;">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
 						<?php elseif ($row->movement_direction === 'down'): ?>

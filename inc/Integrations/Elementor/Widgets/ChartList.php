@@ -254,12 +254,17 @@ class ChartList extends Widget_Base {
 			$definitions = \Charts\Core\PublicIntegration::get_eligible_definitions($limit);
 		}
 
-		if ( empty($definitions) ) return;
+		if ( empty($definitions) ) {
+			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				echo '<div style="padding:40px;text-align:center;background:#0f172a;color:#fff;border-radius:20px;border:2px dashed #eab308;direction:ltr;"><h3>Charts: Featured Chart List</h3><p>No chart data found. Check settings.</p></div>';
+			}
+			return;
+		}
 
 		$start_index = intval($settings['start_index'] ?: 1);
 ?>
-		<div class="kc-root">
-			<div class="kc-chart-list-widget" style="display: flex; flex-direction: column;">
+		<div class="kc-cl2-root kc-widget-wrap" id="<?php echo $uid; ?>">
+			<div class="kc-cl2-widget" style="display: flex; flex-direction: column;">
 				<?php foreach ( $definitions as $i => $def ) : 
 					$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 1);
 					$top = !empty($entries) ? $entries[0] : null;

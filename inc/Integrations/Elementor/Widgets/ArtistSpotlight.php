@@ -41,7 +41,11 @@ class ArtistSpotlight extends Widget_Base {
 
 		echo '<div class="kc-widget-wrap">';
 		if (!$artist) {
-			echo '<div style="padding:20px; text-align:center; background:#f8fafc; border-radius:12px; border:1px dashed #cbd5e1; color:#64748b; font-size:13px;">No artist intelligence data available.</div>';
+			echo '<div style="padding:32px 20px; text-align:center; background:#f8fafc; border-radius:12px; border:2px dashed #cbd5e1; color:#64748b; font-size:14px; line-height:1.6;">'
+				. '<div style="font-size:36px; margin-bottom:12px;">🎤</div>'
+				. '<strong style="display:block; color:#334155; font-size:15px; margin-bottom:6px;">Artist Power Spotlight</strong>'
+				. 'No artist intelligence data found. Run the chart intelligence processor to populate data.'
+				. '</div>';
 			echo '</div>';
 			return;
 		}
@@ -99,7 +103,7 @@ class ArtistSpotlight extends Widget_Base {
 		echo '</svg></div>';
 		
 		echo '<h2 class="' . $uid . '-name kc-elm-title">' . esc_html($artist->display_name) . '</h2>';
-		echo '<p class="' . $uid . '-sub">مؤشر القوة المجمع: <strong style="color:#6366f1;">' . number_format($score) . '</strong></p>';
+		echo '<p class="' . $uid . '-sub kc-elm-artist">مؤشر القوة المجمع: <strong style="color:#6366f1;">' . number_format($score) . '</strong></p>';
 		
 		echo '<div class="' . $uid . '-stats kc-grid-root kc-elm-meta">';
 		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . intval($artist->weeks_on_chart) . '</div><div class="' . $uid . '-stat-lbl">أسابيع بالشارت</div></div>';
