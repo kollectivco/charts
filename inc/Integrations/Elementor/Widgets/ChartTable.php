@@ -106,16 +106,53 @@ class ChartTable extends Widget_Base {
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'meta_typo', 'label' => 'Artist Typography', 'selector' => '{{WRAPPER}} .kc-row-subtitle' ] );
 		$this->end_controls_section();
 
-		// Image
-		$this->start_controls_section( 'style_image', [ 'label' => __( 'Image', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE, 'condition' => [ 'show_cover' => 'yes' ] ] );
-		$this->add_responsive_control( 'img_size', [
-			'label' => __( 'Image Size', 'charts' ), 'type' => Controls_Manager::SLIDER,
-			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};' ],
+		// Featured Image
+		$this->start_controls_section( 'style_image', [ 'label' => __( 'Featured Image', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE, 'condition' => [ 'show_cover' => 'yes' ] ] );
+		
+		$this->add_responsive_control( 'img_width', [
+			'label' => __( 'Image Width', 'charts' ), 'type' => Controls_Manager::SLIDER,
+			'size_units' => [ 'px', '%', 'vw' ],
+			'range' => [ 'px' => [ 'min' => 20, 'max' => 300, 'step' => 1 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'width: {{SIZE}}{{UNIT}};', '{{WRAPPER}} .kc-row-img-wrap' => 'width: {{SIZE}}{{UNIT}};' ],
 		]);
+		
+		$this->add_responsive_control( 'img_height', [
+			'label' => __( 'Image Height', 'charts' ), 'type' => Controls_Manager::SLIDER,
+			'size_units' => [ 'px', 'vh' ],
+			'range' => [ 'px' => [ 'min' => 20, 'max' => 300, 'step' => 1 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'height: {{SIZE}}{{UNIT}};' ],
+		]);
+
+		$this->add_control( 'img_position', [
+			'label' => __( 'Image Position', 'charts' ), 'type' => Controls_Manager::SELECT,
+			'options' => [ '2' => 'Left / Default', '4' => 'Right / After Text' ],
+			'default' => '2',
+			'selectors' => [ '{{WRAPPER}} .kc-row-img-wrap' => 'order: {{VALUE}};' ],
+		]);
+		
+		$this->add_responsive_control( 'img_margin', [
+			'label' => __( 'Custom Featured Margin', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-row-img-wrap' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+
 		$this->add_responsive_control( 'img_radius', [
 			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
 			'selectors' => [ '{{WRAPPER}} .kc-row-art' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
 		]);
+		
+		$this->add_control( 'img_hover_effect', [
+			'label' => __( 'Hover Effect', 'charts' ), 'type' => Controls_Manager::SELECT,
+			'options' => [ '' => '- Disable -', 'zoom' => 'Zoom In', 'lift' => 'Lift Up', 'grayscale' => 'Grayscale to Color' ],
+			'default' => '',
+		]);
+
+		$this->add_control( 'img_align', [
+			'label' => __( 'Align', 'charts' ), 'type' => Controls_Manager::SELECT,
+			'options' => [ '' => '- Default -', 'flex-start' => 'Top', 'center' => 'Middle', 'flex-end' => 'Bottom' ],
+			'default' => '',
+			'selectors' => [ '{{WRAPPER}} .kc-row-img-wrap' => 'align-self: {{VALUE}};' ],
+		]);
+
 		$this->end_controls_section();
 
 		// Movement Badges
@@ -246,6 +283,17 @@ class ChartTable extends Widget_Base {
 			:where(.<?php echo $uid; ?>) .kc-move-up { color: var(--k-success, #10b981); font-weight: 850; letter-spacing: 0.05em; }
 			:where(.<?php echo $uid; ?>) .kc-move-down { color: var(--k-error, #ef4444); font-weight: 850; letter-spacing: 0.05em; }
 			:where(.<?php echo $uid; ?>) .kc-move-new { background-color: #f59e0b; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 900; font-size: 10px; letter-spacing: 0.1em; }
+			:where(.<?php echo $uid; ?>) .kc-row-art {
+				transition: all 0.3s ease;
+			}
+			<?php if ($settings['img_hover_effect'] === 'zoom'): ?>
+			:where(.<?php echo $uid; ?>) .kc-row-item:hover .kc-row-art { transform: scale(1.1); }
+			<?php elseif ($settings['img_hover_effect'] === 'lift'): ?>
+			:where(.<?php echo $uid; ?>) .kc-row-item:hover .kc-row-img-wrap { transform: translateY(-5px); }
+			<?php elseif ($settings['img_hover_effect'] === 'grayscale'): ?>
+			:where(.<?php echo $uid; ?>) .kc-row-art { filter: grayscale(100%); }
+			:where(.<?php echo $uid; ?>) .kc-row-item:hover .kc-row-art { filter: grayscale(0%); }
+			<?php endif; ?>
 			</style>
 
 			<div class="kc-chart-table kc-variant-<?php echo esc_attr($style_variant); ?> kc-widget-card">
@@ -255,17 +303,17 @@ class ChartTable extends Widget_Base {
 				?>
 					<div class="kc-row-item kc-rank-row <?php echo $is_featured ? 'kc-row-featured' : ''; ?>">
 						
-						<div class="kc-row-rank">
+						<div class="kc-row-rank" style="order:1;">
 							<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->rank_position); ?>
 						</div>
 						
 						<?php if ( $show_cover ) : ?>
-						<div class="kc-row-img-wrap">
+						<div class="kc-row-img-wrap" style="order:2;">
 							<img src="<?php echo esc_url($row->cover_image); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>">
 						</div>
 						<?php endif; ?>
 
-						<div class="kc-row-info">
+						<div class="kc-row-info" style="order:3;">
 							<h4 class="kc-row-title kc-title"><?php echo esc_html($resolved['title']); ?></h4>
 							<?php if ( $show_artist && !empty($resolved['subtitle']) ) : ?>
 								<p class="kc-row-subtitle kc-meta"><?php echo esc_html($resolved['subtitle']); ?></p>
@@ -273,7 +321,7 @@ class ChartTable extends Widget_Base {
 						</div>
 
 						<?php if ( $show_movement ) : ?>
-						<div class="kc-row-movement stat-opt">
+						<div class="kc-row-movement stat-opt" style="order:5;">
 							<?php if ($row->movement_direction === 'up'): ?>
 								<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->movement_value); ?></span>
 							<?php elseif ($row->movement_direction === 'down'): ?>
