@@ -14,6 +14,7 @@ class ChartShowcaseSlider extends Widget_Base {
 	public function get_title() { return __( 'Charts: Premium Showcase Slider', 'charts' ); }
 	public function get_icon() { return 'eicon-slider-push'; }
 	public function get_categories() { return [ 'charts' ]; }
+	public function get_script_depends() { return [ 'swiper' ]; }
 
 	protected function register_controls() {
 		$this->start_controls_section( 'content_section', [ 'label' => __( 'Chart Settings', 'charts' ), 'tab' => Controls_Manager::TAB_CONTENT ] );
@@ -54,6 +55,49 @@ class ChartShowcaseSlider extends Widget_Base {
 			'default' => 'المزيد',
 		] );
 
+		$this->end_controls_section();
+
+		
+		$this->start_controls_section( 'carousel_settings', [ 'label' => __( 'Carousel Settings', 'charts' ), 'tab' => Controls_Manager::TAB_CONTENT ] );
+		$this->add_responsive_control( 'slides_per_view', [
+			'label' => __( 'Cards to Show', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 4,
+			'tablet_default' => 2,
+			'mobile_default' => 1,
+		] );
+		$this->add_responsive_control( 'space_between', [
+			'label' => __( 'Space Between (px)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 16,
+		] );
+		$this->add_control( 'autoplay', [
+			'label' => __( 'Autoplay', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
+		$this->add_control( 'autoplay_speed', [
+			'label' => __( 'Autoplay Speed (ms)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'default' => 3000,
+			'condition' => [ 'autoplay' => 'yes' ],
+		] );
+		$this->add_control( 'pause_on_hover', [
+			'label' => __( 'Pause on Hover', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+			'condition' => [ 'autoplay' => 'yes' ],
+		] );
+		$this->add_control( 'loop', [
+			'label' => __( 'Infinite Loop', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
+		$this->add_control( 'show_arrows', [
+			'label' => __( 'Show Navigation Arrows', 'charts' ),
+			'type' => Controls_Manager::SWITCHER,
+			'default' => 'yes',
+		] );
 		$this->end_controls_section();
 
 		$this->start_controls_section( 'style_cards', [ 'label' => __( 'Cards Layout', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
@@ -107,16 +151,16 @@ class ChartShowcaseSlider extends Widget_Base {
 		.' . $uid . ' .kc-sc-more:hover { color: #fff; }
 		
 		/* Slider Track */
-		.' . $uid . ' .kc-sc-track-wrap { position: relative; width: 100%; }
-		.' . $uid . ' .kc-sc-track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 16px; }
-		.' . $uid . ' .kc-sc-track::-webkit-scrollbar { display: none; }
+		.' . $uid . ' .kc-sc-track-wrap { position: relative; width: 100%; overflow: hidden; }
+		.' . $uid . ' .swiper { width: 100%; padding-bottom: 16px; overflow: visible; }
+		.' . $uid . ' .swiper-slide { height: auto; }
 		
 		/* Card Base */
 		.' . $uid . ' .kc-sc-card { 
 			position: relative; 
 			border-radius: 16px; 
 			overflow: hidden; 
-			scroll-snap-align: start; 
+			 
 			cursor: pointer;
 			background-color: #0f0f0f;
 			border: 1px solid rgba(255,255,255,0.05);
@@ -181,7 +225,8 @@ class ChartShowcaseSlider extends Widget_Base {
 		echo '</div>';
 		
 		echo '<div class="kc-sc-track-wrap">';
-		echo '<div class="kc-sc-track" id="' . $uid . '-track">';
+		echo '<div class="swiper kc-sc-track" id="' . $uid . '-swiper">';
+		echo '<div class="swiper-wrapper">';
 		
 		foreach ($entries as $index => $e) {
 			$bg_idx = $index % 4;
@@ -202,7 +247,7 @@ class ChartShowcaseSlider extends Widget_Base {
 			$crown_color = ($bg_idx == 0 || $bg_idx == 3) ? '#ffffff' : '#000000';
 			if ($bg_idx == 2) $crown_color = '#ffffff'; // Purple looks better with white crown
 			
-			echo '<div class="kc-sc-card kc-sc-card-' . $bg_idx . '">';
+			echo '<div class="swiper-slide"><div class="kc-sc-card kc-sc-card-' . $bg_idx . '">';
 			echo '<div class="kc-sc-shape"></div>';
 			echo '<div class="kc-sc-scribble" style="position:absolute; inset:0; z-index:1;"></div>';
 			
@@ -219,16 +264,48 @@ class ChartShowcaseSlider extends Widget_Base {
 			echo '<h3 class="kc-sc-artist">' . wp_kses_post($display_text) . '</h3>';
 			echo '</div>';
 			echo '</div>';
+			echo '</div>';
 		}
 		
 		echo '</div>';
 		echo '</div>';
-		
-		echo '<div class="kc-sc-nav">';
-		echo '<button class="kc-sc-nav-btn kc-prev" onclick="document.getElementById(\'' . $uid . '-track\').scrollBy({left: 320, behavior: \'smooth\'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>';
-		echo '<button class="kc-sc-nav-btn kc-next" onclick="document.getElementById(\'' . $uid . '-track\').scrollBy({left: -320, behavior: \'smooth\'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>';
 		echo '</div>';
 		
+		if ($settings['show_arrows'] === 'yes') {
+			echo '<div class="kc-sc-nav">';
+			echo '<button class="kc-sc-nav-btn kc-next ' . $uid . '-next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>';
+			echo '<button class="kc-sc-nav-btn kc-prev ' . $uid . '-prev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>';
+			echo '</div>';
+		}
+		
 		echo '</div>';
-	}
+		
+		$uid_safe = str_replace('-', '_', $uid);
+		$autoplay = $settings['autoplay'] === 'yes' ? 'autoplay: { delay: ' . intval($settings['autoplay_speed']) . ', disableOnInteraction: false, pauseOnMouseEnter: ' . ($settings['pause_on_hover'] === 'yes' ? 'true' : 'false') . ' },' : '';
+		$loop = $settings['loop'] === 'yes' ? 'loop: true,' : 'loop: false,';
+		
+		echo '<script>
+		function initCarousel_' . $uid_safe . '() {
+			if(typeof Swiper !== "undefined") {
+				new Swiper("#' . $uid . '-swiper", {
+					slidesPerView: ' . floatval($settings['slides_per_view'] ?: 4) . ',
+					spaceBetween: ' . floatval($settings['space_between'] ?: 16) . ',
+					' . $loop . '
+					' . $autoplay . '
+					breakpoints: {
+						320: { slidesPerView: ' . floatval($settings['slides_per_view_mobile'] ?: 1) . ' },
+						768: { slidesPerView: ' . floatval($settings['slides_per_view_tablet'] ?: 2) . ' },
+						1024: { slidesPerView: ' . floatval($settings['slides_per_view'] ?: 4) . ' }
+					},
+					navigation: {
+						nextEl: ".' . $uid . '-next",
+						prevEl: ".' . $uid . '-prev",
+					}
+				});
+			}
+		}
+		setTimeout(initCarousel_' . $uid_safe . ', 100);
+		</script>';
+		
+			}
 }
