@@ -106,9 +106,9 @@ class SparklinesTable extends Widget_Base {
 		echo '<table class="' . $uid . '-table">';
 		echo '<thead><tr>';
 		echo '<th class="kc-elm-counter">#</th>';
-		echo '<th>Track Details</th>';
-		echo '<th class="' . $uid . '-spark-col">4-Week Trend</th>';
-		echo '<th class="' . $uid . '-move-col">Move</th>';
+		echo '<th>تفاصيل الأغنية</th>';
+		echo '<th class="' . $uid . '-spark-col">مسار 4 أسابيع</th>';
+		echo '<th class="' . $uid . '-move-col">الحركة</th>';
 		echo '</tr></thead><tbody>';
 
 		foreach ($entries as $e) {
@@ -168,7 +168,7 @@ class SparklinesTable extends Widget_Base {
 				$move = $e->movement_value;
 				if ($e->movement_direction === 'up') echo '<span class="' . $uid . '-badge-up">▲ ' . intval($move) . '</span>';
 				elseif ($e->movement_direction === 'down') echo '<span class="' . $uid . '-badge-down">▼ ' . intval($move) . '</span>';
-				else echo '<span class="' . $uid . '-badge-new">NEW</span>';
+				else echo '<span class="' . $uid . '-badge-new">جديد</span>';
 			}
 			echo '</td>';
 			

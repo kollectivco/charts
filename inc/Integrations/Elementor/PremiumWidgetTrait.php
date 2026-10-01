@@ -63,14 +63,14 @@ trait PremiumWidgetTrait {
 		$this->add_control( 'badge_new_text', [
 			'label' => __( 'New Entry Text', 'charts' ),
 			'type' => Controls_Manager::TEXT,
-			'default' => '🌟 NEW',
+			'default' => '🌟 جديد',
 			'condition' => [ 'show_badges' => 'yes' ],
 		] );
 
 		$this->add_control( 'badge_hot_text', [
 			'label' => __( 'Hot Trend Text', 'charts' ),
 			'type' => Controls_Manager::TEXT,
-			'default' => '🔥 HOT',
+			'default' => '🔥 تريند',
 			'condition' => [ 'show_badges' => 'yes' ],
 		] );
 

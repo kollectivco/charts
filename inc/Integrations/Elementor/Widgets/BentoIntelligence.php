@@ -92,15 +92,15 @@ class BentoIntelligence extends Widget_Base {
 		echo '<div class="' . $uid . '-grid kc-grid-root">';
 		if ($top_song) {
 			$img = $top_song->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
-			echo '<div class="' . $uid . '-card kc-elm-card ' . $uid . '-main kc-bh-main"><div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($img) . '\');"></div><div class="' . $uid . '-overlay kc-elm-overlay"></div><div class="' . $uid . '-content"><div class="' . $uid . '-badge">👑 Track of the Week</div><h3 class="' . $uid . '-title kc-elm-title">' . esc_html($top_song->title) . '</h3><p class="' . $uid . '-artist kc-elm-artist">' . esc_html($top_song->artist) . '</p></div></div>';
+			echo '<div class="' . $uid . '-card kc-elm-card ' . $uid . '-main kc-bh-main"><div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($img) . '\');"></div><div class="' . $uid . '-overlay kc-elm-overlay"></div><div class="' . $uid . '-content"><div class="' . $uid . '-badge">👑 أغنية الأسبوع</div><h3 class="' . $uid . '-title kc-elm-title">' . esc_html($top_song->title) . '</h3><p class="' . $uid . '-artist kc-elm-artist">' . esc_html($top_song->artist) . '</p></div></div>';
 		}
 		if ($top_artist) {
 			$img = $top_artist->image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
-			echo '<div class="' . $uid . '-card kc-elm-card ' . $uid . '-side"><div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($img) . '\');"></div><div class="' . $uid . '-overlay kc-elm-overlay"></div><div class="' . $uid . '-content"><div class="' . $uid . '-badge" style="background:rgba(236, 72, 153, 0.3);color:#f472b6;">⭐ Top Authority</div><h3 class="' . $uid . '-title kc-elm-title">' . esc_html($top_artist->artist) . '</h3><p class="' . $uid . '-artist kc-elm-artist">Score: ' . intval($top_artist->artist_power_score) . '</p></div></div>';
+			echo '<div class="' . $uid . '-card kc-elm-card ' . $uid . '-side"><div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($img) . '\');"></div><div class="' . $uid . '-overlay kc-elm-overlay"></div><div class="' . $uid . '-content"><div class="' . $uid . '-badge" style="background:rgba(236, 72, 153, 0.3);color:#f472b6;">⭐ صدارة الفنانين</div><h3 class="' . $uid . '-title kc-elm-title">' . esc_html($top_artist->artist) . '</h3><p class="' . $uid . '-artist kc-elm-artist">النقاط: ' . intval($top_artist->artist_power_score) . '</p></div></div>';
 		}
 		if ($breakout) {
 			$img = $breakout->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png';
-			echo '<div class="' . $uid . '-card kc-elm-card ' . $uid . '-side"><div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($img) . '\');"></div><div class="' . $uid . '-overlay kc-elm-overlay"></div><div class="' . $uid . '-content"><div class="' . $uid . '-badge" style="background:rgba(16, 185, 129, 0.3);color:#34d399;">🚀 Fastest Riser</div><h3 class="' . $uid . '-title kc-elm-title">' . esc_html($breakout->title) . '</h3><p class="' . $uid . '-artist kc-elm-artist">+' . intval($breakout->growth_rate) . '% Growth</p></div></div>';
+			echo '<div class="' . $uid . '-card kc-elm-card ' . $uid . '-side"><div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($img) . '\');"></div><div class="' . $uid . '-overlay kc-elm-overlay"></div><div class="' . $uid . '-content"><div class="' . $uid . '-badge" style="background:rgba(16, 185, 129, 0.3);color:#34d399;">🚀 الأسرع صعوداً</div><h3 class="' . $uid . '-title kc-elm-title">' . esc_html($breakout->title) . '</h3><p class="' . $uid . '-artist kc-elm-artist">+' . intval($breakout->growth_rate) . '% نمو</p></div></div>';
 		}
 		echo '</div></div>';
 	}

@@ -62,7 +62,7 @@ class ForecastTicker extends Widget_Base {
 		$items_html = '';
 		foreach ($results as $r) {
 			$hot_badge = ($settings['show_badges'] === 'yes' && $r->momentum_score >= 80) ? '<span style="color:#ef4444;margin-right:4px;">' . esc_html($settings['badge_hot_text']) . '</span>' : '';
-			$items_html .= '<div class="' . $uid . '-item"><span class="' . $uid . '-title kc-elm-title">' . $hot_badge . esc_html($r->title) . '</span><span class="' . $uid . '-artist kc-elm-artist">by ' . esc_html($r->artist) . '</span><span class="' . $uid . '-score kc-elm-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' . intval($r->momentum_score) . '</span></div>';
+			$items_html .= '<div class="' . $uid . '-item"><span class="' . $uid . '-title kc-elm-title">' . $hot_badge . esc_html($r->title) . '</span><span class="' . $uid . '-artist kc-elm-artist">بواسطة ' . esc_html($r->artist) . '</span><span class="' . $uid . '-score kc-elm-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' . intval($r->momentum_score) . '</span></div>';
 		}
 
 		echo '<div class="' . $uid . '-ticker-wrap kc-elm-card">';

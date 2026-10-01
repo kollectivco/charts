@@ -185,7 +185,7 @@ class ChartTable extends Widget_Base {
 							<?php elseif ($row->movement_direction === 'down'): ?>
 								<span class="kc-move-down" style="color:var(--k-error, #ef4444); font-weight:850; letter-spacing:0.05em;">▼ <?php echo $row->movement_value; ?></span>
 							<?php elseif ($row->movement_direction === 'new'): ?>
-								<span class="kc-move-new" style="background:#f59e0b; color:#fff; padding:4px 8px; border-radius:4px; font-weight:900; font-size:10px; letter-spacing:0.1em;">NEW</span>
+								<span class="kc-move-new" style="background:#f59e0b; color:#fff; padding:4px 8px; border-radius:4px; font-weight:900; font-size:10px; letter-spacing:0.1em;">جديد</span>
 							<?php endif; ?>
 						</div>
 						<?php endif; ?>

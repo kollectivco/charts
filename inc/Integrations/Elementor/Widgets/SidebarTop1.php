@@ -126,7 +126,7 @@ class SidebarTop1 extends Widget_Base {
 				echo '<div class="' . $uid . '-card kc-elm-card">';
 				echo '<div class="' . $uid . '-bg kc-elm-img" style="background-image:url(\'' . esc_url($c['image']) . '\');"></div>';
 				echo '<div class="' . $uid . '-num kc-elm-counter">1</div>';
-				echo '<div class="' . $uid . '-stats kc-elm-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 6 12 12 16 14"/><circle cx="12" cy="12" r="10"/></svg> ' . $c['weeks'] . ' Wks</div>';
+				echo '<div class="' . $uid . '-stats kc-elm-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 6 12 12 16 14"/><circle cx="12" cy="12" r="10"/></svg> ' . $c['weeks'] . ' أسابيع</div>';
 				echo '<div class="' . $uid . '-overlay kc-elm-overlay">';
 				echo '<div class="' . $uid . '-ch-name"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ' . esc_html($c['chart_name']) . '</div>';
 				echo '<div class="' . $uid . '-title kc-elm-title">' . esc_html($c['track']) . '</div>';

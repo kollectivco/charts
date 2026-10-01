@@ -87,7 +87,7 @@ class ArtistSpotlight extends Widget_Base {
 		echo '<div class="' . $uid . '-wrap kc-elm-card">';
 		
 		if ($settings['show_badges'] === 'yes') {
-			echo '<div><div class="' . $uid . '-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Top Artist Authority</div></div>';
+			echo '<div><div class="' . $uid . '-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> أقوى فنان</div></div>';
 		}
 		
 		echo '<div class="' . $uid . '-gauge-box">';
@@ -99,14 +99,14 @@ class ArtistSpotlight extends Widget_Base {
 		echo '</svg></div>';
 		
 		echo '<h2 class="' . $uid . '-name kc-elm-title">' . esc_html($artist->display_name) . '</h2>';
-		echo '<p class="' . $uid . '-sub">Composite Power Score: <strong style="color:#6366f1;">' . number_format($score) . '</strong></p>';
+		echo '<p class="' . $uid . '-sub">مؤشر القوة المجمع: <strong style="color:#6366f1;">' . number_format($score) . '</strong></p>';
 		
 		echo '<div class="' . $uid . '-stats kc-grid-root kc-elm-meta">';
-		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . intval($artist->weeks_on_chart) . '</div><div class="' . $uid . '-stat-lbl">Chart Wks</div></div>';
-		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">#' . intval($artist->peaks_count) . '</div><div class="' . $uid . '-stat-lbl">Peak Rank</div></div>';
+		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . intval($artist->weeks_on_chart) . '</div><div class="' . $uid . '-stat-lbl">أسابيع بالشارت</div></div>';
+		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">#' . intval($artist->peaks_count) . '</div><div class="' . $uid . '-stat-lbl">أعلى مركز</div></div>';
 		$streams = intval($artist->total_streams);
 		$streams_fmt = $streams > 1000000 ? round($streams/1000000, 1) . 'M' : ($streams > 1000 ? round($streams/1000, 1) . 'K' : $streams);
-		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . $streams_fmt . '</div><div class="' . $uid . '-stat-lbl">Index Vol</div></div>';
+		echo '<div class="' . $uid . '-stat-card"><div class="' . $uid . '-stat-val">' . $streams_fmt . '</div><div class="' . $uid . '-stat-lbl">حجم المؤشر</div></div>';
 		echo '</div></div></div>';
 	}
 }

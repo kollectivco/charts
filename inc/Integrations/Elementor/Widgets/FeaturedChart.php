@@ -144,7 +144,7 @@ class FeaturedChart extends Widget_Base {
 								<?php elseif ($row->movement_direction === 'down'): ?>
 									<span style="color: var(--k-error, #e74c3c); font-weight: 800; font-size: 12px;">▼ <?php echo $row->movement_value; ?></span>
 								<?php elseif ($row->movement_direction === 'new'): ?>
-									<span class="kc-badge kc-badge-accent" style="font-size: 9px; padding: 3px 8px; background: #f1c40f; color: #000; border-radius: 4px; font-weight: 800;">NEW</span>
+									<span class="kc-badge kc-badge-accent" style="font-size: 9px; padding: 3px 8px; background: #f1c40f; color: #000; border-radius: 4px; font-weight: 800;">جديد</span>
 								<?php endif; ?>
 							</div>
 							<?php endif; ?>

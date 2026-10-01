@@ -103,7 +103,7 @@ class ViralRadar extends Widget_Base {
 					echo '</div>';
 					echo '<div class="' . $uid . '-score kc-elm-meta">';
 					echo '<span class="' . $uid . '-val">' . intval($d->momentum_score) . '</span>';
-					echo '<span class="' . $uid . '-lbl">MOMENTUM</span>';
+					echo '<span class="' . $uid . '-lbl">الزخم</span>';
 					echo '</div>';
 					echo '</div>';
 				}
@@ -112,9 +112,9 @@ class ViralRadar extends Widget_Base {
 		};
 
 		echo '<div class="' . $uid . '-wrap kc-grid-root">';
-		$render_col('Exploding', '🔥', 'col-exp', $exploding);
-		$render_col('Rising', '📈', 'col-ris', $rising);
-		$render_col('Emerging', '🌱', 'col-emg', $emerging);
+		$render_col('متفجر', '🔥', 'col-exp', $exploding);
+		$render_col('صاعد', '📈', 'col-ris', $rising);
+		$render_col('مكتشف جديد', '🌱', 'col-emg', $emerging);
 		echo '</div></div>';
 	}
 }
