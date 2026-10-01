@@ -123,10 +123,21 @@ class DynamicChartGrid extends Widget_Base {
 
 		if ($layout === 'bento') {
 			echo '
-			.' . $uid . '-grid { display: grid; grid-auto-rows: 200px; }
-			.' . $uid . '-card:nth-child(1) { grid-column: span 2; grid-row: span 2; }
-			.' . $uid . '-card:nth-child(2), .' . $uid . '-card:nth-child(3) { grid-column: span 2; grid-row: span 1; }
-			@media (max-width: 768px) { .' . $uid . '-card:nth-child(1), .' . $uid . '-card:nth-child(2), .' . $uid . '-card:nth-child(3) { grid-column: span 1; } }
+			.' . $uid . '-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; grid-auto-rows: 200px; }
+			.' . $uid . '-card { height: 100%; width: 100%; }
+			.' . $uid . '-card:nth-child(1) { grid-column: 1 / span 2; grid-row: 1 / span 2; }
+			.' . $uid . '-card:nth-child(2) { grid-column: 3 / span 2; grid-row: 1 / span 1; }
+			.' . $uid . '-card:nth-child(3) { grid-column: 3 / span 2; grid-row: 2 / span 1; }
+			@media (max-width: 1024px) {
+				.' . $uid . '-grid { grid-template-columns: repeat(2, 1fr); }
+				.' . $uid . '-card:nth-child(1) { grid-column: 1 / span 2; grid-row: 1 / span 2; }
+				.' . $uid . '-card:nth-child(2) { grid-column: 1 / span 2; grid-row: 3 / span 1; }
+				.' . $uid . '-card:nth-child(3) { grid-column: 1 / span 2; grid-row: 4 / span 1; }
+			}
+			@media (max-width: 768px) { 
+				.' . $uid . '-grid { grid-template-columns: 1fr; grid-auto-rows: 250px; }
+				.' . $uid . '-card:nth-child(1), .' . $uid . '-card:nth-child(2), .' . $uid . '-card:nth-child(3) { grid-column: 1 / span 1; grid-row: auto; } 
+			}
 			';
 		} elseif ($layout === 'accordion') {
 			echo '.' . $uid . '-grid { display: flex; height: 500px; } .' . $uid . '-card { flex: 1; } .' . $uid . '-card:hover { flex: 4; } @media (max-width:768px) { .' . $uid . '-grid { flex-direction: column; height: 800px; } }';
@@ -140,7 +151,7 @@ class DynamicChartGrid extends Widget_Base {
 		$render_item = function($entry, $def) use ($uid, $layout, $settings) {
 			$img = (!empty($entry->resolved_image) ? $entry->resolved_image : $entry->cover_image) ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 			$resolved = \Charts\Core\PublicIntegration::resolve_display_name($entry, $def);
-			$rank = $entry->rank_position;
+			$rank = \Charts\Core\Transliteration::to_arabic_numerals($entry->rank_position);
 			$is_new = ($entry->movement_direction === 'new');
 			
 			$slide_class = ($layout === 'carousel') ? 'swiper-slide' : '';
