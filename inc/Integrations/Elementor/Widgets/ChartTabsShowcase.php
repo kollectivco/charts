@@ -77,7 +77,12 @@ class ChartTabsShowcase extends Widget_Base {
 			'default' => [ 'size' => 160, 'unit' => 'px' ],
 			'selectors' => [ '{{WRAPPER}} .kc-item-img-wrap' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};' ],
 		] );
-		$this->end_controls_section();
+		
+		$this->add_responsive_control( 'image_radius', [
+			'label' => __( 'Image Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-item-img-wrap' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};', '{{WRAPPER}} .kc-item-img' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+$this->end_controls_section();
 
 		// --- RANK BADGE ---
 		$this->start_controls_section( 'badge_style_section', [ 'label' => __( 'Rank Badge', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
@@ -89,7 +94,17 @@ class ChartTabsShowcase extends Widget_Base {
 			'label' => __( 'Badge Text Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-rank-badge' => 'color: {{VALUE}};' ], 'default' => '#ffffff',
 		] );
-		$this->end_controls_section();
+				$this->add_responsive_control( 'badge_pos_top', [
+			'label' => __( 'Badge Offset Top/Bottom', 'charts' ), 'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'min' => -50, 'max' => 100, 'step' => 1 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-rank-badge' => 'top: {{SIZE}}{{UNIT}};' ],
+		] );
+		$this->add_responsive_control( 'badge_pos_right', [
+			'label' => __( 'Badge Offset Left/Right', 'charts' ), 'type' => Controls_Manager::SLIDER,
+			'range' => [ 'px' => [ 'min' => -50, 'max' => 100, 'step' => 1 ] ],
+			'selectors' => [ '{{WRAPPER}} .kc-rank-badge' => 'right: {{SIZE}}{{UNIT}};' ],
+		] );
+$this->end_controls_section();
 
 		$this->add_premium_badge_controls();
 
@@ -206,8 +221,8 @@ class ChartTabsShowcase extends Widget_Base {
 		.' . $uid . '-item-img-wrap { 
 			position: relative; 
 			width: 160px; 
-			aspect-ratio: 1/1; 
-			border-radius: 50%; 
+			aspect-ratio: 1/1; box-sizing: border-box; 
+			border-radius: 50% !important; 
 			padding: 5px; 
 			background: linear-gradient(135deg, var(--kc-ring-1) 0%, var(--kc-ring-2) 100%);
 			margin-bottom: 24px;
@@ -217,7 +232,7 @@ class ChartTabsShowcase extends Widget_Base {
 		.' . $uid . '-item-img { 
 			width: 100%; 
 			height: 100%; 
-			border-radius: 50%; 
+			border-radius: 50% !important; 
 			border: 4px solid #fff; 
 			object-fit: cover; 
 			transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
@@ -244,7 +259,7 @@ class ChartTabsShowcase extends Widget_Base {
 			display: flex; 
 			align-items: center; 
 			justify-content: center; 
-			border-radius: 50%; 
+			border-radius: 50% !important; 
 			border: 3px solid #fff; 
 			box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
 			z-index: 2;
@@ -329,7 +344,7 @@ class ChartTabsShowcase extends Widget_Base {
 				echo '</div>';
 				
 				echo '<h4 class="' . $uid . '-title kc-elm-title">' . esc_html($trk['title']) . '</h4>';
-				echo '<p class="' . $uid . '-artist kc-elm-artist">' . esc_html($trk['artist']) . '</p>';
+				echo '<p class="' . $uid . '-artist kc-elm-meta">' . esc_html($trk['artist']) . '</p>';
 				echo '</div>';
 			}
 			
