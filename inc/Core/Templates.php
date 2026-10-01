@@ -5,6 +5,19 @@ class Templates {
     public static function init() {
         add_action( 'init', [ self::class, 'register_cpt' ] );
         add_action( 'elementor/init', [ self::class, 'enable_elementor' ] );
+        add_filter( 'template_include', [ self::class, 'force_elementor_template' ], 99 );
+    }
+
+    
+    public static function force_elementor_template( $template ) {
+        if ( is_singular( 'charts_template' ) ) {
+            // Provide a guaranteed safe fallback template that outputs the_content() so Elementor can hook into it
+            $fallback = CHARTS_PATH . 'public/templates/single-charts_template.php';
+            if ( file_exists( $fallback ) ) {
+                return $fallback;
+            }
+        }
+        return $template;
     }
 
     public static function register_cpt() {
@@ -33,7 +46,7 @@ class Templates {
             'has_archive'        => false,
             'hierarchical'       => false,
             'menu_position'      => null,
-            'supports'           => [ 'title', 'elementor' ],
+            'supports'           => [ 'title', 'editor', 'elementor' ],
         ];
 
         register_post_type( 'charts_template', $args );
