@@ -26,7 +26,7 @@ class Templates {
             'public'             => true,
             'publicly_queryable' => true,
             'show_ui'            => true,
-            'show_in_menu'       => 'charts-menu',
+            'show_in_menu'       => 'charts-dashboard',
             'query_var'          => true,
             'rewrite'            => [ 'slug' => 'chart-template' ],
             'capability_type'    => 'post',
