@@ -80,6 +80,7 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/SparklinesTable.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/BentoIntelligence.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartTabsShowcase.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartShowcaseSlider.php';
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
@@ -97,5 +98,6 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\SparklinesTable() );
 		$widgets_manager->register( new Widgets\BentoIntelligence() );
 		$widgets_manager->register( new Widgets\ChartTabsShowcase() );
+		$widgets_manager->register( new Widgets\ChartShowcaseSlider() );
 	}
 }
