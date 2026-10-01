@@ -151,7 +151,7 @@ $this->end_controls_section();
 				$img = (!empty($e->resolved_image) ? $e->resolved_image : $e->cover_image) ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 				$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 				$tracks[] = [
-					'rank' => $e->rank_position,
+					'rank' => \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position),
 					'title' => $resolved['title'],
 					'artist' => $resolved['subtitle'],
 					'image' => $img,

@@ -144,7 +144,7 @@ class SparklinesTable extends Widget_Base {
 			}
 
 			echo '<tr>';
-			echo '<td class="kc-elm-counter" style="font-weight:900;font-size:18px;">' . $e->rank_position . '</td>';
+			echo '<td class="kc-elm-counter" style="font-weight:900;font-size:18px;">' . \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position) . '</td>';
 			echo '<td>';
 			echo '<div class="' . $uid . '-track-col">';
 			echo '<img src="' . esc_url($img) . '" class="' . $uid . '-img kc-elm-img">';
@@ -166,8 +166,8 @@ class SparklinesTable extends Widget_Base {
 				echo '<span class="' . $uid . '-badge-new" style="background:#ef4444;color:#fff;">' . esc_html($settings['badge_new_text']) . '</span>';
 			} else {
 				$move = $e->movement_value;
-				if ($e->movement_direction === 'up') echo '<span class="' . $uid . '-badge-up">▲ ' . intval($move) . '</span>';
-				elseif ($e->movement_direction === 'down') echo '<span class="' . $uid . '-badge-down">▼ ' . intval($move) . '</span>';
+				if ($e->movement_direction === 'up') echo '<span class="' . $uid . '-badge-up">▲ ' . \Charts\Core\Transliteration::to_arabic_numerals($move) . '</span>';
+				elseif ($e->movement_direction === 'down') echo '<span class="' . $uid . '-badge-down">▼ ' . \Charts\Core\Transliteration::to_arabic_numerals($move) . '</span>';
 				else echo '<span class="' . $uid . '-badge-new">جديد</span>';
 			}
 			echo '</td>';

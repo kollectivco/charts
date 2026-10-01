@@ -179,7 +179,7 @@ class SidebarTop1 extends Widget_Base {
 				'track'      => $resolved['title'],
 				'artist'     => $resolved['subtitle'],
 				'image'      => $img,
-				'weeks'      => $top->weeks_on_chart ?? 1
+				'weeks'      => \Charts\Core\Transliteration::to_arabic_numerals($top->weeks_on_chart ?? 1)
 			];
 		}
 

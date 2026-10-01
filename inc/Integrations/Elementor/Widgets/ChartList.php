@@ -293,7 +293,7 @@ class ChartList extends Widget_Base {
 						</div>
 
 						<?php if ( $settings['show_index'] === 'yes' ) : ?>
-							<div class="kc-list-index" style="position: absolute; right: 0; font-weight: 950; pointer-events: none; line-height: 1;"><?php echo $idx_str; ?></div>
+							<div class="kc-list-index" style="position: absolute; right: 0; font-weight: 950; pointer-events: none; line-height: 1;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($idx_str); ?></div>
 						<?php endif; ?>
 					</div>
 				<?php endforeach; ?>

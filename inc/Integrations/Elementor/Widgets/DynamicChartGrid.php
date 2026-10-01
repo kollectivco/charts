@@ -168,7 +168,7 @@ class DynamicChartGrid extends Widget_Base {
 			echo '<div class="' . $uid . '-title kc-elm-title">' . esc_html($resolved['title']) . '</div>';
 			echo '<div class="' . $uid . '-artist kc-elm-artist">' . esc_html($resolved['subtitle']) . '</div>';
 			echo '<div class="' . $uid . '-meta kc-elm-meta">';
-			echo '<span class="' . $uid . '-badge kc-elm-badge">أعلى مركز #' . \Charts\Core\Transliteration::to_arabic_numerals($entry->peak_rank ?? $rank) . '</span>';
+			echo '<span class="' . $uid . '-badge kc-elm-badge">أعلى مركز #' . \Charts\Core\Transliteration::to_arabic_numerals($entry->peak_rank ?: $entry->rank_position) . '</span>';
 			echo '<span class="' . $uid . '-badge kc-elm-badge">' . ($entry->weeks_on_chart ?? 1) . ' أسابيع</span>';
 			echo '</div></div></div>';
 		};
