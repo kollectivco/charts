@@ -97,5 +97,6 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\BentoIntelligence() );
 		$widgets_manager->register( new Widgets\ChartTabsShowcase() );
 		$widgets_manager->register( new Widgets\ChartShowcaseSlider() );
+		$widgets_manager->register( new Widgets\Top5HeroShowcase() );
 	}
 }
