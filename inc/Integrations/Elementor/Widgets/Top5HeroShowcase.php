@@ -59,21 +59,112 @@ class Top5HeroShowcase extends Widget_Base {
 
 		$this->end_controls_section();
 
-		$this->start_controls_section( 'style_section', [ 'label' => __( 'Colors & Style', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		
+		// 1. General Style
+		$this->start_controls_section( 'style_general', [ 'label' => __( 'General & Background', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_control( 'accent_color', [
-			'label' => __( 'Accent Color (Pink/Red)', 'charts' ),
-			'type' => Controls_Manager::COLOR,
-			'default' => '#ff0055',
+			'label' => __( 'Accent Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ff0055',
 			'selectors' => [ '{{WRAPPER}}' => '--t5-accent: {{VALUE}};' ],
 		]);
+		$this->add_control( 'bg_color', [
+			'label' => __( 'Widget Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-wrap' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_responsive_control( 'widget_padding', [
+			'label' => __( 'Widget Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em', '%' ],
+			'selectors' => [ '{{WRAPPER}} .kc-t5-wrap' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->end_controls_section();
+
+		// 2. Header Style
+		$this->start_controls_section( 'style_header', [ 'label' => __( 'Header & Title', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-titles h2' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'title_typo', 'selector' => '{{WRAPPER}} .kc-t5-titles h2',
+		]);
+		$this->add_control( 'subtitle_color', [
+			'label' => __( 'Subtitle Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-titles p' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'subtitle_typo', 'selector' => '{{WRAPPER}} .kc-t5-titles p',
+		]);
 		$this->add_control( 'link_color', [
-			'label' => __( 'Link Color', 'charts' ),
-			'type' => Controls_Manager::COLOR,
-			'default' => '#00ffaa',
+			'label' => __( 'Link Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#00ffaa',
 			'selectors' => [ '{{WRAPPER}}' => '--t5-link: {{VALUE}};' ],
 		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'link_typo', 'selector' => '{{WRAPPER}} .kc-t5-link',
+		]);
+		$this->add_control( 'bgtext_color', [
+			'label' => __( 'Giant Background Text Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-bg-text' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'bgtext_typo', 'selector' => '{{WRAPPER}} .kc-t5-bg-text',
+		]);
+		$this->end_controls_section();
 
+		// 3. Hero Style (#1)
+		$this->start_controls_section( 'style_hero', [ 'label' => __( 'Hero Card (#1)', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'hero_title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-hero-text h3' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'hero_title_typo', 'selector' => '{{WRAPPER}} .kc-t5-hero-text h3',
+		]);
+		$this->add_control( 'hero_artist_color', [
+			'label' => __( 'Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-hero-text p' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'hero_artist_typo', 'selector' => '{{WRAPPER}} .kc-t5-hero-text p',
+		]);
+		$this->add_control( 'hero_rank_color', [
+			'label' => __( 'Giant Rank Number Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-rank-big' => 'color: {{VALUE}};' ],
+		]);
+		$this->end_controls_section();
+
+		// 4. List Style (#2-5)
+		$this->start_controls_section( 'style_list', [ 'label' => __( 'List Cards (#2-#5)', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'row_bg_color', [
+			'label' => __( 'Row Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-row' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'row_hover_color', [
+			'label' => __( 'Row Hover Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-row:hover' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'list_title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-r-info h4' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'list_title_typo', 'selector' => '{{WRAPPER}} .kc-t5-r-info h4',
+		]);
+		$this->add_control( 'list_artist_color', [
+			'label' => __( 'Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-r-info p' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'list_artist_typo', 'selector' => '{{WRAPPER}} .kc-t5-r-info p',
+		]);
+		$this->add_control( 'list_rank_color', [
+			'label' => __( 'Rank Number Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-r-rank' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'up_color', [
+			'label' => __( 'Up (▲) Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-move-up' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'down_color', [
+			'label' => __( 'Down (▼) Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-t5-move-down' => 'color: {{VALUE}};' ],
+		]);
 		$this->end_controls_section();
 	}
 
