@@ -172,11 +172,27 @@ class Top5HeroShowcase extends Widget_Base {
 		$settings = $this->get_settings_for_display();
 		
 		$manager = new \Charts\Admin\SourceManager();
-		$def = (empty($settings["chart_id"]) || $settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
-		if (!$def) return;
+		$def = (!isset($settings["chart_id"]) || $settings["chart_id"] === "0" || empty($settings["chart_id"])) ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
+		if ( ! $def ) {
+			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				echo '<div style="padding:40px; text-align:center; background:#0f172a; color:#fff; border-radius:20px; border:2px dashed #ff0055; direction:ltr;">';
+				echo '<h3 style="color:#fff; margin-bottom:8px;">Widget Data Missing</h3>';
+				echo '<p style="color:#94a3b8; margin:0;">Please select a specific chart from the Content settings. (Dynamic mode only works on Single Chart templates).</p>';
+				echo '</div>';
+			}
+			return;
+		}
 
 		$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 5);
-		if (empty($entries)) return;
+		if ( empty($entries) ) {
+			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				echo '<div style="padding:40px; text-align:center; background:#0f172a; color:#fff; border-radius:20px; border:2px dashed #eab308; direction:ltr;">';
+				echo '<h3 style="color:#fff; margin-bottom:8px;">No Chart Data Found</h3>';
+				echo '<p style="color:#94a3b8; margin:0;">The selected chart does not have any active entries to display.</p>';
+				echo '</div>';
+			}
+			return;
+		}
 
 		$uid = 'kc-t5-' . $this->get_id();
 		

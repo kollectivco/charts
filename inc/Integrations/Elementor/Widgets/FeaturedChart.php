@@ -61,11 +61,27 @@ class FeaturedChart extends Widget_Base {
 
 		$manager = new \Charts\Admin\SourceManager();
 		$def = ($settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
-		if ( ! $def ) return;
+		if ( ! $def ) {
+			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				echo '<div style="padding:40px; text-align:center; background:#0f172a; color:#fff; border-radius:20px; border:2px dashed #ff0055; direction:ltr;">';
+				echo '<h3 style="color:#fff; margin-bottom:8px;">Widget Data Missing</h3>';
+				echo '<p style="color:#94a3b8; margin:0;">Please select a specific chart from the Content settings. (Dynamic mode only works on Single Chart templates).</p>';
+				echo '</div>';
+			}
+			return;
+		}
 
 		$limit = intval($settings['preview_rows'] ?: 5);
 		$rows = \Charts\Core\PublicIntegration::get_preview_entries($def, $limit);
-		if ( empty($rows) ) return;
+		if ( empty($entries) ) {
+			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+				echo '<div style="padding:40px; text-align:center; background:#0f172a; color:#fff; border-radius:20px; border:2px dashed #eab308; direction:ltr;">';
+				echo '<h3 style="color:#fff; margin-bottom:8px;">No Chart Data Found</h3>';
+				echo '<p style="color:#94a3b8; margin:0;">The selected chart does not have any active entries to display.</p>';
+				echo '</div>';
+			}
+			return;
+		}
 
 		$uid = 'kc-fc-' . $this->get_id();
 ?>
