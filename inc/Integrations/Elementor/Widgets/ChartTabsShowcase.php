@@ -220,6 +220,9 @@ $this->end_controls_section();
 		/* Gorgeous Ring Image */
 		.' . $uid . '-item-img-wrap { 
 			position: relative; 
+			display: flex;
+			align-items: center;
+			justify-content: center; 
 			width: 160px; 
 			aspect-ratio: 1/1; box-sizing: border-box; 
 			border-radius: 50% !important; 
@@ -230,11 +233,14 @@ $this->end_controls_section();
 			transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 		}
 		.' . $uid . '-item-img { 
-			width: 100%; 
-			height: 100%; 
+			display: block !important;
+			width: 100% !important; 
+			height: 100% !important; 
+			aspect-ratio: 1/1 !important;
+			box-sizing: border-box !important; 
 			border-radius: 50% !important; 
-			border: 4px solid #fff; 
-			object-fit: cover; 
+			border: 4px solid #fff !important; 
+			object-fit: cover !important; 
 			transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
 		}
 		.' . $uid . '-item:hover .' . $uid . '-item-img-wrap { 
