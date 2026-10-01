@@ -1,14 +1,14 @@
 <?php
-
 namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
+use Charts\Integrations\Elementor\PremiumWidgetTrait;
 
-/**
- * Elementor Widget: Chart Leader Hero
- */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 class ChartLeader extends Widget_Base {
+	use PremiumWidgetTrait;
 
 	public function get_name() { return 'chart_leader'; }
 	public function get_title() { return __( 'Charts: Leader Hero', 'charts' ); }
@@ -18,165 +18,142 @@ class ChartLeader extends Widget_Base {
 	protected function register_controls() {
 		$this->start_controls_section( 'section_content', [ 'label' => __( 'Hero Config', 'charts' ) ] );
 		
-		$definitions = (new \Charts\Admin\SourceManager())->get_definitions( true );
-		$options = ["0" => __("Current Chart (Dynamic)", "charts")];
-		foreach ( $definitions as $def ) { $options[$def->id] = $def->title; }
+		$manager = new \Charts\Admin\SourceManager();
+		$defs = $manager->get_definitions(true);
+		$options = ['0' => __( 'Current Chart (Dynamic)', 'charts' )];
+		if ($defs) { foreach ($defs as $d) { $options[$d->id] = $d->title; } }
 
 		$this->add_control( 'chart_id', [
 			'label' => __( 'Select Chart', 'charts' ),
 			'type' => Controls_Manager::SELECT,
 			'options' => $options,
-			'default' => !empty($options) ? array_key_first($options) : ''
+			'default' => '0',
+		] );
+
+		$this->add_control( 'style_variant', [
+			'label' => __( 'Layout Style', 'charts' ),
+			'type' => Controls_Manager::SELECT,
+			'options' => [
+				'standard' => 'Standard Split Hero',
+				'minimal' => 'Minimal Centered Hero'
+			],
+			'default' => 'standard',
 		] );
 
 		$this->end_controls_section();
 
-		\Charts\Integrations\Elementor\ControlHelper::add_layout_controls( $this, [
-			'standard' => 'Standard Hero',
-			'minimal' => 'Minimal Card'
-		]);
+		$this->start_controls_section( 'section_visibility', [ 'label' => __( 'Visibility', 'charts' ) ] );
+		$this->add_control( 'show_cover', [ 'label' => 'Show Image', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
+		$this->add_control( 'show_artist', [ 'label' => 'Show Artist', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
+		$this->add_control( 'show_meta', [ 'label' => 'Show Stats/Meta', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
+		$this->end_controls_section();
 
-		\Charts\Integrations\Elementor\ControlHelper::add_visibility_controls( $this, [
-			'show_cover', 'show_artist', 'show_meta', 'show_cta'
+		$this->start_controls_section( 'style_general', [ 'label' => __( 'Colors', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'bg_color', [
+			'label' => __( 'Background Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-wrap' => 'background-color: {{VALUE}};' ],
 		]);
-
-		\Charts\Integrations\Elementor\ControlHelper::add_style_controls( $this );
+		$this->add_control( 'title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-title' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'accent_color', [
+			'label' => __( 'Accent Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ff0055',
+			'selectors' => [ '{{WRAPPER}}' => '--cl-accent: {{VALUE}};' ],
+		]);
+		$this->end_controls_section();
 	}
 
 	protected function render() {
 		$settings = $this->get_settings_for_display();
-		$manager = new \Charts\Admin\SourceManager();
-		
-		if ( empty($settings['chart_id']) ) return;
+		if ( ! isset($settings['chart_id']) || $settings['chart_id'] === '' ) return;
 
-		$def = (empty($settings["chart_id"]) || $settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
+		$manager = new \Charts\Admin\SourceManager();
+		$def = ($settings["chart_id"] === "0") ? \Charts\Core\PublicIntegration::get_current_chart_definition() : $manager->get_definition($settings["chart_id"]);
 		if ( ! $def ) return;
 
-		global $wpdb;
-		$row = $wpdb->get_row( $wpdb->prepare( "
-			SELECT e.* FROM {$wpdb->prefix}charts_entries e
-			JOIN {$wpdb->prefix}charts_sources s ON s.id = e.source_id
-			WHERE s.chart_type = %s AND s.country_code = %s AND s.is_active = 1
-			ORDER BY e.created_at DESC, e.rank_position ASC LIMIT 1
-		", $def->chart_type, $def->country_code ) );
+		$entries = \Charts\Core\PublicIntegration::get_preview_entries($def, 1);
+		if ( empty($entries) ) return;
 		
-		if ( ! $row ) return;
+		$row = $entries[0];
+		$img = \Charts\Core\PublicIntegration::resolve_chart_image($def, [$row]);
+		if (empty($img) && !empty($row->resolved_image)) $img = $row->resolved_image;
+		if (empty($img)) $img = CHARTS_URL . 'public/assets/img/placeholder.png';
+		$res = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 
-		$style_variant = $settings['style_variant'] ?? 'standard';
-		$show_cover    = $settings['show_cover'] !== 'no';
-		$show_artist   = $settings['show_artist'] !== 'no';
-		$show_cta      = $settings['show_cta'] === 'yes';
-		$show_meta     = $settings['show_meta'] !== 'no';
-		
-		$uid = 'kc-ldr-' . $this->get_id();
+		$uid = 'kc-cl-' . $this->get_id();
+		$variant = $settings['style_variant'];
 ?>
-		<div class="kc-root <?php echo $uid; ?>">
-			<style>
-			:where(.<?php echo $uid; ?>) .kc-widget-card {
-				border: 1px solid var(--k-border, #e2e8f0);
-				padding: 0;
-				background-color: var(--k-surface-alt, #f8fafc);
-				overflow: hidden;
-				border-radius: var(--k-radius-lg, 16px);
-				box-shadow: var(--k-shadow-md, 0 4px 6px rgba(0,0,0,0.1));
-			}
-			:where(.<?php echo $uid; ?>) .kc-title {
-				font-size: clamp(2rem, 5vw, 4rem);
-				font-weight: 900;
-				letter-spacing: -0.05em;
-				line-height: 0.95;
-				margin-bottom: 16px;
-				color: var(--k-text, #0f172a);
-			}
-			:where(.<?php echo $uid; ?>) .kc-meta {
-				margin-bottom: 12px;
-				display: block;
-				letter-spacing: 0.1em;
-				font-size: 10px;
-				font-weight: 800;
-				color: var(--k-text-muted, #64748b);
-				text-transform: uppercase;
-			}
-			</style>
-			
-			<div class="kc-widget-card kc-hero-card kc-variant-<?php echo esc_attr($style_variant); ?>">
-				
-				<?php if ( $style_variant === 'standard' ) : ?>
-					<div style="display:flex; flex-wrap:wrap; align-items:center;">
-						<?php if ( $show_cover ) : ?>
-						<div class="hero-art" style="position:relative; flex:1; min-width:300px;">
-							<span class="kc-row-rank" style="position:absolute; top:24px; left:24px; font-size:4rem; font-weight:900; line-height:1; color:#fff; text-shadow:0 4px 12px rgba(0,0,0,0.5); z-index:10;">١</span>
-							<img src="<?php echo esc_url((!empty($row->resolved_image) ? $row->resolved_image : $row->cover_image)); ?>" alt="<?php echo esc_attr($row->track_name); ?>" style="width:100%; height:100%; min-height:400px; object-fit:cover;">
-						</div>
-						<?php endif; ?>
-						<div class="hero-info" style="flex:1.5; padding:48px; min-width:300px;">
-							<?php if ( $show_meta ) : ?>
-								<span class="kc-meta"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
-							<?php endif; ?>
-							
-							<?php 
-								$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
-							?>
-							<h1 class="kc-title">
-								<?php echo esc_html($resolved['title']); ?>
-							</h1>
-							
-							<?php if ( $show_artist ) : ?>
-								<p style="font-size:1.5rem; font-weight:700; color:var(--k-accent); margin-bottom:32px;">
-									<?php echo esc_html($resolved['subtitle']); ?>
-								</p>
-							<?php endif; ?>
-							
-							<?php if ( $show_meta ) : ?>
-							<div class="kc-stats-bar" style="display:flex; gap:32px; margin-bottom:32px; flex-wrap:wrap;">
-								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;"><?php echo \Charts\Core\Translation::get('wks on chart'); ?></span>
-									<span style="font-size:24px; font-weight:900; color:var(--k-text);"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->weeks_on_chart ?: 1); ?></span>
-								</div>
-								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">أعلى مركز</span>
-									<span style="font-size:24px; font-weight:900; color:var(--k-text);">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->peak_rank ?: 1); ?></span>
-								</div>
-								<div class="kc-stat-item">
-									<span style="display:block; font-size:9px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase; margin-bottom:4px;">التريند</span>
-									<span style="font-size:16px; font-weight:900; color:var(--k-text);"><?php echo strtoupper($row->movement_direction); ?></span>
-								</div>
-							</div>
-							<?php endif; ?>
+		<style>
+		.<?php echo $uid; ?>-wrap { background: #0f172a; border-radius: 24px; overflow: hidden; --cl-accent: <?php echo $settings['accent_color'] ?: '#ff0055'; ?>; color: #fff; direction: rtl; font-family: "Cairo", sans-serif; }
+		.<?php echo $uid; ?>-standard { display: flex; flex-wrap: wrap; align-items: stretch; }
+		.<?php echo $uid; ?>-img-wrap { position: relative; flex: 1; min-width: 300px; min-height: 400px; }
+		.<?php echo $uid; ?>-img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+		.<?php echo $uid; ?>-rank { position: absolute; top: 24px; right: 24px; font-size: 80px; font-weight: 900; line-height: 1; color: #fff; text-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: "Inter", sans-serif; z-index: 10; }
+		.<?php echo $uid; ?>-info { flex: 1.5; padding: 48px; min-width: 300px; display: flex; flex-direction: column; justify-content: center; }
+		.<?php echo $uid; ?>-meta-tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 24px; align-self: flex-start; }
+		.<?php echo $uid; ?>-title { font-size: 48px; font-weight: 900; line-height: 1.2; margin: 0 0 8px 0; color: #fff; }
+		.<?php echo $uid; ?>-artist { font-size: 20px; font-weight: 700; color: var(--cl-accent); margin: 0 0 32px 0; }
+		
+		.<?php echo $uid; ?>-stats { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 32px; background: rgba(0,0,0,0.2); padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+		.<?php echo $uid; ?>-stat { display: flex; flex-direction: column; gap: 4px; }
+		.<?php echo $uid; ?>-stat-lbl { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+		.<?php echo $uid; ?>-stat-val { font-size: 24px; font-weight: 900; color: #fff; }
+		
+		.<?php echo $uid; ?>-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: var(--cl-accent); color: #fff; font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 40px; align-self: flex-start; transition: transform 0.2s; }
+		.<?php echo $uid; ?>-btn:hover { transform: translateY(-2px); }
 
-							<?php if ( $show_cta ) : ?>
-								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="display:inline-flex; align-items:center; gap:8px; padding:16px 32px; background:var(--k-text); color:var(--k-surface); font-size:12px; font-weight:800; text-decoration:none; border-radius:40px; letter-spacing:0.05em; transition:transform 0.2s;">
-									<?php echo esc_html($settings['card_cta_text'] ?? 'استكشف بيانات السوق'); ?> &rarr;
-								</a>
-							<?php endif; ?>
-						</div>
+		.<?php echo $uid; ?>-minimal { padding: 60px; text-align: center; position: relative; }
+		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-meta-tag { align-self: center; margin: 0 auto 24px auto; }
+		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-title { font-size: 56px; }
+		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-btn { align-self: center; margin: 32px auto 0 auto; }
+		</style>
+
+		<div class="<?php echo $uid; ?>-wrap kc-widget-wrap">
+			<?php if ($variant === 'standard') : ?>
+				<div class="<?php echo $uid; ?>-standard">
+					<?php if ($settings['show_cover'] === 'yes') : ?>
+					<div class="<?php echo $uid; ?>-img-wrap">
+						<span class="<?php echo $uid; ?>-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals(1); ?></span>
+						<img src="<?php echo esc_url($img); ?>" class="<?php echo $uid; ?>-img" alt="">
 					</div>
-				<?php else : // Minimal Variant ?>
-					<div style="padding:48px; text-align:center; position:relative; z-index:2;">
-						<?php if ( $show_meta ) : ?>
-							<span class="kc-meta"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
+					<?php endif; ?>
+					<div class="<?php echo $uid; ?>-info">
+						<span class="<?php echo $uid; ?>-meta-tag">👑 متصدر الشارت • <?php echo esc_html($def->title); ?></span>
+						<h1 class="<?php echo $uid; ?>-title"><?php echo esc_html($res['title']); ?></h1>
+						<?php if ($settings['show_artist'] === 'yes') : ?>
+							<p class="<?php echo $uid; ?>-artist"><?php echo esc_html($res['subtitle']); ?></p>
 						<?php endif; ?>
-						<?php 
-							$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
-						?>
-						<h2 class="kc-title" style="font-size:3rem; font-weight:950; letter-spacing:-0.03em; margin:0 0 16px;">
-							<?php echo esc_html($resolved['title']); ?>
-						</h2>
-						<?php if ( $show_artist ) : ?>
-							<p style="font-size:1.25rem; font-weight:700; color:var(--k-accent); margin:0;">
-								<?php echo esc_html($resolved['subtitle']); ?>
-							</p>
-						<?php endif; ?>
-						<?php if ( $show_cta ) : ?>
-							<div style="margin-top:32px;">
-								<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" style="font-size:12px; font-weight:800; color:var(--k-text); text-decoration:underline;">
-									<?php echo esc_html($settings['card_cta_text'] ?? 'عرض السباق'); ?>
-								</a>
+						
+						<?php if ($settings['show_meta'] === 'yes') : ?>
+						<div class="<?php echo $uid; ?>-stats">
+							<div class="<?php echo $uid; ?>-stat">
+								<span class="<?php echo $uid; ?>-stat-lbl">أسابيع في الشارت</span>
+								<span class="<?php echo $uid; ?>-stat-val"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->weeks_on_chart ?: 1); ?></span>
 							</div>
+							<div class="<?php echo $uid; ?>-stat">
+								<span class="<?php echo $uid; ?>-stat-lbl">أعلى مركز</span>
+								<span class="<?php echo $uid; ?>-stat-val">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($row->peak_rank ?: 1); ?></span>
+							</div>
+							<div class="<?php echo $uid; ?>-stat">
+								<span class="<?php echo $uid; ?>-stat-lbl">التريند</span>
+								<span class="<?php echo $uid; ?>-stat-val" style="color: <?php echo ($row->movement_direction === 'up' ? '#10b981' : ($row->movement_direction === 'down' ? '#f43f5e' : '#f59e0b')); ?>; font-size:18px;">
+									<?php echo ($row->movement_direction === 'up' ? '▲' : ($row->movement_direction === 'down' ? '▼' : 'جديد')); ?>
+								</span>
+							</div>
+						</div>
 						<?php endif; ?>
 					</div>
-				<?php endif; ?>
-			</div>
+				</div>
+			<?php else : ?>
+				<div class="<?php echo $uid; ?>-minimal">
+					<span class="<?php echo $uid; ?>-meta-tag">👑 متصدر الشارت • <?php echo esc_html($def->title); ?></span>
+					<h1 class="<?php echo $uid; ?>-title"><?php echo esc_html($res['title']); ?></h1>
+					<?php if ($settings['show_artist'] === 'yes') : ?>
+						<p class="<?php echo $uid; ?>-artist"><?php echo esc_html($res['subtitle']); ?></p>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
 		</div>
 <?php
 	}
