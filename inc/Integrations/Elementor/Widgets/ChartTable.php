@@ -26,7 +26,7 @@ class ChartTable extends Widget_Base {
 			'label' => __( 'Select Chart', 'charts' ),
 			'type' => Controls_Manager::SELECT,
 			'options' => $options,
-			'default' => array_key_first($options)
+			'default' => !empty($options) ? array_key_first($options) : ''
 		] );
 
 		$this->add_control( 'limit', [
@@ -68,41 +68,124 @@ class ChartTable extends Widget_Base {
 		$show_cover    = $settings['show_cover'] !== 'no';
 		$show_artist   = $settings['show_artist'] !== 'no';
 		$show_movement = $settings['show_movement'] !== 'no';
+		
+		$uid = 'kc-tbl-' . $this->get_id();
 
 ?>
-		<div class="kc-root">
-			<div class="kc-chart-table kc-variant-<?php echo esc_attr($style_variant); ?> kc-widget-card" style="background:var(--k-surface); border:1px solid var(--k-border); border-radius:var(--k-radius-lg); overflow:hidden; box-shadow:var(--k-shadow-sm);">
+		<div class="kc-root <?php echo $uid; ?>">
+			<style>
+			.<?php echo $uid; ?> .kc-widget-card {
+				background: var(--k-surface, #ffffff);
+				border: 1px solid var(--k-border, #e2e8f0);
+				border-radius: var(--k-radius-lg, 16px);
+				overflow: hidden;
+				box-shadow: var(--k-shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+			}
+			.<?php echo $uid; ?> .kc-row-item {
+				display: flex;
+				align-items: center;
+				border-bottom: 1px solid var(--k-divider, #f1f5f9);
+				padding: 16px 24px;
+			}
+			.<?php echo $uid; ?> .kc-row-item:last-child {
+				border-bottom: none;
+			}
+			.<?php echo $uid; ?> .kc-row-featured {
+				padding: 32px 40px;
+				background: var(--k-surface-alt, #f8fafc);
+			}
+			.<?php echo $uid; ?> .kc-row-rank {
+				font-weight: 900;
+				color: var(--k-text, #0f172a);
+				width: 40px;
+				font-size: 1.25rem;
+			}
+			.<?php echo $uid; ?> .kc-row-featured .kc-row-rank {
+				width: 60px;
+				font-size: 2.5rem;
+			}
+			.<?php echo $uid; ?> .kc-row-img-wrap {
+				margin-right: 24px;
+				flex-shrink: 0;
+			}
+			.<?php echo $uid; ?> .kc-row-art {
+				border-radius: var(--k-radius-sm, 8px);
+				object-fit: cover;
+				width: 48px;
+				height: 48px;
+			}
+			.<?php echo $uid; ?> .kc-row-featured .kc-row-art {
+				width: 80px;
+				height: 80px;
+			}
+			.<?php echo $uid; ?> .kc-row-info {
+				flex-grow: 1;
+				min-width: 0;
+			}
+			.<?php echo $uid; ?> .kc-row-title {
+				margin: 0;
+				font-weight: 800;
+				color: var(--k-text, #0f172a);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				font-size: 14px;
+			}
+			.<?php echo $uid; ?> .kc-row-featured .kc-row-title {
+				font-size: 1.5rem;
+			}
+			.<?php echo $uid; ?> .kc-row-subtitle {
+				margin: 4px 0 0;
+				font-weight: 600;
+				color: var(--k-text-muted, #64748b);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				font-size: 12px;
+			}
+			.<?php echo $uid; ?> .kc-row-featured .kc-row-subtitle {
+				font-size: 1.1rem;
+			}
+			.<?php echo $uid; ?> .kc-row-movement {
+				flex-shrink: 0;
+				margin-left: 24px;
+				text-align: right;
+				font-size: 12px;
+			}
+			</style>
+
+			<div class="kc-chart-table kc-variant-<?php echo esc_attr($style_variant); ?> kc-widget-card">
 				<?php foreach ( $rows as $idx => $row ) : 
 					$is_featured = ($style_variant === 'featured' && $idx === 0);
 					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 				?>
-					<div class="kc-row-item kc-rank-row <?php echo $is_featured ? 'kc-row-featured' : ''; ?>" style="display:flex; align-items:center; border-bottom:1px solid var(--k-divider); <?php echo $is_featured ? 'padding:32px 40px; background:var(--k-surface-alt);' : 'padding:16px 24px;'; ?>">
+					<div class="kc-row-item kc-rank-row <?php echo $is_featured ? 'kc-row-featured' : ''; ?>">
 						
-						<div class="kc-row-rank" style="font-weight:900; color:var(--k-text); width: <?php echo $is_featured ? '60px' : '40px'; ?>; <?php echo $is_featured ? 'font-size:2.5rem;' : 'font-size:1.25rem;'; ?>">
+						<div class="kc-row-rank">
 							<?php echo $row->rank_position; ?>
 						</div>
 						
 						<?php if ( $show_cover ) : ?>
-						<div class="kc-row-img-wrap" style="margin-right:24px; flex-shrink:0;">
-							<img src="<?php echo esc_url($row->cover_image); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>" style="border-radius:var(--k-radius-sm); object-fit:cover; <?php echo $is_featured ? 'width:80px; height:80px;' : 'width:48px; height:48px;'; ?>">
+						<div class="kc-row-img-wrap">
+							<img src="<?php echo esc_url($row->cover_image); ?>" class="kc-row-art" alt="<?php echo esc_attr($resolved['title']); ?>">
 						</div>
 						<?php endif; ?>
 
-						<div class="kc-row-info" style="flex-grow:1; min-width:0;">
-							<h4 class="kc-row-title kc-title" style="margin:0; font-weight:800; color:var(--k-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; <?php echo $is_featured ? 'font-size:1.5rem;' : 'font-size:14px;'; ?>"><?php echo esc_html($resolved['title']); ?></h4>
+						<div class="kc-row-info">
+							<h4 class="kc-row-title kc-title"><?php echo esc_html($resolved['title']); ?></h4>
 							<?php if ( $show_artist ) : ?>
-								<p class="kc-row-subtitle kc-meta" style="margin:4px 0 0; font-weight:600; color:var(--k-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; <?php echo $is_featured ? 'font-size:1.1rem;' : 'font-size:12px;'; ?>"><?php echo esc_html($resolved['subtitle']); ?></p>
+								<p class="kc-row-subtitle kc-meta"><?php echo esc_html($resolved['subtitle']); ?></p>
 							<?php endif; ?>
 						</div>
 
 						<?php if ( $show_movement ) : ?>
-						<div class="kc-row-movement stat-opt" style="flex-shrink:0; margin-left:24px; text-align:right; font-size:12px;">
+						<div class="kc-row-movement stat-opt">
 							<?php if ($row->movement_direction === 'up'): ?>
-								<span class="kc-move-up" style="color:var(--k-success, #2ecc71); font-weight:850; letter-spacing:0.05em;">▲ <?php echo $row->movement_value; ?></span>
+								<span class="kc-move-up" style="color:var(--k-success, #10b981); font-weight:850; letter-spacing:0.05em;">▲ <?php echo $row->movement_value; ?></span>
 							<?php elseif ($row->movement_direction === 'down'): ?>
-								<span class="kc-move-down" style="color:var(--k-error, #e74c3c); font-weight:850; letter-spacing:0.05em;">▼ <?php echo $row->movement_value; ?></span>
+								<span class="kc-move-down" style="color:var(--k-error, #ef4444); font-weight:850; letter-spacing:0.05em;">▼ <?php echo $row->movement_value; ?></span>
 							<?php elseif ($row->movement_direction === 'new'): ?>
-								<span class="kc-move-new" style="background:#f1c40f; color:#000; padding:4px 8px; border-radius:4px; font-weight:900; font-size:10px; letter-spacing:0.1em;">NEW</span>
+								<span class="kc-move-new" style="background:#f59e0b; color:#fff; padding:4px 8px; border-radius:4px; font-weight:900; font-size:10px; letter-spacing:0.1em;">NEW</span>
 							<?php endif; ?>
 						</div>
 						<?php endif; ?>

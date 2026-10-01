@@ -26,7 +26,7 @@ class ChartLeader extends Widget_Base {
 			'label' => __( 'Select Chart', 'charts' ),
 			'type' => Controls_Manager::SELECT,
 			'options' => $options,
-			'default' => array_key_first($options)
+			'default' => !empty($options) ? array_key_first($options) : ''
 		] );
 
 		$this->end_controls_section();
@@ -67,9 +67,39 @@ class ChartLeader extends Widget_Base {
 		$show_artist   = $settings['show_artist'] !== 'no';
 		$show_cta      = $settings['show_cta'] === 'yes';
 		$show_meta     = $settings['show_meta'] !== 'no';
+		
+		$uid = 'kc-ldr-' . $this->get_id();
 ?>
-		<div class="kc-root">
-			<div class="kc-widget-card kc-hero-card kc-variant-<?php echo esc_attr($style_variant); ?>" style="border:1px solid var(--k-border); padding:0; background:var(--k-surface-alt); overflow:hidden; border-radius:var(--k-radius-lg); box-shadow:var(--k-shadow-md);">
+		<div class="kc-root <?php echo $uid; ?>">
+			<style>
+			.<?php echo $uid; ?> .kc-widget-card {
+				border: 1px solid var(--k-border, #e2e8f0);
+				padding: 0;
+				background: var(--k-surface-alt, #f8fafc);
+				overflow: hidden;
+				border-radius: var(--k-radius-lg, 16px);
+				box-shadow: var(--k-shadow-md, 0 4px 6px rgba(0,0,0,0.1));
+			}
+			.<?php echo $uid; ?> .kc-title {
+				font-size: clamp(2rem, 5vw, 4rem);
+				font-weight: 900;
+				letter-spacing: -0.05em;
+				line-height: 0.95;
+				margin-bottom: 16px;
+				color: var(--k-text, #0f172a);
+			}
+			.<?php echo $uid; ?> .kc-meta {
+				margin-bottom: 12px;
+				display: block;
+				letter-spacing: 0.1em;
+				font-size: 10px;
+				font-weight: 800;
+				color: var(--k-text-muted, #64748b);
+				text-transform: uppercase;
+			}
+			</style>
+			
+			<div class="kc-widget-card kc-hero-card kc-variant-<?php echo esc_attr($style_variant); ?>">
 				
 				<?php if ( $style_variant === 'standard' ) : ?>
 					<div style="display:flex; flex-wrap:wrap; align-items:center;">
@@ -81,13 +111,13 @@ class ChartLeader extends Widget_Base {
 						<?php endif; ?>
 						<div class="hero-info" style="flex:1.5; padding:48px; min-width:300px;">
 							<?php if ( $show_meta ) : ?>
-								<span class="kc-meta" style="margin-bottom:12px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
+								<span class="kc-meta"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
 							<?php endif; ?>
 							
 							<?php 
 								$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 							?>
-							<h1 class="kc-title" style="font-size:clamp(2rem, 5vw, 4rem); font-weight:900; letter-spacing:-0.05em; line-height:0.95; margin-bottom:16px; color:var(--k-text);">
+							<h1 class="kc-title">
 								<?php echo esc_html($resolved['title']); ?>
 							</h1>
 							
@@ -124,12 +154,12 @@ class ChartLeader extends Widget_Base {
 				<?php else : // Minimal Variant ?>
 					<div style="padding:48px; text-align:center; position:relative; z-index:2;">
 						<?php if ( $show_meta ) : ?>
-							<span class="kc-meta" style="margin-bottom:16px; display:block; letter-spacing:0.1em; font-size:10px; font-weight:800; color:var(--k-text-muted); text-transform:uppercase;"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
+							<span class="kc-meta"><?php echo \Charts\Core\Translation::get('Chart Leader'); ?> • <?php echo esc_html($def->title); ?></span>
 						<?php endif; ?>
 						<?php 
 							$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 						?>
-						<h2 class="kc-title" style="font-size:3rem; font-weight:950; letter-spacing:-0.03em; margin:0 0 16px; color:var(--k-text);">
+						<h2 class="kc-title" style="font-size:3rem; font-weight:950; letter-spacing:-0.03em; margin:0 0 16px;">
 							<?php echo esc_html($resolved['title']); ?>
 						</h2>
 						<?php if ( $show_artist ) : ?>

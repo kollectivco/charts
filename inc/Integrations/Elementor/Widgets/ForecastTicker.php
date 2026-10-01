@@ -3,13 +3,15 @@ namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
+use Charts\Integrations\Elementor\PremiumWidgetTrait;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class ForecastTicker extends Widget_Base {
+	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_forecast_ticker'; }
-	public function get_title() { return __( 'Forecast & Viral Ticker', 'charts' ); }
+	public function get_title() { return __( 'Forecast Ticker', 'charts' ); }
 	public function get_icon() { return 'eicon-marquee'; }
 	public function get_categories() { return [ 'charts' ]; }
 
@@ -18,79 +20,54 @@ class ForecastTicker extends Widget_Base {
 			'label' => __( 'Ticker Settings', 'charts' ),
 			'tab' => Controls_Manager::TAB_CONTENT,
 		] );
-
-		$this->add_control( 'speed', [
-			'label' => __( 'Animation Speed (Seconds)', 'charts' ),
-			'type' => Controls_Manager::NUMBER,
-			'default' => 30,
-			'min' => 10,
-			'max' => 100,
+		$this->add_control( 'notice', [
+			'type' => Controls_Manager::RAW_HTML,
+			'raw' => __( 'Shows the top 10 songs with highest momentum.', 'charts' ),
+			'content_classes' => 'elementor-descriptor',
 		] );
-
 		$this->end_controls_section();
 
-		$this->start_controls_section( 'style_section', [
-			'label' => __( 'Styling', 'charts' ),
-			'tab' => Controls_Manager::TAB_STYLE,
-		] );
-
-		$this->add_control( 'bg_color', [
-			'label' => __( 'Background Color', 'charts' ),
-			'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-tck-wrap' => 'background: {{VALUE}};' ],
-		] );
-		
-		$this->add_control( 'text_color', [
-			'label' => __( 'Text Color', 'charts' ),
-			'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-tck-wrap' => 'color: {{VALUE}};' ],
-		] );
-
-		$this->end_controls_section();
+		$this->add_premium_badge_controls();
+		$this->add_granular_style_controls(['card', 'title', 'meta']);
 	}
 
 	protected function render() {
 		global $wpdb;
-		$speed = $this->get_settings_for_display('speed') ?: 30;
-		$uid = 'kc-tck-' . $this->get_id();
-
 		$intel = $wpdb->prefix . 'charts_intelligence';
 		$tracks = $wpdb->prefix . 'charts_tracks';
 		$artists = $wpdb->prefix . 'charts_artists';
 
-		$viral = $wpdb->get_results("SELECT i.momentum_score, t.title, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.momentum_score >= 70 ORDER BY i.momentum_score DESC LIMIT 5");
-		$risers = $wpdb->get_results("SELECT i.growth_rate, t.title, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' AND i.growth_rate >= 50 ORDER BY i.growth_rate DESC LIMIT 5");
+		$results = $wpdb->get_results("SELECT i.momentum_score, t.title, a.display_name as artist FROM $intel i JOIN $tracks t ON t.id = i.entity_id LEFT JOIN $artists a ON a.id = t.primary_artist_id WHERE i.entity_type = 'track' ORDER BY i.momentum_score DESC LIMIT 10");
 
-		$messages = [];
-		foreach ($viral as $v) {
-			$messages[] = '🔥 <span class="kc-tck-hl">' . esc_html($v->title) . '</span> by ' . esc_html($v->artist) . ' is EXPLODING (Momentum: ' . intval($v->momentum_score) . ')';
-		}
-		foreach ($risers as $r) {
-			$messages[] = '🚀 <span class="kc-tck-hl">' . esc_html($r->title) . '</span> is a FAST RISER (+ ' . intval($r->growth_rate) . '% Growth)';
-		}
-		if (empty($messages)) {
-			$messages[] = '⚡ AI Intelligence Engine is monitoring market shifts...';
-			$messages[] = '📊 Waiting for enough data to generate trend forecasts...';
-		}
-
-		$marquee_content = implode('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', $messages);
+		$uid = 'kc-ft-' . $this->get_id();
+		$settings = $this->get_settings_for_display();
 
 		echo '<div class="kc-widget-wrap">';
-		echo '<style>
-		.' . $uid . '-wrap { width: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; overflow: hidden; position: relative; color: #cbd5e1; font-family: "Fira Code", monospace, sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.05em; display: flex; align-items: center; }
-		.' . $uid . '-wrap::before { content: "AI FORECAST"; position: absolute; left: 0; top: 0; bottom: 0; background: #6366f1; color: #fff; font-weight: 900; font-family: "Inter", sans-serif; display: flex; align-items: center; padding: 0 16px; z-index: 2; font-size: 11px; letter-spacing: 0.1em; box-shadow: 4px 0 12px rgba(0,0,0,0.5); }
-		.' . $uid . '-ticker { white-space: nowrap; padding-left: 120px; display: inline-block; animation: ' . $uid . '-scroll ' . $speed . 's linear infinite; }
-		.' . $uid . '-ticker:hover { animation-play-state: paused; }
-		.' . $uid . '-wrap .kc-tck-hl { color: #fff; font-weight: 800; }
-		@keyframes ' . $uid . '-scroll {
-			0% { transform: translateX(100%); }
-			100% { transform: translateX(-100%); }
+		if (empty($results)) {
+			echo '<div style="padding:10px; background:#f8fafc; text-align:center; border:1px dashed #cbd5e1; border-radius:8px; color:#64748b;">No forecast data.</div></div>';
+			return;
 		}
+
+		echo '<style>
+		.' . $uid . '-ticker-wrap { width: 100%; overflow: hidden; background: #0f172a; padding: 12px 0; border-radius: 12px; display: flex; align-items: center; }
+		.' . $uid . '-ticker { display: flex; white-space: nowrap; animation: kc-ticker-' . $uid . ' 30s linear infinite; }
+		.' . $uid . '-ticker:hover { animation-play-state: paused; }
+		@keyframes kc-ticker-' . $uid . ' { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+		.' . $uid . '-item { display: inline-flex; align-items: center; gap: 8px; padding: 0 24px; border-right: 1px solid rgba(255,255,255,0.1); }
+		.' . $uid . '-title { font-size: 14px; font-weight: 800; color: #fff; }
+		.' . $uid . '-artist { font-size: 13px; color: #94a3b8; font-weight: 500; }
+		.' . $uid . '-score { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 900; color: #10b981; margin-left: 8px; background: rgba(16,185,129,0.15); padding: 2px 6px; border-radius: 4px; }
 		</style>';
 
-		echo '<div class="' . $uid . '-wrap kc-tck-wrap">';
+		$items_html = '';
+		foreach ($results as $r) {
+			$hot_badge = ($settings['show_badges'] === 'yes' && $r->momentum_score >= 80) ? '<span style="color:#ef4444;margin-right:4px;">' . esc_html($settings['badge_hot_text']) . '</span>' : '';
+			$items_html .= '<div class="' . $uid . '-item"><span class="' . $uid . '-title kc-elm-title">' . $hot_badge . esc_html($r->title) . '</span><span class="' . $uid . '-artist kc-elm-artist">by ' . esc_html($r->artist) . '</span><span class="' . $uid . '-score kc-elm-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' . intval($r->momentum_score) . '</span></div>';
+		}
+
+		echo '<div class="' . $uid . '-ticker-wrap kc-elm-card">';
 		echo '<div class="' . $uid . '-ticker">';
-		echo $marquee_content;
+		echo $items_html . $items_html; // Duplicate for infinite scroll effect
 		echo '</div></div></div>';
 	}
 }
