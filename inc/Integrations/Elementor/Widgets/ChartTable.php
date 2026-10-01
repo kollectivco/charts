@@ -74,55 +74,55 @@ class ChartTable extends Widget_Base {
 ?>
 		<div class="kc-root <?php echo $uid; ?>">
 			<style>
-			.<?php echo $uid; ?> .kc-widget-card {
-				background: var(--k-surface, #ffffff);
+			:where(.<?php echo $uid; ?>) .kc-widget-card {
+				background-color: var(--k-surface, #ffffff);
 				border: 1px solid var(--k-border, #e2e8f0);
 				border-radius: var(--k-radius-lg, 16px);
 				overflow: hidden;
 				box-shadow: var(--k-shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
 			}
-			.<?php echo $uid; ?> .kc-row-item {
+			:where(.<?php echo $uid; ?>) .kc-row-item {
 				display: flex;
 				align-items: center;
 				border-bottom: 1px solid var(--k-divider, #f1f5f9);
 				padding: 16px 24px;
 			}
-			.<?php echo $uid; ?> .kc-row-item:last-child {
+			:where(.<?php echo $uid; ?>) .kc-row-item:last-child {
 				border-bottom: none;
 			}
-			.<?php echo $uid; ?> .kc-row-featured {
+			:where(.<?php echo $uid; ?>) .kc-row-featured {
 				padding: 32px 40px;
-				background: var(--k-surface-alt, #f8fafc);
+				background-color: var(--k-surface-alt, #f8fafc);
 			}
-			.<?php echo $uid; ?> .kc-row-rank {
+			:where(.<?php echo $uid; ?>) .kc-row-rank {
 				font-weight: 900;
 				color: var(--k-text, #0f172a);
 				width: 40px;
 				font-size: 1.25rem;
 			}
-			.<?php echo $uid; ?> .kc-row-featured .kc-row-rank {
+			:where(.<?php echo $uid; ?>) .kc-row-featured .kc-row-rank {
 				width: 60px;
 				font-size: 2.5rem;
 			}
-			.<?php echo $uid; ?> .kc-row-img-wrap {
+			:where(.<?php echo $uid; ?>) .kc-row-img-wrap {
 				margin-right: 24px;
 				flex-shrink: 0;
 			}
-			.<?php echo $uid; ?> .kc-row-art {
+			:where(.<?php echo $uid; ?>) .kc-row-art {
 				border-radius: var(--k-radius-sm, 8px);
 				object-fit: cover;
 				width: 48px;
 				height: 48px;
 			}
-			.<?php echo $uid; ?> .kc-row-featured .kc-row-art {
+			:where(.<?php echo $uid; ?>) .kc-row-featured .kc-row-art {
 				width: 80px;
 				height: 80px;
 			}
-			.<?php echo $uid; ?> .kc-row-info {
+			:where(.<?php echo $uid; ?>) .kc-row-info {
 				flex-grow: 1;
 				min-width: 0;
 			}
-			.<?php echo $uid; ?> .kc-row-title {
+			:where(.<?php echo $uid; ?>) .kc-row-title {
 				margin: 0;
 				font-weight: 800;
 				color: var(--k-text, #0f172a);
@@ -131,10 +131,10 @@ class ChartTable extends Widget_Base {
 				text-overflow: ellipsis;
 				font-size: 14px;
 			}
-			.<?php echo $uid; ?> .kc-row-featured .kc-row-title {
+			:where(.<?php echo $uid; ?>) .kc-row-featured .kc-row-title {
 				font-size: 1.5rem;
 			}
-			.<?php echo $uid; ?> .kc-row-subtitle {
+			:where(.<?php echo $uid; ?>) .kc-row-subtitle {
 				margin: 4px 0 0;
 				font-weight: 600;
 				color: var(--k-text-muted, #64748b);
@@ -143,10 +143,10 @@ class ChartTable extends Widget_Base {
 				text-overflow: ellipsis;
 				font-size: 12px;
 			}
-			.<?php echo $uid; ?> .kc-row-featured .kc-row-subtitle {
+			:where(.<?php echo $uid; ?>) .kc-row-featured .kc-row-subtitle {
 				font-size: 1.1rem;
 			}
-			.<?php echo $uid; ?> .kc-row-movement {
+			:where(.<?php echo $uid; ?>) .kc-row-movement {
 				flex-shrink: 0;
 				margin-left: 24px;
 				text-align: right;

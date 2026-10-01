@@ -72,15 +72,15 @@ class ChartLeader extends Widget_Base {
 ?>
 		<div class="kc-root <?php echo $uid; ?>">
 			<style>
-			.<?php echo $uid; ?> .kc-widget-card {
+			:where(.<?php echo $uid; ?>) .kc-widget-card {
 				border: 1px solid var(--k-border, #e2e8f0);
 				padding: 0;
-				background: var(--k-surface-alt, #f8fafc);
+				background-color: var(--k-surface-alt, #f8fafc);
 				overflow: hidden;
 				border-radius: var(--k-radius-lg, 16px);
 				box-shadow: var(--k-shadow-md, 0 4px 6px rgba(0,0,0,0.1));
 			}
-			.<?php echo $uid; ?> .kc-title {
+			:where(.<?php echo $uid; ?>) .kc-title {
 				font-size: clamp(2rem, 5vw, 4rem);
 				font-weight: 900;
 				letter-spacing: -0.05em;
@@ -88,7 +88,7 @@ class ChartLeader extends Widget_Base {
 				margin-bottom: 16px;
 				color: var(--k-text, #0f172a);
 			}
-			.<?php echo $uid; ?> .kc-meta {
+			:where(.<?php echo $uid; ?>) .kc-meta {
 				margin-bottom: 12px;
 				display: block;
 				letter-spacing: 0.1em;

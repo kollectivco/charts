@@ -73,31 +73,31 @@ class FeaturedChart extends Widget_Base {
 ?>
 		<div class="kc-root <?php echo $uid; ?>">
 			<style>
-			.<?php echo $uid; ?> .kc-widget-card {
+			:where(.<?php echo $uid; ?>) .kc-widget-card {
 				padding: 0;
 				min-width: 100%;
-				background: var(--k-surface, #ffffff);
+				background-color: var(--k-surface, #ffffff);
 				border-radius: var(--k-radius-lg, 16px);
 				border: 1px solid var(--k-border, #e2e8f0);
 				overflow: hidden;
 				box-shadow: var(--k-shadow-md, 0 4px 6px rgba(0,0,0,0.1));
 			}
-			.<?php echo $uid; ?> .kc-list-header {
+			:where(.<?php echo $uid; ?>) .kc-list-header {
 				padding: <?php echo $style_variant === 'compact' ? '24px' : '40px'; ?>;
-				background: var(--k-surface-alt, #f8fafc);
+				background-color: var(--k-surface-alt, #f8fafc);
 				border-bottom: 1px solid var(--k-divider, #f1f5f9);
 				display: flex;
 				justify-content: space-between;
 				align-items: flex-end;
 			}
-			.<?php echo $uid; ?> .kc-title {
+			:where(.<?php echo $uid; ?>) .kc-title {
 				font-size: 1.8rem;
 				font-weight: 850;
 				letter-spacing: -0.02em;
 				color: var(--k-text, #0f172a);
 				margin: 0;
 			}
-			.<?php echo $uid; ?> .kc-meta {
+			:where(.<?php echo $uid; ?>) .kc-meta {
 				margin-bottom: 8px;
 				font-size: 10px;
 				display: block;
@@ -117,14 +117,14 @@ class FeaturedChart extends Widget_Base {
 					</div>
 					<?php if ( $show_cta ) : ?>
 					<div style="text-align: right; flex-shrink: 0; margin-left: 24px;">
-						<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-btn" style="padding: 10px 24px; font-size: 13px; text-decoration: none; font-weight: 800; color: var(--k-text); border: 1px solid var(--k-border); border-radius: 40px; background: var(--k-surface); transition: background 0.2s;">
+						<a href="<?php echo home_url('/charts/' . $def->slug . '/'); ?>" class="kc-btn" style="padding: 10px 24px; font-size: 13px; text-decoration: none; font-weight: 800; color: var(--k-text); border: 1px solid var(--k-border); border-radius: 40px; background-color: var(--k-surface); transition: background 0.2s;">
 							<?php echo esc_html($settings['card_cta_text'] ?? 'View Full Chart'); ?> &rarr;
 						</a>
 					</div>
 					<?php endif; ?>
 				</div>
 
-				<div class="kc-list-content" style="padding: 16px 0 32px; background: var(--k-surface);">
+				<div class="kc-list-content" style="padding: 16px 0 32px; background-color: var(--k-surface);">
 					<?php foreach ( $rows as $idx => $row ) : 
 						$resolved = \Charts\Core\PublicIntegration::resolve_display_name($row, $def);
 					?>
