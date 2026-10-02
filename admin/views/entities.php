@@ -44,6 +44,67 @@ if ( $type === 'artist' ) {
 		array( 'label' => __( 'Chart Presence', 'charts' ), 'value' => $stats['active_items'], 'icon' => 'dashicons-chart-bar', 'color' => '#f59e0b' ),
 	);
 } elseif ( $type === 'video' ) {
+	$stats['total']        = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table" );
+	$stats['with_thumb']    = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table WHERE thumbnail IS NOT NULL AND thumbnail != ''" );
+	$stats['with_youtube']  = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table WHERE youtube_id IS NOT NULL AND youtube_id != ''" );
+	$stats['active_items']  = $wpdb->get_var( "SELECT COUNT(DISTINCT item_id) FROM $entries_table WHERE item_type = 'video' AND item_id > 0" );
+
+	$kpis = array(
+		array( 'label' => __( 'Music Clips', 'charts' ), 'value' => $stats['total'], 'icon' => 'dashicons-video-alt3', 'color' => '#ef4444' ),
+		array( 'label' => __( 'Visual Thumbs', 'charts' ), 'value' => $stats['with_thumb'], 'icon' => 'dashicons-format-video', 'color' => '#22c55e' ),
+		array( 'label' => __( 'YouTube Linked', 'charts' ), 'value' => $stats['with_youtube'], 'icon' => 'dashicons-youtube', 'color' => '#FF0000' ),
+		array( 'label' => __( 'Active Views', 'charts' ), 'value' => $stats['active_items'], 'icon' => 'dashicons-visibility', 'color' => '#f59e0b' ),
+	);
+}
+
+// 3. Pagination Settings
+$per_page = 100;
+$current_page = max( 1, isset( $_GET['paged'] ) ? intval( $_GET['paged'] ) : 1 );
+$offset = ( $current_page - 1 ) * $per_page;
+
+// 4. Filters & Search
+$filter_spotify = isset( $_GET['spotify_linked'] ) ? $_GET['spotify_linked'] : '';
+$filter_image   = isset( $_GET['has_image'] ) ? $_GET['has_image'] : '';
+$filter_en   = isset( $_GET['missing_en'] ) ? $_GET['missing_en'] : '';
+
+$items = array();
+$total = 0;
+
+if ( $type === 'artist' ) {
+	$where = "WHERE 1=1";
+	if ( $search ) {
+		$where .= $wpdb->prepare( " AND (display_name LIKE %s OR slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+	}
+	if ( $filter_spotify === 'yes' ) $where .= " AND spotify_id IS NOT NULL AND spotify_id != ''";
+	if ( $filter_spotify === 'no' ) $where .= " AND (spotify_id IS NULL OR spotify_id = '')";
+	if ( $filter_image === 'yes' ) $where .= " AND image IS NOT NULL AND image != ''";
+	if ( $filter_image === 'no' ) $where .= " AND (image IS NULL OR image = '')";
+
+	if ( $filter_en === 'yes' ) $where .= " AND (display_name_en IS NULL OR display_name_en = '')";
+	$items = $wpdb->get_results( "SELECT * FROM $artists_table {$where} ORDER BY display_name ASC LIMIT $per_page OFFSET $offset" );
+	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $artists_table {$where}" );
+	$title = __( 'Artists', 'charts' );
+} elseif ( $type === 'track' ) {
+	$where = "WHERE 1=1";
+	if ( $search ) {
+		$where .= $wpdb->prepare( " AND (t.title LIKE %s OR t.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+	}
+	if ( $filter_spotify === 'yes' ) $where .= " AND t.spotify_id IS NOT NULL AND t.spotify_id != ''";
+	if ( $filter_spotify === 'no' ) $where .= " AND (t.spotify_id IS NULL OR t.spotify_id = '')";
+	if ( $filter_image === 'yes' ) $where .= " AND t.cover_image IS NOT NULL AND t.cover_image != ''";
+	if ( $filter_image === 'no' ) $where .= " AND (t.cover_image IS NULL OR t.cover_image = '')";
+
+	if ( $filter_en === 'yes' ) $where .= " AND (t.title_en IS NULL OR t.title_en = '')";
+	$items = $wpdb->get_results( "
+		SELECT t.*, a.display_name AS artist_name 
+		FROM $tracks_table t 
+		LEFT JOIN $artists_table a ON a.id = t.primary_artist_id
+		{$where} 
+		ORDER BY t.title ASC LIMIT $per_page OFFSET $offset
+	" );
+	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $tracks_table t {$where}" );
+	$title = __( 'Tracks', 'charts' );
+} elseif ( $type === 'video' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
 		$where .= $wpdb->prepare( " AND (v.title LIKE %s OR v.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
@@ -53,8 +114,8 @@ if ( $type === 'artist' ) {
 	if ( $filter_image === 'yes' ) $where .= " AND v.thumbnail IS NOT NULL AND v.thumbnail != ''";
 	if ( $filter_image === 'no' ) $where .= " AND (v.thumbnail IS NULL OR v.thumbnail = '')";
 	if ( $filter_en === 'yes' ) $where .= " AND (v.title_en IS NULL OR v.title_en = '')";
-	$items = $wpdb->get_results( "
 
+	$items = $wpdb->get_results( "
 		SELECT v.*, a.display_name AS artist_name 
 		FROM $videos_table v 
 		LEFT JOIN $artists_table a ON a.id = v.primary_artist_id
@@ -888,7 +949,6 @@ window.processSmartMerge = function(clusterIndex) {
 
 
 <style>
-/* Refined Form UI */
 .charts-input { background: #fdfdfd; border: 1px solid #dcdfe6; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #334155; transition: border-color 0.2s, box-shadow 0.2s; }
 .charts-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); outline: none; }
 .charts-btn-secondary { background: #fff; border: 1px solid #dcdfe6; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
@@ -899,21 +959,31 @@ window.processSmartMerge = function(clusterIndex) {
 .charts-table th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
 .charts-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
 .charts-table tr:hover td { background: #f8fafc; }
-
-<style>
-
+.entity-row-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #334155; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+.entity-row-action:hover { border-color: #cbd5e1; color: #0f172a; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+.entity-row-action .dashicons { width: 14px; height: 14px; font-size: 14px; color: #64748b; }
+.entity-row-action:hover .dashicons { color: #334155; }
+.entity-edit-action { color: #2563eb; }
+.entity-edit-action:hover { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+.entity-edit-action .dashicons { color: #3b82f6; }
+.entity-delete-action { color: #dc2626; }
+.entity-delete-action:hover { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+.entity-delete-action .dashicons { color: #ef4444; }
+.entity-merge-trigger { color: #7c3aed; }
+.entity-merge-trigger:hover { color: #6d28d9; background: #f5f3ff; border-color: #ddd6fe; }
+.entity-merge-trigger .dashicons { color: #8b5cf6; }
+.entity-merge-options { position: absolute; z-index: 10020; top: calc(100% + 5px); right: 0; min-width: 200px; padding: 8px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); }
+.entity-merge-options button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: #475569; text-align: left; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.entity-merge-options button:hover { background: #f1f5f9; color: #0f172a; }
 </style>
 <style>
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 .entity-row-action .dashicons{width:14px;height:14px;font-size:14px}
 
-.entity-merge-menu>summary{list-style:none}.entity-merge-menu>summary::-webkit-details-marker{display:none}
+.entity-merge-menu{position:relative;display:inline-block}.entity-merge-menu>summary{list-style:none}.entity-merge-menu>summary::-webkit-details-marker{display:none}
 .entity-modal{position:fixed;inset:0;z-index:100100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.58)}.entity-modal-panel{width:min(560px,100%);max-height:min(740px,90vh);overflow:auto;border:1px solid #e4e8f0;border-radius:14px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.24)}.entity-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #edf0f5}.entity-modal-header>div{display:flex;align-items:center;gap:10px;color:#5b42b5}.entity-modal-header h2{margin:0;color:#1e293b;font-size:17px}.entity-modal-close{width:32px;height:32px;border:0;border-radius:7px;background:#f3f5f8;color:#667085;font-size:22px;cursor:pointer}.entity-merge-source{margin:16px 22px;padding:10px 12px;border-radius:8px;background:#f7f8fc;color:#667085;font-size:12px}.entity-merge-source strong{color:#25314a}.entity-merge-search-label{display:block;margin:0 22px 7px;color:#344054;font-size:12px;font-weight:700}.entity-merge-searchbox{display:flex;align-items:center;gap:8px;margin:0 22px 12px;padding:0 11px;border:1px solid #d9deea;border-radius:8px;color:#98a2b3}.entity-merge-searchbox:focus-within{border-color:#6d5bd0;box-shadow:0 0 0 3px rgba(109,91,208,.12)}.entity-merge-searchbox input{width:100%;height:42px;border:0!important;box-shadow:none!important;outline:0!important}.entity-merge-searchbox #entity-merge-search-spinner{animation:spin 1s linear infinite}.entity-merge-results{max-height:330px;min-height:70px;overflow:auto;margin:0 22px;border:1px solid #edf0f5;border-radius:8px}.entity-merge-empty,.entity-merge-error{margin:0;padding:22px;color:#8490a2;text-align:center;font-size:12px}.entity-merge-error{color:#b4232f}.entity-merge-result{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-bottom:1px solid #f0f2f6;background:#fff;text-align:left;cursor:pointer}.entity-merge-result:last-child{border-bottom:0}.entity-merge-result:hover,.entity-merge-result.is-selected{background:#f5f3ff}.entity-merge-result.is-selected{box-shadow:inset 3px 0 #6d5bd0}.entity-merge-result img{width:34px;height:34px;border-radius:50%;object-fit:cover}.entity-merge-result-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}.entity-merge-result-copy strong{overflow:hidden;color:#263248;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.entity-merge-result-copy small{color:#8993a4;font-size:10px}.entity-merge-id{color:#8a93a3;font:11px monospace}.entity-modal-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:14px 22px;border-top:1px solid #edf0f5;color:#7a8496;font-size:11px}.entity-modal-footer>div{display:flex;gap:8px}.entity-modal-footer .button-primary{background:#5541b5;border-color:#5541b5}.entity-modal-footer .button-primary:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:782px){.entity-modal-footer{align-items:flex-start;flex-direction:column}}
-
-<style>
-
 </style>
 
 <!-- Bulk Merge Modal UI -->
