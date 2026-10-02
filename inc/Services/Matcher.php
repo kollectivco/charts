@@ -45,7 +45,6 @@ class Matcher {
 
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
-			'display_name_en' => Normalizer::is_arabic( $display_name ) ? Slugger::make( $display_name, 'artist' ) : null,
 			'normalized_name' => $normalized_name,
 			'slug'            => $slug,
 			'created_at'      => current_time( 'mysql' ),
@@ -93,7 +92,6 @@ class Matcher {
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
-			'title_en'          => Normalizer::is_arabic( $title ) ? Slugger::make( $title, 'track' ) : null,
 			'normalized_title'  => $normalized_title,
 			'slug'              => $slug,
 			'primary_artist_id' => $primary_artist_id,

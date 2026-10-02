@@ -326,7 +326,6 @@ class YouTubeCsvImporter {
 
 		$wpdb->insert( $table, array(
 			'display_name'        => $display_name,
-			'display_name_en' => Normalizer::is_arabic( $display_name ) ? \Charts\Services\Slugger::make( $display_name, 'artist' ) : null,
 			'normalized_name'     => $normalized,
 			'slug'                => $slug,
 			'image'               => $image,
@@ -361,7 +360,6 @@ class YouTubeCsvImporter {
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
-			'title_en'          => Normalizer::is_arabic( $title ) ? \Charts\Services\Slugger::make( $title, 'track' ) : null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
