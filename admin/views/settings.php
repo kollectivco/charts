@@ -13,6 +13,12 @@ $panel = [
     'homepage' => [
         'title' => 'Charts Home',
         'sections' => [
+            'template' => [
+                'title' => 'Template Strategy',
+                'fields' => [
+                    [ 'id' => 'homepage.elementor_template', 'type' => 'select', 'label' => 'Elementor Design Template', 'options' => \Charts\Core\Templates::get_options(), 'desc' => 'Select a custom Elementor template. If selected, it completely replaces the native Charts Home page layout.' ],
+                ]
+            ],
             'layout' => [
                 'title' => 'Structural Strategy',
                 'fields' => [
@@ -22,17 +28,7 @@ $panel = [
                     [ 'id' => 'homepage.show_charts_grid', 'type' => 'switch', 'label' => 'Show Public Charts Browse Grid' ],
                 ]
             ],
-            'single' => [
-        'title' => 'Single Chart Page',
-        'sections' => [
-            'layout' => [
-                'title' => 'Template Strategy',
-                'fields' => [
-                    [ 'id' => 'single.elementor_template', 'type' => 'select', 'label' => 'Elementor Design Template', 'options' => \Charts\Core\Templates::get_options(), 'desc' => 'Select a custom Elementor template. If selected, it completely replaces the native Single Chart page layout.' ],
-                ]
-            ]
-        ]
-    ],
+
     'design' => [
                 'title' => 'Aesthetic Spacing',
                 'fields' => [

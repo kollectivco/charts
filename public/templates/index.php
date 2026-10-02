@@ -49,6 +49,24 @@ if ( $top_artists_chart ) {
 }
 
 use Charts\Core\Settings;
+
+// -------------------------------------------------------------------
+// CUSTOM ELEMENTOR TEMPLATE INJECTION
+// -------------------------------------------------------------------
+$custom_template_id = Settings::get('homepage.elementor_template', 0);
+if ( !empty($custom_template_id) && class_exists('\Elementor\Plugin') && ! $is_mobile ) {
+    \Charts\Core\PublicIntegration::get_header();
+    
+    // Inject Elementor Content
+    $elementor = \Elementor\Plugin::instance();
+    echo '<div class="kc-elementor-override" style="width: 100%;">';
+    echo $elementor->frontend->get_builder_content_for_display( $custom_template_id );
+    echo '</div>';
+
+    \Charts\Core\PublicIntegration::get_footer();
+    exit;
+}
+
 if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 
 $homepage_show_artists = Settings::get('homepage.show_artists_row');
