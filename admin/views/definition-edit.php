@@ -81,6 +81,7 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 						<option value="track" <?php selected($item_type, 'track'); ?>>Tracks (Audio)</option>
 						<option value="artist" <?php selected($item_type, 'artist'); ?>>Artists</option>
 						<option value="video" <?php selected($item_type, 'video'); ?>>Clips & Videos</option>
+						<option value="album" <?php selected($item_type, 'album'); ?>>Albums & EPs</option>
 					</select>
 					<span class="input-helper">Core data model (e.g. Song vs Artist).</span>
 				</div>
@@ -96,6 +97,9 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 						</optgroup>
 						<optgroup label="Professional Logics" data-entity="artist">
 							<option value="top-artists" <?php selected($chart_type, 'top-artists'); ?>>Top Artists</option>
+						</optgroup>
+						<optgroup label="Collection Logics" data-entity="album">
+							<option value="top-albums" <?php selected($chart_type, 'top-albums'); ?>>Top Albums</option>
 						</optgroup>
 					</select>
 					<span class="input-helper">Assigns the appropriate display template for this chart.</span>
