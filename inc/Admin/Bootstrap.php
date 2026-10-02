@@ -2134,55 +2134,71 @@ class Bootstrap {
 
 		global $wpdb;
 		$id = intval( $_POST['id'] ?? 0 );
+		$entity_type = sanitize_text_field( $_POST['entity_type'] ?? 'artist' );
 		$primary_name = sanitize_text_field( $_POST['primary_name'] ?? '' );
 		$name_en = sanitize_text_field( $_POST['name_en'] ?? '' );
 		$spotify_id = sanitize_text_field( $_POST['spotify_id'] ?? '' );
 		$youtube_id = sanitize_text_field( $_POST['youtube_id'] ?? '' );
-		$apple_music_id = sanitize_text_field( $_POST['apple_music_id'] ?? '' );
-		$tiktok_id = sanitize_text_field( $_POST['tiktok_id'] ?? '' );
-		$instagram_id = sanitize_text_field( $_POST['instagram_id'] ?? '' );
-		$aliases_str = sanitize_text_field( $_POST['aliases'] ?? '' );
-
-		if ( !$id || empty($primary_name) ) {
-			wp_send_json_error( array( 'message' => 'Artist ID and display name are required.' ) );
-		}
-
-		$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $id ) );
-		if ( !$artist ) {
-			wp_send_json_error( array( 'message' => 'Artist not found.' ) );
-		}
-
-		$meta = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : [];
 		
-		$aliases = array_filter(array_map('trim', explode(',', $aliases_str)));
-		$meta['aliases'] = $aliases;
-		$meta['youtube_id'] = $youtube_id;
-		$meta['apple_music_id'] = $apple_music_id;
-		$meta['tiktok_id'] = $tiktok_id;
-		$meta['instagram_id'] = $instagram_id;
+		if ( !$id || empty($primary_name) ) {
+			wp_send_json_error( array( 'message' => 'ID and Name are required.' ) );
+		}
 
 		$normalized = mb_strtolower($primary_name);
 
-		$wpdb->update(
-			"{$wpdb->prefix}charts_artists",
-			array(
-				'display_name' => $primary_name,
-				'display_name_en' => $name_en,
-				'normalized_name' => $normalized,
-				'spotify_id' => $spotify_id,
-				'metadata_json' => json_encode($meta),
-				'updated_at' => current_time('mysql')
-			),
-			array( 'id' => $id )
-		);
+		if ( $entity_type === 'artist' || $entity_type === 'artists' ) {
+			$apple_music_id = sanitize_text_field( $_POST['apple_music_id'] ?? '' );
+			$tiktok_id = sanitize_text_field( $_POST['tiktok_id'] ?? '' );
+			$instagram_id = sanitize_text_field( $_POST['instagram_id'] ?? '' );
+			$aliases_str = sanitize_text_field( $_POST['aliases'] ?? '' );
 
-		$wpdb->update(
-			"{$wpdb->prefix}charts_entries",
-			array( 'artist_names' => $primary_name, 'artist_names_en' => $name_en ),
-			array( 'item_type' => 'artist', 'item_id' => $id )
-		);
+			$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $id ) );
+			$meta = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : [];
+			$aliases = array_filter(array_map('trim', explode(',', $aliases_str)));
+			$meta['aliases'] = $aliases;
+			$meta['youtube_id'] = $youtube_id;
+			$meta['apple_music_id'] = $apple_music_id;
+			$meta['tiktok_id'] = $tiktok_id;
+			$meta['instagram_id'] = $instagram_id;
 
-		wp_send_json_success( array( 'message' => 'Artist identity updated successfully.' ) );
+			$wpdb->update( "{$wpdb->prefix}charts_artists", array(
+				'display_name' => $primary_name, 'display_name_en' => $name_en,
+				'normalized_name' => $normalized, 'spotify_id' => $spotify_id,
+				'metadata_json' => json_encode($meta), 'updated_at' => current_time('mysql')
+			), array( 'id' => $id ) );
+
+			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'artist_names' => $primary_name, 'artist_names_en' => $name_en ), array( 'item_type' => 'artist', 'item_id' => $id ) );
+			\Charts\Core\Intelligence::recalculate_all();
+			wp_send_json_success( array( 'message' => 'Artist updated.' ) );
+		} 
+		else if ( $entity_type === 'track' || $entity_type === 'tracks' ) {
+			$wpdb->update( "{$wpdb->prefix}charts_tracks", array(
+				'title' => $primary_name, 'title_en' => $name_en,
+				'normalized_title' => $normalized, 'spotify_id' => $spotify_id, 'youtube_id' => $youtube_id
+			), array( 'id' => $id ) );
+
+			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'track_name' => $primary_name, 'track_name_en' => $name_en ), array( 'item_type' => 'track', 'item_id' => $id ) );
+			\Charts\Core\Intelligence::recalculate_all();
+			wp_send_json_success( array( 'message' => 'Track updated.' ) );
+		}
+		else if ( $entity_type === 'video' || $entity_type === 'videos' || $entity_type === 'clip' || $entity_type === 'clips' ) {
+			$wpdb->update( "{$wpdb->prefix}charts_videos", array(
+				'title' => $primary_name, 'normalized_title' => $normalized, 'youtube_id' => $youtube_id
+			), array( 'id' => $id ) );
+
+			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'track_name' => $primary_name ), array( 'item_type' => 'video', 'item_id' => $id ) );
+			\Charts\Core\Intelligence::recalculate_all();
+			wp_send_json_success( array( 'message' => 'Video updated.' ) );
+		}
+		else if ( $entity_type === 'album' || $entity_type === 'albums' ) {
+			$wpdb->update( "{$wpdb->prefix}charts_albums", array(
+				'title' => $primary_name, 'normalized_title' => $normalized, 'spotify_id' => $spotify_id
+			), array( 'id' => $id ) );
+
+			wp_send_json_success( array( 'message' => 'Album updated.' ) );
+		}
+
+		wp_send_json_error( array( 'message' => 'Invalid entity type.' ) );
 	}
 
 	/**

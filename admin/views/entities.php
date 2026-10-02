@@ -375,7 +375,16 @@ $entity_type = $type;
 													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
 												<?php endif; ?>
 												<?php if ( isset($item->id) && ($type === 'artist' || $type === 'track') ) : ?>
-													<!-- Old inline Merge button removed in favor of Bulk Merge -->
+													
+<?php if ( isset($item->id) ) : ?>
+	<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#3b82f6; color:#fff;" onclick="openEditModal('<?php echo esc_js($type); ?>', <?php echo (int) $item->id; ?>)">
+		<?php _e( 'Edit', 'charts' ); ?>
+	</button>
+	<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#8b5cf6; color:#fff;" onclick="openMergeModal('<?php echo esc_js($type); ?>', <?php echo (int) $item->id; ?>, '<?php echo esc_js(htmlspecialchars(isset($item->display_name) ? $item->display_name : (isset($item->title) ? $item->title : ''))); ?>')">
+		<?php _e( 'Merge', 'charts' ); ?>
+	</button>
+<?php endif; ?>
+
 												<?php endif; ?>
 												<?php if ( isset($item->id) ) : ?>
 													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
