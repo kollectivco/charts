@@ -1331,8 +1331,11 @@ class Bootstrap {
 
 		$type  = sanitize_text_field( $_POST['type'] ?? 'track' );
 		$query = sanitize_text_field( $_POST['query'] ?? '' );
+		$id    = intval( $_POST['id'] ?? 0 );
 
-		if ( strlen($query) < 2 ) wp_send_json_success( array() );
+		if ( strlen($query) < 2 && !$id ) wp_send_json_success( array() );
+
+		if ( $id ) $query = (string) $id;
 
 		try {
 			$results = \Charts\Core\EntityManager::search_entities( $type, $query );

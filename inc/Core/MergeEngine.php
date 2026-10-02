@@ -55,18 +55,13 @@ class MergeEngine {
 
 			// 4. Move track_artists links
 			$wpdb->query( $wpdb->prepare(
-				"UPDATE IGNORE {$wpdb->prefix}charts_track_artists SET artist_id = %d WHERE artist_id IN ($ids_in)",
+				"UPDATE IGNORE {$wpdb->prefix}charts_item_artists SET artist_id = %d WHERE artist_id IN ($ids_in)",
 				$master_id
 			) );
 			// Delete any remaining duplicates that were ignored due to unique key conflicts
-			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_track_artists WHERE artist_id IN ($ids_in)" );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_item_artists WHERE artist_id IN ($ids_in)" );
 
-			// 5. Move video_artists links
-			$wpdb->query( $wpdb->prepare(
-				"UPDATE IGNORE {$wpdb->prefix}charts_video_artists SET artist_id = %d WHERE artist_id IN ($ids_in)",
-				$master_id
-			) );
-			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_video_artists WHERE artist_id IN ($ids_in)" );
+
 
 			// 6. Update chart entries pointing to the duplicate artists directly
 			$wpdb->query( $wpdb->prepare(
@@ -119,8 +114,29 @@ class MergeEngine {
 			// 8. Delete the duplicate artist records
 			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_artists WHERE id IN ($ids_in)" );
 
+
+			// Update denormalized strings in charts_entries
+			$master_artist = $wpdb->get_var( $wpdb->prepare("SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $master_id) );
+			if ($master_artist) {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE {$wpdb->prefix}charts_entries SET artist_names = %s WHERE item_type = 'artist' AND item_id = %d",
+					$master_artist, $master_id
+				) );
+				
+				// Also update tracks where this artist is primary
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE {$wpdb->prefix}charts_entries e 
+					JOIN {$wpdb->prefix}charts_tracks t ON t.id = e.item_id 
+					SET e.artist_names = %s 
+					WHERE e.item_type = 'track' AND t.primary_artist_id = %d",
+					$master_artist, $master_id
+				) );
+			}
+			\Charts\Core\Intelligence::recalculate_all();
+
 			$wpdb->query( 'COMMIT' );
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d artists into master ID %d.', count($duplicate_ids), $master_id ) );
+
 		} catch ( \Exception $e ) {
 			$wpdb->query( 'ROLLBACK' );
 			return array( 'success' => false, 'message' => 'Merge failed: ' . $e->getMessage() );
@@ -165,10 +181,10 @@ class MergeEngine {
 			// 2. Move track_artists links to master track
 			// (We just reassign track_id. If artist is already linked to master track, it will be ignored by UNIQUE index)
 			$wpdb->query( $wpdb->prepare(
-				"UPDATE IGNORE {$wpdb->prefix}charts_track_artists SET track_id = %d WHERE track_id IN ($ids_in)",
+				"UPDATE IGNORE {$wpdb->prefix}charts_item_artists SET item_id = %d WHERE item_type = 'track' AND item_id IN ($ids_in)",
 				$master_id
 			) );
-			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_track_artists WHERE track_id IN ($ids_in)" );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_item_artists WHERE item_type = 'track' AND item_id IN ($ids_in)" );
 
 			// 3. Update chart entries
 			$wpdb->query( $wpdb->prepare(
@@ -230,8 +246,20 @@ class MergeEngine {
 			// 6. Delete duplicate tracks
 			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_tracks WHERE id IN ($ids_in)" );
 
+
+			// Update denormalized strings in charts_entries
+			$master_track = $wpdb->get_var( $wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_tracks WHERE id = %d", $master_id) );
+			if ($master_track) {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE {$wpdb->prefix}charts_entries SET track_name = %s WHERE item_type = 'track' AND item_id = %d",
+					$master_track, $master_id
+				) );
+			}
+			\Charts\Core\Intelligence::recalculate_all();
+
 			$wpdb->query( 'COMMIT' );
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d tracks into master ID %d.', count($duplicate_ids), $master_id ) );
+
 		} catch ( \Exception $e ) {
 			$wpdb->query( 'ROLLBACK' );
 			return array( 'success' => false, 'message' => 'Merge failed: ' . $e->getMessage() );

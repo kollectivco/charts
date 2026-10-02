@@ -283,9 +283,9 @@ class EntityManager {
 			foreach ( $results as &$r ) {
 				$r->subtitle = $wpdb->get_var( $wpdb->prepare( "
 					SELECT a.display_name FROM {$wpdb->prefix}charts_artists a
-					JOIN {$wpdb->prefix}charts_" . $type . "_artists ja ON ja.artist_id = a.id
-					WHERE ja." . $type . "_id = %d LIMIT 1
-				", $r->id ) ) ?: '';
+					JOIN {$wpdb->prefix}charts_item_artists ja ON ja.artist_id = a.id
+					WHERE ja.item_type = %s AND ja.item_id = %d LIMIT 1
+				", $type, $r->id ) ) ?: '';
 			}
 		}
 		
