@@ -39,6 +39,9 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_auto_reconcile', array( self::class, 'handle_auto_reconcile' ) );
 		add_action( 'wp_ajax_charts_update_artist_identity', array( self::class, 'handle_update_artist_identity' ) );
 		add_action( 'wp_ajax_kc_recalculate_forecast', array( self::class, 'handle_recalculate_forecast' ) );
+		add_action( 'wp_ajax_charts_billboard_sync', array( self::class, 'handle_billboard_sync' ) );
+		add_action( 'wp_ajax_charts_billboard_download_csv', array( self::class, 'handle_billboard_download_csv' ) );
+		add_action( 'wp_ajax_charts_billboard_get_weeks', array( self::class, 'handle_billboard_get_weeks' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -2111,5 +2114,60 @@ class Bootstrap {
 		);
 
 		wp_send_json_success( array( 'message' => 'Artist identity updated successfully.' ) );
+	}
+
+	/**
+	 * AJAX: Get Billboard Arabia available weeks list
+	 */
+	public static function handle_billboard_get_weeks() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+
+		$weeks = \Charts\Services\BillboardService::get_weeks();
+		wp_send_json_success( array( 'weeks' => $weeks ) );
+	}
+
+	/**
+	 * AJAX: Direct 1-Click Sync Billboard Arabia Chart to Database
+	 */
+	public static function handle_billboard_sync() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+
+		$week_id  = intval( $_POST['week_id'] ?? 0 );
+		$chart_id = intval( $_POST['chart_id'] ?? 0 );
+
+		$result = \Charts\Services\BillboardService::sync_to_chart( $week_id, $chart_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array(
+			'message' => sprintf( __( 'تم استيراد %d أغنية بنجاح من بيلبورد عربية وتحديث الشارت والصور!', 'charts' ), $result['imported_count'] ),
+			'data'    => $result,
+		) );
+	}
+
+	/**
+	 * Download Billboard Arabia CSV Sheet directly
+	 */
+	public static function handle_billboard_download_csv() {
+		if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( $_GET['nonce'], 'charts_admin_action' ) ) {
+			wp_die( 'Security check failed.' );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Unauthorized.' );
+		}
+
+		$week_id = intval( $_GET['week_id'] ?? 0 );
+		\Charts\Services\BillboardService::download_csv( $week_id );
 	}
 }
