@@ -60,13 +60,26 @@ class PremiumHeroSlider extends Widget_Base {
 		$this->end_controls_section();
 
 		$this->start_controls_section( 'section_image_settings', [ 'label' => __( 'Image Settings', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_control( 'overlay_opacity', [
-			'label' => __( 'Overlay Darkness', 'charts' ),
-			'type' => Controls_Manager::SLIDER,
-			'range' => [ 'px' => [ 'max' => 1, 'min' => 0, 'step' => 0.05 ] ],
-			'default' => [ 'size' => 0.5 ],
-			'selectors' => [ '{{WRAPPER}} .kc-phs-overlay' => 'background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,{{SIZE}}) 40%, rgba(0,0,0,0.1) 100%);' ],
+		
+		$this->add_control( 'overlay_color_start', [
+			'label' => __( 'Overlay Gradient Start', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'default' => 'rgba(0,0,0,0.9)',
+			'selectors' => [ '{{WRAPPER}}' => '--phs-overlay-start: {{VALUE}};' ],
 		] );
+		$this->add_control( 'overlay_color_mid', [
+			'label' => __( 'Overlay Gradient Mid', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'default' => 'rgba(0,0,0,0.4)',
+			'selectors' => [ '{{WRAPPER}}' => '--phs-overlay-mid: {{VALUE}};' ],
+		] );
+		$this->add_control( 'overlay_color_end', [
+			'label' => __( 'Overlay Gradient End', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'default' => 'rgba(0,0,0,0.1)',
+			'selectors' => [ '{{WRAPPER}}' => '--phs-overlay-end: {{VALUE}};' ],
+		] );
+
 		$this->add_control( 'enable_zoom', [
 			'label' => __( 'Enable Zoom Animation', 'charts' ),
 			'type' => Controls_Manager::SWITCHER,
@@ -92,7 +105,7 @@ class PremiumHeroSlider extends Widget_Base {
 		$this->add_control( 'show_dots', [ 'label' => 'Show Dots', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
 		$this->end_controls_section();
 
-		$this->start_controls_section( 'style_general', [ 'label' => __( 'Colors & Style', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->start_controls_section( 'style_general', [ 'label' => __( 'Colors & Height', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_responsive_control( 'slider_height', [
 			'label' => __( 'Slider Height', 'charts' ), 'type' => Controls_Manager::SLIDER, 'size_units' => [ 'px', 'vh' ],
 			'range' => [ 'px' => [ 'min' => 200, 'max' => 1000 ] ],
@@ -102,11 +115,68 @@ class PremiumHeroSlider extends Widget_Base {
 			'label' => __( 'Accent Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ff0055',
 			'selectors' => [ '{{WRAPPER}}' => '--phs-accent: {{VALUE}};' ],
 		]);
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_typography', [ 'label' => __( 'Typography', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_control( 'title_color', [
 			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-phs-title' => 'color: {{VALUE}};' ],
 		]);
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'title_typo', 'selector' => '{{WRAPPER}} .kc-phs-title' ] );
+		
+		$this->add_control( 'subtitle_color', [
+			'label' => __( 'Subtitle Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-phs-desc' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'subtitle_typo', 'selector' => '{{WRAPPER}} .kc-phs-desc' ] );
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_navigation', [ 'label' => __( 'Navigation', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		
+		$this->add_control( 'arrow_color', [
+			'label' => __( 'Arrow Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-phs-next, {{WRAPPER}} .kc-phs-prev' => 'color: {{VALUE}}; border-color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'arrow_bg', [
+			'label' => __( 'Arrow Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-phs-next, {{WRAPPER}} .kc-phs-prev' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'arrow_hover_color', [
+			'label' => __( 'Arrow Hover Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-phs-next:hover, {{WRAPPER}} .kc-phs-prev:hover' => 'color: {{VALUE}}; border-color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'arrow_hover_bg', [
+			'label' => __( 'Arrow Hover Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-phs-next:hover, {{WRAPPER}} .kc-phs-prev:hover' => 'background-color: {{VALUE}};' ],
+		]);
+
+		$this->add_control( 'dot_color', [
+			'label' => __( 'Dot Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .swiper-pagination-bullet' => 'background: {{VALUE}};' ],
+		]);
+		$this->add_control( 'dot_active_color', [
+			'label' => __( 'Dot Active Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .swiper-pagination-bullet-active' => 'background: {{VALUE}};' ],
+		]);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_spacing', [ 'label' => __( 'Spacing', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		
+		$this->add_responsive_control( 'slide_padding', [
+			'label' => __( 'Slide Padding', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-phs-slide' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+
+		$this->add_responsive_control( 'content_margin', [
+			'label' => __( 'Content Margin', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-phs-content' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+
 		$this->end_controls_section();
 	}
 
@@ -159,12 +229,12 @@ class PremiumHeroSlider extends Widget_Base {
 		$uid_safe = str_replace('-', '_', $uid);
 ?>
 		<style>
-		.<?php echo $uid; ?>-wrap { position: relative; width: 100%; height: 500px; border-radius: 24px; overflow: hidden; --phs-accent: <?php echo $settings['accent_color'] ?: '#ff0055'; ?>; direction: rtl; font-family: "Cairo", sans-serif; }
+		.<?php echo $uid; ?>-wrap { position: relative; width: 100%; height: 500px; border-radius: 24px; overflow: hidden; --phs-accent: <?php echo $settings['accent_color'] ?: '#ff0055'; ?>; --phs-overlay-start: rgba(0,0,0,0.9); --phs-overlay-mid: rgba(0,0,0,0.4); --phs-overlay-end: rgba(0,0,0,0.1); direction: rtl; font-family: "Cairo", sans-serif; }
 		.<?php echo $uid; ?>-wrap .swiper { width: 100%; height: 100%; }
 		.<?php echo $uid; ?>-slide { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; padding: 60px; }
 		.<?php echo $uid; ?>-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; <?php echo $settings['enable_zoom'] === 'yes' ? 'transform: scale(1.05); transition: transform 6s linear;' : ''; ?> }
 		.<?php echo $uid; ?>-wrap .swiper-slide-active .<?php echo $uid; ?>-bg { transform: scale(1); }
-		.<?php echo $uid; ?>-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%); z-index: 2; }
+		.<?php echo $uid; ?>-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--phs-overlay-start) 0%, var(--phs-overlay-mid) 40%, var(--phs-overlay-end) 100%); z-index: 2; }
 		.<?php echo $uid; ?>-content { position: relative; z-index: 3; color: #fff; max-width: 800px; }
 		.<?php echo $uid; ?>-badge { display: inline-block; background: var(--phs-accent); color: #fff; font-weight: 900; padding: 6px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; letter-spacing: 1px; }
 		.<?php echo $uid; ?>-title { font-size: 64px; font-weight: 900; line-height: 1.1; margin: 0 0 16px 0; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }

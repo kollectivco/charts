@@ -231,8 +231,9 @@ class ChartShowcaseSlider extends Widget_Base {
 		.' . $uid . ' .kc-sc-info { position: absolute; bottom: 20px; right: 20px; left: 20px; z-index: 4; display: flex; flex-direction: column; align-items: flex-start; text-align: right; }
 		.' . $uid . ' .kc-sc-artist { color: #fff; font-size: 38px; font-weight: 900; line-height: 1.1; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.8); word-wrap: break-word; text-align: right; }
 		.' . $uid . ' .kc-sc-artist span { display: block; }
+		.' . $uid . ' .kc-sc-subtitle { font-size: 24px; font-weight: 700; opacity: 0.9; margin-top: 4px; display: block; }
 		
-				/* Variant: Overlay */
+		/* Variant: Overlay */
 		.' . $uid . '.kc-variant-overlay .kc-sc-shape,
 		.' . $uid . '.kc-variant-overlay .kc-sc-scribble { display: none !important; }
 		.' . $uid . '.kc-variant-overlay .kc-sc-img-wrap { inset: 0; display: block; }
@@ -242,12 +243,16 @@ class ChartShowcaseSlider extends Widget_Base {
 		.' . $uid . '.kc-variant-overlay .kc-sc-crown { left: 24px; right: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8)); }
 		.' . $uid . '.kc-variant-overlay .kc-sc-artist { font-size: 32px; }
 
-		/* Nav Arrows (Exact Square Style) */
-		.' . $uid . ' .kc-sc-nav { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; padding: 0 8px; }
+		/* Nav Arrows & Dots */
+		.' . $uid . ' .kc-sc-nav-wrap { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding: 0 8px; }
+		.' . $uid . ' .kc-sc-nav { display: flex; gap: 8px; justify-content: flex-end; }
 		.' . $uid . ' .kc-sc-nav-btn { width: 48px; height: 48px; border: 1px solid #334155; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
 		.' . $uid . ' .kc-sc-nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
 		.' . $uid . ' .kc-sc-nav-btn.kc-next { border-color: #e11d48; color: #e11d48; }
 		.' . $uid . ' .kc-sc-nav-btn.kc-next:hover { background: rgba(225, 29, 72, 0.1); }
+		.' . $uid . ' .swiper-pagination { position: relative; bottom: auto; text-align: right; width: auto; }
+		.' . $uid . ' .swiper-pagination-bullet { background: #94a3b8; opacity: 0.5; width: 10px; height: 10px; margin: 0 4px; }
+		.' . $uid . ' .swiper-pagination-bullet-active { background: #e11d48; opacity: 1; }
 		</style>';
 
 		$crown_svg = '<svg class="kc-sc-crown" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M15,60 C25,45 35,30 40,35 C42,45 45,60 50,70 C55,45 60,20 65,15 C68,35 70,55 75,65 C80,45 85,30 90,35" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -274,13 +279,14 @@ class ChartShowcaseSlider extends Widget_Base {
 			$img = (!empty($e->resolved_image) ? $e->resolved_image : $e->cover_image) ?: CHARTS_URL . 'public/assets/img/placeholder.png';
 			$num = \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position);
 			
-			$display_text = ($def->entity_type === 'track' && !empty($resolved['subtitle'])) ? $resolved['subtitle'] : $resolved['title'];
+			$display_title = $resolved['title'];
+			$display_subtitle = ($def->entity_type === 'track' && !empty($resolved['subtitle'])) ? $resolved['subtitle'] : '';
 			
-			$words = explode(' ', trim($display_text));
+			$words = explode(' ', trim($display_title));
 			if (count($words) >= 2) {
-				$display_text = '<span>' . $words[0] . '</span><span>' . implode(' ', array_slice($words, 1)) . '</span>';
+				$display_title = '<span>' . $words[0] . '</span><span>' . implode(' ', array_slice($words, 1)) . '</span>';
 			} else {
-				$display_text = '<span>' . $display_text . '</span>';
+				$display_title = '<span>' . $display_title . '</span>';
 			}
 			
 			// Adjust crown color based on background
@@ -301,7 +307,10 @@ class ChartShowcaseSlider extends Widget_Base {
 			
 			echo '<div class="kc-sc-overlay"></div>';
 			echo '<div class="kc-sc-info">';
-			echo '<h3 class="kc-sc-artist">' . wp_kses_post($display_text) . '</h3>';
+			echo '<h3 class="kc-sc-artist">' . wp_kses_post($display_title) . '</h3>';
+			if (!empty($display_subtitle)) {
+				echo '<span class="kc-sc-subtitle">' . wp_kses_post($display_subtitle) . '</span>';
+			}
 			echo '</div>';
 			echo '</div>';
 			echo '</div>';
@@ -311,41 +320,53 @@ class ChartShowcaseSlider extends Widget_Base {
 		echo '</div>';
 		echo '</div>';
 		
-		if ($settings['show_arrows'] === 'yes') {
+		echo '<div class="kc-sc-nav-wrap">';
+		if (!empty($settings['show_dots']) && $settings['show_dots'] === 'yes') {
+			echo '<div class="swiper-pagination ' . $uid . '-pagination"></div>';
+		} else {
+			echo '<div></div>'; // Spacer
+		}
+		if (!isset($settings['show_arrows']) || $settings['show_arrows'] === 'yes') {
 			echo '<div class="kc-sc-nav">';
 			echo '<button class="kc-sc-nav-btn kc-next ' . $uid . '-next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>';
 			echo '<button class="kc-sc-nav-btn kc-prev ' . $uid . '-prev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>';
 			echo '</div>';
 		}
+		echo '</div>'; // End nav wrap
 		
 		echo '</div>';
 		
 		$uid_safe = str_replace('-', '_', $uid);
-		$autoplay = $settings['autoplay'] === 'yes' ? 'autoplay: { delay: ' . intval($settings['autoplay_speed']) . ', disableOnInteraction: false, pauseOnMouseEnter: ' . ($settings['pause_on_hover'] === 'yes' ? 'true' : 'false') . ' },' : '';
-		$loop = $settings['loop'] === 'yes' ? 'loop: true,' : 'loop: false,';
+		$autoplay = (isset($settings['autoplay']) && $settings['autoplay'] === 'yes') ? 'autoplay: { delay: ' . intval($settings['autoplay_speed']) . ', disableOnInteraction: false, pauseOnMouseEnter: ' . ($settings['pause_on_hover'] === 'yes' ? 'true' : 'false') . ' },' : '';
+		$loop = (isset($settings['loop']) && $settings['loop'] === 'yes') ? 'loop: true,' : 'loop: false,';
 		
 		echo '<script>
 		function initCarousel_' . $uid_safe . '() {
 			if(typeof Swiper !== "undefined") {
 				new Swiper("#' . $uid . '-swiper", {
-					slidesPerView: ' . floatval($settings['slides_per_view'] ?: 4) . ',
-					spaceBetween: ' . floatval($settings['space_between'] ?: 16) . ',
+					slidesPerView: ' . floatval($settings['slides_per_view'] ?? 4) . ',
+					spaceBetween: ' . floatval($settings['space_between'] ?? 16) . ',
 					' . $loop . '
 					' . $autoplay . '
 					breakpoints: {
-						320: { slidesPerView: ' . floatval($settings['slides_per_view_mobile'] ?: 1) . ' },
-						768: { slidesPerView: ' . floatval($settings['slides_per_view_tablet'] ?: 2) . ' },
-						1024: { slidesPerView: ' . floatval($settings['slides_per_view'] ?: 4) . ' }
+						320: { slidesPerView: ' . floatval($settings['slides_per_view_mobile'] ?? 1) . ' },
+						768: { slidesPerView: ' . floatval($settings['slides_per_view_tablet'] ?? 2) . ' },
+						1024: { slidesPerView: ' . floatval($settings['slides_per_view'] ?? 4) . ' }
 					},
 					navigation: {
 						nextEl: ".' . $uid . '-next",
 						prevEl: ".' . $uid . '-prev",
+					},
+					pagination: {
+						el: ".' . $uid . '-pagination",
+						clickable: true,
 					}
 				});
 			}
 		}
 		setTimeout(initCarousel_' . $uid_safe . ', 100);
 		</script>';
+		
 		
 			}
 }

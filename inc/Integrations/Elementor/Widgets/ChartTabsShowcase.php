@@ -73,6 +73,18 @@ class ChartTabsShowcase extends Widget_Base {
 		// --- STYLING: TABS ---
 		$this->start_controls_section( 'style_tabs', [ 'label' => __( 'Tabs Navigation', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		
+		$this->add_responsive_control( 'tab_nav_align', [
+			'label' => __( 'Alignment', 'charts' ),
+			'type' => Controls_Manager::CHOOSE,
+			'options' => [
+				'left' => [ 'title' => __( 'Left', 'charts' ), 'icon' => 'eicon-text-align-left' ],
+				'center' => [ 'title' => __( 'Center', 'charts' ), 'icon' => 'eicon-text-align-center' ],
+				'right' => [ 'title' => __( 'Right', 'charts' ), 'icon' => 'eicon-text-align-right' ],
+			],
+			'default' => 'center',
+			'selectors' => [ '{{WRAPPER}} .kc-ts-nav-align' => 'text-align: {{VALUE}};' ],
+		] );
+
 		$this->add_control( 'tab_nav_bg', [
 			'label' => __( 'Nav Container Background', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-nav-wrap' => 'background-color: {{VALUE}};' ],
@@ -382,7 +394,7 @@ class ChartTabsShowcase extends Widget_Base {
 
 		<div class="<?php echo esc_attr($wrap_class); ?>">
 			<?php if ($settings['show_tabs'] === 'yes' && count($charts_data) > 1) : ?>
-			<div style="text-align: center;">
+			<div class="kc-ts-nav-align">
 				<div class="<?php echo $uid; ?>-nav-wrap kc-ts-nav-wrap">
 					<div class="<?php echo $uid; ?>-nav kc-ts-nav">
 						<?php foreach ($charts_data as $i => $c) : ?>
