@@ -85,7 +85,7 @@ class Integrity {
 				$wpdb->insert($artists_tbl, array(
 					'display_name'    => $name,
 					'normalized_name' => $normalized,
-					'slug'            => sanitize_title($name),
+					'slug'            => \Charts\Services\Slugger::make( $name, 'artist' ),
 					'created_at'      => current_time('mysql')
 				));
 				$id = $wpdb->insert_id;
@@ -110,7 +110,7 @@ class Integrity {
 				$wpdb->insert($artists_tbl, array(
 					'display_name'    => $primary_artist,
 					'normalized_name' => $normalized_artist,
-					'slug'            => sanitize_title($primary_artist),
+					'slug'            => \Charts\Services\Slugger::make( $primary_artist, 'artist' ),
 					'created_at'      => current_time('mysql')
 				));
 				$artist_id = $wpdb->insert_id;
@@ -123,7 +123,7 @@ class Integrity {
 				$wpdb->insert($tracks_tbl, array(
 					'title'             => $title,
 					'normalized_title'  => $normalized_track,
-					'slug'              => sanitize_title($title . '-' . $artist_id),
+					'slug'              => \Charts\Services\Slugger::make( $title . '-' . $artist_id, 'track-' . $artist_id ),
 					'primary_artist_id' => $artist_id,
 					'created_at'        => current_time('mysql')
 				));

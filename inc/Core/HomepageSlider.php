@@ -130,7 +130,7 @@ class HomepageSlider {
                 'badge'     => '',
                 'image_url' => $a->image ?: CHARTS_URL . 'public/assets/img/placeholder.png',
                 'btn1_text' => 'View Profile',
-                'btn1_link' => home_url('/charts/artist/' . ($a->slug ?? sanitize_title($a->display_name)) . '/'),
+                'btn1_link' => home_url('/charts/artist/' . ($a->slug ?? \Charts\Services\Slugger::make($a->display_name, 'artist')) . '/'),
             ];
         }
         return $slides;

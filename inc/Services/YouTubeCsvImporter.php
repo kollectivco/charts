@@ -315,9 +315,9 @@ class YouTubeCsvImporter {
 			return $id;
 		}
 		$franko = Normalizer::to_franko( $display_name );
-		$slug = sanitize_title( $display_name );
+		$slug = \Charts\Services\Slugger::make( $display_name, 'artist' );
 		if ( empty( $slug ) ) {
-			$slug = sanitize_title( $franko );
+			$slug = \Charts\Services\Slugger::make( $franko, 'artist' );
 		}
 		if ( empty( $slug ) ) {
 			$slug = 'artist-' . wp_generate_password( 8, false );
@@ -326,7 +326,7 @@ class YouTubeCsvImporter {
 
 		$wpdb->insert( $table, array(
 			'display_name'        => $display_name,
-			'display_name_franko' => $franko !== $display_name ? $franko : null,
+			'display_name_en' => Normalizer::is_arabic( $display_name ) ? \Charts\Services\Slugger::make( $display_name, 'artist' ) : null,
 			'normalized_name'     => $normalized,
 			'slug'                => $slug,
 			'image'               => $image,
@@ -350,9 +350,9 @@ class YouTubeCsvImporter {
 			return $id;
 		}
 		$franko = Normalizer::to_franko( $title );
-		$slug = sanitize_title( $title . '-' . $artist_id );
+		$slug = \Charts\Services\Slugger::make( $title . '-' . $artist_id, 'track-' . $artist_id );
 		if ( empty( $slug ) ) {
-			$slug = sanitize_title( $franko . '-' . $artist_id );
+			$slug = \Charts\Services\Slugger::make( $franko . '-' . $artist_id, 'track-' . $artist_id );
 		}
 		if ( empty( $slug ) ) {
 			$slug = 'track-' . wp_generate_password( 8, false );
@@ -361,7 +361,7 @@ class YouTubeCsvImporter {
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
-			'title_franko'      => $franko !== $title ? $franko : null,
+			'title_en'          => Normalizer::is_arabic( $title ) ? \Charts\Services\Slugger::make( $title, 'track' ) : null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,
@@ -387,7 +387,7 @@ class YouTubeCsvImporter {
 			return $id;
 		}
 		$franko = Normalizer::to_franko( $title );
-		$slug = $this->unique_slug( $table, sanitize_title( $title . '-' . $artist_id ) );
+		$slug = $this->unique_slug( $table, \Charts\Services\Slugger::make( $title . '-' . $artist_id, 'video-' . $artist_id ) );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
 			'normalized_title'  => $normalized,

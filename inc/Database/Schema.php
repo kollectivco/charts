@@ -357,7 +357,7 @@ class Schema {
 			
 			$id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $artists_tbl WHERE normalized_name = %s", $normalized));
 			if ( !$id ) {
-				$slug = sanitize_title($name);
+				$slug = \Charts\Services\Slugger::make( $name, 'artist' );
 				$wpdb->insert($artists_tbl, array(
 					'display_name'    => $name,
 					'normalized_name' => $normalized,
@@ -386,7 +386,7 @@ class Schema {
 				$wpdb->insert($artists_tbl, array(
 					'display_name'    => $primary_artist,
 					'normalized_name' => $normalized_artist,
-					'slug'            => sanitize_title($primary_artist),
+					'slug'            => \Charts\Services\Slugger::make( $primary_artist, 'artist' ),
 					'created_at'      => current_time('mysql')
 				));
 				$artist_id = $wpdb->insert_id;
@@ -399,7 +399,7 @@ class Schema {
 				$wpdb->insert($tracks_tbl, array(
 					'title'             => $title,
 					'normalized_title'  => $normalized_track,
-					'slug'              => sanitize_title($title . '-' . $artist_id),
+					'slug'              => \Charts\Services\Slugger::make( $title . '-' . $artist_id, 'track-' . $artist_id ),
 					'primary_artist_id' => $artist_id,
 					'created_at'        => current_time('mysql')
 				));
@@ -423,7 +423,7 @@ class Schema {
 						$wpdb->insert($artists_tbl, array(
 							'display_name'    => $a_name,
 							'normalized_name' => $norm_a,
-							'slug'            => sanitize_title($a_name),
+							'slug'            => \Charts\Services\Slugger::make( $a_name, 'artist' ),
 							'created_at'      => current_time('mysql')
 						));
 						$a_id = $wpdb->insert_id;

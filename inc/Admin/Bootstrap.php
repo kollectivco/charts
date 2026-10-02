@@ -537,6 +537,7 @@ class Bootstrap {
 			array( 'title' => 'Clips', 'slug' => 'charts-clips', 'callback' => 'render_entities' ),
 			array( 'title' => 'Sources', 'slug' => 'charts-sources', 'callback' => 'render_sources' ),
 			array( 'title' => 'Import Center', 'slug' => 'charts-import', 'callback' => 'render_import_center' ),
+			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
 			array( 'title' => 'Import Runs', 'slug' => 'charts-imports', 'callback' => 'render_results_history' ),
 			array( 'title' => 'Matching Center', 'slug' => 'charts-matching', 'callback' => 'render_matching' ),
 			array( 'title' => 'Intelligence', 'slug' => 'charts-intelligence', 'callback' => 'render_intelligence' ),
@@ -728,7 +729,7 @@ class Bootstrap {
 
 	private static function process_billboard_csv_upload() {
 		global $wpdb;
-		if ( empty( $_FILES['billboard_csv']['tmp_name'] ) ) {
+		if ( empty( $_FILES['billboard_csv']['tmp_name'] ) || (int) ( $_FILES['billboard_csv']['error'] ?? UPLOAD_ERR_OK ) !== UPLOAD_ERR_OK ) {
 			\Charts\Core\Notify::error( __( 'The Billboard CSV is missing.', 'charts' ), __( 'Input Failure', 'charts' ) );
 			return;
 		}
@@ -739,7 +740,10 @@ class Bootstrap {
 			return;
 		}
 
-		$meta = array();
+		$meta = array(
+			'chart_id'    => absint( $_POST['chart_id'] ?? 0 ),
+			'period_date' => sanitize_text_field( $_POST['period_date'] ?? current_time( 'Y-m-d' ) ),
+		);
 		$importer = new \Charts\Services\BillboardCsvImporter();
 		$result = $importer->run( $csv_content, $meta );
 

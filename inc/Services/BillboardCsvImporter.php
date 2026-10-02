@@ -2,7 +2,7 @@
 namespace Charts\Services;
 
 class BillboardCsvImporter {
-	public function run($csv_content, $meta) {
+	public function run( $csv_content, $meta = array() ) {
 		global $wpdb;
 		$lines = explode("\n", str_replace("\r", "", trim($csv_content)));
 		if (count($lines) < 2) return new \WP_Error('empty_csv', 'CSV is empty or invalid.');
@@ -10,28 +10,42 @@ class BillboardCsvImporter {
 		$source_table = $wpdb->prefix . 'charts_sources';
 		$runs_table   = $wpdb->prefix . 'charts_import_runs';
 		
-		$chart_id = $meta['chart_id'] ?? 0;
-		$source_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $source_table WHERE platform = 'billboard' AND chart_type = %s LIMIT 1", $chart_id ? "cid-{$chart_id}" : 'top-songs'));
+		$chart_id = absint( $meta['chart_id'] ?? 0 );
+		$definition = $chart_id ? ( new \Charts\Admin\SourceManager() )->get_definition( $chart_id ) : null;
+		$chart_type = $chart_id ? 'cid-' . $chart_id : 'top-songs';
+		$country = $definition ? strtolower( $definition->country_code ) : 'global';
+		$source_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $source_table WHERE platform = 'billboard' AND chart_type = %s LIMIT 1", $chart_type ) );
 		
 		if (!$source_id) {
-			$wpdb->insert($source_table, [
-				'source_name' => 'Billboard Arabia', 'platform' => 'billboard', 'source_type' => 'manual',
-				'country_code' => 'global', 'frequency' => 'weekly', 'chart_type' => $chart_id ? "cid-{$chart_id}" : 'top-songs', 'is_active' => 1
-			]);
+			$wpdb->insert( $source_table, array(
+				'source_name' => $definition ? 'Billboard Arabia — ' . $definition->title : 'Billboard Arabia Hot 100',
+				'platform' => 'billboard',
+				'source_type' => 'manual_import',
+				'country_code' => $country,
+				'frequency' => 'weekly',
+				'chart_type' => $chart_type,
+				'source_url' => 'https://www.billboardarabia.com/charts/',
+				'parser_key' => 'billboard-csv',
+				'is_active' => 1,
+			) );
 			$source_id = $wpdb->insert_id;
 		}
+		if ( ! $source_id ) return new \WP_Error( 'billboard_source_failed', __( 'Could not create the Billboard import source.', 'charts' ) );
 
 		// Create run record
-		$wpdb->insert( $runs_table, [
+		$wpdb->insert( $runs_table, array(
 			'source_id'  => $source_id,
+			'run_type'   => 'csv',
 			'status'     => 'processing',
-			'total_rows' => count($lines),
+			'fetched_rows' => max( 0, count( $lines ) - 1 ),
+			'parsed_rows' => max( 0, count( $lines ) - 1 ),
 			'started_at' => current_time( 'mysql' ),
-		] );
-		$run_id = $wpdb->insert_id;
+		) );
+		$run_id = (int) $wpdb->insert_id;
 
 		$import_flow = new \Charts\Services\ImportFlow();
-		$period_id = $import_flow->ensure_period('weekly', current_time('Y-m-d'));
+		$period_date = sanitize_text_field( $meta['period_date'] ?? current_time( 'Y-m-d' ) );
+		$period_id = $import_flow->ensure_period( 'weekly', $period_date );
 
 		$headers = str_getcsv(array_shift($lines));
 		if (strpos($headers[0], "\xEF\xBB\xBF") === 0) $headers[0] = substr($headers[0], 3);
@@ -95,13 +109,14 @@ class BillboardCsvImporter {
 		\Charts\Core\Intelligence::recalculate_all();
 
 		// Update run record
-		$wpdb->update( $runs_table, [
-			'status'        => 'completed',
+		$wpdb->update( $runs_table, array(
+			'status'        => ( $imported > 0 || empty( $lines ) ) ? 'completed' : 'failed',
 			'matched_items' => $imported,
 			'created_items' => $created,
-			'error_log'     => empty($errors) ? null : implode(" | ", array_slice($errors, 0, 50)),
-			'completed_at'  => current_time( 'mysql' ),
-		], ['id' => $run_id] );
+			'error_message' => empty( $errors ) ? null : implode( ' | ', array_slice( $errors, 0, 50 ) ),
+			'logs_json'     => wp_json_encode( array( 'provider' => 'billboard', 'skipped' => max( 0, count( $lines ) - $imported ) ) ),
+			'finished_at'   => current_time( 'mysql' ),
+		), array( 'id' => $run_id ) );
 
 		return [ 'saved' => $imported, 'parsed' => count($lines), 'source_id' => $source_id, 'period_id' => $period_id, 'run_id' => $run_id, 'skipped' => count($lines) - $imported ];
 	}

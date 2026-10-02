@@ -32,8 +32,8 @@ class Matcher {
 		// 2b. Try Franko Match
 		$franko = Normalizer::to_franko( $display_name );
 		if ( $franko !== $display_name ) {
-			$norm_franko = mb_strtolower( $franko );
-			$artist_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE display_name_franko = %s OR normalized_name = %s", $franko, $norm_franko ) );
+			$english_name = Slugger::make( $display_name, 'artist' );
+			$artist_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE display_name_en = %s", $english_name ) );
 			if ( $artist_id ) {
 				return $artist_id;
 			}
@@ -41,12 +41,11 @@ class Matcher {
 
 		// 3. Create fresh
 		$franko = Normalizer::to_franko( $display_name );
-		$slug = sanitize_title( $display_name );
-		$slug = $this->ensure_unique_slug( $table, $slug );
+		$slug = Slugger::unique( $table, $display_name, 'artist' );
 
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
-			'display_name_franko' => $franko !== $display_name ? $franko : null,
+			'display_name_en' => Normalizer::is_arabic( $display_name ) ? Slugger::make( $display_name, 'artist' ) : null,
 			'normalized_name' => $normalized_name,
 			'slug'            => $slug,
 			'created_at'      => current_time( 'mysql' ),
@@ -79,9 +78,10 @@ class Matcher {
 		// 1b. Try Franko Match
 		$franko = Normalizer::to_franko( $title );
 		if ( $franko !== $title ) {
+			$english_title = Slugger::make( $title, 'track' );
 			$track_id = $wpdb->get_var( $wpdb->prepare( 
-				"SELECT id FROM $table WHERE (title_franko = %s OR normalized_title = %s) AND primary_artist_id = %d", 
-				$franko, mb_strtolower($franko), $primary_artist_id 
+				"SELECT id FROM $table WHERE title_en = %s AND primary_artist_id = %d",
+				$english_title, $primary_artist_id
 			) );
 			if ( $track_id ) return $track_id;
 		}
@@ -89,12 +89,11 @@ class Matcher {
 		// 2. Create fresh
 		$franko = Normalizer::to_franko( $title );
 		$slug_base = $title . ' ' . $primary_artist_id;
-		$slug = sanitize_title( $slug_base );
-		$slug = $this->ensure_unique_slug( $table, $slug );
+		$slug = Slugger::unique( $table, $slug_base, 'track-' . $primary_artist_id );
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
-			'title_franko'      => $franko !== $title ? $franko : null,
+			'title_en'          => Normalizer::is_arabic( $title ) ? Slugger::make( $title, 'track' ) : null,
 			'normalized_title'  => $normalized_title,
 			'slug'              => $slug,
 			'primary_artist_id' => $primary_artist_id,
@@ -126,12 +125,10 @@ class Matcher {
 		}
 
 		$franko = Normalizer::to_franko( $title );
-		$slug = sanitize_title( $title . ' ' . $primary_artist_id );
-		$slug = $this->ensure_unique_slug( $table, $slug );
+		$slug = Slugger::unique( $table, $title . ' ' . $primary_artist_id, 'video-' . $primary_artist_id );
 
 		$wpdb->insert( $table, array(
 			'title'             => $title,
-			'title_franko'      => $franko !== $title ? $franko : null,
 			'normalized_title'  => $normalized_title,
 			'slug'              => $slug,
 			'primary_artist_id' => $primary_artist_id,
@@ -204,7 +201,7 @@ class Matcher {
 		}
 
 		// Create
-		$slug = $this->ensure_unique_slug( $table, sanitize_title( $data['title'] . ' ' . $primary_artist_id ) );
+		$slug = Slugger::unique( $table, $data['title'] . ' ' . $primary_artist_id, 'album-' . $primary_artist_id );
 		$wpdb->insert( $table, array(
 			'title'             => $data['title'],
 			'normalized_title'  => $normalized_title,
@@ -247,7 +244,7 @@ class Matcher {
 		}
 
 		// Create
-		$slug = $this->ensure_unique_slug( $table, sanitize_title( $data['title'] . ' ' . $data['primary_artist_id'] ) );
+		$slug = Slugger::unique( $table, $data['title'] . ' ' . $data['primary_artist_id'], 'track-' . $data['primary_artist_id'] );
 		$wpdb->insert( $table, array(
 			'title'             => $data['title'],
 			'normalized_title'  => $normalized_title,

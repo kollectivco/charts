@@ -121,7 +121,6 @@ class EntityManager {
 	public static function ensure_artist( $display_name, $data = array() ) {
 		global $wpdb;
 		$normalized = mb_strtolower( trim( $display_name ) );
-		$slug = sanitize_title( $display_name );
 		$table = $wpdb->prefix . 'charts_artists';
 
 		$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
@@ -130,6 +129,7 @@ class EntityManager {
 		}
 
 		if ( $existing_id ) return (int) $existing_id;
+		$slug = \Charts\Services\Slugger::unique( $table, $display_name, 'artist' );
 
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
@@ -157,7 +157,7 @@ class EntityManager {
 
 		if ( $sql_id ) return (int) $sql_id;
 
-		$slug = sanitize_title( $title . '-' . $artist_id );
+		$slug = \Charts\Services\Slugger::unique( $table, $title . '-' . $artist_id, 'track-' . $artist_id );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
 			'normalized_title'  => $normalized,
@@ -191,7 +191,7 @@ class EntityManager {
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
 		if ( $id ) return (int) $id;
 
-		$slug = sanitize_title( $title . '-' . $artist_id );
+		$slug = \Charts\Services\Slugger::unique( $table, $title . '-' . $artist_id, 'video-' . $artist_id );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
 			'normalized_title'  => $normalized,
@@ -238,11 +238,15 @@ class EntityManager {
 	 */
 	public static function search_entities( $type, $query, $limit = 20 ) {
 		global $wpdb;
-		$suffix = ( $type === 'artist' ? 'artists' : ( ($type === 'video') ? 'videos' : 'tracks' ) );
+		$allowed_types = array( 'artist', 'track', 'video', 'album' );
+		if ( ! in_array( $type, $allowed_types, true ) ) $type = 'track';
+		$suffix = array( 'artist' => 'artists', 'track' => 'tracks', 'video' => 'videos', 'album' => 'albums' )[ $type ];
 		$table  = $wpdb->prefix . 'charts_' . $suffix;
 		
 		$col    = ( $type === 'artist' ? 'display_name' : 'title' );
 		$norm_col = ( $type === 'artist' ? 'normalized_name' : 'normalized_title' );
+		$image_col = array( 'artist' => 'image', 'track' => 'cover_image', 'video' => 'thumbnail', 'album' => 'cover_image' )[ $type ];
+		$english_col = array( 'artist' => 'display_name_en', 'track' => 'title_en', 'video' => null, 'album' => null )[ $type ];
 
 		// Clean and generate variations for smarter search
 		$clean_query = \Charts\Services\Normalizer::normalize_title( $query );
@@ -254,6 +258,10 @@ class EntityManager {
 
 		$where = "$col LIKE %s OR slug LIKE %s OR $norm_col LIKE %s OR $norm_col LIKE %s";
 		$params = array( $search_query, $search_clean, $search_clean, $search_franko );
+		if ( $english_col ) {
+			$where .= " OR $english_col LIKE %s";
+			$params[] = $search_franko;
+		}
 
 		if ( is_numeric( $query ) ) {
 			$where .= " OR id = %d";
@@ -263,7 +271,7 @@ class EntityManager {
 		$limit = intval( $limit );
 		$where .= " ORDER BY $col ASC LIMIT $limit";
 
-		$sql = "SELECT id, $col as title, slug, " . ( $type === 'artist' ? "image" : "cover_image" ) . " as image 
+		$sql = "SELECT id, $col as title, slug, $image_col as image " . ( $english_col ? ", $english_col as name_en " : ", '' as name_en " ) . "
 			FROM $table 
 			WHERE $where";
 
@@ -271,7 +279,7 @@ class EntityManager {
 		$results = $wpdb->get_results( $prepared );
 		
 		// If track or video, also try to find the artist name for subtitle
-		if ( $type !== 'artist' ) {
+		if ( in_array( $type, array( 'track', 'video' ), true ) ) {
 			foreach ( $results as &$r ) {
 				$r->subtitle = $wpdb->get_var( $wpdb->prepare( "
 					SELECT a.display_name FROM {$wpdb->prefix}charts_artists a

@@ -194,7 +194,7 @@ class SourceManager {
 			$post_data = array(
 				'ID'           => $id,
 				'post_title'   => sanitize_text_field( $data['title'] ),
-				'post_name'    => sanitize_title( $data['slug'] ),
+			'post_name'    => \Charts\Services\Slugger::make( $data['slug'], 'chart' ),
 				'post_content' => sanitize_textarea_field( $data['chart_summary'] ),
 				'post_status'  => isset( $data['is_public'] ) && $data['is_public'] ? 'publish' : 'draft',
 				'menu_order'   => isset( $data['menu_order'] ) ? (int) $data['menu_order'] : 0,
@@ -224,7 +224,7 @@ class SourceManager {
 			$fields = array(
 				'title'           => sanitize_text_field( $data['title'] ),
 				'title_ar'        => sanitize_text_field( $data['title_ar'] ?? '' ),
-				'slug'            => sanitize_title( $data['slug'] ),
+			'slug'            => \Charts\Services\Slugger::make( $data['slug'], 'chart' ),
 				'chart_summary'   => sanitize_textarea_field( $data['chart_summary'] ),
 				'chart_type'      => sanitize_text_field( $data['chart_type'] ),
 				'item_type'       => sanitize_text_field( $data['item_type'] ),
