@@ -16,12 +16,18 @@ class BillboardService {
 	const ARTIST_IMG_BASE = 'https://sys.billboardarabia.com/storage/artists/';
 
 	/** Supported Billboard Arabia lists, keyed by Billboard's API chart ID. */
-	public static function get_chart_catalog() {
+			public static function get_chart_catalog() {
 		return array(
-			1  => array( 'label' => 'Billboard Arabia Hot 100', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'billboard-arabia-hot-100' ),
-			2  => array( 'label' => 'Billboard Arabia 100 Artists', 'item_type' => 'artist', 'endpoint' => 'artists-charts', 'target_slug' => 'billboard-arabia-100-artists' ),
-			8  => array( 'label' => 'Top 50 Indie', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-indie' ),
-			10 => array( 'label' => 'Top 50 Mahraganat', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-mahraganat' ),
+			1  => array( 'label' => 'Billboard Arabia Hot 100', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'hot-100', 'source_path' => 'charts' ),
+			2  => array( 'label' => 'Billboard Arabia 100 Artists', 'item_type' => 'artist', 'endpoint' => 'artists-charts', 'target_slug' => '100-artists', 'source_path' => 'artist-view' ),
+			3  => array( 'label' => 'Top 50 Khaleeji', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-khaleeji', 'source_path' => 'top-50-khaleeji' ),
+			4  => array( 'label' => 'Top 50 Egyptian', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-egyptian', 'source_path' => 'top-50-egyptian' ),
+			5  => array( 'label' => 'Top 50 Levantine', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-levantine', 'source_path' => 'top-50-levantine' ),
+			6  => array( 'label' => 'Top 50 Maghreb', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-maghreb', 'source_path' => 'top-50-maghreb' ),
+			7  => array( 'label' => 'Top 50 Arabic Hip Hop', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-arabic-hip-hop', 'source_path' => 'top-50-arabic-hip-hop' ),
+			8  => array( 'label' => 'Top 50 Indie Arabic', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-indie-arabic', 'source_path' => 'top-50-indie-arabic' ),
+			9  => array( 'label' => 'Top 50 Shelat', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-shelat', 'source_path' => 'top-50-shelat' ),
+			10 => array( 'label' => 'Top 50 Mahraganat', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-mahraganat', 'source_path' => 'top-50-mahraganat' ),
 		);
 	}
 
@@ -273,7 +279,7 @@ class BillboardService {
 			$target_chart_type
 		) );
 		$source_name = $definition ? 'Billboard Arabia — ' . $definition->title : $chart['label'];
-		$source_url = 'https://www.billboardarabia.com/' . ( $chart['item_type'] === 'artist' ? 'artist-view' : ( $billboard_chart_id === 8 ? 'top-50-indie' : ( $billboard_chart_id === 10 ? 'top-50-mahraganat' : 'charts/' ) ) );
+		$source_url = 'https://www.billboardarabia.com/' . ( $chart['source_path'] ?? 'charts' );
 
 		if ( ! $source_id ) {
 			$wpdb->insert( $source_table, array(

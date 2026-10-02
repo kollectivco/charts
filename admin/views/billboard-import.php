@@ -30,8 +30,19 @@ $nonce       = wp_create_nonce( 'charts_admin_action' );
 			</div>
 		</div>
 
+		
+		<div class="bb-catalog-grid">
+			<?php foreach ( $catalog as $billboard_id => $chart ) : ?>
+				<div class="bb-chart-card" data-id="<?php echo (int) $billboard_id; ?>">
+					<div class="bb-chart-icon"><?php echo $chart['item_type'] === 'artist' ? '🎤' : '🎵'; ?></div>
+					<h3><?php echo esc_html( $chart['label'] ); ?></h3>
+					<p><?php echo $chart['item_type'] === 'artist' ? 'Artists' : 'Songs'; ?></p>
+				</div>
+			<?php endforeach; ?>
+		</div>
+
 		<div class="bb-field-grid">
-			<div class="bb-field">
+			<div class="bb-field" id="bb-select-source-wrap" style="display:none;"><div class="bb-field">
 				<label for="bb-select-source"><?php esc_html_e( 'قائمة Billboard', 'charts' ); ?></label>
 				<select id="bb-select-source">
 					<?php foreach ( $catalog as $billboard_id => $chart ) : ?>
@@ -39,7 +50,7 @@ $nonce       = wp_create_nonce( 'charts_admin_action' );
 					<?php endforeach; ?>
 				</select>
 				<small><?php esc_html_e( 'Hot 100، 100 فنان، إندي، ومهرجانات.', 'charts' ); ?></small>
-			</div>
+			</div></div>
 			<div class="bb-field">
 				<label for="bb-select-chart"><?php esc_html_e( 'الشارت الوجهة في موقعك', 'charts' ); ?></label>
 				<select id="bb-select-chart" required>
@@ -94,10 +105,21 @@ $nonce       = wp_create_nonce( 'charts_admin_action' );
 .bb-page-header{align-items:center;margin-bottom:22px}.bb-eyebrow{margin:0 0 5px;color:#5267a6;font-size:11px;font-weight:800;letter-spacing:.13em}.bb-page-header .charts-admin-title{margin:0 0 6px}.bb-page-header .charts-admin-subtitle{margin:0;color:var(--bb-muted)}
 .bb-sync-card{padding:30px;border:1px solid #202d49;border-radius:18px;background:radial-gradient(ellipse at 100% 0,rgba(57,91,174,.24),transparent 42%),linear-gradient(135deg,#10182a,#131e35);color:#fff;box-shadow:0 16px 42px rgba(19,30,53,.13)}
 .bb-sync-heading{display:flex;align-items:flex-start;gap:16px;margin-bottom:27px}.bb-brand-mark{display:grid;place-items:center;flex:0 0 48px;height:48px;border-radius:14px;background:#244fcd;color:#fff;font-size:27px;font-weight:900;font-family:Arial,sans-serif}.bb-heading-copy{flex:1}.bb-heading-meta{display:flex;align-items:center;gap:8px;color:#8baeff;font-size:10px;font-weight:800;letter-spacing:.12em}.bb-live-dot,.bb-status-dot{width:7px;height:7px;border-radius:50%;background:#21ca91;box-shadow:0 0 0 4px rgba(33,202,145,.13)}.bb-heading-copy h2{margin:7px 0 5px;color:#fff;font-size:21px}.bb-heading-copy p{margin:0;color:#9eaac0;font-size:13px}.bb-connection-pill{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid rgba(255,255,255,.11);border-radius:30px;color:#c3cde0;font-size:12px}.bb-connection-pill[data-connected="false"] .bb-status-dot{background:#f45e62;box-shadow:0 0 0 4px rgba(244,94,98,.14)}
-.bb-field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.bb-field{padding:15px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.045)}.bb-field label{display:block;margin:0 0 9px;color:#d9e0ec;font-size:12px;font-weight:700}.bb-field select{width:100%;height:44px;padding:0 12px;border:1px solid #394660;border-radius:8px;background:#19253b;color:#fff;font-size:13px}.bb-field select:focus{border-color:#7293ff;box-shadow:0 0 0 2px rgba(88,122,255,.22);outline:0}.bb-field small{display:block;margin-top:8px;color:#8694ac;font-size:11px}.bb-actions{display:flex;align-items:center;gap:11px;margin-top:20px}.bb-primary-button,.bb-secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:0 17px;border:0;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.bb-primary-button{background:#315fe5;color:#fff;box-shadow:0 5px 14px rgba(35,81,211,.3)}.bb-primary-button:hover{background:#426ff0;color:#fff}.bb-secondary-button{border:1px solid #d9dfeb;background:#fff;color:#28354d}.bb-secondary-button:hover{border-color:#aab8d4;color:#172033}.bb-sync-card .bb-secondary-button{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#e2e8f3}.bb-sync-card .bb-secondary-button:hover{background:rgba(255,255,255,.13);color:#fff}.bb-primary-button:disabled,.bb-secondary-button:disabled{opacity:.55;cursor:wait}.bb-loading{display:inline-flex;align-items:center;gap:8px;color:#aebbd1;font-size:12px}.bb-loading .dashicons{animation:bb-spin 1s linear infinite}@keyframes bb-spin{to{transform:rotate(360deg)}}.bb-feedback{margin-top:16px;padding:12px 14px;border:1px solid rgba(255,255,255,.13);border-radius:9px;font-size:13px}.bb-feedback.is-success{background:rgba(18,160,112,.16);color:#a9f2d5}.bb-feedback.is-error{background:rgba(224,67,79,.14);color:#ffc1c5}
+.bb-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.bb-field{padding:15px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.045)}.bb-field label{display:block;margin:0 0 9px;color:#d9e0ec;font-size:12px;font-weight:700}.bb-field select{width:100%;height:44px;padding:0 12px;border:1px solid #394660;border-radius:8px;background:#19253b;color:#fff;font-size:13px}.bb-field select:focus{border-color:#7293ff;box-shadow:0 0 0 2px rgba(88,122,255,.22);outline:0}.bb-field small{display:block;margin-top:8px;color:#8694ac;font-size:11px}.bb-actions{display:flex;align-items:center;gap:11px;margin-top:20px}.bb-primary-button,.bb-secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:0 17px;border:0;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.bb-primary-button{background:#315fe5;color:#fff;box-shadow:0 5px 14px rgba(35,81,211,.3)}.bb-primary-button:hover{background:#426ff0;color:#fff}.bb-secondary-button{border:1px solid #d9dfeb;background:#fff;color:#28354d}.bb-secondary-button:hover{border-color:#aab8d4;color:#172033}.bb-sync-card .bb-secondary-button{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#e2e8f3}.bb-sync-card .bb-secondary-button:hover{background:rgba(255,255,255,.13);color:#fff}.bb-primary-button:disabled,.bb-secondary-button:disabled{opacity:.55;cursor:wait}.bb-loading{display:inline-flex;align-items:center;gap:8px;color:#aebbd1;font-size:12px}.bb-loading .dashicons{animation:bb-spin 1s linear infinite}@keyframes bb-spin{to{transform:rotate(360deg)}}.bb-feedback{margin-top:16px;padding:12px 14px;border:1px solid rgba(255,255,255,.13);border-radius:9px;font-size:13px}.bb-feedback.is-success{background:rgba(18,160,112,.16);color:#a9f2d5}.bb-feedback.is-error{background:rgba(224,67,79,.14);color:#ffc1c5}
 .bb-csv-card{display:flex;align-items:center;gap:16px;margin-top:20px;padding:20px 22px;border:1px solid var(--bb-border);border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(29,42,67,.04)}.bb-csv-icon{display:grid;place-items:center;flex:0 0 44px;height:44px;border-radius:12px;background:#edf3ff;color:#315fe5;font-size:22px}.bb-csv-copy{flex:1}.bb-csv-copy h2{margin:0 0 4px;color:var(--bb-ink);font-size:15px}.bb-csv-copy p{margin:0;color:var(--bb-muted);font-size:12px}.bb-csv-form{display:flex;align-items:center;gap:9px}.bb-csv-form>input[type=date]{height:40px;border:1px solid var(--bb-border);border-radius:7px;padding:0 9px}.bb-file-input{position:relative;display:inline-flex;align-items:center;gap:7px;max-width:175px;height:40px;padding:0 11px;overflow:hidden;border:1px dashed #bdc7d8;border-radius:7px;color:#47536a;font-size:12px;white-space:nowrap;cursor:pointer}.bb-file-input input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.bb-file-input .dashicons{color:#315fe5}.bb-file-input.has-file{border-color:#315fe5;background:#f3f6ff}
 @media(max-width:900px){.bb-field-grid{grid-template-columns:1fr 1fr}.bb-csv-card{align-items:flex-start;flex-wrap:wrap}.bb-csv-copy{min-width:70%}.bb-csv-form{width:100%;flex-wrap:wrap}.bb-csv-form>input[type=date]{flex:1}}
 @media(max-width:600px){.bb-sync-card{padding:19px}.bb-sync-heading{flex-wrap:wrap}.bb-connection-pill{margin-left:64px}.bb-field-grid{grid-template-columns:1fr}.bb-actions{align-items:stretch;flex-direction:column}.bb-primary-button,.bb-actions>.bb-secondary-button{width:100%;min-height:46px}.bb-csv-card{padding:17px}.bb-csv-copy{min-width:calc(100% - 64px)}.bb-csv-form>input[type=date],.bb-file-input,.bb-csv-form>.bb-secondary-button{width:100%;max-width:none;min-height:42px}}
+
+.bb-catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.bb-chart-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px 12px; cursor: pointer; transition: all 0.2s ease; text-align: center; }
+.bb-chart-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+.bb-chart-card.active { background: #315fe5; border-color: #426ff0; box-shadow: 0 8px 24px rgba(49, 95, 229, 0.4); }
+.bb-chart-icon { width: 40px; height: 40px; margin: 0 auto 10px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.bb-chart-card.active .bb-chart-icon { background: rgba(255,255,255,0.2); }
+.bb-chart-card h3 { margin: 0; font-size: 12px; color: #fff; font-weight: 700; line-height: 1.4; }
+.bb-chart-card p { margin: 4px 0 0; font-size: 10px; color: #aebbd1; text-transform: uppercase; letter-spacing: 1px; }
+.bb-chart-card.active p { color: rgba(255,255,255,0.8); }
+
 </style>
 
 <script>
@@ -145,6 +167,15 @@ jQuery(function($) {
 	}
 
 	$source.on('change', function() { filterTargets(true); loadWeeks(); $feedback.hide(); });
+
+	$(".bb-chart-card").on("click", function() {
+		$(".bb-chart-card").removeClass("active");
+		$(this).addClass("active");
+		$source.val($(this).data("id")).trigger("change");
+	});
+	// Auto-select first card
+	$(".bb-chart-card").first().click();
+
 	$target.on('change', function() { $('#billboard-target').val($(this).val()); });
 	filterTargets(true);
 	$('#billboard-csv').on('change', function() {
