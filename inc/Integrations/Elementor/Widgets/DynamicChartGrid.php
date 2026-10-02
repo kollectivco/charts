@@ -79,6 +79,7 @@ class DynamicChartGrid extends Widget_Base {
 
 		$this->add_premium_layout_controls();
 		$this->add_granular_style_controls(['card', 'image', 'title', 'meta', 'counter']);
+		$this->add_advanced_image_controls();
 	}
 
 	protected function render() {

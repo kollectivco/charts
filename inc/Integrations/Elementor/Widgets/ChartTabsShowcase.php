@@ -210,6 +210,7 @@ class ChartTabsShowcase extends Widget_Base {
 		]);
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'rank_typo', 'selector' => '{{WRAPPER}} .kc-ts-rank-list, {{WRAPPER}} .kc-ts-rank-badge' ] );
 		$this->end_controls_section();
+		$this->add_advanced_image_controls();
 	}
 
 	

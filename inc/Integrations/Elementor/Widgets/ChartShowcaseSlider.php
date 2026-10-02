@@ -2,6 +2,7 @@
 namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
+use Charts\Integrations\Elementor\PremiumWidgetTrait;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
 use Elementor\Group_Control_Text_Shadow;
@@ -9,6 +10,7 @@ use Elementor\Group_Control_Text_Shadow;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class ChartShowcaseSlider extends Widget_Base {
+	use PremiumWidgetTrait;
 
 	public function get_name() { return 'kc_chart_showcase_slider'; }
 	public function get_title() { return __( 'Charts: Premium Showcase Slider', 'charts' ); }
@@ -149,6 +151,7 @@ class ChartShowcaseSlider extends Widget_Base {
 		$this->add_responsive_control( 'content_padding', [ 'label' => 'Padding', 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ], 'selectors' => [ '{{WRAPPER}} .kc-sc-info' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ] ] );
 		$this->add_responsive_control( 'content_margin', [ 'label' => 'Margin', 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ], 'selectors' => [ '{{WRAPPER}} .kc-sc-info' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ] ] );
 		$this->end_controls_section();
+		$this->add_advanced_image_controls();
 	}
 
 	protected function render() {

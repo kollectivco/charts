@@ -3,6 +3,7 @@
 namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
+use Charts\Integrations\Elementor\PremiumWidgetTrait;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
 use Elementor\Group_Control_Box_Shadow;
@@ -11,6 +12,7 @@ use Elementor\Group_Control_Box_Shadow;
  * Elementor Widget: Intelligence Grid
  */
 class ChartGrid extends Widget_Base {
+	use PremiumWidgetTrait;
 
 	public function get_name() { return 'charts_grid'; }
 	public function get_title() { return __( 'Charts: Intelligence Grid', 'charts' ); }
@@ -189,6 +191,7 @@ class ChartGrid extends Widget_Base {
 
 		$this->end_controls_section();
 
+		$this->add_advanced_image_controls();
 	}
 
 	protected function render() {

@@ -138,6 +138,7 @@ class ChartTable extends Widget_Base {
 		]);
 		$this->end_controls_section();
 
+		$this->add_advanced_image_controls();
 	}
 
 	protected function render() {

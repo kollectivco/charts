@@ -270,4 +270,127 @@ trait PremiumWidgetTrait {
 			$this->end_controls_section();
 		}
 	}
+
+	public function add_advanced_image_controls($wrap_selector = '{{WRAPPER}} .kc-elm-img-wrap, {{WRAPPER}} .kc-card-hero, {{WRAPPER}} .kc-t5-r-img, {{WRAPPER}} .kc-t5-hero-bg', $img_selector = '{{WRAPPER}} .kc-elm-img, {{WRAPPER}} img') {
+		$this->start_controls_section( 'style_advanced_image', [
+			'label' => __( 'Featured Image', 'charts' ),
+			'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+		] );
+
+		$this->add_control( 'img_size', [
+			'label' => __( 'Featured Image Size', 'charts' ),
+			'type' => \Elementor\Controls_Manager::SELECT,
+			'options' => [
+				'thumbnail' => 'Thumbnail',
+				'medium' => 'Medium',
+				'large' => 'Large',
+				'full' => 'Full',
+			],
+			'default' => 'full',
+			'description' => 'Select a featured image size to optimize with the columns setting.',
+		] );
+
+		$this->add_responsive_control( 'img_ratio', [
+			'label' => __( 'Custom Featured Ratio', 'charts' ),
+			'type' => \Elementor\Controls_Manager::NUMBER,
+			'description' => 'Input custom ratio percent (height*100/width) for featured image you would like. e.g. 50',
+			'selectors' => [
+				$wrap_selector => 'aspect-ratio: 100 / {{VALUE}} !important;',
+				$img_selector => 'aspect-ratio: 100 / {{VALUE}} !important; object-fit: cover;',
+			],
+		] );
+
+		$this->add_responsive_control( 'img_advanced_border_radius', [
+			'label' => __( 'Border Radius', 'charts' ),
+			'type' => \Elementor\Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em' ],
+			'description' => 'Input a custom border radius (in px) for the featured image.',
+			'selectors' => [ 
+				$wrap_selector => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
+				$img_selector => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+			],
+		] );
+
+		$this->add_control( 'img_hover_effect', [
+			'label' => __( 'Hover Effect', 'charts' ),
+			'type' => \Elementor\Controls_Manager::SELECT,
+			'options' => [
+				'' => '- Disable -',
+				'zoom-in' => 'Zoom In',
+				'zoom-out' => 'Zoom Out',
+				'blur' => 'Blur',
+				'grayscale' => 'Grayscale',
+			],
+			'default' => '',
+			'description' => 'Select a hover effect for this block featured images.',
+		] );
+		
+		$this->add_control( 'img_hover_css_zoom_in', [
+			'type' => \Elementor\Controls_Manager::HIDDEN,
+			'selectors' => [ 
+				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(1.1);',
+				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(1.1);',
+				$img_selector => 'transition: transform 0.4s ease, filter 0.4s ease;'
+			],
+			'condition' => [ 'img_hover_effect' => 'zoom-in' ],
+		] );
+
+		$this->add_control( 'img_hover_css_zoom_out', [
+			'type' => \Elementor\Controls_Manager::HIDDEN,
+			'selectors' => [ 
+				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(0.95);',
+				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(0.95);',
+				$img_selector => 'transition: transform 0.4s ease, filter 0.4s ease;'
+			],
+			'condition' => [ 'img_hover_effect' => 'zoom-out' ],
+		] );
+		
+		$this->add_control( 'img_hover_css_blur', [
+			'type' => \Elementor\Controls_Manager::HIDDEN,
+			'selectors' => [ 
+				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: blur(4px);',
+				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: blur(4px);',
+				$img_selector => 'transition: filter 0.4s ease;'
+			],
+			'condition' => [ 'img_hover_effect' => 'blur' ],
+		] );
+
+		$this->add_control( 'img_hover_css_gray', [
+			'type' => \Elementor\Controls_Manager::HIDDEN,
+			'selectors' => [ 
+				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: grayscale(100%);',
+				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: grayscale(100%);',
+				$img_selector => 'transition: filter 0.4s ease;'
+			],
+			'condition' => [ 'img_hover_effect' => 'grayscale' ],
+		] );
+
+		$this->add_responsive_control( 'img_align', [
+			'label' => __( 'Align', 'charts' ),
+			'type' => \Elementor\Controls_Manager::CHOOSE,
+			'options' => [
+				'left' => [ 'title' => 'Left', 'icon' => 'eicon-text-align-left' ],
+				'center' => [ 'title' => 'Center', 'icon' => 'eicon-text-align-center' ],
+				'right' => [ 'title' => 'Right', 'icon' => 'eicon-text-align-right' ],
+			],
+			'selectors' => [
+				$wrap_selector => 'text-align: {{VALUE}}; display: flex; justify-content: {{VALUE}};'
+			],
+			'description' => 'Align the featured images for this block.',
+		] );
+
+		$this->add_control( 'img_lazy_load', [
+			'label' => __( 'Lazy Load', 'charts' ),
+			'type' => \Elementor\Controls_Manager::SELECT,
+			'options' => [
+				'' => '- Default -',
+				'yes' => 'Enable',
+				'no' => 'Disable',
+			],
+			'default' => '',
+			'description' => 'Disable lazy load image if this block is above the fold.',
+		] );
+
+		$this->end_controls_section();
+	}
 }

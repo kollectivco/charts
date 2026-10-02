@@ -2,6 +2,7 @@
 namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
+use Charts\Integrations\Elementor\PremiumWidgetTrait;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
 
@@ -10,6 +11,7 @@ use Elementor\Group_Control_Typography;
  * Displays a list of charts highlighting the #1 item of each.
  */
 class ChartList extends Widget_Base {
+	use PremiumWidgetTrait;
 
 	public function get_name() { return 'chart_list'; }
 	public function get_title() { return __( 'Charts: Intelligence List', 'charts' ); }
@@ -277,6 +279,7 @@ class ChartList extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+		$this->add_advanced_image_controls();
 	}
 
 	protected function render() {
