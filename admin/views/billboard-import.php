@@ -1,180 +1,178 @@
 <?php
 /** Standalone Billboard Arabia import workflows. */
-$manager = new \Charts\Admin\SourceManager();
+$manager     = new \Charts\Admin\SourceManager();
 $definitions = $manager->get_definitions( false );
+$catalog     = \Charts\Services\BillboardService::get_chart_catalog();
+$weeks       = \Charts\Services\BillboardService::get_weeks( 1 );
+$nonce       = wp_create_nonce( 'charts_admin_action' );
 ?>
-<div class="wrap charts-admin-wrap premium-light">
-	<header class="charts-admin-header">
+<div class="wrap charts-admin-wrap premium-light bb-import-page">
+	<header class="charts-admin-header bb-page-header">
 		<div>
+			<p class="bb-eyebrow"><?php esc_html_e( 'DATA IMPORT', 'charts' ); ?></p>
 			<h1 class="charts-admin-title"><?php esc_html_e( 'Billboard Arabia Import', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle"><?php esc_html_e( 'Sync directly from Billboard Arabia or import a Billboard CSV export.', 'charts' ); ?></p>
+			<p class="charts-admin-subtitle"><?php esc_html_e( 'استورد قوائم Billboard Arabia مباشرة، أو ارفع ملف CSV للشارت المطلوب.', 'charts' ); ?></p>
 		</div>
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=charts-imports' ) ); ?>" class="charts-btn-back"><?php esc_html_e( 'View Import History', 'charts' ); ?></a>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=charts-imports' ) ); ?>" class="charts-btn-back"><?php esc_html_e( 'Import History', 'charts' ); ?> <span aria-hidden="true">↗</span></a>
 	</header>
 	<?php settings_errors( 'charts' ); ?>
-	<!-- 🌟 BILLBOARD ARABIA 1-CLICK NEXUS CARD -->
-	<?php
-	$bb_weeks = \Charts\Services\BillboardService::get_weeks();
-	$bb_nonce = wp_create_nonce( 'charts_admin_action' );
-	?>
-	<div class="bb-nexus-card" style="background: linear-gradient(135deg, #0b1120 0%, #15203b 100%); color: #fff; padding: 28px 32px; border-radius: 16px; margin-bottom: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.08); position: relative;">
-		<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
-			<div>
-				<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-					<span style="background: #1A48C4; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase;">Direct API Sync</span>
-					<h2 style="color: #fff; margin: 0; font-size: 22px; font-weight: 800;">بيلبورد عربية هوت 100 (Billboard Arabia)</h2>
-				</div>
-				<p style="color: #94a3b8; margin: 0; font-size: 14px;">جلب البيانات الرسمية والصور عالية الدقة (HD) مباشرة من سيرفر بيلبورد وتحديث الشارت في ثوانٍ بدون رفع شيتات يدوي.</p>
+
+	<section class="bb-sync-card" aria-labelledby="bb-sync-title">
+		<div class="bb-sync-heading">
+			<div class="bb-brand-mark" aria-hidden="true">B</div>
+			<div class="bb-heading-copy">
+				<div class="bb-heading-meta"><span class="bb-live-dot"></span><?php esc_html_e( 'BILLBOARD ARABIA · DIRECT API', 'charts' ); ?></div>
+				<h2 id="bb-sync-title"><?php esc_html_e( 'اختار القائمة وحدد وجهة الاستيراد', 'charts' ); ?></h2>
+				<p><?php esc_html_e( 'القائمة المصدر تحدد بيانات Billboard، والوجهة تحدد الشارت الذي سيظهر فيه الترتيب داخل موقعك.', 'charts' ); ?></p>
 			</div>
-			<div style="background: rgba(255,255,255,0.06); padding: 6px 14px; border-radius: 30px; font-size: 12px; color: #38bdf8; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(56,189,248,0.2);">
-				<span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
-				<span>متصل بـ API بيلبورد المباشر</span>
+			<div class="bb-connection-pill" id="bb-connection-status" data-connected="<?php echo ! empty( $weeks ) ? 'true' : 'false'; ?>">
+				<span class="bb-status-dot"></span><span><?php echo ! empty( $weeks ) ? esc_html__( 'API متاح', 'charts' ) : esc_html__( 'تعذر الاتصال', 'charts' ); ?></span>
 			</div>
 		</div>
 
-		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 22px;">
-			<div>
-				<label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">📅 أسبوع بيلبورد (Billboard Week)</label>
-				<select id="bb-select-week" style="width: 100%; height: 42px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 0 12px; font-size: 14px; outline: none;">
-					<?php if ( ! empty($bb_weeks) ) : ?>
-						<?php foreach ( $bb_weeks as $idx => $w ) : ?>
-							<option value="<?php echo esc_attr($w['week_id']); ?>">
-								<?php echo esc_html($w['label']); ?> <?php echo ($idx === 0) ? '🔥 (أحدث أسبوع)' : ''; ?>
-							</option>
-						<?php endforeach; ?>
-					<?php else : ?>
-						<option value="202639">01 أكتوبر 2026 (أسبوع 202639)</option>
-					<?php endif; ?>
-				</select>
-			</div>
-
-			<div>
-				<label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🎯 الشارت الهدف في موقعك (Target Chart)</label>
-				<select id="bb-select-chart" style="width: 100%; height: 42px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 0 12px; font-size: 14px; outline: none;">
-					<option value="0">افتراضي / شارت بيلبورد عربية الافتراضي</option>
-					<?php foreach ( $definitions as $d ) : ?>
-						<option value="<?php echo intval($d->id); ?>"><?php echo esc_html($d->title); ?> (<?php echo esc_html($d->slug); ?>)</option>
+		<div class="bb-field-grid">
+			<div class="bb-field">
+				<label for="bb-select-source"><?php esc_html_e( 'قائمة Billboard', 'charts' ); ?></label>
+				<select id="bb-select-source">
+					<?php foreach ( $catalog as $billboard_id => $chart ) : ?>
+						<option value="<?php echo (int) $billboard_id; ?>" data-item-type="<?php echo esc_attr( $chart['item_type'] ); ?>" data-target-slug="<?php echo esc_attr( $chart['target_slug'] ); ?>"><?php echo esc_html( $chart['label'] ); ?></option>
 					<?php endforeach; ?>
 				</select>
+				<small><?php esc_html_e( 'Hot 100، 100 فنان، إندي، ومهرجانات.', 'charts' ); ?></small>
+			</div>
+			<div class="bb-field">
+				<label for="bb-select-chart"><?php esc_html_e( 'الشارت الوجهة في موقعك', 'charts' ); ?></label>
+				<select id="bb-select-chart" required>
+					<option value=""><?php esc_html_e( 'اختار الشارت الوجهة', 'charts' ); ?></option>
+					<?php foreach ( $definitions as $definition ) : ?>
+						<option value="<?php echo (int) $definition->id; ?>" data-item-type="<?php echo esc_attr( $definition->item_type ); ?>" data-slug="<?php echo esc_attr( $definition->slug ); ?>"><?php echo esc_html( $definition->title ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<small><?php esc_html_e( 'هنعرض هنا الشارتات المتوافقة مع نوع القائمة.', 'charts' ); ?></small>
+			</div>
+			<div class="bb-field">
+				<label for="bb-select-week"><?php esc_html_e( 'أسبوع Billboard', 'charts' ); ?></label>
+				<select id="bb-select-week" <?php disabled( empty( $weeks ) ); ?>>
+					<?php foreach ( $weeks as $index => $week ) : ?>
+						<option value="<?php echo (int) $week['week_id']; ?>"><?php echo esc_html( $week['label'] . ( 0 === $index ? ' · الأحدث' : '' ) ); ?></option>
+					<?php endforeach; ?>
+					<?php if ( empty( $weeks ) ) : ?><option value=""><?php esc_html_e( 'لا توجد أسابيع متاحة', 'charts' ); ?></option><?php endif; ?>
+				</select>
+				<small id="bb-week-help"><?php esc_html_e( 'بتتغير الأسابيع حسب القائمة المختارة.', 'charts' ); ?></small>
 			</div>
 		</div>
 
-		<div style="display: flex; align-items: center; flex-wrap: wrap; gap: 14px;">
-			<button type="button" id="bb-btn-sync" style="background: #1A48C4; color: #fff; border: none; padding: 12px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(26,72,196,0.4);">
-				<span class="dashicons dashicons-update-alt" style="font-size: 18px; width: 18px; height: 18px;"></span>
-				<span id="bb-btn-sync-text">استيراد وتحديث الشارت فوراً (1-Click Sync)</span>
-			</button>
-
-			<button type="button" id="bb-btn-csv" style="background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.18); padding: 12px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
-				<span class="dashicons dashicons-media-spreadsheet" style="font-size: 18px; width: 18px; height: 18px;"></span>
-				<span>تحميل كشيت إكسيل (CSV جاهز بالصور)</span>
-			</button>
-
-			<span id="bb-spinner" style="display: none; color: #38bdf8; font-size: 14px; align-items: center; gap: 6px;">
-				<span class="dashicons dashicons-update" style="animation: spin 1s infinite linear;"></span>
-				<span>جاري الاتصال وسحب الـ 100 أغنية والصور الأصلية...</span>
-			</span>
+		<div class="bb-actions">
+			<button type="button" id="bb-btn-sync" class="bb-primary-button"><span class="dashicons dashicons-update-alt" aria-hidden="true"></span><span><?php esc_html_e( 'استيراد القائمة الآن', 'charts' ); ?></span></button>
+			<button type="button" id="bb-btn-csv" class="bb-secondary-button"><span class="dashicons dashicons-download" aria-hidden="true"></span><span><?php esc_html_e( 'تحميل CSV', 'charts' ); ?></span></button>
+			<span id="bb-spinner" class="bb-loading" style="display:none"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e( 'جاري جلب القائمة وتحديث الشارت…', 'charts' ); ?></span>
 		</div>
+		<div id="bb-feedback-box" class="bb-feedback" role="status" aria-live="polite" style="display:none"></div>
+	</section>
 
-		<div id="bb-feedback-box" style="display: none; margin-top: 18px; padding: 14px 18px; border-radius: 8px; font-size: 14px;"></div>
-	</div>
-
-	<style>
-	@keyframes spin { 100% { transform: rotate(360deg); } }
-	#bb-btn-sync:hover { background: #2557df !important; transform: translateY(-1px); }
-	#bb-btn-csv:hover { background: rgba(255,255,255,0.16) !important; color: #fff !important; }
-	</style>
-
-	<script>
-	jQuery(document).ready(function($) {
-		var bbNonce = '<?php echo esc_js($bb_nonce); ?>';
-		var ajaxUrl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
-
-		// 1. Direct Sync Handler
-		$('#bb-btn-sync').on('click', function(e) {
-			e.preventDefault();
-			var weekId = $('#bb-select-week').val();
-			var chartId = $('#bb-select-chart').val();
-			var $btn = $(this);
-			var $box = $('#bb-feedback-box');
-			var $spinner = $('#bb-spinner');
-
-			$btn.prop('disabled', true).css('opacity', '0.6');
-			$spinner.css('display', 'inline-flex');
-			$box.hide();
-
-			$.ajax({
-				url: ajaxUrl,
-				type: 'POST',
-				dataType: 'json',
-				data: {
-					action: 'charts_billboard_sync',
-					week_id: weekId,
-					chart_id: chartId,
-					_wpnonce: bbNonce
-				},
-				success: function(res) {
-					$btn.prop('disabled', false).css('opacity', '1');
-					$spinner.hide();
-					if (res.success) {
-						$box.css({
-							'display': 'block',
-							'background': 'rgba(16, 185, 129, 0.15)',
-							'color': '#34d399',
-							'border': '1px solid rgba(16, 185, 129, 0.3)'
-						}).html('<strong>✅ نجاح:</strong> ' + res.data.message + ' <a href="' + '<?php echo esc_js(home_url('/charts/')); ?>' + '" target="_blank" style="color:#6ee7b7; text-decoration:underline; margin-right:8px;">معاينة الشارت في الموقع &rarr;</a>');
-					} else {
-						$box.css({
-							'display': 'block',
-							'background': 'rgba(239, 68, 68, 0.15)',
-							'color': '#f87171',
-							'border': '1px solid rgba(239, 68, 68, 0.3)'
-						}).html('<strong>❌ خطأ:</strong> ' + (res.data ? res.data.message : 'فشلت عملية المزامنة'));
-					}
-				},
-				error: function(xhr, status, err) {
-					$btn.prop('disabled', false).css('opacity', '1');
-					$spinner.hide();
-					$box.css({
-						'display': 'block',
-						'background': 'rgba(239, 68, 68, 0.15)',
-						'color': '#f87171',
-						'border': '1px solid rgba(239, 68, 68, 0.3)'
-					}).html('<strong>❌ خطأ في الاتصال:</strong> ' + err);
-				}
-			});
-		});
-
-		// 2. Download CSV Handler
-		$('#bb-btn-csv').on('click', function(e) {
-			e.preventDefault();
-			var weekId = $('#bb-select-week').val();
-			var downloadUrl = ajaxUrl + '?action=charts_billboard_download_csv&week_id=' + encodeURIComponent(weekId) + '&nonce=' + encodeURIComponent(bbNonce);
-			window.location.href = downloadUrl;
-		});
-	});
-	</script>
-
-
-	<div class="premium-form-card" style="margin-top:24px; padding:24px;">
-		<h2><?php esc_html_e( 'Import Billboard CSV', 'charts' ); ?></h2>
-		<p><?php esc_html_e( 'Upload a Billboard CSV export with rank, track name, and artist columns.', 'charts' ); ?></p>
-		<form method="post" enctype="multipart/form-data">
+	<section class="bb-csv-card" aria-labelledby="bb-csv-title">
+		<div class="bb-csv-icon dashicons dashicons-media-spreadsheet" aria-hidden="true"></div>
+		<div class="bb-csv-copy">
+			<h2 id="bb-csv-title"><?php esc_html_e( 'استيراد من ملف CSV', 'charts' ); ?></h2>
+			<p><?php esc_html_e( 'استخدم نفس الشارت الوجهة وحدد تاريخ الأسبوع الموجود في الملف.', 'charts' ); ?></p>
+		</div>
+		<form method="post" enctype="multipart/form-data" class="bb-csv-form">
 			<?php wp_nonce_field( 'charts_admin_action' ); ?>
 			<input type="hidden" name="charts_action" value="unified_import">
 			<input type="hidden" name="platform" value="billboard">
-			<p><label for="billboard-target"><strong><?php esc_html_e( 'Target chart', 'charts' ); ?></strong></label><br>
-			<select name="chart_id" id="billboard-target" required>
-				<option value=""><?php esc_html_e( 'Select a chart', 'charts' ); ?></option>
-				<?php foreach ( $definitions as $definition ) : ?>
-					<option value="<?php echo (int) $definition->id; ?>"><?php echo esc_html( $definition->title ); ?></option>
-				<?php endforeach; ?>
-			</select></p>
-			<p><label for="billboard-period"><strong><?php esc_html_e( 'Chart week date', 'charts' ); ?></strong></label><br>
-			<input type="date" name="period_date" id="billboard-period" value="<?php echo esc_attr( current_time( 'Y-m-d' ) ); ?>" required></p>
-			<p><label for="billboard-csv"><strong><?php esc_html_e( 'CSV file', 'charts' ); ?></strong></label><br>
-			<input type="file" name="import_file" id="billboard-csv" accept=".csv,text/csv" required></p>
-			<button type="submit" class="charts-btn-create"><?php esc_html_e( 'Import Billboard CSV', 'charts' ); ?></button>
+			<label class="screen-reader-text" for="billboard-period"><?php esc_html_e( 'Chart week date', 'charts' ); ?></label>
+			<input type="date" name="period_date" id="billboard-period" value="<?php echo esc_attr( current_time( 'Y-m-d' ) ); ?>" required>
+			<label class="bb-file-input" for="billboard-csv"><span class="dashicons dashicons-upload" aria-hidden="true"></span><span><?php esc_html_e( 'اختار ملف CSV', 'charts' ); ?></span><input type="file" name="import_file" id="billboard-csv" accept=".csv,text/csv" required></label>
+			<input type="hidden" name="chart_id" id="billboard-target" value="">
+			<button type="submit" class="bb-secondary-button"><?php esc_html_e( 'استيراد الملف', 'charts' ); ?></button>
 		</form>
-	</div>
+	</section>
 </div>
+
+<style>
+.bb-import-page{--bb-ink:#172033;--bb-muted:#697386;--bb-blue:#2855d9;--bb-border:#e5e9f1;max-width:1280px}
+.bb-page-header{align-items:center;margin-bottom:22px}.bb-eyebrow{margin:0 0 5px;color:#5267a6;font-size:11px;font-weight:800;letter-spacing:.13em}.bb-page-header .charts-admin-title{margin:0 0 6px}.bb-page-header .charts-admin-subtitle{margin:0;color:var(--bb-muted)}
+.bb-sync-card{padding:30px;border:1px solid #202d49;border-radius:18px;background:radial-gradient(ellipse at 100% 0,rgba(57,91,174,.24),transparent 42%),linear-gradient(135deg,#10182a,#131e35);color:#fff;box-shadow:0 16px 42px rgba(19,30,53,.13)}
+.bb-sync-heading{display:flex;align-items:flex-start;gap:16px;margin-bottom:27px}.bb-brand-mark{display:grid;place-items:center;flex:0 0 48px;height:48px;border-radius:14px;background:#244fcd;color:#fff;font-size:27px;font-weight:900;font-family:Arial,sans-serif}.bb-heading-copy{flex:1}.bb-heading-meta{display:flex;align-items:center;gap:8px;color:#8baeff;font-size:10px;font-weight:800;letter-spacing:.12em}.bb-live-dot,.bb-status-dot{width:7px;height:7px;border-radius:50%;background:#21ca91;box-shadow:0 0 0 4px rgba(33,202,145,.13)}.bb-heading-copy h2{margin:7px 0 5px;color:#fff;font-size:21px}.bb-heading-copy p{margin:0;color:#9eaac0;font-size:13px}.bb-connection-pill{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid rgba(255,255,255,.11);border-radius:30px;color:#c3cde0;font-size:12px}.bb-connection-pill[data-connected="false"] .bb-status-dot{background:#f45e62;box-shadow:0 0 0 4px rgba(244,94,98,.14)}
+.bb-field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.bb-field{padding:15px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.045)}.bb-field label{display:block;margin:0 0 9px;color:#d9e0ec;font-size:12px;font-weight:700}.bb-field select{width:100%;height:44px;padding:0 12px;border:1px solid #394660;border-radius:8px;background:#19253b;color:#fff;font-size:13px}.bb-field select:focus{border-color:#7293ff;box-shadow:0 0 0 2px rgba(88,122,255,.22);outline:0}.bb-field small{display:block;margin-top:8px;color:#8694ac;font-size:11px}.bb-actions{display:flex;align-items:center;gap:11px;margin-top:20px}.bb-primary-button,.bb-secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:0 17px;border:0;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.bb-primary-button{background:#315fe5;color:#fff;box-shadow:0 5px 14px rgba(35,81,211,.3)}.bb-primary-button:hover{background:#426ff0;color:#fff}.bb-secondary-button{border:1px solid #d9dfeb;background:#fff;color:#28354d}.bb-secondary-button:hover{border-color:#aab8d4;color:#172033}.bb-sync-card .bb-secondary-button{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#e2e8f3}.bb-sync-card .bb-secondary-button:hover{background:rgba(255,255,255,.13);color:#fff}.bb-primary-button:disabled,.bb-secondary-button:disabled{opacity:.55;cursor:wait}.bb-loading{display:inline-flex;align-items:center;gap:8px;color:#aebbd1;font-size:12px}.bb-loading .dashicons{animation:bb-spin 1s linear infinite}@keyframes bb-spin{to{transform:rotate(360deg)}}.bb-feedback{margin-top:16px;padding:12px 14px;border:1px solid rgba(255,255,255,.13);border-radius:9px;font-size:13px}.bb-feedback.is-success{background:rgba(18,160,112,.16);color:#a9f2d5}.bb-feedback.is-error{background:rgba(224,67,79,.14);color:#ffc1c5}
+.bb-csv-card{display:flex;align-items:center;gap:16px;margin-top:20px;padding:20px 22px;border:1px solid var(--bb-border);border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(29,42,67,.04)}.bb-csv-icon{display:grid;place-items:center;flex:0 0 44px;height:44px;border-radius:12px;background:#edf3ff;color:#315fe5;font-size:22px}.bb-csv-copy{flex:1}.bb-csv-copy h2{margin:0 0 4px;color:var(--bb-ink);font-size:15px}.bb-csv-copy p{margin:0;color:var(--bb-muted);font-size:12px}.bb-csv-form{display:flex;align-items:center;gap:9px}.bb-csv-form>input[type=date]{height:40px;border:1px solid var(--bb-border);border-radius:7px;padding:0 9px}.bb-file-input{position:relative;display:inline-flex;align-items:center;gap:7px;max-width:175px;height:40px;padding:0 11px;overflow:hidden;border:1px dashed #bdc7d8;border-radius:7px;color:#47536a;font-size:12px;white-space:nowrap;cursor:pointer}.bb-file-input input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.bb-file-input .dashicons{color:#315fe5}.bb-file-input.has-file{border-color:#315fe5;background:#f3f6ff}
+@media(max-width:900px){.bb-field-grid{grid-template-columns:1fr 1fr}.bb-csv-card{align-items:flex-start;flex-wrap:wrap}.bb-csv-copy{min-width:70%}.bb-csv-form{width:100%;flex-wrap:wrap}.bb-csv-form>input[type=date]{flex:1}}
+@media(max-width:600px){.bb-sync-card{padding:19px}.bb-sync-heading{flex-wrap:wrap}.bb-connection-pill{margin-left:64px}.bb-field-grid{grid-template-columns:1fr}.bb-actions{align-items:stretch;flex-direction:column}.bb-primary-button,.bb-actions>.bb-secondary-button{width:100%;min-height:46px}.bb-csv-card{padding:17px}.bb-csv-copy{min-width:calc(100% - 64px)}.bb-csv-form>input[type=date],.bb-file-input,.bb-csv-form>.bb-secondary-button{width:100%;max-width:none;min-height:42px}}
+</style>
+
+<script>
+jQuery(function($) {
+	var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
+	var nonce = <?php echo wp_json_encode( $nonce ); ?>;
+	var $source = $('#bb-select-source'), $target = $('#bb-select-chart'), $week = $('#bb-select-week');
+	var $sync = $('#bb-btn-sync'), $csv = $('#bb-btn-csv'), $feedback = $('#bb-feedback-box');
+
+	function filterTargets(preferMatch) {
+		var $sourceOption = $source.find(':selected');
+		var itemType = $sourceOption.data('item-type');
+		var matchSlug = $sourceOption.data('target-slug');
+		var chosen = '';
+		$target.find('option').each(function() {
+			var $option = $(this), compatible = !$option.val() || $option.data('item-type') === itemType;
+			$option.prop('disabled', !compatible).toggle(compatible);
+			if (preferMatch && $option.data('slug') === matchSlug && compatible) chosen = $option.val();
+		});
+		if (chosen) $target.val(chosen);
+		else if ($target.find(':selected').prop('disabled')) $target.val('');
+		$('#billboard-target').val($target.val() || '');
+	}
+
+	function loadWeeks() {
+		var sourceId = $source.val();
+		$week.prop('disabled', true).html('<option value=""><?php echo esc_js( __( 'جاري تحميل الأسابيع…', 'charts' ) ); ?></option>');
+		$.post(ajaxUrl, {action:'charts_billboard_get_weeks', billboard_chart_id:sourceId, _wpnonce:nonce})
+		.done(function(res) {
+			$week.empty();
+			if (res && res.success && res.data.weeks && res.data.weeks.length) {
+				$.each(res.data.weeks, function(i, item) {
+					$('<option>').val(item.week_id).text(item.label + (i === 0 ? ' · الأحدث' : '')).appendTo($week);
+				});
+				$week.prop('disabled', false);
+				$('#bb-connection-status').attr('data-connected','true').find('span:last').text('<?php echo esc_js( __( 'API متاح', 'charts' ) ); ?>');
+			} else {
+				$week.append($('<option>').val('').text('<?php echo esc_js( __( 'لا توجد أسابيع متاحة', 'charts' ) ); ?>'));
+				$('#bb-connection-status').attr('data-connected','false').find('span:last').text('<?php echo esc_js( __( 'تعذر الاتصال', 'charts' ) ); ?>');
+			}
+		}).fail(function() {
+			$week.html('<option value=""><?php echo esc_js( __( 'تعذر الاتصال بـ Billboard', 'charts' ) ); ?></option>');
+			$('#bb-connection-status').attr('data-connected','false').find('span:last').text('<?php echo esc_js( __( 'تعذر الاتصال', 'charts' ) ); ?>');
+		}).always(function() {$week.prop('disabled', false);});
+	}
+
+	$source.on('change', function() { filterTargets(true); loadWeeks(); $feedback.hide(); });
+	$target.on('change', function() { $('#billboard-target').val($(this).val()); });
+	filterTargets(true);
+	$('#billboard-csv').on('change', function() {
+		var name = this.files && this.files[0] ? this.files[0].name : '<?php echo esc_js( __( 'اختار ملف CSV', 'charts' ) ); ?>';
+		$(this).closest('.bb-file-input').toggleClass('has-file', !!this.files.length).find('span').last().text(name);
+	});
+
+	$sync.on('click', function() {
+		if (!$target.val()) { $feedback.removeClass('is-success').addClass('is-error').text('<?php echo esc_js( __( 'اختار شارت وجهة متوافق الأول.', 'charts' ) ); ?>').show(); return; }
+		$sync.prop('disabled', true); $csv.prop('disabled', true); $('#bb-spinner').show(); $feedback.hide();
+		$.post(ajaxUrl, {action:'charts_billboard_sync', week_id:$week.val(), chart_id:$target.val(), billboard_chart_id:$source.val(), _wpnonce:nonce})
+		.done(function(res) {
+			if (res && res.success) $feedback.removeClass('is-error').addClass('is-success').text(res.data.message || '<?php echo esc_js( __( 'تم الاستيراد بنجاح.', 'charts' ) ); ?>');
+			else $feedback.removeClass('is-success').addClass('is-error').text(res && res.data ? res.data.message : '<?php echo esc_js( __( 'فشل استيراد القائمة.', 'charts' ) ); ?>');
+			$feedback.show();
+		}).fail(function(xhr) { $feedback.removeClass('is-success').addClass('is-error').text(xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : '<?php echo esc_js( __( 'تعذر الاتصال بالخادم.', 'charts' ) ); ?>').show(); })
+		.always(function() { $sync.prop('disabled', false); $csv.prop('disabled', false); $('#bb-spinner').hide(); });
+	});
+
+	$csv.on('click', function() {
+		if (!$target.val()) { $feedback.removeClass('is-success').addClass('is-error').text('<?php echo esc_js( __( 'اختار شارت وجهة متوافق الأول.', 'charts' ) ); ?>').show(); return; }
+		var query = $.param({action:'charts_billboard_download_csv', week_id:$week.val(), chart_id:$source.val(), nonce:nonce});
+		window.location.href = ajaxUrl + '?' + query;
+	});
+
+	$('form.bb-csv-form').on('submit', function(e) {
+		if (!$target.val()) { e.preventDefault(); $feedback.removeClass('is-success').addClass('is-error').text('<?php echo esc_js( __( 'اختار شارت وجهة متوافق الأول.', 'charts' ) ); ?>').show(); return; }
+		$('#billboard-target').val($target.val());
+	});
+});
+</script>

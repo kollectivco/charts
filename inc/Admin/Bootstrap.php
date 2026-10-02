@@ -2193,7 +2193,8 @@ class Bootstrap {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 		}
 
-		$weeks = \Charts\Services\BillboardService::get_weeks();
+		$billboard_chart_id = absint( $_POST['billboard_chart_id'] ?? 1 );
+		$weeks = \Charts\Services\BillboardService::get_weeks( $billboard_chart_id );
 		wp_send_json_success( array( 'weeks' => $weeks ) );
 	}
 
@@ -2211,14 +2212,18 @@ class Bootstrap {
 
 		$week_id  = intval( $_POST['week_id'] ?? 0 );
 		$chart_id = intval( $_POST['chart_id'] ?? 0 );
+		$billboard_chart_id = absint( $_POST['billboard_chart_id'] ?? 1 );
 
-		$result = \Charts\Services\BillboardService::sync_to_chart( $week_id, $chart_id );
+		$result = \Charts\Services\BillboardService::sync_to_chart( $week_id, $chart_id, $billboard_chart_id );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
 		wp_send_json_success( array(
-			'message' => sprintf( __( 'تم استيراد %d أغنية بنجاح من بيلبورد عربية وتحديث الشارت والصور!', 'charts' ), $result['imported_count'] ),
+			'message' => sprintf(
+				$result['item_type'] === 'artist' ? __( 'تم استيراد %d فنان بنجاح من قائمة Billboard Arabia.', 'charts' ) : __( 'تم استيراد %d أغنية بنجاح من قائمة Billboard Arabia.', 'charts' ),
+				$result['imported_count']
+			),
 			'data'    => $result,
 		) );
 	}
@@ -2236,6 +2241,7 @@ class Bootstrap {
 		@set_time_limit(300);
 
 		$week_id = intval( $_GET['week_id'] ?? 0 );
-		\Charts\Services\BillboardService::download_csv( $week_id );
+		$billboard_chart_id = absint( $_GET['chart_id'] ?? 1 );
+		\Charts\Services\BillboardService::download_csv( $week_id, $billboard_chart_id );
 	}
 }
