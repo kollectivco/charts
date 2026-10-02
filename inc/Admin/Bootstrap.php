@@ -563,13 +563,10 @@ class Bootstrap {
 		}
 		if ( $saved === false || ! $id ) return new \WP_Error( 'entity_save_failed', __( 'The record could not be saved. Check that the slug is unique.', 'charts' ) );
 
-		if ( $type === 'artist' ) {
-			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'artist_names' => $name, 'track_name' => $name ), array( 'item_type' => 'artist', 'item_id' => $id ) );
-		} else {
+		self::sync_entity_chart_entries( $type, $id, $type === 'artist' ? ( $existing->display_name ?? '' ) : '', $type === 'artist' ? ( $existing->display_name_en ?? '' ) : '' );
+		if ( $type !== 'artist' ) {
 			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", (int) $data['primary_artist_id'] ) );
-			$entry_type = $type === 'video' ? 'video' : 'track';
-			$cover_key = $type === 'video' ? 'thumbnail' : 'cover_image';
-			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'track_name' => $name, 'artist_names' => $artist_name, 'cover_image' => $data[ $cover_key ] ?? null ), array( 'item_type' => $entry_type, 'item_id' => $id ) );
+			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'artist_names' => $artist_name ), array( 'item_type' => $type === 'video' ? 'video' : 'track', 'item_id' => $id ) );
 		}
 
 		self::clear_frontend_caches();
@@ -1284,6 +1281,70 @@ class Bootstrap {
 		$wpdb->query( "DELETE FROM {$wpdb->prefix}options WHERE option_name LIKE '_transient_kc_preview_%' OR option_name LIKE '_transient_timeout_kc_preview_%'" );
 	}
 
+	/** Keep the denormalized chart rows in sync with the canonical entity record. */
+	private static function sync_entity_chart_entries( $type, $id, $old_name = '', $old_name_en = '' ) {
+		global $wpdb;
+		$id = absint( $id );
+		if ( ! $id ) return;
+
+		if ( $type === 'artist' ) {
+			$artist = $wpdb->get_row( $wpdb->prepare( "SELECT display_name, display_name_en, slug, spotify_id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $id ) );
+			if ( ! $artist ) return;
+			$wpdb->update( "{$wpdb->prefix}charts_entries", array(
+				'artist_names' => $artist->display_name,
+				'artist_names_en' => $artist->display_name_en,
+				'track_name' => $artist->display_name,
+				'item_slug' => $artist->slug,
+				'spotify_id' => $artist->spotify_id,
+			), array( 'item_type' => 'artist', 'item_id' => $id ) );
+
+			// Update the cached display string on charted tracks and videos that use this artist.
+			if ( ( $old_name !== '' && $old_name !== $artist->display_name ) || ( $old_name_en !== '' && $old_name_en !== $artist->display_name_en ) ) {
+				$related = $wpdb->get_results( $wpdb->prepare(
+					"SELECT e.id, e.artist_names, e.artist_names_en FROM {$wpdb->prefix}charts_entries e
+					 LEFT JOIN {$wpdb->prefix}charts_tracks t ON e.item_type = 'track' AND t.id = e.item_id
+					 LEFT JOIN {$wpdb->prefix}charts_videos v ON e.item_type = 'video' AND v.id = e.item_id
+					 LEFT JOIN {$wpdb->prefix}charts_track_artists ta ON ta.track_id = t.id AND ta.artist_id = %d
+					 LEFT JOIN {$wpdb->prefix}charts_video_artists va ON va.video_id = v.id AND va.artist_id = %d
+					 WHERE (t.primary_artist_id = %d OR v.primary_artist_id = %d OR ta.artist_id = %d OR va.artist_id = %d)
+					 GROUP BY e.id",
+					$id, $id, $id, $id, $id, $id
+				) );
+				foreach ( $related as $entry ) {
+					$entry_data = array();
+					if ( $old_name !== '' && $old_name !== $artist->display_name ) {
+						$updated_names = preg_replace( '/(?<![\\p{L}\\p{N}])' . preg_quote( $old_name, '/' ) . '(?![\\p{L}\\p{N}])/iu', $artist->display_name, (string) $entry->artist_names );
+						if ( $updated_names !== null && $updated_names !== $entry->artist_names ) $entry_data['artist_names'] = $updated_names;
+					}
+					if ( $old_name_en !== '' && $old_name_en !== $artist->display_name_en ) {
+						$updated_names_en = preg_replace( '/(?<![\\p{L}\\p{N}])' . preg_quote( $old_name_en, '/' ) . '(?![\\p{L}\\p{N}])/iu', (string) $artist->display_name_en, (string) $entry->artist_names_en );
+						if ( $updated_names_en !== null && $updated_names_en !== $entry->artist_names_en ) $entry_data['artist_names_en'] = $updated_names_en;
+					}
+					if ( $entry_data ) {
+						$wpdb->update( "{$wpdb->prefix}charts_entries", $entry_data, array( 'id' => $entry->id ) );
+					}
+				}
+			}
+			return;
+		}
+
+		if ( $type === 'track' ) {
+			$entity = $wpdb->get_row( $wpdb->prepare( "SELECT title, slug, cover_image, primary_artist_id, spotify_id, youtube_id FROM {$wpdb->prefix}charts_tracks WHERE id = %d", $id ) );
+			$entry_type = 'track';
+			$image = $entity ? $entity->cover_image : null;
+		} elseif ( $type === 'video' ) {
+			$entity = $wpdb->get_row( $wpdb->prepare( "SELECT title, slug, thumbnail AS cover_image, primary_artist_id, youtube_id FROM {$wpdb->prefix}charts_videos WHERE id = %d", $id ) );
+			$entry_type = 'video';
+			$image = $entity ? $entity->cover_image : null;
+		} else {
+			return;
+		}
+		if ( ! $entity ) return;
+		$data = array( 'track_name' => $entity->title, 'item_slug' => $entity->slug, 'cover_image' => $image, 'youtube_id' => $entity->youtube_id );
+		if ( $type === 'track' ) $data['spotify_id'] = $entity->spotify_id;
+		$wpdb->update( "{$wpdb->prefix}charts_entries", $data, array( 'item_type' => $entry_type, 'item_id' => $id ) );
+	}
+
 	/**
 	 * DESTRUCTIVE: Wipes all plugin data from the database.
 	 */
@@ -1465,6 +1526,7 @@ class Bootstrap {
 		$result = $manager->save_manual_entries( $chart_id, $new_entries );
 		
 		if ( $result !== false ) {
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'count' => $result ) );
 		} else {
 			wp_send_json_error( array( 'message' => 'Failed to synchronize manual entries.' ) );
@@ -1492,6 +1554,7 @@ class Bootstrap {
 		$result = $manager->save_manual_entries( $chart_id, $order );
 
 		if ( $result !== false ) {
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'count' => $result ) );
 		} else {
 			wp_send_json_error( array( 'message' => 'Failed to persist manual ranking order.' ) );
@@ -1661,6 +1724,8 @@ class Bootstrap {
 
 		$table = $wpdb->prefix . 'charts_' . $type . 's';
 		$wpdb->update( $table, array( 'spotify_id' => $spotify_id ), array( 'id' => $id ) );
+		$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'spotify_id' => $spotify_id ), array( 'item_type' => $type, 'item_id' => $id ) );
+		self::clear_frontend_caches();
 
 		wp_send_json_success( array( 'message' => 'Linked successfully.' ) );
 	}
@@ -2068,6 +2133,7 @@ class Bootstrap {
 			}
 
 			if ($result['success']) {
+				self::clear_frontend_caches();
 				wp_send_json_success( array( 'message' => $result['message'] ) );
 			} else {
 				wp_send_json_error( array( 'message' => $result['message'] ) );
@@ -2084,6 +2150,7 @@ class Bootstrap {
 			foreach ( $ids as $id ) {
 				self::delete_single_entity( $id, $singular_type );
 			}
+			self::clear_frontend_caches();
 
 			wp_send_json_success( array( 'message' => sprintf('Successfully deleted %d entities.', count($ids)) ) );
 		} else {
@@ -2202,6 +2269,7 @@ class Bootstrap {
 
 		if ($total_merged > 0) {
 			\Charts\Core\Intelligence::recalculate_all();
+			self::clear_frontend_caches();
 		}
 
 		wp_send_json_success( array( 'message' => sprintf( 'Auto-reconciliation complete. Merged %d duplicate records.', $total_merged ) ) );
@@ -2239,6 +2307,7 @@ class Bootstrap {
 			$aliases_str = sanitize_text_field( $_POST['aliases'] ?? '' );
 
 			$artist = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_artists WHERE id = %d", $id ) );
+			if ( ! $artist ) wp_send_json_error( array( 'message' => 'Artist not found.' ) );
 			$meta = !empty($artist->metadata_json) ? json_decode($artist->metadata_json, true) : [];
 			$aliases = array_filter(array_map('trim', explode(',', $aliases_str)));
 			$meta['aliases'] = $aliases;
@@ -2253,8 +2322,9 @@ class Bootstrap {
 				'metadata_json' => json_encode($meta), 'updated_at' => current_time('mysql')
 			), array( 'id' => $id ) );
 
-			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'artist_names' => $primary_name, 'artist_names_en' => $name_en ), array( 'item_type' => 'artist', 'item_id' => $id ) );
+			self::sync_entity_chart_entries( 'artist', $id, $artist->display_name, $artist->display_name_en ?? '' );
 			\Charts\Core\Intelligence::recalculate_all();
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'message' => 'Artist updated.' ) );
 		} 
 		else if ( $entity_type === 'track' || $entity_type === 'tracks' ) {
@@ -2263,8 +2333,10 @@ class Bootstrap {
 				'normalized_title' => $normalized, 'spotify_id' => $spotify_id, 'youtube_id' => $youtube_id
 			), array( 'id' => $id ) );
 
-			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'track_name' => $primary_name, 'track_name_en' => $name_en ), array( 'item_type' => 'track', 'item_id' => $id ) );
+			self::sync_entity_chart_entries( 'track', $id );
+			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'track_name_en' => $name_en ), array( 'item_type' => 'track', 'item_id' => $id ) );
 			\Charts\Core\Intelligence::recalculate_all();
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'message' => 'Track updated.' ) );
 		}
 		else if ( $entity_type === 'video' || $entity_type === 'videos' || $entity_type === 'clip' || $entity_type === 'clips' ) {
@@ -2272,14 +2344,16 @@ class Bootstrap {
 				'title' => $primary_name, 'normalized_title' => $normalized, 'youtube_id' => $youtube_id
 			), array( 'id' => $id ) );
 
-			$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'track_name' => $primary_name ), array( 'item_type' => 'video', 'item_id' => $id ) );
+			self::sync_entity_chart_entries( 'video', $id );
 			\Charts\Core\Intelligence::recalculate_all();
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'message' => 'Video updated.' ) );
 		}
 		else if ( $entity_type === 'album' || $entity_type === 'albums' ) {
 			$wpdb->update( "{$wpdb->prefix}charts_albums", array(
 				'title' => $primary_name, 'normalized_title' => $normalized, 'spotify_id' => $spotify_id
 			), array( 'id' => $id ) );
+			self::clear_frontend_caches();
 
 			wp_send_json_success( array( 'message' => 'Album updated.' ) );
 		}

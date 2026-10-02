@@ -53,13 +53,11 @@ class MergeEngine {
 				$master_id
 			) );
 
-			// 4. Move track_artists links
-			$wpdb->query( $wpdb->prepare(
-				"UPDATE IGNORE {$wpdb->prefix}charts_item_artists SET artist_id = %d WHERE artist_id IN ($ids_in)",
-				$master_id
-			) );
-			// Delete any remaining duplicates that were ignored due to unique key conflicts
-			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_item_artists WHERE artist_id IN ($ids_in)" );
+			// 4. Move artist links on tracks and videos.
+			$wpdb->query( $wpdb->prepare( "UPDATE IGNORE {$wpdb->prefix}charts_track_artists SET artist_id = %d WHERE artist_id IN ($ids_in)", $master_id ) );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_track_artists WHERE artist_id IN ($ids_in)" );
+			$wpdb->query( $wpdb->prepare( "UPDATE IGNORE {$wpdb->prefix}charts_video_artists SET artist_id = %d WHERE artist_id IN ($ids_in)", $master_id ) );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_video_artists WHERE artist_id IN ($ids_in)" );
 
 
 
@@ -115,20 +113,30 @@ class MergeEngine {
 			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_artists WHERE id IN ($ids_in)" );
 
 
-			// Update denormalized strings in charts_entries
+			// Refresh chart snapshots from the canonical artist and its current slug.
 			$master_artist = $wpdb->get_var( $wpdb->prepare("SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $master_id) );
+			$master_artist_en = $wpdb->get_var( $wpdb->prepare("SELECT display_name_en FROM {$wpdb->prefix}charts_artists WHERE id = %d", $master_id) );
+			$master_slug = $wpdb->get_var( $wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_artists WHERE id = %d", $master_id) );
+			$master_spotify_id = $wpdb->get_var( $wpdb->prepare("SELECT spotify_id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $master_id) );
 			if ($master_artist) {
 				$wpdb->query( $wpdb->prepare(
-					"UPDATE {$wpdb->prefix}charts_entries SET artist_names = %s WHERE item_type = 'artist' AND item_id = %d",
-					$master_artist, $master_id
+					"UPDATE {$wpdb->prefix}charts_entries SET artist_names = %s, artist_names_en = %s, track_name = %s, item_slug = %s, spotify_id = %s WHERE item_type = 'artist' AND item_id = %d",
+					$master_artist, $master_artist_en, $master_artist, $master_slug, $master_spotify_id, $master_id
 				) );
 				
 				// Also update tracks where this artist is primary
 				$wpdb->query( $wpdb->prepare(
 					"UPDATE {$wpdb->prefix}charts_entries e 
 					JOIN {$wpdb->prefix}charts_tracks t ON t.id = e.item_id 
-					SET e.artist_names = %s 
+					SET e.artist_names = %s, e.artist_names_en = %s
 					WHERE e.item_type = 'track' AND t.primary_artist_id = %d",
+					$master_artist, $master_artist_en, $master_id
+				) );
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE {$wpdb->prefix}charts_entries e
+					 JOIN {$wpdb->prefix}charts_videos v ON v.id = e.item_id
+					 SET e.artist_names = %s
+					 WHERE e.item_type = 'video' AND v.primary_artist_id = %d",
 					$master_artist, $master_id
 				) );
 			}
@@ -248,13 +256,13 @@ class MergeEngine {
 
 
 			// Update denormalized strings in charts_entries
-			$master_track = $wpdb->get_var( $wpdb->prepare("SELECT title FROM {$wpdb->prefix}charts_tracks WHERE id = %d", $master_id) );
-			if ($master_track) {
-				$wpdb->query( $wpdb->prepare(
-					"UPDATE {$wpdb->prefix}charts_entries SET track_name = %s WHERE item_type = 'track' AND item_id = %d",
-					$master_track, $master_id
-				) );
-			}
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->prefix}charts_entries e
+				 JOIN {$wpdb->prefix}charts_tracks t ON t.id = e.item_id
+					SET e.track_name = t.title, e.item_slug = t.slug, e.cover_image = t.cover_image, e.youtube_id = t.youtube_id, e.spotify_id = t.spotify_id
+				 WHERE e.item_type = 'track' AND e.item_id = %d",
+				$master_id
+			) );
 			\Charts\Core\Intelligence::recalculate_all();
 
 			$wpdb->query( 'COMMIT' );
@@ -344,6 +352,13 @@ class MergeEngine {
 
 			// 5. Delete duplicate video records
 			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_videos WHERE id IN ($ids_in)" );
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE {$wpdb->prefix}charts_entries e
+				 JOIN {$wpdb->prefix}charts_videos v ON v.id = e.item_id
+				 SET e.track_name = v.title, e.item_slug = v.slug, e.cover_image = v.thumbnail, e.youtube_id = v.youtube_id
+				 WHERE e.item_type = 'video' AND e.item_id = %d",
+				$master_id
+			) );
 
 			$wpdb->query( 'COMMIT' );
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d videos into master ID %d.', count($duplicate_ids), $master_id ) );
