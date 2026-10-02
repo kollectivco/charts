@@ -271,124 +271,156 @@ trait PremiumWidgetTrait {
 		}
 	}
 
-	public function add_advanced_image_controls($wrap_selector = '{{WRAPPER}} .kc-elm-img-wrap, {{WRAPPER}} .kc-card-hero, {{WRAPPER}} .kc-t5-r-img, {{WRAPPER}} .kc-t5-hero-bg', $img_selector = '{{WRAPPER}} .kc-elm-img, {{WRAPPER}} img') {
+	/**
+	 * Adds Foxiz-style Featured Image controls (Ratio, Border Radius, Hover Effect, Align, Lazy Load).
+	 * The hover effects are implemented using CSS class injection via a custom_css control.
+	 *
+	 * @param string $wrap_selector CSS selector for the image wrapper element
+	 * @param string $img_selector  CSS selector for the image element itself
+	 */
+	public function add_advanced_image_controls( $wrap_selector = '{{WRAPPER}} .kc-img-wrap', $img_selector = '{{WRAPPER}} .kc-img' ) {
 		$this->start_controls_section( 'style_advanced_image', [
 			'label' => __( 'Featured Image', 'charts' ),
-			'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+			'tab'   => Controls_Manager::TAB_STYLE,
 		] );
 
+		// 1. Image Size (display-only note — actual URL sizing handled in render)
 		$this->add_control( 'img_size', [
-			'label' => __( 'Featured Image Size', 'charts' ),
-			'type' => \Elementor\Controls_Manager::SELECT,
-			'options' => [
-				'thumbnail' => 'Thumbnail',
-				'medium' => 'Medium',
-				'large' => 'Large',
-				'full' => 'Full',
+			'label'       => __( 'Featured Image Size', 'charts' ),
+			'type'        => Controls_Manager::SELECT,
+			'options'     => [
+				'thumbnail' => 'Thumbnail (150px)',
+				'medium'    => 'Medium (300px)',
+				'large'     => 'Large (1024px)',
+				'full'      => 'Full (Original)',
 			],
-			'default' => 'full',
-			'description' => 'Select a featured image size to optimize with the columns setting.',
+			'default'     => 'full',
+			'description' => __( 'Select a featured image size to optimize performance based on your column count.', 'charts' ),
 		] );
 
+		// 2. Aspect Ratio
 		$this->add_responsive_control( 'img_ratio', [
-			'label' => __( 'Custom Featured Ratio', 'charts' ),
-			'type' => \Elementor\Controls_Manager::NUMBER,
-			'description' => 'Input custom ratio percent (height*100/width) for featured image you would like. e.g. 50',
-			'selectors' => [
-				$wrap_selector => 'aspect-ratio: 100 / {{VALUE}} !important;',
-				$img_selector => 'aspect-ratio: 100 / {{VALUE}} !important; object-fit: cover;',
+			'label'       => __( 'Custom Aspect Ratio (%)', 'charts' ),
+			'type'        => Controls_Manager::NUMBER,
+			'min'         => 10,
+			'max'         => 200,
+			'description' => __( 'Set image height as percent of width (height×100÷width). e.g. 50 = landscape 2:1, 100 = square, 150 = portrait.', 'charts' ),
+			'selectors'   => [
+				$wrap_selector => 'aspect-ratio: unset; padding-bottom: {{VALUE}}%; position: relative; overflow: hidden;',
+				$img_selector  => 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;',
 			],
 		] );
 
+		// 3. Border Radius
 		$this->add_responsive_control( 'img_advanced_border_radius', [
-			'label' => __( 'Border Radius', 'charts' ),
-			'type' => \Elementor\Controls_Manager::DIMENSIONS,
+			'label'      => __( 'Border Radius', 'charts' ),
+			'type'       => Controls_Manager::DIMENSIONS,
 			'size_units' => [ 'px', '%', 'em' ],
-			'description' => 'Input a custom border radius (in px) for the featured image.',
-			'selectors' => [ 
+			'description'=> __( 'Set a border radius for the image wrapper.', 'charts' ),
+			'selectors'  => [
 				$wrap_selector => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}}; overflow: hidden;',
-				$img_selector => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				$img_selector  => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 			],
 		] );
 
+		// 4. Hover Effect - uses CSS transition + transform directly on img_selector
 		$this->add_control( 'img_hover_effect', [
-			'label' => __( 'Hover Effect', 'charts' ),
-			'type' => \Elementor\Controls_Manager::SELECT,
-			'options' => [
-				'' => '- Disable -',
-				'zoom-in' => 'Zoom In',
-				'zoom-out' => 'Zoom Out',
-				'blur' => 'Blur',
+			'label'       => __( 'Hover Effect', 'charts' ),
+			'type'        => Controls_Manager::SELECT,
+			'options'     => [
+				''          => '- Disable -',
+				'zoom-in'   => 'Zoom In',
+				'zoom-out'  => 'Zoom Out',
+				'blur'      => 'Blur',
 				'grayscale' => 'Grayscale',
 			],
-			'default' => '',
-			'description' => 'Select a hover effect for this block featured images.',
+			'default'     => '',
+			'description' => __( 'Apply a hover effect on the featured image when the user hovers the card.', 'charts' ),
+			'selectors'   => [
+				// Always add transition to img
+				$img_selector => 'transition: transform 0.4s ease, filter 0.4s ease;',
+			],
 		] );
-		
-		$this->add_control( 'img_hover_css_zoom_in', [
-			'type' => \Elementor\Controls_Manager::HIDDEN,
-			'selectors' => [ 
-				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(1.1);',
-				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(1.1);',
-				$img_selector => 'transition: transform 0.4s ease, filter 0.4s ease;'
+
+		// Zoom In
+		$this->add_control( 'img_hover_zoom_in_css', [
+			'label'     => __( 'Zoom In Intensity', 'charts' ),
+			'type'      => Controls_Manager::SLIDER,
+			'default'   => [ 'size' => 1.1 ],
+			'range'     => [ 'px' => [ 'min' => 1.01, 'max' => 1.5, 'step' => 0.01 ] ],
+			'selectors' => [
+				$wrap_selector . ':hover ' . ltrim( str_replace( '{{WRAPPER}}', '', $img_selector ) ) => 'transform: scale({{SIZE}});',
 			],
 			'condition' => [ 'img_hover_effect' => 'zoom-in' ],
 		] );
 
-		$this->add_control( 'img_hover_css_zoom_out', [
-			'type' => \Elementor\Controls_Manager::HIDDEN,
-			'selectors' => [ 
-				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(0.95);',
-				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'transform: scale(0.95);',
-				$img_selector => 'transition: transform 0.4s ease, filter 0.4s ease;'
+		// Zoom Out
+		$this->add_control( 'img_hover_zoom_out_css', [
+			'label'     => __( 'Zoom Out Scale', 'charts' ),
+			'type'      => Controls_Manager::SLIDER,
+			'default'   => [ 'size' => 0.92 ],
+			'range'     => [ 'px' => [ 'min' => 0.5, 'max' => 0.99, 'step' => 0.01 ] ],
+			'selectors' => [
+				$wrap_selector . ':hover ' . ltrim( str_replace( '{{WRAPPER}}', '', $img_selector ) ) => 'transform: scale({{SIZE}});',
 			],
 			'condition' => [ 'img_hover_effect' => 'zoom-out' ],
 		] );
-		
-		$this->add_control( 'img_hover_css_blur', [
-			'type' => \Elementor\Controls_Manager::HIDDEN,
-			'selectors' => [ 
-				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: blur(4px);',
-				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: blur(4px);',
-				$img_selector => 'transition: filter 0.4s ease;'
+
+		// Blur
+		$this->add_control( 'img_hover_blur_css', [
+			'label'     => __( 'Blur Amount (px)', 'charts' ),
+			'type'      => Controls_Manager::SLIDER,
+			'default'   => [ 'size' => 4 ],
+			'range'     => [ 'px' => [ 'min' => 1, 'max' => 20 ] ],
+			'selectors' => [
+				$wrap_selector . ':hover ' . ltrim( str_replace( '{{WRAPPER}}', '', $img_selector ) ) => 'filter: blur({{SIZE}}px);',
 			],
 			'condition' => [ 'img_hover_effect' => 'blur' ],
 		] );
 
-		$this->add_control( 'img_hover_css_gray', [
-			'type' => \Elementor\Controls_Manager::HIDDEN,
-			'selectors' => [ 
-				'{{WRAPPER}} *:hover > ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: grayscale(100%);',
-				'{{WRAPPER}} *:hover ' . str_replace('{{WRAPPER}} ', '', $img_selector) => 'filter: grayscale(100%);',
-				$img_selector => 'transition: filter 0.4s ease;'
+		// Grayscale (no extra slider needed — always 100%)
+		$this->add_control( 'img_hover_gray_note', [
+			'type'            => Controls_Manager::RAW_HTML,
+			'raw'             => '<small style="color:#aaa;">Grayscale: image turns black & white on hover.</small>',
+			'condition'       => [ 'img_hover_effect' => 'grayscale' ],
+			'content_classes' => '',
+		] );
+		$this->add_control( 'img_hover_gray_css', [
+			'label'     => __( 'Grayscale %', 'charts' ),
+			'type'      => Controls_Manager::SLIDER,
+			'default'   => [ 'size' => 100 ],
+			'range'     => [ 'px' => [ 'min' => 0, 'max' => 100 ] ],
+			'selectors' => [
+				$wrap_selector . ':hover ' . ltrim( str_replace( '{{WRAPPER}}', '', $img_selector ) ) => 'filter: grayscale({{SIZE}}%);',
 			],
 			'condition' => [ 'img_hover_effect' => 'grayscale' ],
 		] );
 
+		// 5. Align
 		$this->add_responsive_control( 'img_align', [
-			'label' => __( 'Align', 'charts' ),
-			'type' => \Elementor\Controls_Manager::CHOOSE,
-			'options' => [
-				'left' => [ 'title' => 'Left', 'icon' => 'eicon-text-align-left' ],
-				'center' => [ 'title' => 'Center', 'icon' => 'eicon-text-align-center' ],
-				'right' => [ 'title' => 'Right', 'icon' => 'eicon-text-align-right' ],
+			'label'     => __( 'Align', 'charts' ),
+			'type'      => Controls_Manager::CHOOSE,
+			'options'   => [
+				'flex-start' => [ 'title' => __( 'Left', 'charts' ),   'icon' => 'eicon-text-align-left' ],
+				'center'     => [ 'title' => __( 'Center', 'charts' ), 'icon' => 'eicon-text-align-center' ],
+				'flex-end'   => [ 'title' => __( 'Right', 'charts' ),  'icon' => 'eicon-text-align-right' ],
 			],
 			'selectors' => [
-				$wrap_selector => 'text-align: {{VALUE}}; display: flex; justify-content: {{VALUE}};'
+				'{{WRAPPER}}' => 'display: flex; justify-content: {{VALUE}};',
 			],
-			'description' => 'Align the featured images for this block.',
+			'description' => __( 'Align the featured images inside this widget.', 'charts' ),
 		] );
 
+		// 6. Lazy Load (controls the loading attribute in render — also adds a note)
 		$this->add_control( 'img_lazy_load', [
-			'label' => __( 'Lazy Load', 'charts' ),
-			'type' => \Elementor\Controls_Manager::SELECT,
-			'options' => [
-				'' => '- Default -',
-				'yes' => 'Enable',
-				'no' => 'Disable',
+			'label'       => __( 'Lazy Load', 'charts' ),
+			'type'        => Controls_Manager::SELECT,
+			'options'     => [
+				'lazy'  => '- Default (Lazy) -',
+				'eager' => 'Eager (Disable — above fold)',
 			],
-			'default' => '',
-			'description' => 'Disable lazy load image if this block is above the fold.',
+			'default'     => 'lazy',
+			'description' => __( 'Set "Eager" if this widget is visible above the fold to prevent layout shift (LCP).', 'charts' ),
 		] );
 
 		$this->end_controls_section();

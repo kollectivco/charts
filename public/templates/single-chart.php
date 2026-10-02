@@ -116,14 +116,17 @@ if ( $definition ) {
 // -------------------------------------------------------------------
 // CUSTOM ELEMENTOR TEMPLATE INJECTION
 // -------------------------------------------------------------------
-$custom_template_id = \Charts\Core\Settings::get('single.elementor_template', 0);
-if ( $page_state === 'ready' && !empty($custom_template_id) && class_exists('\Elementor\Plugin') && ! $is_mobile ) {
-    \Charts\Core\PublicIntegration::get_header();
-    
-    // Inject Elementor Content
+$custom_template_id = (int) \Charts\Core\Settings::get('single.elementor_template', 0);
+if ( $page_state === 'ready' && $custom_template_id > 0 && class_exists('\Elementor\Plugin') && ! $is_mobile ) {
     $elementor = \Elementor\Plugin::instance();
-    echo $elementor->frontend->get_builder_content_for_display( $custom_template_id );
-    
+
+    // Ensure Elementor frontend is fully initialized
+    if ( ! $elementor->frontend->has_elementor_in_page() ) {
+        $elementor->frontend->init();
+    }
+
+    \Charts\Core\PublicIntegration::get_header();
+    echo $elementor->frontend->get_builder_content_for_display( $custom_template_id, true );
     \Charts\Core\PublicIntegration::get_footer();
     exit;
 }
