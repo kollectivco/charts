@@ -1315,7 +1315,6 @@ class Bootstrap {
 		if ( function_exists( 'sg_cachepress_purge_cache' ) ) {
 			sg_cachepress_purge_cache();
 		}
-	}options WHERE option_name LIKE '_transient_kc_preview_%' OR option_name LIKE '_transient_timeout_kc_preview_%'" );
 	}
 
 	/** Keep the denormalized chart rows in sync with the canonical entity record. */
