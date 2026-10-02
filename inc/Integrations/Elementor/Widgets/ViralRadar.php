@@ -47,7 +47,6 @@ class ViralRadar extends Widget_Base {
 		
 		// Map 'card' strictly to the columns or the list items
 		$this->add_granular_style_controls(['card', 'image', 'title', 'meta']);
-		$this->add_featured_image_controls();
 	}
 
 	protected function render() {
