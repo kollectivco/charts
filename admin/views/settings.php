@@ -238,7 +238,23 @@ $panel = [
                 'title' => 'Structural Reset',
                 'fields' => [
                     [ 'id' => 'maint_danger', 'type' => 'custom', 'html' => '
-                        <div class="kb-danger-zone">
+                        
+									<div class="kb-field-wrap">
+										<label>Force English Slugs</label>
+										<p class="kb-field-desc" style="margin-bottom:10px;">If your older entries have Arabic URLs, click this to bulk convert all Artists, Tracks, Videos, and Charts to clean English slugs.</p>
+										<button type="button" class="kb-btn kb-btn-outline" onclick="forceEnglishSlugs()">Convert Slugs to English</button>
+										<script>
+										function forceEnglishSlugs() {
+											if(!confirm("Are you sure? This will update all Arabic slugs in the database to English.")) return;
+											jQuery.post(ajaxurl, { action: "charts_force_english_slugs" }).done(function(res){
+												alert(res.data.message);
+												location.reload();
+											});
+										}
+										</script>
+									</div>
+
+									<div class="kb-danger-zone">
                             <p>To destroy all charts, entries, and data, type <strong>RESET CHARTS</strong> below.</p>
                             <input type="text" name="confirm_reset" id="reset_confirm_input" placeholder="Type confirmation here..." class="kb-input" style="border-color:#fecaca;">
                             <label style="margin-top:16px; display:block;"><input type="checkbox" name="wipe_settings" value="1"> Also purge configuration logic</label>
