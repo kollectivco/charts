@@ -263,7 +263,9 @@ class ChartTable extends Widget_Base {
 			
 			// Cover
 			if ($settings['show_cover'] === 'yes') {
+				echo '<div class="kc-ct-img-wrap" style="flex-shrink:0;">';
 				echo '<img src="' . esc_url($img) . '" class="kc-row-img" alt="">';
+				echo '</div>';
 			}
 			
 			// Info

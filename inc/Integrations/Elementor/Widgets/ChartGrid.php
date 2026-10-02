@@ -283,7 +283,9 @@ class ChartGrid extends Widget_Base {
 				?>
 					<div class="kc-preview-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--k-divider);">
 						<span style="font-size: 12px; font-weight: 900; color: <?php echo $accent; ?>; width: 16px;"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
-						<img src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;">
+						<div class="kc-row-img-wrap" style="width: 36px; height: 36px; border-radius: 6px; overflow: hidden; flex-shrink: 0;">
+							<img class="kc-row-img" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+						</div>
 						<div style="overflow: hidden;">
 							<span style="display: block; font-size: 13px; font-weight: 800; color: var(--k-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($resolved['title']); ?></span>
 							<span style="display: block; font-size: 10px; font-weight: 600; color: var(--k-text-muted);"><?php echo esc_html($resolved['subtitle']); ?></span>

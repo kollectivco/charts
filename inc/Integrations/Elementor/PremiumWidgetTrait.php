@@ -300,14 +300,23 @@ trait PremiumWidgetTrait {
 
 		// 2. Aspect Ratio
 		$this->add_responsive_control( 'img_ratio', [
-			'label'       => __( 'Custom Aspect Ratio (%)', 'charts' ),
-			'type'        => Controls_Manager::NUMBER,
-			'min'         => 10,
-			'max'         => 200,
-			'description' => __( 'Set image height as percent of width (height×100÷width). e.g. 50 = landscape 2:1, 100 = square, 150 = portrait.', 'charts' ),
+			'label'       => __( 'Custom Aspect Ratio', 'charts' ),
+			'type'        => Controls_Manager::SELECT,
+			'options'     => [
+				''       => 'Default',
+				'1/1'    => 'Square (1:1)',
+				'16/9'   => 'Landscape (16:9)',
+				'4/3'    => 'Landscape (4:3)',
+				'3/2'    => 'Landscape (3:2)',
+				'9/16'   => 'Portrait (9:16)',
+				'3/4'    => 'Portrait (3:4)',
+				'2/3'    => 'Portrait (2:3)',
+			],
+			'default'     => '',
+			'description' => __( 'Force a specific aspect ratio. If set, it will override defined heights.', 'charts' ),
 			'selectors'   => [
-				$wrap_selector => 'aspect-ratio: unset; padding-bottom: {{VALUE}}%; position: relative; overflow: hidden;',
-				$img_selector  => 'position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;',
+				$wrap_selector => 'aspect-ratio: {{VALUE}} !important; height: auto !important;',
+				$img_selector  => 'object-fit: cover;',
 			],
 		] );
 

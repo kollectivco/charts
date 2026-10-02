@@ -26,6 +26,7 @@ class Settings {
         return [
             // Homepage Presence
             'homepage' => [
+                'elementor_template'   => '',
                 'layout'               => 'standard', // standard, minimal
                 'show_featured_row'    => 1,
                 'show_artists_row'     => 1,
@@ -33,6 +34,11 @@ class Settings {
                 'section_order'        => 'slider,artists,charts',
                 'padding_top'          => 40,
                 'section_spacing'      => 80,
+            ],
+            
+            // Single Chart Page
+            'single' => [
+                'elementor_template'   => '',
             ],
             
             // Hero Billboard (Premium Slider)

@@ -305,6 +305,7 @@ class ChartList extends Widget_Base {
 		}
 
 		$start_index = intval($settings['start_index'] ?: 1);
+		$uid = 'kc-cl2-' . $this->get_id();
 ?>
 		<div class="kc-cl2-root kc-widget-wrap" id="<?php echo $uid; ?>">
 			<div class="kc-cl2-widget" style="display: flex; flex-direction: column;">

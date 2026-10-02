@@ -682,9 +682,36 @@ class Bootstrap {
 		if ( $platform === 'spotify' ) {
 			$_FILES['spotify_csv'] = $_FILES['import_file'];
 			return self::process_spotify_csv_upload();
+		} elseif ( $platform === 'billboard' ) {
+			$_FILES['billboard_csv'] = $_FILES['import_file'];
+			return self::process_billboard_csv_upload();
 		} else {
 			$_FILES['youtube_csv'] = $_FILES['import_file'];
 			return self::process_youtube_csv_upload();
+		}
+	}
+
+	private static function process_billboard_csv_upload() {
+		global $wpdb;
+		if ( empty( $_FILES['billboard_csv']['tmp_name'] ) ) {
+			\Charts\Core\Notify::error( __( 'The Billboard CSV is missing.', 'charts' ), __( 'Input Failure', 'charts' ) );
+			return;
+		}
+
+		$csv_content = file_get_contents( $_FILES['billboard_csv']['tmp_name'] );
+		if ( ! $csv_content ) {
+			\Charts\Core\Notify::error( __( 'Failed to read the uploaded CSV.', 'charts' ), __( 'I/O Failure', 'charts' ) );
+			return;
+		}
+
+		$meta = array();
+		$importer = new \Charts\Services\BillboardCsvImporter();
+		$result = $importer->run( $csv_content, $meta );
+
+		if ( is_wp_error( $result ) ) {
+			\Charts\Core\Notify::error( $result->get_error_message(), __( 'Import Failure', 'charts' ) );
+		} else {
+			return $result['period_id'];
 		}
 	}
 
@@ -1729,7 +1756,7 @@ class Bootstrap {
 	 * Helper: Generate blocking key for duplicate matching.
 	 */
 	private static function generate_blocking_key( $name ) {
-		$franko = mb_strtolower( \Charts\Services\Normalizer::to_franco( $name ) );
+		$franko = mb_strtolower( \Charts\Services\Normalizer::to_franko( $name ) );
 		// Replace typical Arabizi numbers with latin approximations
 		$franko = str_replace( array('3', '7', '2', '5', '9'), array('e', 'h', 'a', 'kh', 'k'), $franko );
 		// Strip vowels and spaces and reduce duplicate characters
@@ -2138,6 +2165,7 @@ class Bootstrap {
 		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
 			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
 		}
+		@set_time_limit(300);
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 		}
@@ -2166,6 +2194,7 @@ class Bootstrap {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Unauthorized.' );
 		}
+		@set_time_limit(300);
 
 		$week_id = intval( $_GET['week_id'] ?? 0 );
 		\Charts\Services\BillboardService::download_csv( $week_id );

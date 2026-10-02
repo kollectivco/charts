@@ -118,7 +118,7 @@ class BillboardService {
 			// Image URL
 			$image_url = '';
 			if ( ! empty( $item['image'] ) ) {
-				$image_url = self::IMG_BASE . ltrim( $item['image'], '/' );
+				$image_url = self::sideload_image( self::IMG_BASE . ltrim( $item['image'], '/' ) );
 			}
 
 			// Stats
@@ -150,6 +150,44 @@ class BillboardService {
 		}
 
 		return $items;
+	}
+
+	public static function sideload_image( $url ) {
+		if ( empty( $url ) ) return '';
+		
+		// If it's already a local URL, skip
+		if ( strpos( $url, 'sys.billboardarabia.com' ) === false ) return $url;
+
+		$upload_dir = wp_upload_dir();
+		$charts_dir = $upload_dir['basedir'] . '/charts-media/kcharts';
+		if ( ! file_exists( $charts_dir ) ) {
+			wp_mkdir_p( $charts_dir );
+		}
+
+		$filename = basename( parse_url( $url, PHP_URL_PATH ) );
+		if ( empty( $filename ) ) $filename = md5( $url ) . '.jpg';
+
+		// Avoid redownloading if exists
+		$filepath = $charts_dir . '/' . $filename;
+		$fileurl  = $upload_dir['baseurl'] . '/charts-media/kcharts/' . $filename;
+		if ( file_exists( $filepath ) ) {
+			return $fileurl;
+		}
+
+		$response = wp_remote_get( $url, array(
+			'timeout'    => 15,
+			'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+		) );
+
+		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+			$body = wp_remote_retrieve_body( $response );
+			if ( $body ) {
+				file_put_contents( $filepath, $body );
+				return $fileurl;
+			}
+		}
+
+		return $url;
 	}
 
 	/**
