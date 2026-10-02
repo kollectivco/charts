@@ -65,6 +65,7 @@ $offset = ( $current_page - 1 ) * $per_page;
 // 4. Filters & Search
 $filter_spotify = isset( $_GET['spotify_linked'] ) ? $_GET['spotify_linked'] : '';
 $filter_image   = isset( $_GET['has_image'] ) ? $_GET['has_image'] : '';
+$filter_en   = isset( $_GET['missing_en'] ) ? $_GET['missing_en'] : '';
 
 $items = array();
 $total = 0;
@@ -144,13 +145,13 @@ $total_items = $total;
 $entity_type = $type;
 
 ?>
-<div class="bento-wrap">
-	<header class="bento-header" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+<div class="charts-admin-wrap premium-light">
+	<header class="charts-admin-header">
 		<div>
-			<h1 class="bento-title" style="margin:0 0 8px 0;font-size:24px;font-weight:600;color:#0f172a;"><?php echo esc_html( $page_title ); ?></h1>
-			<p class="bento-subtitle" style="margin:0;font-size:14px;color:#64748b;"><?php printf( __( 'Canonical library containing %d indexed %s entities.', 'charts' ), $total_items, strtolower($page_title) ); ?></p>
+			<h1 class="charts-admin-title"><?php echo esc_html( $page_title ); ?></h1>
+			<p class="charts-admin-subtitle"><?php printf( __( 'Canonical library containing %d indexed %s entities.', 'charts' ), $total_items, strtolower($page_title) ); ?></p>
 		</div>
-		<div class="bento-actions" style="display: flex; gap: 10px; align-items: center;">
+		<div class="charts-admin-actions" style="display: flex; gap: 10px; align-items: center;">
 			<?php if ($type !== 'advanced'): ?>
 				<!-- Premium Logic Hub -->
 				<div class="kc-logic-hub">
@@ -176,7 +177,7 @@ $entity_type = $type;
 				</div>
 			<?php endif; ?>
 			
-			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="bento-btn-primary" style="background:#0f172a;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;font-size:13px;font-weight:500;">
+			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
 				<span class="dashicons dashicons-plus" style="margin-right:8px; vertical-align: middle;"></span>
 				<?php printf( __( 'Add New %s', 'charts' ), rtrim($page_title, 's') ); ?>
 			</a>
@@ -184,29 +185,29 @@ $entity_type = $type;
 	</header>
 
 	<!-- Filters & Pagination Bar -->
-	<div class="bento-card bento-toolbar" style="background:#fff;padding:16px 24px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;">
+	<div style="background: #fff; padding: 16px 24px; border-radius: 12px; box-shadow: var(--k-shadow-sm); margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
 		<form method="get" style="display: flex; gap: 12px; align-items: center;">
 			<input type="hidden" name="page" value="<?php echo esc_attr($page); ?>">
 			
-			<input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php _e( 'Search by name...', 'charts' ); ?>" class="bento-input" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;" style="width: 250px; margin: 0;">
+			<input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php _e( 'Search by name...', 'charts' ); ?>" class="charts-input" style="width: 250px; margin: 0;">
 			
-			<select name="spotify_linked" class="bento-input" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;" style="margin: 0;">
+			<select name="spotify_linked" class="charts-input" style="margin: 0;">
 				<option value=""><?php _e( 'Spotify Sync Status', 'charts' ); ?></option>
 				<option value="yes" <?php selected($filter_spotify, 'yes'); ?>><?php _e( 'Linked Only', 'charts' ); ?></option>
 				<option value="no" <?php selected($filter_spotify, 'no'); ?>><?php _e( 'Missing Only', 'charts' ); ?></option>
 			</select>
 
-			<select name="has_image" class="bento-input" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;" style="margin: 0;">
+			<select name="has_image" class="charts-input" style="margin: 0;">
 				<option value=""><?php _e( 'Visual Maturity', 'charts' ); ?></option>
 				<option value="yes" <?php selected($filter_image, 'yes'); ?>><?php _e( 'Has Artwork', 'charts' ); ?></option>
 				<option value="no" <?php selected($filter_image, 'no'); ?>><?php _e( 'Missing Artwork', 'charts' ); ?></option>
 			</select>
 
-			<select name="missing_en" class="bento-input" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;" style="margin: 0;">
+			<select name="missing_en" class="charts-input" style="margin: 0;">
 				<option value="">English Name Status</option>
 				<option value="yes" <?php selected($filter_en, 'yes'); ?>>Missing English Name</option>
 			</select>
-			<button type="submit" class="bento-btn-secondary" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;" style="margin: 0; padding: 8px 20px;"><?php _e( 'Filter', 'charts' ); ?></button>
+			<button type="submit" class="charts-btn-secondary" style="margin: 0; padding: 8px 20px;"><?php _e( 'Filter', 'charts' ); ?></button>
 			<?php if($search || $filter_spotify || $filter_image || $filter_en): ?>
 				<a href="<?php echo admin_url('admin.php?page='.$page); ?>" style="font-size: 11px; text-decoration: none; color: #666;"><?php _e( 'Clear All', 'charts' ); ?></a>
 			<?php endif; ?>
@@ -219,11 +220,11 @@ $entity_type = $type;
 			</span>
 			<div style="display: flex; gap: 4px;">
 				<?php if($current_page > 1): ?>
-					<a href="<?php echo add_query_arg('paged', $current_page - 1); ?>" class="bento-btn-secondary" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;" style="padding: 4px 10px; margin: 0;"><span class="dashicons dashicons-arrow-left-alt2"></span></a>
+					<a href="<?php echo add_query_arg('paged', $current_page - 1); ?>" class="charts-btn-secondary" style="padding: 4px 10px; margin: 0;"><span class="dashicons dashicons-arrow-left-alt2"></span></a>
 				<?php endif; ?>
 				
 				<?php if($current_page < $num_pages): ?>
-					<a href="<?php echo add_query_arg('paged', $current_page + 1); ?>" class="bento-btn-secondary" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;" style="padding: 4px 10px; margin: 0;"><span class="dashicons dashicons-arrow-right-alt2"></span></a>
+					<a href="<?php echo add_query_arg('paged', $current_page + 1); ?>" class="charts-btn-secondary" style="padding: 4px 10px; margin: 0;"><span class="dashicons dashicons-arrow-right-alt2"></span></a>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -231,21 +232,22 @@ $entity_type = $type;
 
 	<!-- KPI Analytics Bar -->
 	<?php if ( ! empty( $kpis ) ) : ?>
-		<div class="bento-grid-kpi" style="margin-top: 24px;">
+		<div class="kc-cards-grid">
 			<?php foreach ( $kpis as $kpi ) : ?>
-				<div class="bento-card" style="border-top: 3px solid <?php echo $kpi['color']; ?>; position: relative; overflow: hidden;">
-					<div class="bento-kpi-label"><?php echo esc_html( $kpi['label'] ); ?></div>
-					<div class="bento-kpi-value" style="color: <?php echo $kpi['color']; ?>"><?php echo number_format( $kpi['value'] ); ?></div>
-					<div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 32px; opacity: 0.1; color: <?php echo $kpi['color']; ?>;">
-						<span class="dashicons <?php echo $kpi['icon']; ?>" style="font-size: 36px; width: 36px; height: 36px;"></span>
+				<div class="kc-card">
+					<div class="kc-label"><?php echo esc_html( $kpi['label'] ); ?></div>
+					<div class="kc-value"><?php echo number_format( $kpi['value'] ); ?></div>
+					<div class="kc-card-icon" style="background: <?php echo $kpi['color']; ?>15; color: <?php echo $kpi['color']; ?>;">
+						<span class="dashicons <?php echo $kpi['icon']; ?>"></span>
 					</div>
+					<div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: <?php echo $kpi['color']; ?>; border-top-left-radius: 12px; border-bottom-left-radius: 12px; opacity: 0.6;"></div>
 				</div>
 			<?php endforeach; ?>
 		</div>
 	<?php endif; ?>
 
-	<div class="bento-card" style="margin-top:24px;padding:0;overflow:visible;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-		<div style="padding: 0;">
+	<div class="charts-grid" style="margin-top: 24px;">
+		<div class="charts-card" style="grid-column: span 12; padding: 0; overflow: visible;">
 			
 			<form method="post" id="entities-bulk-form">
 				<?php wp_nonce_field( 'charts_admin_action' ); ?>
@@ -254,14 +256,14 @@ $entity_type = $type;
 
 				<!-- Bulk Actions Header -->
 				<?php if ( ! empty( $items ) && $type !== 'advanced' ) : ?>
-					<div style="padding: 15px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; background: #f8fafc;">
-						<select name="bulk_action_type" id="bulk_action_type" class="bento-input" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;" style="width: 200px; margin: 0;">
+					<div style="padding: 15px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; background: #fafafa;">
+						<select name="bulk_action_type" id="bulk_action_type" class="charts-input" style="width: 200px; margin: 0;">
 							<option value=""><?php _e( 'Bulk Actions', 'charts' ); ?></option>
 							<option value="bulk_promote"><?php _e( 'Migrate to Native', 'charts' ); ?></option>
 							<option value="bulk_merge"><?php _e( 'Merge Selected', 'charts' ); ?></option>
 							<option value="delete" style="color:red;"><?php _e( 'Delete Permanently', 'charts' ); ?></option>
 						</select>
-						<button type="button" class="bento-btn-secondary" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;" style="margin: 0;" onclick="handleBulkActionSubmit(event)">
+						<button type="button" class="charts-btn-secondary" style="margin: 0;" onclick="handleBulkActionSubmit(event)">
 							<?php _e( 'Apply', 'charts' ); ?>
 						</button>
 					</div>
@@ -273,9 +275,9 @@ $entity_type = $type;
 						<h3 style="margin-top: 20px;"><?php _e( 'No records matching criteria', 'charts' ); ?></h3>
 					</div>
 				<?php else : ?>
-					<table class="bento-table" style="width:100%;border-collapse:collapse;text-align:left;font-size:13px;">
-						<thead style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-							<tr style="border-bottom:1px solid #f1f5f9;transition:background 0.2s;">
+					<table class="charts-table">
+						<thead>
+							<tr>
 								<?php if ( $type !== 'advanced' ) : ?>
 									<th style="width: 40px; padding-left: 24px;">
 										<input type="checkbox" id="select-all-entities">
@@ -298,7 +300,7 @@ $entity_type = $type;
 						<tbody>
 							<?php foreach ( $items as $item ) : ?>
 								<?php try { ?>
-									<tr style="border-bottom:1px solid #f1f5f9;transition:background 0.2s;">
+									<tr>
 									<?php if ( $type !== 'advanced' ) : ?>
 										<td style="padding-left: 24px;">
 											<input type="checkbox" name="item_ids[]" value="<?php echo (int) $item->id; ?>" class="entity-checkbox">
@@ -311,11 +313,11 @@ $entity_type = $type;
 												$label = ( $type === 'artist' ) ? ($item->display_name ?? '—') : ($item->title ?? $item->track_name ?? '—');
 												?>
 											<?php if ( $img ) : ?>
-												<img src="<?php echo esc_url( $img ); ?>" style="width: 32px; height: 32px; border-radius: <?php echo $type === 'artist' ? '50%' : '8px'; ?>; object-fit: cover;">
+												<img src="<?php echo esc_url( $img ); ?>" style="width: 32px; height: 32px; border-radius: <?php echo $type === 'artist' ? '50%' : '4px'; ?>; object-fit: cover;">
 											<?php else : ?>
-												<div style="width: 32px; height: 32px; border-radius: <?php echo $type === 'artist' ? '50%' : '8px'; ?>; background: #f1f5f9; border: 1px solid #e2e8f0; color: #94a3b8; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;"><?php echo esc_html( strtoupper( substr( $label, 0, 1 ) ) ); ?></div>
+												<div style="width: 32px; height: 32px; border-radius: 4px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;"><?php echo esc_html( strtoupper( substr( $label, 0, 1 ) ) ); ?></div>
 											<?php endif; ?>
-												<div class="bento-primary" style="font-weight: 700;"><?php echo esc_html( $label ); ?></div>
+												<div class="charts-primary" style="font-weight: 700;"><?php echo esc_html( $label ); ?></div>
 										</div>
 									</td>
 
@@ -327,7 +329,7 @@ $entity_type = $type;
 											<td>#<?php echo (int) ($item->best_rank ?? 0); ?></td>
 											<td><?php echo (int) ($item->max_weeks ?? 0); ?>W / <?php echo (int) ($item->appearances ?? 0); ?> Re</td>
 										<?php else : ?>
-											<td><span style="color:#64748b;font-family:monospace;background:#f1f5f9;padding:2px 6px;border-radius:4px;"><?php echo esc_html( urldecode( $item->slug ?? '—' ) ); ?></span></td>
+											<td><code><?php echo esc_html( urldecode( $item->slug ?? '—' ) ); ?></code></td>
 											<td><span style="font-size: 11px; color: #9ca3af;"><?php echo esc_html( $item->spotify_id ?? $item->youtube_id ?? '—' ); ?></span></td>
 										<?php endif; ?>
 
@@ -351,27 +353,27 @@ $entity_type = $type;
 									?>
 									<td style="text-align: right; padding-right: 24px;">
 										<div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
-											<span class="bento-badge" style="background: <?php echo $s_cfg['bg']; ?>; color: <?php echo $s_cfg['color']; ?>; border: 1px solid <?php echo $s_cfg['color']; ?>30; font-size: 10px; padding: 2px 8px; font-weight: 700;" title="<?php echo esc_attr($meta['sync_error'] ?? ''); ?>">
+											<span class="charts-badge" style="background: <?php echo $s_cfg['bg']; ?>; color: <?php echo $s_cfg['color']; ?>; border: 1px solid <?php echo $s_cfg['color']; ?>30; font-size: 10px; padding: 2px 8px; font-weight: 700;" title="<?php echo esc_attr($meta['sync_error'] ?? ''); ?>">
 												<?php echo esc_html( $s_cfg['label'] ); ?>
 											</span>
 
 											<?php if ( $type === 'chart' || $type === 'advanced' ) : ?>
 												<?php if ( ! empty( $item->slug ) ) : ?>
-													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="bento-badge bento-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
+													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
 												<?php endif; ?>
 
 												<?php if ( $type === 'chart' ) : ?>
 													<?php if ( $native_post_id ) : ?>
-														<a href="<?php echo esc_url( get_edit_post_link( $native_post_id ) ); ?>" class="bento-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration:none;" title="<?php esc_attr_e( 'Edit native WordPress profile', 'charts' ); ?>"><?php _e( 'Native ✎', 'charts' ); ?></a>
+														<a href="<?php echo esc_url( get_edit_post_link( $native_post_id ) ); ?>" class="charts-badge" style="background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2); text-decoration:none;" title="<?php esc_attr_e( 'Edit native WordPress profile', 'charts' ); ?>"><?php _e( 'Native ✎', 'charts' ); ?></a>
 													<?php else : ?>
-														<button type="button" class="bento-badge bento-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php echo esc_js( __( 'Promote this entity to a native WordPress CPT?', 'charts' ) ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
+														<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#f3f4f6; color:#6b7280;" title="<?php esc_attr_e( 'Promote to Native CPT', 'charts' ); ?>" onclick="if(confirm('<?php echo esc_js( __( 'Promote this entity to a native WordPress CPT?', 'charts' ) ); ?>')) { document.getElementById('promote-entity-id').value = <?php echo (int) $item->id; ?>; document.getElementById('promote-entity-form').submit(); }">
 															<span class="dashicons dashicons-upload" style="font-size:14px; width:14px; height:14px; margin-top:-2px;"></span> <?php _e( 'Promote', 'charts' ); ?>
 														</button>
 													<?php endif; ?>
 												<?php endif; ?>
 
 												<?php if ( isset($item->id) ) : ?>
-													<button type="button" class="bento-badge bento-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
 														<?php _e( 'Delete', 'charts' ); ?>
 													</button>
 												<?php endif; ?>
@@ -401,7 +403,7 @@ $entity_type = $type;
 							<?php } catch ( \Throwable $e ) { 
 								error_log( 'Charts Row Render Failure: ' . $e->getMessage() );
 							?>
-								<tr style="border-bottom:1px solid #f1f5f9;transition:background 0.2s;"><td colspan="7" style="padding: 10px; font-size: 11px; background: #fff5f5; color: #ef4444;"><?php printf( __( 'Row resolution failure for %s: %s', 'charts' ), esc_html( $item->slug ?? 'unknown' ), esc_html( $e->getMessage() ) ); ?></td></tr>
+								<tr><td colspan="7" style="padding: 10px; font-size: 11px; background: #fff5f5; color: #ef4444;"><?php printf( __( 'Row resolution failure for %s: %s', 'charts' ), esc_html( $item->slug ?? 'unknown' ), esc_html( $e->getMessage() ) ); ?></td></tr>
 							<?php } ?>
 						<?php endforeach; ?>
 					</tbody>
@@ -429,7 +431,7 @@ $entity_type = $type;
 					<div id="res-platform-label"><?php echo $type === 'artist' ? 'YouTube Linked' : 'Covers Updated'; ?>: <b id="res-platform">0</b></div>
 				</div>
 			</div>
-			<button id="close-sync-modal" class="bento-btn-primary" style="background:#6366f1;border:1px solid #6366f1;color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;" style="display:none;"><?php _e( 'Close & Reload', 'charts' ); ?></button>
+			<button id="close-sync-modal" class="charts-btn-primary" style="display:none;"><?php _e( 'Close & Reload', 'charts' ); ?></button>
 		</div>
 	</div>
 </div>
@@ -859,7 +861,7 @@ window.openSmartDeduplicatorModal = function() {
 			let html = '<p style="margin-bottom: 15px; font-size: 13px; color: #666;">We found <strong>' + clusters.length + '</strong> clusters of duplicate entities.</p>';
 			
 			clusters.forEach((cluster, idx) => {
-				html += `<div style="background: #f8fafc; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+				html += `<div style="background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
 					<h4 style="margin: 0 0 10px 0; font-size: 14px;">Cluster ${idx + 1}: <span style="color:#d946ef;">${cluster.normalized_name}</span></h4>
 					<div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 15px;">`;
 				
@@ -867,13 +869,13 @@ window.openSmartDeduplicatorModal = function() {
 					html += `<div style="display:flex; align-items:center; gap:10px; font-size: 12px; background: #fff; padding: 8px; border: 1px solid #e5e7eb; border-radius: 4px;">
 						<span style="color: #999;">ID: ${ent.id}</span>
 						<strong>${ent.name}</strong>
-						<span class="bento-badge bento-badge-neutral">${ent.entries} entries</span>
-						${ent.is_master ? '<span class="bento-badge" style="background:#d946ef; color:#fff;">Suggested Master</span>' : ''}
+						<span class="charts-badge charts-badge-neutral">${ent.entries} entries</span>
+						${ent.is_master ? '<span class="charts-badge" style="background:#d946ef; color:#fff;">Suggested Master</span>' : ''}
 					</div>`;
 				});
 
 				html += `</div>
-					<button class="bento-btn-primary" style="background:#6366f1;border:1px solid #6366f1;color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;" onclick="processSmartMerge(${idx})" id="btn-smart-merge-${idx}" style="background: #111; border-color: #111;">
+					<button class="charts-btn-primary" onclick="processSmartMerge(${idx})" id="btn-smart-merge-${idx}" style="background: #111; border-color: #111;">
 						<span class="dashicons dashicons-admin-links" style="margin-top:2px;"></span> Auto-Merge Cluster ${idx + 1}
 					</button>
 				</div>`;
@@ -941,8 +943,8 @@ window.processSmartMerge = function(clusterIndex) {
 
 <style>
 @keyframes spin { 100% { transform: rotate(360deg); } }
-.entity-row-action{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#334155;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:all 0.2s;}
-.entity-row-action:hover{border-color:#cbd5e1;color:#0f172a;background:#f8fafc;box-shadow:0 1px 2px rgba(0,0,0,0.05);}.entity-row-action .dashicons{width:14px;height:14px;font-size:14px}
+.entity-row-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:29px;padding:0 9px;border:1px solid #e1e5ee;border-radius:6px;background:#fff;color:#344054;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer}
+.entity-row-action:hover{border-color:#aab8d5;color:#2448b7;background:#f7f9ff}.entity-row-action .dashicons{width:14px;height:14px;font-size:14px}
 .entity-delete-action{border-color:#f1d5d7;color:#ba3039}.entity-delete-action:hover{border-color:#d83f4a;background:#fff6f6;color:#a51f28}
 .entity-merge-menu{position:relative;display:inline-block}.entity-merge-menu>summary{list-style:none}.entity-merge-menu>summary::-webkit-details-marker{display:none}.entity-merge-trigger{color:#5b42b5;border-color:#ded8f5;background:#faf9ff}.entity-merge-options{position:absolute;z-index:10020;top:calc(100% + 5px);right:0;min-width:190px;padding:5px;border:1px solid #e1e5ee;border-radius:8px;background:#fff;box-shadow:0 10px 28px rgba(26,36,59,.17)}.entity-merge-options button{display:block;width:100%;padding:9px 10px;border:0;border-radius:5px;background:#fff;color:#344054;text-align:left;font-size:12px;cursor:pointer}.entity-merge-options button:hover{background:#f3f5fa;color:#46349a}
 .entity-modal{position:fixed;inset:0;z-index:100100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.58)}.entity-modal-panel{width:min(560px,100%);max-height:min(740px,90vh);overflow:auto;border:1px solid #e4e8f0;border-radius:14px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.24)}.entity-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #edf0f5}.entity-modal-header>div{display:flex;align-items:center;gap:10px;color:#5b42b5}.entity-modal-header h2{margin:0;color:#1e293b;font-size:17px}.entity-modal-close{width:32px;height:32px;border:0;border-radius:7px;background:#f3f5f8;color:#667085;font-size:22px;cursor:pointer}.entity-merge-source{margin:16px 22px;padding:10px 12px;border-radius:8px;background:#f7f8fc;color:#667085;font-size:12px}.entity-merge-source strong{color:#25314a}.entity-merge-search-label{display:block;margin:0 22px 7px;color:#344054;font-size:12px;font-weight:700}.entity-merge-searchbox{display:flex;align-items:center;gap:8px;margin:0 22px 12px;padding:0 11px;border:1px solid #d9deea;border-radius:8px;color:#98a2b3}.entity-merge-searchbox:focus-within{border-color:#6d5bd0;box-shadow:0 0 0 3px rgba(109,91,208,.12)}.entity-merge-searchbox input{width:100%;height:42px;border:0!important;box-shadow:none!important;outline:0!important}.entity-merge-searchbox #entity-merge-search-spinner{animation:spin 1s linear infinite}.entity-merge-results{max-height:330px;min-height:70px;overflow:auto;margin:0 22px;border:1px solid #edf0f5;border-radius:8px}.entity-merge-empty,.entity-merge-error{margin:0;padding:22px;color:#8490a2;text-align:center;font-size:12px}.entity-merge-error{color:#b4232f}.entity-merge-result{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-bottom:1px solid #f0f2f6;background:#fff;text-align:left;cursor:pointer}.entity-merge-result:last-child{border-bottom:0}.entity-merge-result:hover,.entity-merge-result.is-selected{background:#f5f3ff}.entity-merge-result.is-selected{box-shadow:inset 3px 0 #6d5bd0}.entity-merge-result img{width:34px;height:34px;border-radius:50%;object-fit:cover}.entity-merge-result-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}.entity-merge-result-copy strong{overflow:hidden;color:#263248;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.entity-merge-result-copy small{color:#8993a4;font-size:10px}.entity-merge-id{color:#8a93a3;font:11px monospace}.entity-modal-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:14px 22px;border-top:1px solid #edf0f5;color:#7a8496;font-size:11px}.entity-modal-footer>div{display:flex;gap:8px}.entity-modal-footer .button-primary{background:#5541b5;border-color:#5541b5}.entity-modal-footer .button-primary:disabled{opacity:.45;cursor:not-allowed}
@@ -960,13 +962,13 @@ window.processSmartMerge = function(clusterIndex) {
 			<p style="margin-top: 0; font-size: 13px; color: #666; margin-bottom: 15px;">
 				You have selected multiple entities to merge. Please select which one should be the <strong>Master Record</strong>. The others will be merged into it and deleted.
 			</p>
-			<div id="bulk-merge-candidates-list" style="max-height: 250px; overflow-y: auto; background: #f8fafc; border-radius: 6px; border: 1px solid #eee;">
+			<div id="bulk-merge-candidates-list" style="max-height: 250px; overflow-y: auto; background: #fafafa; border-radius: 6px; border: 1px solid #eee;">
 				<!-- Dynamic content here -->
 			</div>
 		</div>
 		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
-			<button class="bento-btn-secondary" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;" onclick="closeBulkMergeModal()">Cancel</button>
-			<button id="bulk-merge-confirm-btn" class="bento-btn-primary" style="background:#6366f1;border:1px solid #6366f1;color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;" onclick="confirmBulkMerge()" style="margin-left: 10px; background: #d946ef; border-color: #d946ef;">Confirm Merge</button>
+			<button class="charts-btn-secondary" onclick="closeBulkMergeModal()">Cancel</button>
+			<button id="bulk-merge-confirm-btn" class="charts-btn-primary" onclick="confirmBulkMerge()" style="margin-left: 10px; background: #d946ef; border-color: #d946ef;">Confirm Merge</button>
 		</div>
 	</div>
 </div>
@@ -984,7 +986,7 @@ window.processSmartMerge = function(clusterIndex) {
 			<!-- Results dynamically injected here -->
 		</div>
 		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
-			<button class="bento-btn-secondary" style="background:#f8fafc;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;" onclick="window.location.reload()">Done</button>
+			<button class="charts-btn-secondary" onclick="window.location.reload()">Done</button>
 		</div>
 	</div>
 </div>
