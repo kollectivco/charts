@@ -151,7 +151,7 @@ class ChartShowcaseSlider extends Widget_Base {
 		$this->add_responsive_control( 'content_padding', [ 'label' => 'Padding', 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ], 'selectors' => [ '{{WRAPPER}} .kc-sc-info' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ] ] );
 		$this->add_responsive_control( 'content_margin', [ 'label' => 'Margin', 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ], 'selectors' => [ '{{WRAPPER}} .kc-sc-info' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ] ] );
 		$this->end_controls_section();
-		$this->add_advanced_image_controls();
+		$this->add_advanced_image_controls('{{WRAPPER}} .kc-sc-img-wrap', '{{WRAPPER}} .kc-sc-img');
 	}
 
 	protected function render() {

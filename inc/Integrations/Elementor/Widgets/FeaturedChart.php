@@ -135,7 +135,7 @@ class FeaturedChart extends Widget_Base {
 
 		$this->end_controls_section();
 
-		$this->add_advanced_image_controls();
+		$this->add_advanced_image_controls('{{WRAPPER}} .kc-fc-img-wrap, {{WRAPPER}} .kc-fc-r-img', '{{WRAPPER}} .kc-fc-img-wrap img, {{WRAPPER}} .kc-fc-r-img img');
 	}
 
 	protected function render() {

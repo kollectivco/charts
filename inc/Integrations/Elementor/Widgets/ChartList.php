@@ -279,7 +279,7 @@ class ChartList extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
-		$this->add_advanced_image_controls();
+		$this->add_advanced_image_controls('{{WRAPPER}} .kc-cl2-img-wrap', '{{WRAPPER}} .kc-cl2-img-wrap img');
 	}
 
 	protected function render() {

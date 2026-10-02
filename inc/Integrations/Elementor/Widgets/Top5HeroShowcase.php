@@ -198,7 +198,7 @@ class Top5HeroShowcase extends Widget_Base {
 		]);
 
 		$this->end_controls_section();
-		$this->add_advanced_image_controls();
+		$this->add_advanced_image_controls('{{WRAPPER}} .kc-t5-hero, {{WRAPPER}} .kc-t5-r-img', '{{WRAPPER}} .kc-t5-hero-bg, {{WRAPPER}} .kc-t5-r-img');
 	}
 
 	protected function render() {

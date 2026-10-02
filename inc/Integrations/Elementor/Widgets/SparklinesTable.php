@@ -140,7 +140,7 @@ class SparklinesTable extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
-		$this->add_advanced_image_controls();
+		$this->add_advanced_image_controls('{{WRAPPER}} .kc-elm-img', '{{WRAPPER}} .kc-elm-img');
 	}
 
 	protected function render() {

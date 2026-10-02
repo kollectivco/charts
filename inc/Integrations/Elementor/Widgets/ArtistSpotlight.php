@@ -30,7 +30,7 @@ class ArtistSpotlight extends Widget_Base {
 		$this->add_premium_badge_controls();
 		$this->add_premium_layout_controls();
 		$this->add_granular_style_controls(['card', 'image', 'title', 'meta']);
-		$this->add_advanced_image_controls();
+		$this->add_advanced_image_controls('{{WRAPPER}} .kc-spot-avatar', '{{WRAPPER}} .kc-elm-img');
 	}
 
 	protected function render() {
