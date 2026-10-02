@@ -37,6 +37,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_resolve_potential_duplicates', array( self::class, 'handle_resolve_potential_duplicates' ) );
 		add_action( 'wp_ajax_charts_bulk_action_ajax', array( self::class, 'handle_bulk_action_ajax' ) );
 		add_action( 'wp_ajax_charts_auto_reconcile', array( self::class, 'handle_auto_reconcile' ) );
+		add_action( 'wp_ajax_charts_force_english_slugs', array( self::class, 'handle_force_english_slugs' ) );
 		add_action( 'wp_ajax_charts_update_artist_identity', array( self::class, 'handle_update_artist_identity' ) );
 		add_action( 'wp_ajax_kc_recalculate_forecast', array( self::class, 'handle_recalculate_forecast' ) );
 		add_action( 'wp_ajax_charts_billboard_sync', array( self::class, 'handle_billboard_sync' ) );
@@ -296,9 +297,9 @@ class Bootstrap {
 			
 			case 'unified_import':
 				$run_id = self::process_unified_import();
-				if ( is_numeric($run_id) ) {
+				if ( is_numeric($run_id) || (is_array($run_id) && isset($run_id['run_id'])) ) {
 					\Charts\Core\Notify::success( __( 'Unified segment ingest complete. Live signals are being calibrated in the nexus.', 'charts' ), __( 'Nexus Sync Complete', 'charts' ) );
-					wp_redirect( admin_url( 'admin.php?page=charts-import&sync_complete=1&run_id=' . $run_id ) );
+					wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&sync_complete=1&run_id=' . (is_array($run_id) ? $run_id['run_id'] : $run_id) ) );
 					exit;
 				}
 				$processed = true;
@@ -2289,6 +2290,51 @@ class Bootstrap {
 	/**
 	 * AJAX: Get Billboard Arabia available weeks list
 	 */
+	public static function handle_force_english_slugs() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error();
+		}
+
+		global $wpdb;
+		$updated = 0;
+		$tables = [
+			'charts_artists' => ['id', 'display_name', 'slug'],
+			'charts_tracks' => ['id', 'title', 'slug'],
+			'charts_videos' => ['id', 'title', 'slug'],
+			'charts_albums' => ['id', 'title', 'slug']
+		];
+
+		foreach ($tables as $table_suffix => $cols) {
+			$table = $wpdb->prefix . $table_suffix;
+			$items = $wpdb->get_results("SELECT {$cols[0]} as id, {$cols[1]} as title, {$cols[2]} as slug FROM $table");
+			
+			foreach ($items as $item) {
+				if (preg_match('/[^\x20-\x7e]/', urldecode($item->slug)) || urldecode($item->slug) !== $item->slug) {
+					$expected = \Charts\Services\Slugger::unique($table, $item->title);
+					$wpdb->update($table, ['slug' => $expected], ['id' => $item->id]);
+					$updated++;
+				}
+			}
+		}
+
+		$chart_table = $wpdb->prefix . 'charts_definitions';
+		$charts = $wpdb->get_results("SELECT id, title, slug FROM $chart_table");
+		foreach ($charts as $chart) {
+			if (preg_match('/[^\x20-\x7e]/', urldecode($chart->slug)) || urldecode($chart->slug) !== $chart->slug) {
+				$expected = \Charts\Services\Slugger::unique($chart_table, $chart->title, 'chart');
+				$wpdb->update($chart_table, ['slug' => $expected], ['id' => $chart->id]);
+				$native_id = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'charts_definition_id' AND meta_value = %d", $chart->id));
+				if ($native_id) {
+					wp_update_post(['ID' => $native_id, 'post_name' => $expected]);
+				}
+				$updated++;
+			}
+		}
+
+		wp_send_json_success( array( 'message' => "Updated $updated slugs." ) );
+	}
+
+
 	public static function handle_billboard_get_weeks() {
 		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
 			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
