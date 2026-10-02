@@ -100,6 +100,16 @@ class Bootstrap {
 		$processed = false;
 
 		switch ( $action ) {
+			case 'save_entity':
+				$result = self::persist_entity_record();
+				if ( is_wp_error( $result ) ) {
+					\Charts\Core\Notify::error( $result->get_error_message(), __( 'Entity Save Failed', 'charts' ) );
+				} else {
+					\Charts\Core\Notify::success( __( 'Entity saved successfully.', 'charts' ), __( 'Changes Saved', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
 			case 'save_settings_v2':
 				if ( ! current_user_can( 'manage_options' ) ) return;
 				check_admin_referer( 'kcharts_save_v2' );
@@ -436,9 +446,9 @@ class Bootstrap {
 				$module = 'settings';
 			} elseif ( strpos( $action, 'source' ) !== false ) {
 				$module = 'sources';
-			} elseif ( in_array( $action, array( 'promote_entity', 'bulk_promote', 'delete_entity' ) ) ) {
+			} elseif ( in_array( $action, array( 'promote_entity', 'bulk_promote', 'delete_entity', 'save_entity' ), true ) ) {
 				// Route back to the correct entity screen based on submitted type
-				$entity_type = sanitize_text_field( $_POST['type'] ?? '' );
+				$entity_type = sanitize_text_field( $_POST['entity_type'] ?? ( $_POST['type'] ?? '' ) );
 				if ( $entity_type === 'track' ) {
 					$module = 'tracks';
 				} elseif ( $entity_type === 'video' ) {
@@ -461,7 +471,7 @@ class Bootstrap {
 			// 3. Construct target URL
 			// We prioritize the referer IF it matches our surface, otherwise we use the clean module URL
 			$target_url = '';
-			if ( $referer && ! ( stripos( $referer, '/charts/' ) !== false && stripos( $referer, '/charts-dashboard' ) === false ) ) {
+			if ( $action !== 'save_entity' && $referer && ! ( stripos( $referer, '/charts/' ) !== false && stripos( $referer, '/charts-dashboard' ) === false ) ) {
 				// Referer is safe (it's either admin or dashboard)
 				$target_url = $referer;
 			} else {
@@ -489,6 +499,80 @@ class Bootstrap {
 	 */
 	private static function get_charts_admin_url() {
 		return admin_url( 'admin.php?page=charts-dashboard' );
+	}
+
+	/** Validate and persist artist, track, or clip edits from the entity editor. */
+	private static function persist_entity_record() {
+		global $wpdb;
+		$type = sanitize_key( wp_unslash( $_POST['entity_type'] ?? '' ) );
+		$id   = absint( $_POST['entity_id'] ?? 0 );
+		$map  = array( 'artist' => 'artists', 'track' => 'tracks', 'video' => 'videos' );
+		if ( ! isset( $map[ $type ] ) ) return new \WP_Error( 'invalid_entity_type', __( 'Unsupported entity type.', 'charts' ) );
+
+		$table = $wpdb->prefix . 'charts_' . $map[ $type ];
+		$existing = $id ? $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) ) : null;
+		if ( $id && ! $existing ) return new \WP_Error( 'entity_not_found', __( 'This record no longer exists.', 'charts' ) );
+
+		$name = sanitize_text_field( wp_unslash( $_POST['entity_name'] ?? '' ) );
+		if ( $name === '' ) return new \WP_Error( 'entity_name_required', __( 'Name or title is required.', 'charts' ) );
+
+		$slug_input = sanitize_text_field( wp_unslash( $_POST['slug'] ?? '' ) );
+		$slug = \Charts\Services\Slugger::make( $slug_input !== '' ? $slug_input : $name, $type . '-' . ( $id ?: 'item' ) );
+		$base_slug = $slug;
+		$suffix = 2;
+		while ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE slug = %s AND id != %d LIMIT 1", $slug, $id ) ) ) {
+			$slug = $base_slug . '-' . $suffix++;
+		}
+
+		$data = array( 'slug' => $slug, 'updated_at' => current_time( 'mysql' ) );
+		if ( $type === 'artist' ) {
+			$data['display_name'] = $name;
+			$data['normalized_name'] = \Charts\Services\Normalizer::normalize_artist( $name );
+			$data['display_name_en'] = sanitize_text_field( wp_unslash( $_POST['name_en'] ?? '' ) ) ?: null;
+			$data['spotify_id'] = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) ) ?: null;
+			$data['image'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
+		} else {
+			$artist_id = absint( $_POST['primary_artist_id'] ?? 0 );
+			if ( ! $artist_id || ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) ) ) {
+				return new \WP_Error( 'primary_artist_required', __( 'Choose a valid primary artist.', 'charts' ) );
+			}
+			$data['title'] = $name;
+			$data['normalized_title'] = \Charts\Services\Normalizer::normalize_title( $name );
+			$data['primary_artist_id'] = $artist_id;
+			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) );
+			if ( $type === 'track' ) {
+				$data['spotify_id'] = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) ) ?: null;
+				$data['youtube_id'] = sanitize_text_field( wp_unslash( $_POST['youtube_id'] ?? '' ) ) ?: null;
+				$data['cover_image'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
+			} else {
+				$data['youtube_id'] = sanitize_text_field( wp_unslash( $_POST['youtube_id'] ?? '' ) ) ?: null;
+				$data['video_url'] = esc_url_raw( wp_unslash( $_POST['video_url'] ?? '' ) ) ?: null;
+				$data['thumbnail'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
+				$related_track_id = absint( $_POST['related_track_id'] ?? 0 );
+				$data['related_track_id'] = $related_track_id ?: null;
+			}
+		}
+
+		if ( $existing ) {
+			$saved = $wpdb->update( $table, $data, array( 'id' => $id ) );
+		} else {
+			$data['created_at'] = current_time( 'mysql' );
+			$saved = $wpdb->insert( $table, $data );
+			$id = (int) $wpdb->insert_id;
+		}
+		if ( $saved === false || ! $id ) return new \WP_Error( 'entity_save_failed', __( 'The record could not be saved. Check that the slug is unique.', 'charts' ) );
+
+		if ( $type === 'artist' ) {
+			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'artist_names' => $name, 'track_name' => $name ), array( 'item_type' => 'artist', 'item_id' => $id ) );
+		} else {
+			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", (int) $data['primary_artist_id'] ) );
+			$entry_type = $type === 'video' ? 'video' : 'track';
+			$cover_key = $type === 'video' ? 'thumbnail' : 'cover_image';
+			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'track_name' => $name, 'artist_names' => $artist_name, 'cover_image' => $data[ $cover_key ] ?? null ), array( 'item_type' => $entry_type, 'item_id' => $id ) );
+		}
+
+		self::clear_frontend_caches();
+		return $id;
 	}
 
 	/**
@@ -1551,6 +1635,7 @@ class Bootstrap {
 		}
 
 		if ( $result['success'] ) {
+			self::clear_frontend_caches();
 			wp_send_json_success( array( 'message' => $result['message'] ) );
 		} else {
 			wp_send_json_error( array( 'message' => $result['message'] ) );

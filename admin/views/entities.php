@@ -240,7 +240,7 @@ $entity_type = $type;
 	<?php endif; ?>
 
 	<div class="charts-grid" style="margin-top: 24px;">
-		<div class="charts-card" style="grid-column: span 12; padding: 0; overflow: hidden;">
+		<div class="charts-card" style="grid-column: span 12; padding: 0; overflow: visible;">
 			
 			<form method="post" id="entities-bulk-form">
 				<?php wp_nonce_field( 'charts_admin_action' ); ?>
@@ -310,7 +310,7 @@ $entity_type = $type;
 											<?php else : ?>
 												<div style="width: 32px; height: 32px; border-radius: 4px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;"><?php echo esc_html( strtoupper( substr( $label, 0, 1 ) ) ); ?></div>
 											<?php endif; ?>
-											<div style="font-weight: 700;"><?php echo esc_html( $label ); ?></div>
+												<div class="charts-primary" style="font-weight: 700;"><?php echo esc_html( $label ); ?></div>
 										</div>
 									</td>
 
@@ -370,26 +370,24 @@ $entity_type = $type;
 														<?php _e( 'Delete', 'charts' ); ?>
 													</button>
 												<?php endif; ?>
-											<?php else : ?>
-												<?php if ( ! empty( $item->slug ) ) : ?>
-													<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="charts-badge charts-badge-neutral" style="text-decoration: none;"><?php _e( 'View', 'charts' ); ?></a>
-												<?php endif; ?>
-												<?php if ( isset($item->id) && ($type === 'artist' || $type === 'track') ) : ?>
-													
-<?php if ( isset($item->id) ) : ?>
-	<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#3b82f6; color:#fff;" onclick="openEditModal('<?php echo esc_js($type); ?>', <?php echo (int) $item->id; ?>)">
-		<?php _e( 'Edit', 'charts' ); ?>
-	</button>
-	<button type="button" class="charts-badge charts-badge-neutral" style="border:none; cursor:pointer; background:#8b5cf6; color:#fff;" onclick="openMergeModal('<?php echo esc_js($type); ?>', <?php echo (int) $item->id; ?>, '<?php echo esc_js(htmlspecialchars(isset($item->display_name) ? $item->display_name : (isset($item->title) ? $item->title : ''))); ?>')">
-		<?php _e( 'Merge', 'charts' ); ?>
-	</button>
-<?php endif; ?>
-
-												<?php endif; ?>
-												<?php if ( isset($item->id) ) : ?>
-													<button type="button" class="charts-badge charts-badge-danger" style="border:none; cursor:pointer;" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
-														<?php _e( 'Delete', 'charts' ); ?>
-													</button>
+							<?php else : ?>
+								<?php if ( ! empty( $item->slug ) ) : ?>
+									<a href="<?php echo esc_url( $view_url ); ?>" target="_blank" rel="noopener" class="entity-row-action entity-view-action"><?php esc_html_e( 'View', 'charts' ); ?></a>
+								<?php endif; ?>
+								<?php if ( isset( $item->id ) ) : ?>
+									<a href="<?php echo esc_url( add_query_arg( array( 'page' => $page, 'action' => 'edit', 'type' => $type, 'id' => (int) $item->id ), admin_url( 'admin.php' ) ) ); ?>" class="entity-row-action entity-edit-action"><span class="dashicons dashicons-edit" aria-hidden="true"></span><?php esc_html_e( 'Edit', 'charts' ); ?></a>
+									<details class="entity-merge-menu">
+										<summary class="entity-row-action entity-merge-trigger"><span class="dashicons dashicons-admin-links" aria-hidden="true"></span><?php esc_html_e( 'Merge', 'charts' ); ?><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></summary>
+										<div class="entity-merge-options">
+											<button type="button" data-entity-merge="choose" data-id="<?php echo (int) $item->id; ?>" data-name="<?php echo esc_attr( $label ); ?>"><?php esc_html_e( 'Choose merge target', 'charts' ); ?></button>
+											<button type="button" data-entity-merge="search" data-id="<?php echo (int) $item->id; ?>" data-name="<?php echo esc_attr( $label ); ?>"><?php esc_html_e( 'Search for a match', 'charts' ); ?></button>
+										</div>
+									</details>
+								<?php endif; ?>
+								<?php if ( isset($item->id) ) : ?>
+									<button type="button" class="entity-row-action entity-delete-action" onclick="if(confirm('<?php echo esc_js( __( 'Really delete this entity?', 'charts' ) ); ?>')) { document.getElementById('single-delete-id').value = <?php echo (int) $item->id; ?>; document.getElementById('single-delete-form').submit(); }">
+										<?php _e( 'Delete', 'charts' ); ?>
+									</button>
 												<?php endif; ?>
 											<?php endif; ?>
 										</div>
@@ -446,6 +444,20 @@ $entity_type = $type;
 	<input type="hidden" name="id" id="promote-entity-id" value="">
 	<input type="hidden" name="type" value="<?php echo esc_attr( $type ); ?>">
 </form>
+
+<div id="entity-merge-modal" class="entity-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="entity-merge-title">
+	<div class="entity-modal-panel">
+		<div class="entity-modal-header">
+			<div><span class="dashicons dashicons-admin-links" aria-hidden="true"></span><h2 id="entity-merge-title"><?php esc_html_e( 'Merge entities', 'charts' ); ?></h2></div>
+			<button type="button" class="entity-modal-close" aria-label="<?php esc_attr_e( 'Close', 'charts' ); ?>">&times;</button>
+		</div>
+		<p class="entity-merge-source"><?php esc_html_e( 'Current record:', 'charts' ); ?> <strong id="entity-merge-source-name"></strong></p>
+		<label class="entity-merge-search-label" for="entity-merge-search"><?php esc_html_e( 'Search for the record to keep', 'charts' ); ?></label>
+		<div class="entity-merge-searchbox"><span class="dashicons dashicons-search" aria-hidden="true"></span><input type="search" id="entity-merge-search" placeholder="<?php esc_attr_e( 'Type at least 2 characters…', 'charts' ); ?>" autocomplete="off"><span id="entity-merge-search-spinner" class="dashicons dashicons-update" style="display:none" aria-hidden="true"></span></div>
+		<div id="entity-merge-results" class="entity-merge-results"><p class="entity-merge-empty"><?php esc_html_e( 'Search the library and choose the master record.', 'charts' ); ?></p></div>
+		<div class="entity-modal-footer"><span id="entity-merge-selection-label"><?php esc_html_e( 'No merge target selected', 'charts' ); ?></span><div><button type="button" class="button entity-modal-cancel"><?php esc_html_e( 'Cancel', 'charts' ); ?></button><button type="button" class="button button-primary" id="entity-merge-confirm" disabled><?php esc_html_e( 'Merge records', 'charts' ); ?></button></div></div>
+	</div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -569,6 +581,147 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Bulk Merge Feature
 let bulkMergeType = '<?php echo esc_js($type); ?>s'; // artists or tracks
+
+let mergeSourceEntity = null;
+let mergeMasterEntity = null;
+let mergeSearchTimer = null;
+
+function closeEntityMergeModal() {
+	const modal = document.getElementById('entity-merge-modal');
+	if (modal) modal.style.display = 'none';
+}
+
+function renderEntityMergeResults(entities) {
+	const results = document.getElementById('entity-merge-results');
+	results.innerHTML = '';
+	if (!entities.length) {
+		const empty = document.createElement('p');
+		empty.className = 'entity-merge-empty';
+		empty.textContent = '<?php echo esc_js( __( 'No matching records found.', 'charts' ) ); ?>';
+		results.appendChild(empty);
+		return;
+	}
+	entities.forEach(function(entity) {
+		const id = parseInt(entity.id, 10);
+		if (!id || (mergeSourceEntity && id === mergeSourceEntity.id)) return;
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'entity-merge-result';
+		button.dataset.id = String(id);
+		button.dataset.name = entity.title || entity.name || '';
+		if (entity.image) {
+			const image = document.createElement('img');
+			image.src = entity.image;
+			image.alt = '';
+			button.appendChild(image);
+		}
+		const copy = document.createElement('span');
+		copy.className = 'entity-merge-result-copy';
+		const name = document.createElement('strong');
+		name.textContent = entity.title || entity.name || ('#' + id);
+		copy.appendChild(name);
+		if (entity.subtitle) {
+			const subtitle = document.createElement('small');
+			subtitle.textContent = entity.subtitle;
+			copy.appendChild(subtitle);
+		}
+		const badge = document.createElement('span');
+		badge.className = 'entity-merge-id';
+		badge.textContent = '#' + id;
+		button.append(copy, badge);
+		button.addEventListener('click', function() {
+			mergeMasterEntity = { id:id, name:entity.title || entity.name || ('#' + id) };
+			results.querySelectorAll('.entity-merge-result').forEach(function(row) { row.classList.remove('is-selected'); });
+			button.classList.add('is-selected');
+			document.getElementById('entity-merge-selection-label').textContent = '<?php echo esc_js( __( 'Keep:', 'charts' ) ); ?> ' + mergeMasterEntity.name;
+			document.getElementById('entity-merge-confirm').disabled = false;
+		});
+		results.appendChild(button);
+	});
+	if (!results.children.length) {
+		const empty = document.createElement('p');
+		empty.className = 'entity-merge-empty';
+		empty.textContent = '<?php echo esc_js( __( 'No other records found.', 'charts' ) ); ?>';
+		results.appendChild(empty);
+	}
+}
+
+function searchEntityMergeTargets(query) {
+	const results = document.getElementById('entity-merge-results');
+	const spinner = document.getElementById('entity-merge-search-spinner');
+	if (!query || query.trim().length < 2) {
+		results.innerHTML = '<p class="entity-merge-empty"><?php echo esc_js( __( 'Type at least 2 characters to search.', 'charts' ) ); ?></p>';
+		return;
+	}
+	spinner.style.display = 'inline-block';
+	const data = new FormData();
+	data.append('action', 'charts_search_entities');
+	data.append('nonce', '<?php echo wp_create_nonce( 'charts_admin_action' ); ?>');
+	data.append('type', '<?php echo esc_js( $type ); ?>');
+	data.append('query', query.trim());
+	fetch(ajaxurl, { method:'POST', body:data })
+		.then(function(response) { return response.json(); })
+		.then(function(response) {
+			if (response.success) renderEntityMergeResults(Array.isArray(response.data) ? response.data : []);
+			else results.innerHTML = '<p class="entity-merge-error"><?php echo esc_js( __( 'Search failed. Try again.', 'charts' ) ); ?></p>';
+		})
+		.catch(function() { results.innerHTML = '<p class="entity-merge-error"><?php echo esc_js( __( 'Could not reach the server.', 'charts' ) ); ?></p>'; })
+		.finally(function() { spinner.style.display = 'none'; });
+}
+
+document.addEventListener('click', function(event) {
+	const option = event.target.closest('[data-entity-merge]');
+	if (option) {
+		event.preventDefault();
+		const details = option.closest('details');
+		if (details) details.open = false;
+		mergeSourceEntity = { id:parseInt(option.dataset.id, 10), name:option.dataset.name || '' };
+		mergeMasterEntity = null;
+		document.getElementById('entity-merge-source-name').textContent = mergeSourceEntity.name;
+		document.getElementById('entity-merge-search').value = '';
+		document.getElementById('entity-merge-selection-label').textContent = '<?php echo esc_js( __( 'No merge target selected', 'charts' ) ); ?>';
+		document.getElementById('entity-merge-confirm').disabled = true;
+		document.getElementById('entity-merge-results').innerHTML = '<p class="entity-merge-empty"><?php echo esc_js( __( 'Search the library and choose the master record.', 'charts' ) ); ?></p>';
+		document.getElementById('entity-merge-modal').style.display = 'flex';
+		if (option.dataset.entityMerge === 'search') {
+			document.getElementById('entity-merge-search').value = mergeSourceEntity.name;
+			searchEntityMergeTargets(mergeSourceEntity.name);
+		} else {
+			document.getElementById('entity-merge-search').focus();
+		}
+	}
+	if (event.target.closest('.entity-modal-close, .entity-modal-cancel')) closeEntityMergeModal();
+	if (event.target.id === 'entity-merge-modal') closeEntityMergeModal();
+});
+
+document.getElementById('entity-merge-search').addEventListener('input', function() {
+	window.clearTimeout(mergeSearchTimer);
+	const query = this.value;
+	mergeSearchTimer = window.setTimeout(function() { searchEntityMergeTargets(query); }, 250);
+});
+
+document.getElementById('entity-merge-confirm').addEventListener('click', function() {
+	if (!mergeSourceEntity || !mergeMasterEntity || mergeSourceEntity.id === mergeMasterEntity.id) return;
+	const button = this;
+	if (!window.confirm('<?php echo esc_js( __( 'Merge the current record into the selected master? The current record will be removed after its chart history is moved.', 'charts' ) ); ?>')) return;
+	button.disabled = true;
+	button.textContent = '<?php echo esc_js( __( 'Merging…', 'charts' ) ); ?>';
+	const data = new FormData();
+	data.append('action', 'charts_process_merge');
+	data.append('_wpnonce', '<?php echo wp_create_nonce( 'charts_admin_action' ); ?>');
+	data.append('type', bulkMergeType);
+	data.append('master_id', mergeMasterEntity.id);
+	data.append('duplicate_ids[]', mergeSourceEntity.id);
+	fetch(ajaxurl, { method:'POST', body:data })
+		.then(function(response) { return response.json(); })
+		.then(function(response) {
+			if (response.success) window.location.reload();
+			else { window.alert(response.data && response.data.message ? response.data.message : '<?php echo esc_js( __( 'Merge failed.', 'charts' ) ); ?>'); button.disabled = false; button.textContent = '<?php echo esc_js( __( 'Merge records', 'charts' ) ); ?>'; }
+		})
+		.catch(function() { window.alert('<?php echo esc_js( __( 'Could not reach the server.', 'charts' ) ); ?>'); button.disabled = false; button.textContent = '<?php echo esc_js( __( 'Merge records', 'charts' ) ); ?>'; });
+});
+
+document.addEventListener('keydown', function(event) { if (event.key === 'Escape') closeEntityMergeModal(); });
 
 window.handleBulkActionSubmit = function(e) {
 	const select = document.getElementById('bulk_action_type');
@@ -783,6 +936,12 @@ window.processSmartMerge = function(clusterIndex) {
 
 <style>
 @keyframes spin { 100% { transform: rotate(360deg); } }
+.entity-row-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:29px;padding:0 9px;border:1px solid #e1e5ee;border-radius:6px;background:#fff;color:#344054;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer}
+.entity-row-action:hover{border-color:#aab8d5;color:#2448b7;background:#f7f9ff}.entity-row-action .dashicons{width:14px;height:14px;font-size:14px}
+.entity-delete-action{border-color:#f1d5d7;color:#ba3039}.entity-delete-action:hover{border-color:#d83f4a;background:#fff6f6;color:#a51f28}
+.entity-merge-menu{position:relative;display:inline-block}.entity-merge-menu>summary{list-style:none}.entity-merge-menu>summary::-webkit-details-marker{display:none}.entity-merge-trigger{color:#5b42b5;border-color:#ded8f5;background:#faf9ff}.entity-merge-options{position:absolute;z-index:10020;top:calc(100% + 5px);right:0;min-width:190px;padding:5px;border:1px solid #e1e5ee;border-radius:8px;background:#fff;box-shadow:0 10px 28px rgba(26,36,59,.17)}.entity-merge-options button{display:block;width:100%;padding:9px 10px;border:0;border-radius:5px;background:#fff;color:#344054;text-align:left;font-size:12px;cursor:pointer}.entity-merge-options button:hover{background:#f3f5fa;color:#46349a}
+.entity-modal{position:fixed;inset:0;z-index:100100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.58)}.entity-modal-panel{width:min(560px,100%);max-height:min(740px,90vh);overflow:auto;border:1px solid #e4e8f0;border-radius:14px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.24)}.entity-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #edf0f5}.entity-modal-header>div{display:flex;align-items:center;gap:10px;color:#5b42b5}.entity-modal-header h2{margin:0;color:#1e293b;font-size:17px}.entity-modal-close{width:32px;height:32px;border:0;border-radius:7px;background:#f3f5f8;color:#667085;font-size:22px;cursor:pointer}.entity-merge-source{margin:16px 22px;padding:10px 12px;border-radius:8px;background:#f7f8fc;color:#667085;font-size:12px}.entity-merge-source strong{color:#25314a}.entity-merge-search-label{display:block;margin:0 22px 7px;color:#344054;font-size:12px;font-weight:700}.entity-merge-searchbox{display:flex;align-items:center;gap:8px;margin:0 22px 12px;padding:0 11px;border:1px solid #d9deea;border-radius:8px;color:#98a2b3}.entity-merge-searchbox:focus-within{border-color:#6d5bd0;box-shadow:0 0 0 3px rgba(109,91,208,.12)}.entity-merge-searchbox input{width:100%;height:42px;border:0!important;box-shadow:none!important;outline:0!important}.entity-merge-searchbox #entity-merge-search-spinner{animation:spin 1s linear infinite}.entity-merge-results{max-height:330px;min-height:70px;overflow:auto;margin:0 22px;border:1px solid #edf0f5;border-radius:8px}.entity-merge-empty,.entity-merge-error{margin:0;padding:22px;color:#8490a2;text-align:center;font-size:12px}.entity-merge-error{color:#b4232f}.entity-merge-result{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-bottom:1px solid #f0f2f6;background:#fff;text-align:left;cursor:pointer}.entity-merge-result:last-child{border-bottom:0}.entity-merge-result:hover,.entity-merge-result.is-selected{background:#f5f3ff}.entity-merge-result.is-selected{box-shadow:inset 3px 0 #6d5bd0}.entity-merge-result img{width:34px;height:34px;border-radius:50%;object-fit:cover}.entity-merge-result-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}.entity-merge-result-copy strong{overflow:hidden;color:#263248;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.entity-merge-result-copy small{color:#8993a4;font-size:10px}.entity-merge-id{color:#8a93a3;font:11px monospace}.entity-modal-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;padding:14px 22px;border-top:1px solid #edf0f5;color:#7a8496;font-size:11px}.entity-modal-footer>div{display:flex;gap:8px}.entity-modal-footer .button-primary{background:#5541b5;border-color:#5541b5}.entity-modal-footer .button-primary:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:782px){.entity-modal-footer{align-items:flex-start;flex-direction:column}.entity-merge-options{right:auto;left:0}}
 </style>
 
 <!-- Bulk Merge Modal UI -->
