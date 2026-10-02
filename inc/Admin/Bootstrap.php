@@ -722,7 +722,7 @@ class Bootstrap {
 		if ( is_wp_error( $result ) ) {
 			\Charts\Core\Notify::error( $result->get_error_message(), __( 'Import Failure', 'charts' ) );
 		} else {
-			return $result['period_id'];
+			return $result['run_id'] ?? $result['period_id'];
 		}
 	}
 
@@ -746,7 +746,7 @@ class Bootstrap {
 		if ( is_wp_error( $result ) ) {
 			\Charts\Core\Notify::error( $result->get_error_message(), __( 'Import Failure', 'charts' ) );
 		} else {
-			return $result['period_id'];
+			return $result['run_id'] ?? $result['period_id'];
 		}
 	}
 

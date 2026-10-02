@@ -7,8 +7,8 @@ class KontentCsvImporter {
 		$lines = explode("\n", str_replace("\r", "", trim($csv_content)));
 		if (count($lines) < 2) return new \WP_Error('empty_csv', 'CSV is empty or invalid.');
 
-		// Ensure Kontent Source
 		$source_table = $wpdb->prefix . 'charts_sources';
+		$runs_table   = $wpdb->prefix . 'charts_import_runs';
 		
 		$chart_id = $meta['chart_id'] ?? 0;
 		$chart_def = null;
@@ -23,7 +23,7 @@ class KontentCsvImporter {
 		
 		$item_type = in_array('Artist', $headers) && !in_array('Song', $headers) ? 'artist' : 'track';
 
-		$source_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $source_table WHERE platform = 'kontent' AND chart_type = %s LIMIT 1", $item_type === 'artist' ? 'top-artists' : 'top-songs'));
+		$source_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $source_table WHERE platform = 'kontent' AND chart_type = %s LIMIT 1", $chart_id ? "cid-{$chart_id}" : ($item_type === 'artist' ? 'top-artists' : 'top-songs')));
 		if (!$source_id) {
 			$wpdb->insert($source_table, [
 				'source_name' => 'Kontent Analytics (' . ucfirst($item_type) . ')',
@@ -31,16 +31,28 @@ class KontentCsvImporter {
 				'source_type' => 'manual',
 				'country_code' => $meta['country'] ?? 'global',
 				'frequency' => $meta['period_type'] ?? 'weekly',
-				'chart_type' => $item_type === 'artist' ? 'top-artists' : 'top-songs',
+				'chart_type' => $chart_id ? "cid-{$chart_id}" : ($item_type === 'artist' ? 'top-artists' : 'top-songs'),
 				'is_active' => 1
 			]);
 			$source_id = $wpdb->insert_id;
 		}
 
+		// Create run record
+		$wpdb->insert( $runs_table, [
+			'source_id'  => $source_id,
+			'status'     => 'processing',
+			'total_rows' => count($lines),
+			'started_at' => current_time( 'mysql' ),
+		] );
+		$run_id = $wpdb->insert_id;
+
 		$import_flow = new \Charts\Services\ImportFlow();
 		$period_id = $import_flow->ensure_period($meta['period_type'] ?? 'weekly', $meta['period_date'] ?? current_time('Y-m-d'));
 
 		$imported = 0;
+		$created  = 0;
+		$errors   = [];
+		
 		foreach ($lines as $line) {
 			if (empty(trim($line))) continue;
 			$row = str_getcsv($line);
@@ -56,14 +68,23 @@ class KontentCsvImporter {
 				if (!$title) continue;
 				$streams = $this->parse_number($data['Followers'] ?? '');
 
+				// Track before vs after to detect "created"
+				$artist_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_artists WHERE display_name = %s LIMIT 1", $title));
+				
 				$artist_id = \Charts\Core\EntityManager::ensure_artist($title);
 				if ($artist_id) {
+					if (!$artist_exists) $created++;
+					
 					$flat = [ 'track_name' => $title, 'artist_names' => $title, 'streams' => $streams ];
 					$entry_id = $import_flow->upsert_entry($source_id, $period_id, 'artist', $artist_id, $data, $flat);
 					if ($entry_id) {
 						$wpdb->update($wpdb->prefix . 'charts_entries', ['rank_position' => $rank], ['id' => $entry_id]);
 						$imported++;
+					} else {
+						$errors[] = "Entity Failure ($title)";
 					}
+				} else {
+					$errors[] = "Entity Creation Failed ($title)";
 				}
 			} else {
 				$title = trim($data['Song'] ?? '');
@@ -75,22 +96,39 @@ class KontentCsvImporter {
 				$primary_artist = trim($artists[0]);
 
 				$artist_id = \Charts\Core\EntityManager::ensure_artist($primary_artist);
+				$track_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_tracks WHERE title = %s AND primary_artist_id = %d LIMIT 1", $title, $artist_id));
+
 				$track_id = \Charts\Core\EntityManager::ensure_track($title, $artist_id);
 
 				if ($track_id) {
+					if (!$track_exists) $created++;
+
 					$flat = [ 'track_name' => $title, 'artist_names' => $artist_str, 'streams' => $streams ];
 					$entry_id = $import_flow->upsert_entry($source_id, $period_id, 'track', $track_id, $data, $flat);
 					if ($entry_id) {
 						$wpdb->update($wpdb->prefix . 'charts_entries', ['rank_position' => $rank], ['id' => $entry_id]);
 						$imported++;
+					} else {
+						$errors[] = "Entity Failure ($title)";
 					}
+				} else {
+					$errors[] = "Entity Creation Failed ($title)";
 				}
 			}
 		}
 
 		\Charts\Core\Intelligence::recalculate_all();
 
-		return [ 'saved' => $imported, 'parsed' => count($lines), 'source_id' => $source_id, 'period_id' => $period_id, 'skipped' => count($lines) - $imported ];
+		// Update run record
+		$wpdb->update( $runs_table, [
+			'status'        => 'completed',
+			'matched_items' => $imported,
+			'created_items' => $created,
+			'error_log'     => empty($errors) ? null : implode(" | ", array_slice($errors, 0, 50)),
+			'completed_at'  => current_time( 'mysql' ),
+		], ['id' => $run_id] );
+
+		return [ 'saved' => $imported, 'parsed' => count($lines), 'source_id' => $source_id, 'period_id' => $period_id, 'run_id' => $run_id, 'skipped' => count($lines) - $imported ];
 	}
 
 	private function parse_number($str) {
