@@ -685,9 +685,44 @@ class Bootstrap {
 		} elseif ( $platform === 'billboard' ) {
 			$_FILES['billboard_csv'] = $_FILES['import_file'];
 			return self::process_billboard_csv_upload();
+		} elseif ( $platform === 'kontent' ) {
+			$_FILES['kontent_csv'] = $_FILES['import_file'];
+			return self::process_kontent_csv_upload();
 		} else {
 			$_FILES['youtube_csv'] = $_FILES['import_file'];
 			return self::process_youtube_csv_upload();
+		}
+	}
+
+	private static function process_kontent_csv_upload() {
+		global $wpdb;
+		if ( empty( $_FILES['kontent_csv']['tmp_name'] ) ) {
+			\Charts\Core\Notify::error( __( 'The Kontent CSV is missing.', 'charts' ), __( 'Input Failure', 'charts' ) );
+			return;
+		}
+
+		$csv_content = file_get_contents( $_FILES['kontent_csv']['tmp_name'] );
+		if ( ! $csv_content ) {
+			\Charts\Core\Notify::error( __( 'Failed to read the uploaded CSV.', 'charts' ), __( 'I/O Failure', 'charts' ) );
+			return;
+		}
+
+		$meta = array(
+			'chart_id'    => intval( $_POST['chart_id'] ?? 0 ),
+			'country'     => sanitize_text_field( $_POST['country'] ?? 'eg' ),
+			'period_type' => sanitize_text_field( $_POST['period_type'] ?? 'weekly' ),
+			'period_date' => sanitize_text_field( $_POST['period_date'] ?? current_time('Y-m-d') ),
+			'item_type'   => sanitize_text_field( $_POST['item_type'] ?? 'track' ),
+			'filename'    => sanitize_text_field( $_FILES['kontent_csv']['name'] ?? '' ),
+		);
+
+		$importer = new \Charts\Services\KontentCsvImporter();
+		$result = $importer->run( $csv_content, $meta );
+
+		if ( is_wp_error( $result ) ) {
+			\Charts\Core\Notify::error( $result->get_error_message(), __( 'Import Failure', 'charts' ) );
+		} else {
+			return $result['period_id'];
 		}
 	}
 

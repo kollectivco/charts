@@ -308,6 +308,21 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									</div>
 								</div>
 							</label>
+							<label class="platform-option">
+								<input type="radio" name="platform" value="kontent" <?php checked($pre_source, 'kontent'); ?>>
+								<div class="platform-box">
+									<div class="platform-icon" style="background:#5B21B6; color:#fff;">
+										<span class="dashicons dashicons-analytics"></span>
+									</div>
+									<div class="platform-text">
+										<strong>Kontent</strong>
+										<span>Internal Metrics CSV</span>
+									</div>
+									<div class="platform-check">
+										<span class="dashicons dashicons-yes-alt"></span>
+									</div>
+								</div>
+							</label>
 							<label class="platform-option" onclick="document.querySelector('.bb-nexus-card').scrollIntoView({behavior:'smooth'});">
 								<input type="radio" name="platform" value="billboard" <?php checked($pre_source, 'billboard'); ?>>
 								<div class="platform-box">
