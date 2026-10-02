@@ -111,6 +111,7 @@ $max_rows        = $def ? (int)$def->max_rows : 100;
 							<option value="spotify" <?php selected($platform, 'spotify'); ?>>Spotify Only</option>
 							<option value="youtube" <?php selected($platform, 'youtube'); ?>>YouTube Only</option>
 							<option value="billboard" <?php selected($platform, 'billboard'); ?>>Billboard Arabia</option>
+							<option value="kontent" <?php selected($platform, 'kontent'); ?>>Kontent Analytics</option>
 						</select>
 					</div>
 					<span class="input-helper">ISO code (e.g. EG, US) and primary data source platform.</span>
