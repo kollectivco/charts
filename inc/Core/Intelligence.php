@@ -34,6 +34,11 @@ class Intelligence {
 		// 3. Process Chart Definitions
 		self::calculate_chart_intelligence();
 
+		// 4. Flush all frontend caches
+		if ( class_exists( '\Charts\Admin\Bootstrap' ) ) {
+			\Charts\Admin\Bootstrap::clear_frontend_caches();
+		}
+
 		// 3.5. Process Advanced Intelligence Metrics (Velocity, Volatility, Retention, etc.)
 		\Charts\Services\IntelligenceEngine::calculate_all();
 
