@@ -120,6 +120,34 @@ class ChartShowcaseSlider extends Widget_Base {
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'title_typo', 'label' => 'Header Title', 'selector' => '{{WRAPPER}} .kc-sc-header-title' ] );
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'num_typo', 'label' => 'Big Number', 'selector' => '{{WRAPPER}} .kc-sc-num' ] );
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'artist_typo', 'label' => 'Artist Name', 'selector' => '{{WRAPPER}} .kc-sc-artist' ] );
+		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'subtitle_typo', 'label' => 'Subtitle', 'selector' => '{{WRAPPER}} .kc-sc-subtitle' ] );
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_slider_nav', [ 'label' => __( 'Navigation (Arrows & Dots)', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->start_controls_tabs( 'nav_tabs' );
+		$this->start_controls_tab( 'nav_normal', [ 'label' => __( 'Normal', 'charts' ) ] );
+		$this->add_control( 'arrow_color', [ 'label' => 'Arrow Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-nav-btn' => 'color: {{VALUE}}; border-color: {{VALUE}};' ] ] );
+		$this->add_control( 'arrow_bg', [ 'label' => 'Arrow Background', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-nav-btn' => 'background-color: {{VALUE}};' ] ] );
+		$this->add_control( 'dot_color', [ 'label' => 'Dot Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .swiper-pagination-bullet' => 'background: {{VALUE}};' ] ] );
+		$this->end_controls_tab();
+		$this->start_controls_tab( 'nav_hover', [ 'label' => __( 'Hover/Active', 'charts' ) ] );
+		$this->add_control( 'arrow_hover_color', [ 'label' => 'Arrow Hover Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-nav-btn:hover, {{WRAPPER}} .kc-sc-nav-btn.kc-next' => 'color: {{VALUE}}; border-color: {{VALUE}};' ] ] );
+		$this->add_control( 'arrow_hover_bg', [ 'label' => 'Arrow Hover Background', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-nav-btn:hover' => 'background-color: {{VALUE}};' ] ] );
+		$this->add_control( 'dot_active_color', [ 'label' => 'Dot Active Color', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .swiper-pagination-bullet-active' => 'background: {{VALUE}};' ] ] );
+		$this->end_controls_tab();
+		$this->end_controls_tabs();
+		$this->add_control( 'show_dots', [ 'label' => __( 'Show Pagination Dots', 'charts' ), 'type' => Controls_Manager::SWITCHER, 'default' => 'yes', 'separator' => 'before' ] );
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_overlay', [ 'label' => __( 'Card Overlay', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_control( 'gradient_bottom', [ 'label' => 'Gradient Bottom Stop', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-overlay' => 'background: linear-gradient(to top, {{VALUE}} 0%, {{gradient_mid.VALUE}} 30%, {{gradient_top.VALUE}} 100%);' ] ] );
+		$this->add_control( 'gradient_mid', [ 'label' => 'Gradient Mid Stop', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-overlay' => 'background: linear-gradient(to top, {{gradient_bottom.VALUE}} 0%, {{VALUE}} 30%, {{gradient_top.VALUE}} 100%);' ] ] );
+		$this->add_control( 'gradient_top', [ 'label' => 'Gradient Top Stop', 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-sc-overlay' => 'background: linear-gradient(to top, {{gradient_bottom.VALUE}} 0%, {{gradient_mid.VALUE}} 30%, {{VALUE}} 100%);' ] ] );
+		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_card_content', [ 'label' => __( 'Card Content Padding/Margin', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_responsive_control( 'content_padding', [ 'label' => 'Padding', 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ], 'selectors' => [ '{{WRAPPER}} .kc-sc-info' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ] ] );
+		$this->add_responsive_control( 'content_margin', [ 'label' => 'Margin', 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ], 'selectors' => [ '{{WRAPPER}} .kc-sc-info' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ] ] );
 		$this->end_controls_section();
 	}
 

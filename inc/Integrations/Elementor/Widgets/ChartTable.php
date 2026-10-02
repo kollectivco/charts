@@ -4,6 +4,8 @@ namespace Charts\Integrations\Elementor\Widgets;
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
+use Elementor\Group_Control_Border;
+use Elementor\Group_Control_Box_Shadow;
 use Charts\Integrations\Elementor\PremiumWidgetTrait;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -81,6 +83,33 @@ class ChartTable extends Widget_Base {
 				'{{WRAPPER}} .kc-table-wrap.is-terminal .kc-row-item' => 'border-bottom-color: {{VALUE}};',
 			],
 		]);
+		
+		$this->add_control( 'row_hover_bg_color', [
+			'label' => __( 'Row Hover Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-table-wrap.is-list .kc-row-item:hover' => 'background-color: {{VALUE}};', '{{WRAPPER}} .is-cards .kc-row-item:hover' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_responsive_control( 'table_padding', [
+			'label' => __( 'Container Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-table-wrap' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_responsive_control( 'table_border_radius', [
+			'label' => __( 'Container Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-table-wrap' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_responsive_control( 'row_border_radius', [
+			'label' => __( 'Row Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-row-item' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'table_box_shadow', 'selector' => '{{WRAPPER}} .kc-table-wrap',
+		]);
+		$this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'row_box_shadow', 'selector' => '{{WRAPPER}} .kc-row-item',
+		]);
+		$this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'row_hover_box_shadow', 'selector' => '{{WRAPPER}} .kc-row-item:hover',
+		]);
+
 		$this->end_controls_section();
 
 		$this->start_controls_section( 'style_text', [ 'label' => __( 'Typography', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
@@ -98,6 +127,18 @@ class ChartTable extends Widget_Base {
 		$this->add_control( 'new_bg', [ 'label' => __( 'New Badge Background', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-move-new' => 'background-color: {{VALUE}};' ] ] );
 		$this->add_control( 'new_color', [ 'label' => __( 'New Badge Text', 'charts' ), 'type' => Controls_Manager::COLOR, 'selectors' => [ '{{WRAPPER}} .kc-move-new' => 'color: {{VALUE}};' ] ] );
 		$this->end_controls_section();
+		
+		$this->start_controls_section( 'style_image', [ 'label' => __( 'Image', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_responsive_control( 'image_border_radius', [
+			'label' => __( 'Image Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%' ],
+			'selectors' => [ '{{WRAPPER}} .kc-row-img' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'image_box_shadow', 'selector' => '{{WRAPPER}} .kc-row-img',
+		]);
+		$this->end_controls_section();
+
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {

@@ -105,6 +105,46 @@ class ChartList extends Widget_Base {
 			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ]
 		]);
 
+		$this->add_responsive_control( 'item_margin', [
+			'label' => __( 'Item Margin', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ]
+		]);
+
+		$this->add_responsive_control( 'item_border_radius', [
+			'label' => __( 'Border Radius', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ]
+		]);
+
+		$this->start_controls_tabs( 'item_bg_tabs' );
+		$this->start_controls_tab( 'item_bg_normal', [ 'label' => __( 'Normal', 'charts' ) ] );
+		$this->add_control( 'item_bg_color', [
+			'label' => __( 'Background Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-item' => 'background-color: {{VALUE}};' ]
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Box_Shadow::get_type(), [
+			'name' => 'item_box_shadow',
+			'selector' => '{{WRAPPER}} .kc-list-item',
+		]);
+		$this->end_controls_tab();
+
+		$this->start_controls_tab( 'item_bg_hover', [ 'label' => __( 'Hover', 'charts' ) ] );
+		$this->add_control( 'item_bg_color_hover', [
+			'label' => __( 'Background Color', 'charts' ),
+			'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-list-item:hover' => 'background-color: {{VALUE}};' ]
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Box_Shadow::get_type(), [
+			'name' => 'item_box_shadow_hover',
+			'selector' => '{{WRAPPER}} .kc-list-item:hover',
+		]);
+		$this->end_controls_tab();
+		$this->end_controls_tabs();
+
 		$this->add_responsive_control( 'content_max_width', [
 			'label' => __( 'Content Max Width', 'charts' ),
 			'type' => Controls_Manager::SLIDER,

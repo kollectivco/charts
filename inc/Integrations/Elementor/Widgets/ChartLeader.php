@@ -48,20 +48,91 @@ class ChartLeader extends Widget_Base {
 		$this->add_control( 'show_meta', [ 'label' => 'Show Stats/Meta', 'type' => Controls_Manager::SWITCHER, 'default' => 'yes' ] );
 		$this->end_controls_section();
 
-		$this->start_controls_section( 'style_general', [ 'label' => __( 'Colors', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+				$this->start_controls_section( 'style_general', [ 'label' => __( 'General Styles', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_control( 'bg_color', [
 			'label' => __( 'Background Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-cl-wrap' => 'background-color: {{VALUE}};' ],
-		]);
-		$this->add_control( 'title_color', [
-			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-cl-title' => 'color: {{VALUE}};' ],
 		]);
 		$this->add_control( 'accent_color', [
 			'label' => __( 'Accent Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ff0055',
 			'selectors' => [ '{{WRAPPER}}' => '--cl-accent: {{VALUE}};' ],
 		]);
+		$this->add_responsive_control( 'wrap_padding', [
+			'label' => __( 'Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-cl-wrap' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_responsive_control( 'wrap_border_radius', [
+			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-cl-wrap' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Box_Shadow::get_type(), [
+			'name' => 'wrap_box_shadow', 'selector' => '{{WRAPPER}} .kc-cl-wrap',
+		]);
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_typography', [ 'label' => __( 'Typography & Colors', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		
+		$this->add_control( 'heading_title', [ 'label' => __( 'Title', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-title' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'title_typography', 'selector' => '{{WRAPPER}} .kc-cl-title',
+		]);
+
+		$this->add_control( 'heading_artist', [ 'label' => __( 'Artist', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'artist_color', [
+			'label' => __( 'Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-artist' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'artist_typography', 'selector' => '{{WRAPPER}} .kc-cl-artist',
+		]);
+
+		$this->add_control( 'heading_rank', [ 'label' => __( 'Rank', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'rank_color', [
+			'label' => __( 'Rank Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-rank' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'rank_typography', 'selector' => '{{WRAPPER}} .kc-cl-rank',
+		]);
+
+		$this->add_control( 'heading_meta', [ 'label' => __( 'Meta / Badge', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'meta_color', [
+			'label' => __( 'Text Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-meta-tag' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_control( 'meta_bg_color', [
+			'label' => __( 'Background Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-cl-meta-tag' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_responsive_control( 'meta_padding', [
+			'label' => __( 'Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-cl-meta-tag' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_responsive_control( 'meta_border_radius', [
+			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-cl-meta-tag' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'meta_typography', 'selector' => '{{WRAPPER}} .kc-cl-meta-tag',
+		]);
+
+		$this->end_controls_section();
+		
+		$this->start_controls_section( 'style_image', [ 'label' => __( 'Image', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->add_responsive_control( 'image_border_radius', [
+			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-cl-img' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Css_Filter::get_type(), [
+			'name' => 'image_css_filters', 'selector' => '{{WRAPPER}} .kc-cl-img',
+		]);
+		$this->end_controls_section();
+
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {

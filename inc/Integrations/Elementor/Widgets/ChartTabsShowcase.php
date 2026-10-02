@@ -72,9 +72,27 @@ class ChartTabsShowcase extends Widget_Base {
 
 		// --- STYLING: TABS ---
 		$this->start_controls_section( 'style_tabs', [ 'label' => __( 'Tabs Navigation', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_control( 'tab_bg', [
-			'label' => __( 'Tabs Container Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+		
+		$this->add_control( 'tab_nav_bg', [
+			'label' => __( 'Nav Container Background', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-nav-wrap' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->add_responsive_control( 'tab_nav_padding', [
+			'label' => __( 'Nav Container Padding', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em', 'rem' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-nav-wrap' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+		$this->add_control( 'tab_nav_border_radius', [
+			'label' => __( 'Nav Border Radius', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em', 'rem' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-nav-wrap' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+
+		$this->add_control( 'tab_bg', [
+			'label' => __( 'Tab Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-ts-tab' => 'background-color: {{VALUE}};' ],
 		]);
 		$this->add_control( 'tab_active_bg', [
 			'label' => __( 'Active Tab Background', 'charts' ), 'type' => Controls_Manager::COLOR,
@@ -88,34 +106,97 @@ class ChartTabsShowcase extends Widget_Base {
 			'label' => __( 'Active Tab Text Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-tab.is-active' => 'color: {{VALUE}};' ],
 		]);
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'tab_active_shadow',
+				'label' => __( 'Active Tab Box Shadow', 'charts' ),
+				'selector' => '{{WRAPPER}} .kc-ts-tab.is-active',
+			]
+		);
+		$this->add_responsive_control( 'tab_padding', [
+			'label' => __( 'Tab Padding', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em', 'rem' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-tab' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+		$this->add_control( 'tab_border_radius', [
+			'label' => __( 'Tab Border Radius', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em', 'rem' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-tab' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'tab_typo', 'selector' => '{{WRAPPER}} .kc-ts-tab' ] );
 		$this->end_controls_section();
 
 		// --- STYLING: LIST ---
-		$this->start_controls_section( 'style_list', [ 'label' => __( 'List Items', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		$this->start_controls_section( 'style_list', [ 'label' => __( 'List Items / Cards', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_control( 'list_bg', [
-			'label' => __( 'Row Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'label' => __( 'Item Background', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-row' => 'background-color: {{VALUE}};' ],
 		]);
 		$this->add_control( 'list_hover_bg', [
-			'label' => __( 'Row Hover Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'label' => __( 'Item Hover Background', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-row:hover' => 'background-color: {{VALUE}};' ],
 		]);
+		$this->add_responsive_control( 'list_padding', [
+			'label' => __( 'Item Padding', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em', 'rem' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-row' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+		$this->add_control( 'list_border_radius', [
+			'label' => __( 'Item Border Radius', 'charts' ),
+			'type' => Controls_Manager::DIMENSIONS,
+			'size_units' => [ 'px', '%', 'em', 'rem' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-row' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		] );
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			[
+				'name' => 'list_border',
+				'selector' => '{{WRAPPER}} .kc-ts-row',
+			]
+		);
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'list_box_shadow',
+				'label' => __( 'Box Shadow', 'charts' ),
+				'selector' => '{{WRAPPER}} .kc-ts-row',
+			]
+		);
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'list_hover_box_shadow',
+				'label' => __( 'Hover Box Shadow', 'charts' ),
+				'selector' => '{{WRAPPER}} .kc-ts-row:hover',
+			]
+		);
+		$this->add_control( 'list_hover_transform', [
+			'label' => __( 'Hover Transform Y (px)', 'charts' ),
+			'type' => Controls_Manager::NUMBER,
+			'selectors' => [
+				'{{WRAPPER}} .kc-ts-row:hover' => 'transform: translateY({{VALUE}}px);',
+			],
+		] );
+
 		$this->add_control( 'title_color', [
 			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-title' => 'color: {{VALUE}};' ],
 		]);
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'title_typo', 'selector' => '{{WRAPPER}} .kc-ts-title' ] );
 		$this->add_control( 'artist_color', [
-			'label' => __( 'Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'label' => __( 'Subtitle/Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-ts-artist' => 'color: {{VALUE}};' ],
 		]);
 		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'artist_typo', 'selector' => '{{WRAPPER}} .kc-ts-artist' ] );
 		$this->add_control( 'rank_color', [
 			'label' => __( 'Rank Color', 'charts' ), 'type' => Controls_Manager::COLOR,
-			'selectors' => [ '{{WRAPPER}} .kc-ts-rank' => 'color: {{VALUE}};' ],
+			'selectors' => [ '{{WRAPPER}} .kc-ts-rank-list, {{WRAPPER}} .kc-ts-rank-badge' => 'color: {{VALUE}};' ],
 		]);
-		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'rank_typo', 'selector' => '{{WRAPPER}} .kc-ts-rank' ] );
+		$this->add_group_control( Group_Control_Typography::get_type(), [ 'name' => 'rank_typo', 'selector' => '{{WRAPPER}} .kc-ts-rank-list, {{WRAPPER}} .kc-ts-rank-badge' ] );
 		$this->end_controls_section();
 	}
 

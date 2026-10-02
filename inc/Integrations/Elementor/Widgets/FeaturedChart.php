@@ -39,20 +39,103 @@ class FeaturedChart extends Widget_Base {
 
 		$this->end_controls_section();
 
-		$this->start_controls_section( 'style_general', [ 'label' => __( 'Style Settings', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
-		$this->add_control( 'accent_color', [
-			'label' => __( 'Accent Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ff0055',
-			'selectors' => [ '{{WRAPPER}}' => '--fc-accent: {{VALUE}};' ],
-		]);
+				$this->start_controls_section( 'style_general', [ 'label' => __( 'General Styles', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 		$this->add_control( 'bg_color', [
 			'label' => __( 'Background Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ffffff',
 			'selectors' => [ '{{WRAPPER}} .kc-fc-wrap' => 'background-color: {{VALUE}};' ],
 		]);
-		$this->add_control( 'text_color', [
-			'label' => __( 'Text Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#0f172a',
-			'selectors' => [ '{{WRAPPER}} .kc-fc-wrap' => 'color: {{VALUE}};' ],
+		$this->add_control( 'accent_color', [
+			'label' => __( 'Accent Color', 'charts' ), 'type' => Controls_Manager::COLOR, 'default' => '#ff0055',
+			'selectors' => [ '{{WRAPPER}}' => '--fc-accent: {{VALUE}};' ],
+		]);
+		$this->add_responsive_control( 'wrap_padding', [
+			'label' => __( 'Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-fc-wrap' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_responsive_control( 'wrap_border_radius', [
+			'label' => __( 'Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-fc-wrap' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Box_Shadow::get_type(), [
+			'name' => 'wrap_box_shadow', 'selector' => '{{WRAPPER}} .kc-fc-wrap',
 		]);
 		$this->end_controls_section();
+
+		$this->start_controls_section( 'style_typography', [ 'label' => __( 'Typography & Colors', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
+		
+		$this->add_control( 'heading_title', [ 'label' => __( 'Title', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-title' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'title_typography', 'selector' => '{{WRAPPER}} .kc-fc-title',
+		]);
+
+		$this->add_control( 'heading_desc', [ 'label' => __( 'Description', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'desc_color', [
+			'label' => __( 'Description Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-desc' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'desc_typography', 'selector' => '{{WRAPPER}} .kc-fc-desc',
+		]);
+
+		$this->add_control( 'heading_meta', [ 'label' => __( 'Meta', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'meta_color', [
+			'label' => __( 'Meta Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-meta' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'meta_typography', 'selector' => '{{WRAPPER}} .kc-fc-meta',
+		]);
+
+		$this->add_control( 'heading_song', [ 'label' => __( 'Song Title', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'song_color', [
+			'label' => __( 'Song Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-song' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'song_typography', 'selector' => '{{WRAPPER}} .kc-fc-song',
+		]);
+
+		$this->add_control( 'heading_artist', [ 'label' => __( 'Artist', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'artist_color', [
+			'label' => __( 'Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-artist' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'artist_typography', 'selector' => '{{WRAPPER}} .kc-fc-artist',
+		]);
+
+		$this->add_control( 'heading_rank', [ 'label' => __( 'Rank', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->add_control( 'rank_color', [
+			'label' => __( 'Rank Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-rank' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( \Elementor\Group_Control_Typography::get_type(), [
+			'name' => 'rank_typography', 'selector' => '{{WRAPPER}} .kc-fc-rank',
+		]);
+
+		$this->add_control( 'heading_row', [ 'label' => __( 'Row Item', 'charts' ), 'type' => Controls_Manager::HEADING, 'separator' => 'before' ] );
+		$this->start_controls_tabs( 'row_tabs' );
+		$this->start_controls_tab( 'row_normal', [ 'label' => __( 'Normal', 'charts' ) ] );
+		$this->add_control( 'row_bg_color', [
+			'label' => __( 'Row Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-row' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->end_controls_tab();
+		$this->start_controls_tab( 'row_hover', [ 'label' => __( 'Hover', 'charts' ) ] );
+		$this->add_control( 'row_bg_color_hover', [
+			'label' => __( 'Row Background Hover', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-fc-row:hover' => 'background-color: {{VALUE}};' ],
+		]);
+		$this->end_controls_tab();
+		$this->end_controls_tabs();
+
+		$this->end_controls_section();
+
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {

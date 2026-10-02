@@ -191,6 +191,7 @@ $this->start_controls_section( 'style_artist', [ 'label' => __( 'Artist Name', '
 
 		// Add Granular controls for the rest (Title, Card bg)
 		$this->add_granular_style_controls(['card', 'title', 'meta']);
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {

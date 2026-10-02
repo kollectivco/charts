@@ -4,6 +4,8 @@ namespace Charts\Integrations\Elementor\Widgets;
 
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
+use Elementor\Group_Control_Typography;
+use Elementor\Group_Control_Box_Shadow;
 
 /**
  * Elementor Widget: Intelligence Grid
@@ -113,12 +115,24 @@ class ChartGrid extends Widget_Base {
 		$this->end_controls_section();
 
 		// 4. Premium Style
-		$this->start_controls_section( 'section_style', [ 'label' => __( 'Premium Aesthetic', 'charts' ) ] );
+		
+		$this->start_controls_section( 'section_style', [ 'label' => __( 'Premium Aesthetic', 'charts' ), 'tab' => Controls_Manager::TAB_STYLE ] );
 
 		$this->add_control( 'card_radius', [
 			'label' => __( 'Border Radius (px)', 'charts' ),
 			'type' => Controls_Manager::NUMBER,
 			'default' => 24,
+            'selectors' => [ '{{WRAPPER}} .kc-chart-card' => 'border-radius: {{VALUE}}px;' ],
+		]);
+        
+        $this->add_responsive_control( 'card_padding', [
+			'label' => __( 'Card Content Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-card-rows, {{WRAPPER}} .kc-chart-card.is-overlay > div:last-child' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+        
+        $this->add_control( 'card_bg', [
+			'label' => __( 'Card Background', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-chart-card:not(.is-overlay)' => 'background-color: {{VALUE}};' ],
 		]);
 
 		$this->add_control( 'card_shadow', [
@@ -132,13 +146,49 @@ class ChartGrid extends Widget_Base {
 			],
 			'default' => 'sm'
 		]);
+        $this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'custom_card_shadow', 'selector' => '{{WRAPPER}} .kc-chart-card',
+		]);
 
 		$this->add_control( 'accent_color', [
 			'label' => __( 'Custom Accent Color', 'charts' ),
 			'type' => Controls_Manager::COLOR,
 		]);
+        
+        $this->add_control( 'title_color', [
+			'label' => __( 'Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-card-hero h3, {{WRAPPER}} .is-overlay h3' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'title_typo', 'selector' => '{{WRAPPER}} .kc-card-hero h3, {{WRAPPER}} .is-overlay h3',
+		]);
+        
+        $this->add_control( 'row_title_color', [
+			'label' => __( 'Row Title Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-preview-row span:nth-child(3) span:first-child, {{WRAPPER}} .is-overlay .kc-row-title' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'row_title_typo', 'selector' => '{{WRAPPER}} .kc-preview-row span:nth-child(3) span:first-child, {{WRAPPER}} .is-overlay .kc-row-title',
+		]);
+        
+        $this->add_control( 'row_artist_color', [
+			'label' => __( 'Row Artist Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-preview-row span:nth-child(3) span:last-child, {{WRAPPER}} .is-overlay .kc-row-subtitle' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'row_artist_typo', 'selector' => '{{WRAPPER}} .kc-preview-row span:nth-child(3) span:last-child, {{WRAPPER}} .is-overlay .kc-row-subtitle',
+		]);
+        
+        $this->add_control( 'row_rank_color', [
+			'label' => __( 'Row Rank Color', 'charts' ), 'type' => Controls_Manager::COLOR,
+			'selectors' => [ '{{WRAPPER}} .kc-preview-row > span:first-child' => 'color: {{VALUE}};' ],
+		]);
+		$this->add_group_control( Group_Control_Typography::get_type(), [
+			'name' => 'row_rank_typo', 'selector' => '{{WRAPPER}} .kc-preview-row > span:first-child',
+		]);
 
 		$this->end_controls_section();
+
 	}
 
 	protected function render() {
@@ -211,7 +261,7 @@ class ChartGrid extends Widget_Base {
 		$radius = intval($settings['card_radius'] ?? 24);
 		$card_image = \Charts\Core\PublicIntegration::resolve_chart_image( $def, $rows );
 ?>
-		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="background: #fff; border: 1px solid var(--k-border); border-radius: <?php echo $radius; ?>px; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
+		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="border: 1px solid var(--k-border); overflow: hidden; height: 100%; display: flex; flex-direction: column;">
 			<div class="kc-card-hero" style="position: relative; height: 180px; overflow: hidden; background: <?php echo $accent; ?>; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px;">
 				<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
 				<div class="kc-hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%);"></div>
@@ -224,7 +274,7 @@ class ChartGrid extends Widget_Base {
 				</div>
 			</div>
 
-			<div class="kc-card-rows" style="padding: 12px 0; flex-grow: 1;">
+			<div class="kc-card-rows" style="flex-grow: 1;">
 				<?php foreach ( $rows as $e ) : 
 					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($e, $def);
 				?>
@@ -255,7 +305,7 @@ class ChartGrid extends Widget_Base {
 		$radius = intval($settings['card_radius'] ?? 24);
 		$card_image = \Charts\Core\PublicIntegration::resolve_chart_image( $def, $top_rows );
 ?>
-		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="position: relative; height: 420px; border-radius: <?php echo $radius; ?>px; overflow: hidden; background: #000;">
+		<article class="kc-chart-card is-overlay <?php echo $shadow_class; ?>" style="position: relative; height: 420px; overflow: hidden; background: #000;">
 			<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
 			<div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);"></div>
 
@@ -272,8 +322,8 @@ class ChartGrid extends Widget_Base {
 					<div style="margin-top: 16px; display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
 						<span style="font-size: 16px; font-weight: 950; color: #fff; opacity: 0.6;">#1</span>
 						<div style="min-width: 0;">
-							<span style="display: block; font-size: 14px; font-weight: 850; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($resolved['title']); ?></span>
-							<span style="display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.6);"><?php echo esc_html($resolved['subtitle']); ?></span>
+							<span class="kc-row-title" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo esc_html($resolved['title']); ?></span>
+							<span class="kc-row-subtitle" style="display: block;"><?php echo esc_html($resolved['subtitle']); ?></span>
 						</div>
 					</div>
 				<?php endif; ?>

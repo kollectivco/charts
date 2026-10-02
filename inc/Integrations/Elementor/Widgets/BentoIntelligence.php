@@ -154,6 +154,7 @@ class BentoIntelligence extends Widget_Base {
 		] );
 
 		$this->end_controls_section();
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {

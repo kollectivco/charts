@@ -168,6 +168,7 @@ class AllChartsGrid extends Widget_Base {
 			'selectors' => [ '{{WRAPPER}} .kc-acg-track-row' => 'border-bottom-color: {{VALUE}};' ],
 		] );
 		$this->end_controls_section();
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {

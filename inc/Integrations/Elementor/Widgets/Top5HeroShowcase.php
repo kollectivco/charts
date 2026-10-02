@@ -4,6 +4,8 @@ namespace Charts\Integrations\Elementor\Widgets;
 use Elementor\Widget_Base;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
+use Elementor\Group_Control_Border;
+use Elementor\Group_Control_Box_Shadow;
 use Charts\Integrations\Elementor\PremiumWidgetTrait;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -127,6 +129,19 @@ class Top5HeroShowcase extends Widget_Base {
 			'label' => __( 'Giant Rank Number Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-t5-rank-big' => 'color: {{VALUE}};' ],
 		]);
+		
+		$this->add_responsive_control( 'hero_padding', [
+			'label' => __( 'Hero Card Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-t5-hero-content' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+        $this->add_responsive_control( 'hero_border_radius', [
+			'label' => __( 'Hero Card Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%' ],
+			'selectors' => [ '{{WRAPPER}} .kc-t5-hero' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+        $this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'hero_box_shadow', 'selector' => '{{WRAPPER}} .kc-t5-hero',
+		]);
+
 		$this->end_controls_section();
 
 		// 4. List Style (#2-5)
@@ -165,7 +180,25 @@ class Top5HeroShowcase extends Widget_Base {
 			'label' => __( 'Down (▼) Color', 'charts' ), 'type' => Controls_Manager::COLOR,
 			'selectors' => [ '{{WRAPPER}} .kc-t5-move-down' => 'color: {{VALUE}};' ],
 		]);
+		
+        $this->add_responsive_control( 'row_padding', [
+			'label' => __( 'Row Padding', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', 'em' ],
+			'selectors' => [ '{{WRAPPER}} .kc-t5-row' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+        $this->add_responsive_control( 'row_border_radius', [
+			'label' => __( 'Row Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%' ],
+			'selectors' => [ '{{WRAPPER}} .kc-t5-row' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+        $this->add_group_control( Group_Control_Box_Shadow::get_type(), [
+			'name' => 'row_box_shadow', 'selector' => '{{WRAPPER}} .kc-t5-row',
+		]);
+        $this->add_responsive_control( 'list_image_radius', [
+			'label' => __( 'List Image Border Radius', 'charts' ), 'type' => Controls_Manager::DIMENSIONS, 'size_units' => [ 'px', '%' ],
+			'selectors' => [ '{{WRAPPER}} .kc-t5-r-img' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};' ],
+		]);
+
 		$this->end_controls_section();
+		$this->add_featured_image_controls();
 	}
 
 	protected function render() {
