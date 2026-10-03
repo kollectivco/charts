@@ -2012,6 +2012,36 @@ class Bootstrap {
 		return trim( $franko );
 	}
 
+	/** Normalize provider URLs and URIs to the canonical external ID used for matching. */
+	private static function normalize_matching_identifier( $value, $provider ) {
+		$value = trim( html_entity_decode( (string) $value, ENT_QUOTES, 'UTF-8' ) );
+		if ( $value === '' || strtolower( $value ) === 'null' || $value === '0' ) {
+			return '';
+		}
+
+		if ( $provider === 'spotify' ) {
+			if ( preg_match( '~spotify:(?:track|album|artist):([A-Za-z0-9]+)~i', $value, $matches ) ) {
+				return $matches[1];
+			}
+			if ( preg_match( '~open\\.spotify\\.com/(?:intl-[^/]+/)?(?:track|album|artist)/([A-Za-z0-9]+)~i', $value, $matches ) ) {
+				return $matches[1];
+			}
+			return preg_match( '/^[A-Za-z0-9]{10,}$/', $value ) ? $value : '';
+		}
+
+		if ( $provider === 'youtube' ) {
+			if ( preg_match( '~youtu\\.be/([A-Za-z0-9_-]{6,})~i', $value, $matches ) ) {
+				return $matches[1];
+			}
+			if ( preg_match( '~youtube\\.com/(?:watch\\?(?:[^#]*?&)?v=|embed/|shorts/|live/)([A-Za-z0-9_-]{6,})~i', $value, $matches ) ) {
+				return $matches[1];
+			}
+			return preg_match( '/^[A-Za-z0-9_-]{6,}$/', $value ) ? $value : '';
+		}
+
+		return '';
+	}
+
 	/**
 	 * AJAX: Smart Entity Resolution & Matching Center clustering scanner.
 	 */
@@ -2060,10 +2090,8 @@ class Bootstrap {
 		foreach ($entities as $e) {
 			$nodes[$e->id] = $e;
 			$edges[$e->id] = [];
-			$s_id = trim($e->spotify_id ?? '');
-			if (strtolower($s_id) === 'null' || $s_id === '0') $s_id = '';
-			$y_id = trim($e->youtube_id ?? '');
-			if (strtolower($y_id) === 'null' || $y_id === '0') $y_id = '';
+			$s_id = self::normalize_matching_identifier( $e->spotify_id ?? '', 'spotify' );
+			$y_id = self::normalize_matching_identifier( $e->youtube_id ?? '', 'youtube' );
 			$b_key = self::generate_blocking_key($e->name);
 			$b_key_en = self::generate_blocking_key($e->name_en ?? '');
 			
@@ -2111,10 +2139,10 @@ class Bootstrap {
 
 			// Sort to find master
 			usort($items, function($a, $b) {
-				$a_spot = isset($a->spotify_id) ? $a->spotify_id : '';
-				$a_tube = isset($a->youtube_id) ? $a->youtube_id : '';
-				$b_spot = isset($b->spotify_id) ? $b->spotify_id : '';
-				$b_tube = isset($b->youtube_id) ? $b->youtube_id : '';
+				$a_spot = self::normalize_matching_identifier( $a->spotify_id ?? '', 'spotify' );
+				$a_tube = self::normalize_matching_identifier( $a->youtube_id ?? '', 'youtube' );
+				$b_spot = self::normalize_matching_identifier( $b->spotify_id ?? '', 'spotify' );
+				$b_tube = self::normalize_matching_identifier( $b->youtube_id ?? '', 'youtube' );
 
 				$scoreA = (!empty($a_spot) || !empty($a_tube)) ? 2 : 0;
 				$scoreB = (!empty($b_spot) || !empty($b_tube)) ? 2 : 0;
@@ -2129,10 +2157,10 @@ class Bootstrap {
 				$dup = $items[$i];
 				$sim = self::get_similarity_pct($master->name, $dup->name);
 				
-				$m_spot = isset($master->spotify_id) ? $master->spotify_id : '';
-				$m_tube = isset($master->youtube_id) ? $master->youtube_id : '';
-				$d_spot = isset($dup->spotify_id) ? $dup->spotify_id : '';
-				$d_tube = isset($dup->youtube_id) ? $dup->youtube_id : '';
+				$m_spot = self::normalize_matching_identifier( $master->spotify_id ?? '', 'spotify' );
+				$m_tube = self::normalize_matching_identifier( $master->youtube_id ?? '', 'youtube' );
+				$d_spot = self::normalize_matching_identifier( $dup->spotify_id ?? '', 'spotify' );
+				$d_tube = self::normalize_matching_identifier( $dup->youtube_id ?? '', 'youtube' );
 
 				$exact_id_match = false;
 				if (!empty($m_spot) && !empty($d_spot) && $m_spot === $d_spot) {
@@ -2300,8 +2328,8 @@ class Bootstrap {
 			foreach ($entities as $e) {
 				$nodes[$e->id] = $e;
 				$edges[$e->id] = [];
-				$s_id = $e->spotify_id ?? '';
-				$y_id = $e->youtube_id ?? '';
+				$s_id = self::normalize_matching_identifier( $e->spotify_id ?? '', 'spotify' );
+				$y_id = self::normalize_matching_identifier( $e->youtube_id ?? '', 'youtube' );
 				$b_key = self::generate_blocking_key($e->name);
 				
 				if (!empty($s_id)) $index_s[$s_id][] = $e->id;
@@ -2347,8 +2375,8 @@ class Bootstrap {
 
 				// Sort to find master
 				usort($items, function($a, $b) {
-					$scoreA = (!empty($a->spotify_id) || !empty($a->youtube_id)) ? 2 : 0;
-					$scoreB = (!empty($b->spotify_id) || !empty($b->youtube_id)) ? 2 : 0;
+					$scoreA = (self::normalize_matching_identifier( $a->spotify_id ?? '', 'spotify' ) !== '' || self::normalize_matching_identifier( $a->youtube_id ?? '', 'youtube' ) !== '') ? 2 : 0;
+					$scoreB = (self::normalize_matching_identifier( $b->spotify_id ?? '', 'spotify' ) !== '' || self::normalize_matching_identifier( $b->youtube_id ?? '', 'youtube' ) !== '') ? 2 : 0;
 					if ($scoreA !== $scoreB) return $scoreB <=> $scoreA;
 					return $a->id <=> $b->id;
 				});
@@ -2361,10 +2389,14 @@ class Bootstrap {
 					$sim = self::get_similarity_pct($master->name, $dup->name);
 					
 					$exact_id_match = false;
-					if (!empty($master->spotify_id) && !empty($dup->spotify_id) && $master->spotify_id === $dup->spotify_id) {
+					$master_spotify_id = self::normalize_matching_identifier( $master->spotify_id ?? '', 'spotify' );
+					$duplicate_spotify_id = self::normalize_matching_identifier( $dup->spotify_id ?? '', 'spotify' );
+					$master_youtube_id = self::normalize_matching_identifier( $master->youtube_id ?? '', 'youtube' );
+					$duplicate_youtube_id = self::normalize_matching_identifier( $dup->youtube_id ?? '', 'youtube' );
+					if ( $master_spotify_id !== '' && $master_spotify_id === $duplicate_spotify_id ) {
 						$exact_id_match = true;
 					}
-					if (!empty($master->youtube_id) && !empty($dup->youtube_id) && $master->youtube_id === $dup->youtube_id) {
+					if ( $master_youtube_id !== '' && $master_youtube_id === $duplicate_youtube_id ) {
 						$exact_id_match = true;
 					}
 

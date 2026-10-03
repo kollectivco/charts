@@ -387,6 +387,26 @@ class PublicIntegration {
 		
 		// 1. If it's a Chart Entry object (has track_name, artist_names)
 		if ( isset($obj->track_name) || isset($obj->artist_names) ) {
+			$is_artist_chart = ( ( $obj->item_type ?? '' ) === 'artist' );
+			if ( $definition ) {
+				$is_artist_chart = $is_artist_chart
+					|| ( ( $definition->item_type ?? '' ) === 'artist' )
+					|| ( ( $definition->chart_type ?? '' ) === 'top-artists' );
+			}
+
+			if ( $is_artist_chart ) {
+				$artist_name = $obj->artist_names ?? '';
+				$artist_en   = $obj->artist_names_en ?? '';
+				if ( $artist_name === '' || $artist_name === null ) {
+					$artist_name = $obj->track_name ?? '';
+					$artist_en   = $obj->track_name_en ?? $artist_en;
+				}
+				return [
+					'title'    => Transliteration::resolve_display( $artist_name, $artist_en, $mode ),
+					'subtitle' => '',
+				];
+			}
+
 			$resolved = Transliteration::resolve_entry_display($obj, $mode);
 			return [
 				'title'    => $resolved['track'],
@@ -538,10 +558,13 @@ class PublicIntegration {
 		if ( empty($definition) || empty($definition->id) ) return array();
 
 		// Use ONLY the strict Profile ID binding ('cid-').
-		$sources = $wpdb->get_results( $wpdb->prepare( "
-			SELECT * FROM {$wpdb->prefix}charts_sources 
-			WHERE chart_type = %s AND is_active = 1
-		", "cid-{$definition->id}" ) );
+		$sql = "SELECT * FROM {$wpdb->prefix}charts_sources WHERE chart_type = %s AND is_active = 1";
+		$params = array( "cid-{$definition->id}" );
+		if ( ! empty( $definition->platform ) && $definition->platform !== 'all' ) {
+			$sql .= ' AND platform = %s';
+			$params[] = $definition->platform;
+		}
+		$sources = $wpdb->get_results( $wpdb->prepare( $sql, ...$params ) );
 
 		return (array) $sources;
 	}
