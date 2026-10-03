@@ -80,7 +80,9 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/BentoIntelligence.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartTabsShowcase.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/ChartShowcaseSlider.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/Top5HeroShowcase.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/AllChartsGrid.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/DynamicShowcaseGrid.php';
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
@@ -100,5 +102,6 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\ChartShowcaseSlider() );
 		$widgets_manager->register( new Widgets\Top5HeroShowcase() );
 		$widgets_manager->register( new Widgets\AllChartsGrid() );
+		$widgets_manager->register( new Widgets\DynamicShowcaseGrid() );
 	}
 }
