@@ -28,7 +28,6 @@ $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ?
 				<p><?php echo $id ? esc_html( sprintf( __( 'Record ID #%d', 'charts' ), $id ) ) : esc_html__( 'New library record', 'charts' ); ?></p>
 			</div>
 		</div>
-</div>
 		<div class="entity-edit-fields">
 			<div class="entity-edit-field wide"><label for="entity-name"><?php echo esc_html( $type === 'artist' ? __( 'Arabic display name', 'charts' ) : __( 'Arabic title', 'charts' ) ); ?></label><input id="entity-name" name="entity_name" type="text" value="<?php echo esc_attr( $name ); ?>" required></div>
 			<div class="entity-edit-field"><label for="entity-slug"><?php esc_html_e( 'English slug', 'charts' ); ?></label><input id="entity-slug" name="slug" type="text" value="<?php echo esc_attr( $entity->slug ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Generated from the name if blank', 'charts' ); ?>" dir="ltr"></div>
