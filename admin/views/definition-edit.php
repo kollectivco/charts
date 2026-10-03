@@ -1,13 +1,9 @@
 <?php
-/**
- * Admin View: Premium Chart Editor (Light Mode)
- * 1:1 Reference Match - High-Fidelity Redesign
- */
+/** Admin view: create or edit a chart definition. */
 $manager = new \Charts\Admin\SourceManager();
-$def_id = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
-$def = $def_id ? $manager->get_definition( $def_id ) : null;
+$def_id  = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+$def     = $def_id ? $manager->get_definition( $def_id ) : null;
 
-// Field Mapping
 $title           = $def ? $def->title : '';
 $title_ar        = $def ? $def->title_ar : '';
 $slug            = $def ? $def->slug : '';
@@ -18,220 +14,181 @@ $country         = $def ? $def->country_code : 'eg';
 $frequency       = $def ? $def->frequency : 'weekly';
 $platform        = $def ? $def->platform : 'all';
 $cover_image_url = $def ? $def->cover_image_url : '';
-$accent_color    = ($def && !empty($def->accent_color)) ? $def->accent_color : '#6366f1';
-$is_public       = $def ? (int)$def->is_public : 1;
-$is_featured     = $def ? (int)$def->is_featured : 0;
-$archive_enabled = $def ? (int)$def->archive_enabled : 1;
-$menu_order      = $def ? (int)$def->menu_order : 0;
-$max_rows        = $def ? (int)$def->max_rows : 100;
+$accent_color    = ( $def && ! empty( $def->accent_color ) ) ? $def->accent_color : '#6366f1';
+$is_public       = $def ? (int) $def->is_public : 1;
+$is_featured     = $def ? (int) $def->is_featured : 0;
+$archive_enabled = $def ? (int) $def->archive_enabled : 1;
+$menu_order      = $def ? (int) $def->menu_order : 0;
+$back_url        = \Charts\Core\Router::get_dashboard_url( 'definitions' );
 ?>
-
-<div class="charts-admin-wrap premium-light">
-	<form method="post">
+<div class="charts-admin-wrap premium-light chart-definition-editor">
+	<form method="post" class="chart-editor-form">
 		<?php wp_nonce_field( 'charts_admin_action' ); ?>
 		<input type="hidden" name="charts_action" value="save_definition">
-		<?php if ( $def_id ) : ?>
-			<input type="hidden" name="id" value="<?php echo $def_id; ?>">
-		<?php endif; ?>
+		<?php if ( $def_id ) : ?><input type="hidden" name="id" value="<?php echo (int) $def_id; ?>"><?php endif; ?>
 
-		<header class="charts-admin-header">
-			<div class="charts-admin-title-group">
-				<div style="display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; color:var(--charts-text-dim); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em;">
-					<span>Charts</span>
-					<span style="opacity:0.3;">&rsaquo;</span>
-					<span><?php echo $def_id ? 'Edit Chart' : 'New Chart'; ?></span>
-				</div>
-				<h1 class="charts-admin-title"><?php echo $def_id ? 'Edit Chart' : 'New Chart'; ?></h1>
-				<p class="charts-admin-subtitle">Configure chart display settings and metadata.</p>
+		<header class="chart-editor-header">
+			<div class="chart-editor-heading">
+				<nav class="chart-editor-breadcrumb" aria-label="<?php esc_attr_e( 'Breadcrumb', 'charts' ); ?>">
+					<a href="<?php echo esc_url( $back_url ); ?>"><?php esc_html_e( 'Charts', 'charts' ); ?></a>
+					<span aria-hidden="true">/</span>
+					<span><?php echo $def_id ? esc_html__( 'Edit Chart', 'charts' ) : esc_html__( 'New Chart', 'charts' ); ?></span>
+				</nav>
+				<h1 class="charts-admin-title"><?php echo $def_id ? esc_html__( 'Edit Chart', 'charts' ) : esc_html__( 'New Chart', 'charts' ); ?></h1>
+				<p class="charts-admin-subtitle"><?php esc_html_e( 'Configure chart display settings and metadata.', 'charts' ); ?></p>
 			</div>
-			<div class="charts-admin-actions" style="display:flex; gap:12px;">
-				<a href="<?php echo admin_url( 'admin.php?page=charts-definitions' ); ?>" class="charts-btn-back">
-					&larr; Back
-				</a>
-				<button type="submit" class="charts-btn-create">
-					<?php echo $def_id ? 'Update Chart' : 'Create Chart'; ?>
-				</button>
+			<div class="chart-editor-header-actions">
+				<a href="<?php echo esc_url( $back_url ); ?>" class="charts-btn-back"><span aria-hidden="true">&larr;</span> <?php esc_html_e( 'Back', 'charts' ); ?></a>
+				<button type="submit" class="charts-btn-create"><?php echo $def_id ? esc_html__( 'Update Chart', 'charts' ) : esc_html__( 'Create Chart', 'charts' ); ?></button>
 			</div>
 		</header>
 
 		<?php settings_errors( 'charts' ); ?>
 
-		<div class="premium-form-card">
-			<div class="premium-form-grid">
-				
-				<!-- Row 1: Name & Slug -->
+		<section class="chart-editor-card" aria-label="<?php esc_attr_e( 'Chart settings', 'charts' ); ?>">
+			<div class="chart-editor-grid">
 				<div class="form-group">
-					<label for="title">Chart Name (EN) <span class="required">*</span></label>
-					<input type="text" id="title" name="title" value="<?php echo esc_attr($title); ?>" class="form-control" placeholder="Hot 100" required>
-				</div>
-                <div class="form-group">
-					<label for="title_ar">Chart Name (AR)</label>
-					<input type="text" id="title_ar" name="title_ar" value="<?php echo esc_attr($title_ar); ?>" class="form-control" placeholder="أفضل ١٠٠ أغنية" dir="rtl">
+					<label for="title"><?php esc_html_e( 'Chart Name (EN)', 'charts' ); ?> <span class="required">*</span></label>
+					<input type="text" id="title" name="title" value="<?php echo esc_attr( $title ); ?>" class="form-control" placeholder="<?php esc_attr_e( 'e.g. Hot 100', 'charts' ); ?>" required>
 				</div>
 				<div class="form-group">
-					<label for="slug">URL Slug <span class="required">*</span></label>
-					<input type="text" id="slug" name="slug" value="<?php echo esc_attr($slug); ?>" class="form-control" placeholder="hot-100" required>
-					<span class="input-helper">URL: /charts/<?php echo $slug ?: 'your-slug'; ?></span>
+					<label for="title_ar"><?php esc_html_e( 'Chart Name (AR)', 'charts' ); ?></label>
+					<input type="text" id="title_ar" name="title_ar" value="<?php echo esc_attr( $title_ar ); ?>" class="form-control" placeholder="<?php esc_attr_e( 'اكتب اسم الشارت بالعربية', 'charts' ); ?>" dir="rtl">
 				</div>
 
-				<!-- Row 2: Types & Model -->
 				<div class="form-group">
-					<label for="item_type">Entity Type <span class="required">*</span></label>
-					<select name="item_type" id="item_type" class="form-control">
-						<option value="track" <?php selected($item_type, 'track'); ?>>Tracks (Audio)</option>
-						<option value="artist" <?php selected($item_type, 'artist'); ?>>Artists</option>
-						<option value="video" <?php selected($item_type, 'video'); ?>>Clips & Videos</option>
-						<option value="album" <?php selected($item_type, 'album'); ?>>Albums & EPs</option>
-					</select>
-					<span class="input-helper">Core data model (e.g. Song vs Artist).</span>
+					<label for="slug"><?php esc_html_e( 'URL Slug', 'charts' ); ?> <span class="required">*</span></label>
+					<input type="text" id="slug" name="slug" value="<?php echo esc_attr( $slug ); ?>" class="form-control" placeholder="hot-100" required>
+					<span class="input-helper chart-slug-preview"><?php esc_html_e( 'Public URL:', 'charts' ); ?> <code>/charts/<span><?php echo esc_html( $slug ?: 'your-slug' ); ?></span></code></span>
 				</div>
 				<div class="form-group">
-					<label for="chart_type">Content Category <span class="required">*</span></label>
-					<select name="chart_type" id="chart_type" class="form-control">
-						<optgroup label="Audio Logics" data-entity="track">
-							<option value="top-songs" <?php selected($chart_type, 'top-songs'); ?>>Top Songs (Official)</option>
-							<option value="viral" <?php selected($chart_type, 'viral'); ?>>Viral Trends & TikTok</option>
-						</optgroup>
-						<optgroup label="Visual Logics" data-entity="video">
-							<option value="top-videos" <?php selected($chart_type, 'top-videos'); ?>>Top Videos / Clips</option>
-						</optgroup>
-						<optgroup label="Professional Logics" data-entity="artist">
-							<option value="top-artists" <?php selected($chart_type, 'top-artists'); ?>>Top Artists</option>
-						</optgroup>
-						<optgroup label="Collection Logics" data-entity="album">
-							<option value="top-albums" <?php selected($chart_type, 'top-albums'); ?>>Top Albums</option>
-						</optgroup>
+					<label for="item_type"><?php esc_html_e( 'Entity Type', 'charts' ); ?> <span class="required">*</span></label>
+					<select name="item_type" id="item_type" class="form-control" required>
+						<option value="track" <?php selected( $item_type, 'track' ); ?>><?php esc_html_e( 'Tracks (Audio)', 'charts' ); ?></option>
+						<option value="artist" <?php selected( $item_type, 'artist' ); ?>><?php esc_html_e( 'Artists', 'charts' ); ?></option>
+						<option value="video" <?php selected( $item_type, 'video' ); ?>><?php esc_html_e( 'Clips & Videos', 'charts' ); ?></option>
+						<option value="album" <?php selected( $item_type, 'album' ); ?>><?php esc_html_e( 'Albums & EPs', 'charts' ); ?></option>
 					</select>
-					<span class="input-helper">Assigns the appropriate display template for this chart.</span>
+					<span class="input-helper"><?php esc_html_e( 'Choose the type of content ranked in this chart.', 'charts' ); ?></span>
 				</div>
 
-				<!-- Row 3: Meta Configuration -->
 				<div class="form-group">
-					<label for="country_code">Market / Country <span class="required">*</span></label>
-					<div style="display: flex; gap: 10px;">
-						<input type="text" id="country_code" name="country_code" value="<?php echo esc_attr($country); ?>" class="form-control" style="width: 80px; text-align: center; text-transform: uppercase;" placeholder="EG" maxlength="2" required>
-						<select id="platform" name="platform" class="form-control" style="flex: 1;">
-							<option value="all" <?php selected($platform, 'all'); ?>>Omni-Platform (Mixed)</option>
-							<option value="spotify" <?php selected($platform, 'spotify'); ?>>Spotify Only</option>
-							<option value="youtube" <?php selected($platform, 'youtube'); ?>>YouTube Only</option>
-							<option value="billboard" <?php selected($platform, 'billboard'); ?>>Billboard Arabia</option>
-							<option value="kontent" <?php selected($platform, 'kontent'); ?>>Kontent Analytics</option>
+					<label for="chart_type"><?php esc_html_e( 'Content Category', 'charts' ); ?> <span class="required">*</span></label>
+					<select name="chart_type" id="chart_type" class="form-control" required>
+						<optgroup label="<?php esc_attr_e( 'Audio Charts', 'charts' ); ?>" data-entity="track">
+							<option value="top-songs" <?php selected( $chart_type, 'top-songs' ); ?>><?php esc_html_e( 'Top Songs (Official)', 'charts' ); ?></option>
+							<option value="viral" <?php selected( $chart_type, 'viral' ); ?>><?php esc_html_e( 'Viral Trends & TikTok', 'charts' ); ?></option>
+						</optgroup>
+						<optgroup label="<?php esc_attr_e( 'Video Charts', 'charts' ); ?>" data-entity="video">
+							<option value="top-videos" <?php selected( $chart_type, 'top-videos' ); ?>><?php esc_html_e( 'Top Videos / Clips', 'charts' ); ?></option>
+						</optgroup>
+						<optgroup label="<?php esc_attr_e( 'Artist Charts', 'charts' ); ?>" data-entity="artist">
+							<option value="top-artists" <?php selected( $chart_type, 'top-artists' ); ?>><?php esc_html_e( 'Top Artists', 'charts' ); ?></option>
+						</optgroup>
+						<optgroup label="<?php esc_attr_e( 'Album Charts', 'charts' ); ?>" data-entity="album">
+							<option value="top-albums" <?php selected( $chart_type, 'top-albums' ); ?>><?php esc_html_e( 'Top Albums', 'charts' ); ?></option>
+						</optgroup>
+					</select>
+					<span class="input-helper"><?php esc_html_e( 'Sets the chart’s ranking and display template.', 'charts' ); ?></span>
+				</div>
+				<div class="form-group">
+					<label for="country_code"><?php esc_html_e( 'Market / Country', 'charts' ); ?> <span class="required">*</span></label>
+					<div class="chart-market-fields">
+						<input type="text" id="country_code" name="country_code" value="<?php echo esc_attr( strtoupper( $country ) ); ?>" class="form-control chart-country-code" placeholder="EG" maxlength="2" required>
+						<select id="platform" name="platform" class="form-control">
+							<option value="all" <?php selected( $platform, 'all' ); ?>><?php esc_html_e( 'Omni-Platform (Mixed)', 'charts' ); ?></option>
+							<option value="spotify" <?php selected( $platform, 'spotify' ); ?>><?php esc_html_e( 'Spotify Only', 'charts' ); ?></option>
+							<option value="youtube" <?php selected( $platform, 'youtube' ); ?>><?php esc_html_e( 'YouTube Only', 'charts' ); ?></option>
+							<option value="billboard" <?php selected( $platform, 'billboard' ); ?>><?php esc_html_e( 'Billboard Arabia', 'charts' ); ?></option>
+							<option value="kontent" <?php selected( $platform, 'kontent' ); ?>><?php esc_html_e( 'Kontent Analytics', 'charts' ); ?></option>
 						</select>
 					</div>
-					<span class="input-helper">ISO code (e.g. EG, US) and primary data source platform.</span>
+					<span class="input-helper"><?php esc_html_e( 'Use an ISO country code and choose the primary data source.', 'charts' ); ?></span>
 				</div>
 				<div class="form-group">
-					<label for="frequency">Frequency / Interval</label>
+					<label for="frequency"><?php esc_html_e( 'Frequency / Interval', 'charts' ); ?></label>
 					<select name="frequency" id="frequency" class="form-control">
-						<option value="daily" <?php selected($frequency, 'daily'); ?>>Daily Charts</option>
-						<option value="weekly" <?php selected($frequency, 'weekly'); ?>>Weekly Charts</option>
-						<option value="monthly" <?php selected($frequency, 'monthly'); ?>>Monthly Charts</option>
+						<option value="daily" <?php selected( $frequency, 'daily' ); ?>><?php esc_html_e( 'Daily Charts', 'charts' ); ?></option>
+						<option value="weekly" <?php selected( $frequency, 'weekly' ); ?>><?php esc_html_e( 'Weekly Charts', 'charts' ); ?></option>
+						<option value="monthly" <?php selected( $frequency, 'monthly' ); ?>><?php esc_html_e( 'Monthly Charts', 'charts' ); ?></option>
 					</select>
 				</div>
 
-				<!-- Row 3: Description -->
-				<div class="form-group form-group-full">
-					<label for="chart_summary">Summary / Description</label>
-					<textarea id="chart_summary" name="chart_summary" class="form-control" placeholder="A brief description of this chart product..."><?php echo esc_textarea($summary); ?></textarea>
+				<div class="form-group chart-editor-full">
+					<label for="chart_summary"><?php esc_html_e( 'Summary / Description', 'charts' ); ?></label>
+					<textarea id="chart_summary" name="chart_summary" class="form-control" rows="4" placeholder="<?php esc_attr_e( 'Add a short description for this chart…', 'charts' ); ?>"><?php echo esc_textarea( $summary ); ?></textarea>
 				</div>
 
-				<!-- Row 4: Cover Image & Branding -->
 				<div class="form-group">
-					<label>Cover Image</label>
-					<div class="image-uploader-field">
-						<img id="cover_preview" src="<?php echo esc_url($cover_image_url); ?>" class="image-preview <?php echo $cover_image_url ? 'has-image' : ''; ?>" alt="Preview">
-						<input type="hidden" id="cover_image_url" name="cover_image_url" value="<?php echo esc_attr($cover_image_url); ?>">
+					<label><?php esc_html_e( 'Cover Image', 'charts' ); ?></label>
+					<div class="image-uploader-field chart-cover-uploader">
+						<img id="cover_preview" src="<?php echo esc_url( $cover_image_url ); ?>" class="image-preview <?php echo $cover_image_url ? 'has-image' : ''; ?>" alt="<?php esc_attr_e( 'Cover image preview', 'charts' ); ?>">
+						<input type="hidden" id="cover_image_url" name="cover_image_url" value="<?php echo esc_attr( $cover_image_url ); ?>">
 						<div class="uploader-actions">
-							<button type="button" class="charts-btn-back charts-upload-trigger">
-								<span class="dashicons dashicons-upload" style="margin-top:2px;"></span> Select Image
-							</button>
-							<button type="button" class="charts-btn-back charts-remove-image" style="color: #ef4444; border-color: #fee2e2;">
-								Remove
-							</button>
+							<button type="button" class="charts-btn-back charts-upload-trigger"><span class="dashicons dashicons-upload" aria-hidden="true"></span> <?php esc_html_e( 'Select Image', 'charts' ); ?></button>
+							<button type="button" class="charts-btn-back charts-remove-image"><?php esc_html_e( 'Remove', 'charts' ); ?></button>
 						</div>
 					</div>
-					<span class="input-helper">High resolution square artwork (1:1) recommended.</span>
+					<span class="input-helper"><?php esc_html_e( 'A high-resolution square image works best.', 'charts' ); ?></span>
 				</div>
-				<div class="form-group">
-					<label for="accent_color">Brand Accent Color</label>
-					<div class="color-picker-wrap">
-						<div class="color-swatch" style="background: <?php echo esc_attr($accent_color); ?>;"></div>
-						<input type="text" id="accent_color" name="accent_color" value="<?php echo esc_attr($accent_color); ?>" class="form-control" style="font-family:monospace; text-transform:uppercase;" placeholder="#6366F1">
+				<div class="form-group chart-branding-fields">
+					<label for="accent_color"><?php esc_html_e( 'Brand Accent Color', 'charts' ); ?></label>
+					<div class="chart-color-control">
+						<input type="color" id="accent_color_picker" value="<?php echo esc_attr( $accent_color ); ?>" aria-label="<?php esc_attr_e( 'Choose accent color', 'charts' ); ?>">
+						<input type="text" id="accent_color" name="accent_color" value="<?php echo esc_attr( $accent_color ); ?>" class="form-control" placeholder="#6366F1">
 					</div>
-					<span class="input-helper">Used for dots, links, and UI accents on the frontend.</span>
-					
-					<div style="margin-top: 32px;">
-						<label for="menu_order">Display Priority</label>
-						<input type="number" id="menu_order" name="menu_order" value="<?php echo $menu_order; ?>" class="form-control" style="width: 120px;">
-						<span class="input-helper">Position in rankings and grids (lower = first).</span>
-					</div>
-				</div>
-
-
-
-				<!-- Row 5: Visibility Toggles -->
-				<div class="toggle-row">
-					<div class="toggle-item">
-						<label class="switch">
-							<input type="checkbox" name="is_public" value="1" <?php checked($is_public, 1); ?>>
-							<span class="slider"></span>
-						</label>
-						<label>Published & Publicly Visible</label>
-					</div>
-					<div class="toggle-item">
-						<label class="switch">
-							<input type="checkbox" name="is_featured" value="1" <?php checked($is_featured, 1); ?>>
-							<span class="slider"></span>
-						</label>
-						<label>Featured Discovery Spot</label>
-					</div>
-					<div class="toggle-item">
-						<label class="switch">
-							<input type="checkbox" name="archive_enabled" value="1" <?php checked($archive_enabled, 1); ?>>
-							<span class="slider"></span>
-						</label>
-						<label>Historical Archive Enabled</label>
+					<span class="input-helper"><?php esc_html_e( 'Used for links and accents on the public chart page.', 'charts' ); ?></span>
+					<div class="chart-priority-field">
+						<label for="menu_order"><?php esc_html_e( 'Display Priority', 'charts' ); ?></label>
+						<input type="number" id="menu_order" name="menu_order" value="<?php echo (int) $menu_order; ?>" class="form-control" min="0" step="1">
+						<span class="input-helper"><?php esc_html_e( 'Lower numbers appear first.', 'charts' ); ?></span>
 					</div>
 				</div>
 
+				<div class="chart-editor-toggles chart-editor-full">
+					<label class="chart-toggle-option"><span class="switch"><input type="checkbox" name="is_public" value="1" <?php checked( $is_public, 1 ); ?>><span class="slider"></span></span><span><?php esc_html_e( 'Published & Publicly Visible', 'charts' ); ?></span></label>
+					<label class="chart-toggle-option"><span class="switch"><input type="checkbox" name="is_featured" value="1" <?php checked( $is_featured, 1 ); ?>><span class="slider"></span></span><span><?php esc_html_e( 'Featured Discovery Spot', 'charts' ); ?></span></label>
+					<label class="chart-toggle-option"><span class="switch"><input type="checkbox" name="archive_enabled" value="1" <?php checked( $archive_enabled, 1 ); ?>><span class="slider"></span></span><span><?php esc_html_e( 'Historical Archive Enabled', 'charts' ); ?></span></label>
+				</div>
 			</div>
-		</div>
+		</section>
 	</form>
-
-	<script>
-	jQuery(document).ready(function($) {
-		const chart_id = $('#chart_rows_sortable').data('chart-id');
-		const item_type = $('#item_type').val();
-
-		// Sync color swatch
-		$('#accent_color').on('input', function() {
-			$('.color-swatch').css('background', $(this).val());
-		});
-		
-		// Update slug helper live
-		$('#slug').on('input', function() {
-			const slug = $(this).val() || 'your-slug';
-			$('.input-helper').text('URL: /charts/' + slug);
-		});
-
-		// Intelligent Field Sync
-		function syncRankingLogic() {
-			const entity = $('#item_type').val();
-			const $logicSelect = $('#chart_type');
-			$logicSelect.find('optgroup').each(function() {
-				const groupEntity = $(this).data('entity');
-				if (groupEntity === entity) { $(this).show().prop('disabled', false); } 
-				else { $(this).hide().prop('disabled', true); }
-			});
-			const $currentOption = $logicSelect.find('option:selected');
-			if ($currentOption.parent().is(':disabled')) {
-				const $firstVisible = $logicSelect.find('optgroup:not(:disabled) option').first();
-				if ($firstVisible.length) { $logicSelect.val($firstVisible.val()); }
-			}
-		}
-		$('#item_type').on('change', syncRankingLogic);
-		syncRankingLogic();
-
-		.charts-admin-table th { font-weight: 700; font-size: 12px; color: var(--charts-text-dim); text-transform: uppercase; letter-spacing: 0.03em; }
-	</style>
 </div>
+
+<script>
+jQuery(function ($) {
+	const $slug = $('#slug');
+	const $slugPreview = $('.chart-slug-preview code span');
+	const $color = $('#accent_color');
+	const $colorPicker = $('#accent_color_picker');
+
+	$slug.on('input', function () {
+		$slugPreview.text($(this).val() || 'your-slug');
+	});
+
+	function normalizeHex(value) {
+		return /^#[0-9a-f]{6}$/i.test(value) ? value : null;
+	}
+	$color.on('input change', function () {
+		const color = normalizeHex($(this).val());
+		if (color) $colorPicker.val(color);
+	});
+	$colorPicker.on('input change', function () {
+		$color.val($(this).val().toUpperCase());
+	});
+
+	function syncChartCategories() {
+		const entity = $('#item_type').val();
+		const $select = $('#chart_type');
+		const $groups = $select.find('optgroup');
+		$groups.prop('disabled', true).hide();
+		const $group = $groups.filter(function () { return $(this).data('entity') === entity; });
+		$group.prop('disabled', false).show();
+		if (!$group.find('option').filter(function () { return this.value === $select.val(); }).length) {
+			$select.val($group.find('option').first().val());
+		}
+	}
+	$('#item_type').on('change', syncChartCategories);
+	syncChartCategories();
+});
+</script>
