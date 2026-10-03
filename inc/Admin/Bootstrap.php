@@ -112,6 +112,16 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'save_clip_track_mappings':
+				$result = self::persist_clip_track_mappings();
+				if ( is_wp_error( $result ) ) {
+					\Charts\Core\Notify::error( $result->get_error_message(), __( 'Clip linking failed', 'charts' ) );
+				} else {
+					\Charts\Core\Notify::success( sprintf( __( 'Saved track links for %d clips.', 'charts' ), (int) $result ), __( 'Clip links saved', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
 			case 'save_settings_v2':
 				if ( ! current_user_can( 'manage_options' ) ) return;
 				check_admin_referer( 'kcharts_save_v2' );
@@ -458,6 +468,8 @@ class Bootstrap {
 				} else {
 					$module = 'artists';
 				}
+			} elseif ( $action === 'save_clip_track_mappings' ) {
+				$module = 'clips';
 			} elseif ( strpos( $action, 'definition' ) !== false ) {
 				$module = 'definitions';
 			} elseif ( strpos( $action, 'import' ) !== false || strpos( $action, 'run' ) !== false ) {
@@ -478,7 +490,9 @@ class Bootstrap {
 				$target_url = $referer;
 			} else {
 				// Fallback to clean module URL
-				$target_url = \Charts\Core\Router::get_dashboard_url( $module );
+				$target_url = $action === 'save_clip_track_mappings'
+					? admin_url( 'admin.php?page=charts-clip-track-linker' )
+					: \Charts\Core\Router::get_dashboard_url( $module );
 				
 				// Ensure surface consistency in fallback
 				if ( $is_external_surface && stripos( $target_url, '/wp-admin/' ) !== false ) {
@@ -632,6 +646,7 @@ class Bootstrap {
 			array( 'title' => 'Artists', 'slug' => 'charts-artists', 'callback' => 'render_entities' ),
 			array( 'title' => 'Tracks', 'slug' => 'charts-tracks', 'callback' => 'render_entities' ),
 			array( 'title' => 'Clips', 'slug' => 'charts-clips', 'callback' => 'render_entities' ),
+			array( 'title' => 'Clip-Track Linking', 'slug' => 'charts-clip-track-linker', 'callback' => 'render_clip_track_linker' ),
 			array( 'title' => 'Sources', 'slug' => 'charts-sources', 'callback' => 'render_sources' ),
 			array( 'title' => 'Import Center', 'slug' => 'charts-import', 'callback' => 'render_import_center' ),
 			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
@@ -1028,6 +1043,44 @@ class Bootstrap {
 		} else {
 			self::render_view( 'entities' );
 		}
+	}
+
+	/** Render the bulk clip-to-track linking workspace. */
+	public static function render_clip_track_linker() {
+		self::render_view( 'clip-track-linker' );
+	}
+
+	/** Save the track selected for each clip on the current linking page. */
+	private static function persist_clip_track_mappings() {
+		global $wpdb;
+		$submitted = wp_unslash( $_POST['clip_track_ids'] ?? array() );
+		if ( ! is_array( $submitted ) ) {
+			return new \WP_Error( 'invalid_clip_mappings', __( 'The submitted clip links were invalid.', 'charts' ) );
+		}
+
+		$clips_table = $wpdb->prefix . 'charts_videos';
+		$tracks_table = $wpdb->prefix . 'charts_tracks';
+		$validated = array();
+		foreach ( $submitted as $clip_id => $track_id ) {
+			$clip_id = absint( $clip_id );
+			$track_id = absint( $track_id );
+			if ( ! $clip_id || ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $clips_table WHERE id = %d", $clip_id ) ) ) {
+				return new \WP_Error( 'clip_not_found', __( 'A clip in this page no longer exists. Reload and try again.', 'charts' ) );
+			}
+			if ( $track_id && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $tracks_table WHERE id = %d", $track_id ) ) ) {
+				return new \WP_Error( 'track_not_found', __( 'One of the selected tracks no longer exists. Search and select it again.', 'charts' ) );
+			}
+			$validated[ $clip_id ] = $track_id ?: null;
+		}
+
+		foreach ( $validated as $clip_id => $track_id ) {
+			$updated = $wpdb->update( $clips_table, array( 'related_track_id' => $track_id ), array( 'id' => $clip_id ) );
+			if ( $updated === false ) {
+				return new \WP_Error( 'clip_link_save_failed', __( 'Some clip links could not be saved. Please retry this page.', 'charts' ) );
+			}
+		}
+
+		return count( $validated );
 	}
 
 	public static function render_insights() {

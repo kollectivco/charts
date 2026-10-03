@@ -198,6 +198,11 @@ $entity_type = $type;
 				</div>
 			<?php endif; ?>
 			
+			<?php if ( $type === 'video' ) : ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=charts-clip-track-linker' ) ); ?>" class="charts-btn-secondary" style="display:inline-flex; align-items:center; gap:7px; padding:9px 14px; text-decoration:none;">
+					<span class="dashicons dashicons-randomize" aria-hidden="true"></span><?php esc_html_e( 'Link Clips to Tracks', 'charts' ); ?>
+				</a>
+			<?php endif; ?>
 			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
 				<span class="dashicons dashicons-plus" style="margin-right:8px; vertical-align: middle;"></span>
 				<?php printf( __( 'Add New %s', 'charts' ), rtrim($page_title, 's') ); ?>
