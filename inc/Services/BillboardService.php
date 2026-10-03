@@ -318,7 +318,10 @@ class BillboardService {
 		$imported_count = 0;
 		foreach ( $items as $row ) {
 			if ( $row['item_type'] === 'artist' ) {
-				$artist_id = \Charts\Core\EntityManager::ensure_artist( $row['title'], array( 'image' => $row['image'] ) );
+				$artist_id = \Charts\Core\EntityManager::ensure_artist( $row['title'], array(
+					'image'           => $row['image'],
+					'display_name_en' => ! empty( $row['english_artist'] ) ? $row['english_artist'] : ( ! empty( $row['english_title'] ) ? $row['english_title'] : null ),
+				) );
 				if ( ! $artist_id ) continue;
 				if ( ! empty( $row['image'] ) ) {
 					$artist_image = $wpdb->get_var( $wpdb->prepare( "SELECT image FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) );
@@ -332,14 +335,16 @@ class BillboardService {
 			$title = $row['title'];
 			$primary_artist = ! empty( $row['artists'][0] ) ? $row['artists'][0] : $row['primary_artist'];
 
-			// Ensure Artist
+			// Ensure Artist with English metadata
 			$artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_artist, array(
-				'image' => $row['image']
+				'image'           => $row['image'],
+				'display_name_en' => ! empty( $row['english_artist'] ) ? $row['english_artist'] : null,
 			) );
 
-			// Ensure Track
+			// Ensure Track with English metadata
 			$track_id = \Charts\Core\EntityManager::ensure_track( $title, $artist_id, array(
-				'cover_image' => $row['image']
+				'cover_image' => $row['image'],
+				'title_en'    => ! empty( $row['english_title'] ) ? $row['english_title'] : null,
 			) );
 
 			// If track exists but has no cover_image, update it with Billboard HD image

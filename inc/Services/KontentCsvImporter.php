@@ -67,14 +67,17 @@ class KontentCsvImporter {
 			if (!$rank) continue;
 
 			if ($item_type === 'artist') {
-				$title = trim($data['Artist'] ?? '');
+				$title = trim($data['Artist'] ?? ($data['Artist Name'] ?? ($data['Name'] ?? '')));
+				$artist_en = trim($data['Artist (EN)'] ?? ($data['English Artist'] ?? ($data['Artist EN'] ?? ($data['Name EN'] ?? ''))));
 				if (!$title) continue;
 				$streams = $this->parse_number($data['Followers'] ?? '');
 
 				// Track before vs after to detect "created"
 				$artist_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_artists WHERE display_name = %s LIMIT 1", $title));
 				
-				$artist_id = \Charts\Core\EntityManager::ensure_artist($title);
+				$artist_id = \Charts\Core\EntityManager::ensure_artist($title, array(
+					'display_name_en' => $artist_en ?: null,
+				));
 				if ($artist_id) {
 					if (!$artist_exists) $created++;
 					
@@ -90,18 +93,24 @@ class KontentCsvImporter {
 					$errors[] = "Entity Creation Failed ($title)";
 				}
 			} else {
-				$title = trim($data['Song'] ?? '');
-				$artist_str = trim($data['Artist(s)'] ?? '');
+				$title = trim($data['Song'] ?? ($data['Track'] ?? ($data['Title'] ?? '')));
+				$title_en = trim($data['Song (EN)'] ?? ($data['English Song'] ?? ($data['Track EN'] ?? ($data['Title EN'] ?? ''))));
+				$artist_str = trim($data['Artist(s)'] ?? ($data['Artist'] ?? ($data['Artists'] ?? '')));
+				$artist_en = trim($data['Artist (EN)'] ?? ($data['English Artist'] ?? ($data['Artist EN'] ?? '')));
 				if (!$title || !$artist_str) continue;
 				$streams = $this->parse_number($data['Streams'] ?? '');
 
 				$artists = explode('،', str_replace(',', '،', $artist_str));
 				$primary_artist = trim($artists[0]);
 
-				$artist_id = \Charts\Core\EntityManager::ensure_artist($primary_artist);
+				$artist_id = \Charts\Core\EntityManager::ensure_artist($primary_artist, array(
+					'display_name_en' => $artist_en ?: null,
+				));
 				$track_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_tracks WHERE title = %s AND primary_artist_id = %d LIMIT 1", $title, $artist_id));
 
-				$track_id = \Charts\Core\EntityManager::ensure_track($title, $artist_id);
+				$track_id = \Charts\Core\EntityManager::ensure_track($title, $artist_id, array(
+					'title_en' => $title_en ?: null,
+				));
 
 				if ($track_id) {
 					if (!$track_exists) $created++;

@@ -117,22 +117,84 @@ class EntityManager {
 
 	/**
 	 * SQL-Baseline: Resolve or create an Artist.
+	 * Supports multi-lingual and cross-script resolution (Arabic vs English vs Franko).
 	 */
 	public static function ensure_artist( $display_name, $data = array() ) {
 		global $wpdb;
-		$normalized = mb_strtolower( trim( $display_name ) );
+		$display_name = trim( $display_name );
+		if ( empty( $display_name ) ) return 0;
+
+		$normalized = mb_strtolower( $display_name );
 		$table = $wpdb->prefix . 'charts_artists';
 
-		$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s", $normalized ) );
+		// 1. Exact match on normalized_name or display_name
+		$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s OR display_name = %s", $normalized, $display_name ) );
+
+		// 2. Match by Spotify ID if available
 		if ( ! $existing_id && ! empty( $data['spotify_id'] ) ) {
 			$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE spotify_id = %s", $data['spotify_id'] ) );
 		}
 
-		if ( $existing_id ) return (int) $existing_id;
+		// 3. Match by display_name_en (English/Latin name comparison)
+		$name_en = ! empty( $data['display_name_en'] ) ? trim( $data['display_name_en'] ) : '';
+		if ( ! $existing_id ) {
+			// If input name is English/Latin, check if it matches an existing artist's display_name_en
+			$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(display_name_en) = %s", $normalized ) );
+		}
+		if ( ! $existing_id && ! empty( $name_en ) ) {
+			$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(display_name_en) = %s OR normalized_name = %s", mb_strtolower( $name_en ), mb_strtolower( $name_en ) ) );
+		}
+
+		// 4. Match via Translation Dictionary (Arabic -> English translation)
+		if ( ! $existing_id && class_exists( '\Charts\Core\Translation' ) ) {
+			$trans = \Charts\Core\Translation::get( $display_name );
+			if ( $trans && $trans !== $display_name ) {
+				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s OR LOWER(display_name_en) = %s", mb_strtolower( $trans ), mb_strtolower( $trans ) ) );
+			}
+		}
+
+		// 5. Match via Franko / Arabizi approximation
+		if ( ! $existing_id && class_exists( '\Charts\Services\Normalizer' ) ) {
+			$franko = \Charts\Services\Normalizer::to_franko( $display_name );
+			if ( $franko && $franko !== $display_name ) {
+				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(display_name_en) = %s OR normalized_name = %s", mb_strtolower( $franko ), mb_strtolower( $franko ) ) );
+			}
+		}
+
+		if ( $existing_id ) {
+			$existing_id = (int) $existing_id;
+			// Backfill missing metadata on existing artist
+			$updates = array();
+			if ( ! empty( $data['image'] ) ) {
+				$curr_img = $wpdb->get_var( $wpdb->prepare( "SELECT image FROM $table WHERE id = %d", $existing_id ) );
+				if ( empty( $curr_img ) ) $updates['image'] = $data['image'];
+			}
+			if ( ! empty( $data['spotify_id'] ) ) {
+				$curr_spot = $wpdb->get_var( $wpdb->prepare( "SELECT spotify_id FROM $table WHERE id = %d", $existing_id ) );
+				if ( empty( $curr_spot ) ) $updates['spotify_id'] = $data['spotify_id'];
+			}
+			if ( ! empty( $name_en ) ) {
+				$curr_en = $wpdb->get_var( $wpdb->prepare( "SELECT display_name_en FROM $table WHERE id = %d", $existing_id ) );
+				if ( empty( $curr_en ) ) $updates['display_name_en'] = $name_en;
+			}
+			if ( ! empty( $updates ) ) {
+				$wpdb->update( $table, $updates, array( 'id' => $existing_id ) );
+			}
+			return $existing_id;
+		}
+
+		// 6. Create new artist record
 		$slug = \Charts\Services\Slugger::unique( $table, $display_name, 'artist' );
+
+		// Auto-derive display_name_en if missing
+		if ( empty( $name_en ) && class_exists( '\Charts\Services\Normalizer' ) ) {
+			$name_en = \Charts\Services\Normalizer::to_franko( $display_name );
+			if ( $name_en === $display_name ) $name_en = null;
+		}
 
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
+			'display_name_en' => $name_en ?: null,
 			'normalized_name' => $normalized,
 			'slug'            => $slug,
 			'spotify_id'      => $data['spotify_id'] ?? null,
@@ -144,22 +206,59 @@ class EntityManager {
 
 	/**
 	 * SQL-Baseline: Resolve or create a Track.
+	 * Cross-checks title in Arabic and English, and prevents duplicate tracks.
 	 */
 	public static function ensure_track( $title, $artist_id, $data = array() ) {
 		global $wpdb;
-		$normalized = mb_strtolower( trim( $title ) );
-		$table = $wpdb->prefix . 'charts_tracks';
+		$title = trim( $title );
+		if ( empty( $title ) ) return 0;
 
-		$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
+		$normalized = mb_strtolower( $title );
+		$table = $wpdb->prefix . 'charts_tracks';
+		$title_en = ! empty( $data['title_en'] ) ? trim( $data['title_en'] ) : '';
+
+		// 1. Exact match on normalized_title + artist
+		$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (normalized_title = %s OR title = %s) AND primary_artist_id = %d", $normalized, $title, $artist_id ) );
+
+		// 2. Match by Spotify ID if available
 		if ( ! $sql_id && ! empty( $data['spotify_id'] ) ) {
 			$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE spotify_id = %s", $data['spotify_id'] ) );
 		}
 
-		if ( $sql_id ) return (int) $sql_id;
+		// 3. Match by English title if available
+		if ( ! $sql_id ) {
+			$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(title_en) = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
+		}
+		if ( ! $sql_id && ! empty( $title_en ) ) {
+			$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND primary_artist_id = %d", mb_strtolower( $title_en ), mb_strtolower( $title_en ), $artist_id ) );
+		}
 
+		if ( $sql_id ) {
+			$sql_id = (int) $sql_id;
+			$updates = array();
+			if ( ! empty( $data['cover_image'] ) ) {
+				$curr_cov = $wpdb->get_var( $wpdb->prepare( "SELECT cover_image FROM $table WHERE id = %d", $sql_id ) );
+				if ( empty( $curr_cov ) ) $updates['cover_image'] = $data['cover_image'];
+			}
+			if ( ! empty( $data['spotify_id'] ) ) {
+				$curr_spot = $wpdb->get_var( $wpdb->prepare( "SELECT spotify_id FROM $table WHERE id = %d", $sql_id ) );
+				if ( empty( $curr_spot ) ) $updates['spotify_id'] = $data['spotify_id'];
+			}
+			if ( ! empty( $title_en ) ) {
+				$curr_en = $wpdb->get_var( $wpdb->prepare( "SELECT title_en FROM $table WHERE id = %d", $sql_id ) );
+				if ( empty( $curr_en ) ) $updates['title_en'] = $title_en;
+			}
+			if ( ! empty( $updates ) ) {
+				$wpdb->update( $table, $updates, array( 'id' => $sql_id ) );
+			}
+			return $sql_id;
+		}
+
+		// 4. Create new track record
 		$slug = \Charts\Services\Slugger::unique( $table, $title . '-' . $artist_id, 'track-' . $artist_id );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_en'          => $title_en ?: null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,

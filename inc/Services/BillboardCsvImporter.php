@@ -61,22 +61,26 @@ class BillboardCsvImporter {
 		
 		// Find columns dynamically
 		$idx_rank = -1; $idx_title = -1; $idx_artist = -1; $idx_image = -1;
+		$idx_artist_en = -1; $idx_title_en = -1;
 		$title_priority = $item_type === 'artist'
-			? array( 'arabic_artist', 'arabic_artist_name', 'artist', 'artist_name', 'name', 'english_artist' )
-			: array( 'arabic_title', 'track_name', 'song_title', 'title', 'track', 'song', 'english_title' );
+			? array( 'arabic_artist', 'arabic_artist_name', 'artist', 'artist_name', 'name' )
+			: array( 'arabic_title', 'track_name', 'song_title', 'title', 'track', 'song' );
 		$artist_priority = $item_type === 'artist'
-			? array( 'arabic_artist', 'arabic_artist_name', 'artist', 'artist_name', 'name', 'english_artist' )
-			: array( 'artist_names', 'arabic_artist', 'artist', 'primary_artist', 'artist_name', 'english_artist' );
+			? array( 'arabic_artist', 'arabic_artist_name', 'artist', 'artist_name', 'name' )
+			: array( 'artist_names', 'arabic_artist', 'artist', 'primary_artist', 'artist_name' );
 		$image_priority = array( 'image', 'image_url', 'cover_image', 'thumbnail', 'cover' );
 		$title_score = PHP_INT_MAX; $artist_score = PHP_INT_MAX; $image_score = PHP_INT_MAX;
 		foreach ($headers as $i => $h) {
 			$h_low = strtolower($h);
 			if (strpos($h_low, 'rank') !== false || $h_low === '#') $idx_rank = $i;
+			if (in_array($h_low, ['english_artist', 'english_artist_name', 'artist_en', 'artist_english', 'name_en'], true)) $idx_artist_en = $i;
+			if (in_array($h_low, ['english_title', 'track_en', 'song_en', 'title_en'], true)) $idx_title_en = $i;
+
 			$score = array_search( $h_low, $title_priority, true );
-			if ( $score === false && ( strpos( $h_low, 'track' ) !== false || strpos( $h_low, 'song' ) !== false || strpos( $h_low, 'title' ) !== false ) ) $score = 50;
+			if ( $score === false && ( strpos( $h_low, 'track' ) !== false || strpos( $h_low, 'song' ) !== false || strpos( $h_low, 'title' ) !== false ) && strpos( $h_low, 'en' ) === false ) $score = 50;
 			if ( $score !== false && $score < $title_score ) { $title_score = $score; $idx_title = $i; }
 			$score = array_search( $h_low, $artist_priority, true );
-			if ( $score === false && ( strpos( $h_low, 'artist' ) !== false || ( $item_type === 'artist' && in_array( $h_low, array( 'name', 'artist_name' ), true ) ) ) ) $score = 50;
+			if ( $score === false && ( strpos( $h_low, 'artist' ) !== false || ( $item_type === 'artist' && in_array( $h_low, array( 'name', 'artist_name' ), true ) ) ) && strpos( $h_low, 'en' ) === false ) $score = 50;
 			if ( $score !== false && $score < $artist_score ) { $artist_score = $score; $idx_artist = $i; }
 			$score = array_search( $h_low, $image_priority, true );
 			if ( $score === false && ( strpos( $h_low, 'image' ) !== false || strpos( $h_low, 'cover' ) !== false || strpos( $h_low, 'thumbnail' ) !== false ) ) $score = 50;
@@ -93,12 +97,17 @@ class BillboardCsvImporter {
 			$title = $idx_title > -1 ? trim($row[$idx_title] ?? '') : '';
 			$artist_str = $idx_artist > -1 ? trim($row[$idx_artist] ?? '') : '';
 			$image = $idx_image > -1 ? trim($row[$idx_image] ?? '') : '';
+			$artist_en = $idx_artist_en > -1 ? trim($row[$idx_artist_en] ?? '') : '';
+			$title_en = $idx_title_en > -1 ? trim($row[$idx_title_en] ?? '') : '';
 
 			if ( $item_type === 'artist' ) {
 				$artist_name = $artist_str ?: $title;
 				if ( ! $rank || ! $artist_name ) continue;
 				$safe_image = \Charts\Services\BillboardService::sideload_image( $image );
-				$artist_id = \Charts\Core\EntityManager::ensure_artist( $artist_name, array( 'image' => $safe_image ) );
+				$artist_id = \Charts\Core\EntityManager::ensure_artist( $artist_name, array(
+					'image'           => $safe_image,
+					'display_name_en' => $artist_en ?: null,
+				) );
 				if ( ! $artist_id ) continue;
 				$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'artist', $artist_id, array( 'rank' => $rank ), array( 'track_name' => $artist_name, 'artist_names' => $artist_name, 'cover_image' => $safe_image ) );
 				if ( $entry_id ) { $imported++; } else { $errors[] = "Entity Failure ($artist_name)"; }
@@ -116,9 +125,15 @@ class BillboardCsvImporter {
 			$artists = explode(',', $artist_str);
 			$primary_artist = trim($artists[0]);
 
-			$artist_id = \Charts\Core\EntityManager::ensure_artist($primary_artist);
+			$artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_artist, array(
+				'image'           => $image,
+				'display_name_en' => $artist_en ?: null,
+			) );
 			$track_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_tracks WHERE title = %s AND primary_artist_id = %d LIMIT 1", $title, $artist_id));
-			$track_id = \Charts\Core\EntityManager::ensure_track($title, $artist_id, ['cover_image' => $image]);
+			$track_id = \Charts\Core\EntityManager::ensure_track( $title, $artist_id, array(
+				'cover_image' => $image,
+				'title_en'    => $title_en ?: null,
+			) );
 
 			if ($track_id) {
 				if (!$track_exists) $created++;
