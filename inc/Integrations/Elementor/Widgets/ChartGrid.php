@@ -266,7 +266,7 @@ class ChartGrid extends Widget_Base {
 ?>
 		<article class="kc-chart-card <?php echo $shadow_class; ?>" style="border: 1px solid var(--k-border); overflow: hidden; height: 100%; display: flex; flex-direction: column;">
 			<div class="kc-card-hero" style="position: relative; height: 180px; overflow: hidden; background: <?php echo $accent; ?>; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px;">
-				<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+				<img src="<?php echo esc_url($card_image); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; opacity: 0.8;">
 				<div class="kc-hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%);"></div>
 				
 				<div style="position: relative; z-index: 2;">

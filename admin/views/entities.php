@@ -929,10 +929,26 @@ window.openSmartDeduplicatorModal = function() {
 				return;
 			}
 
-			let html = '<p style="margin-bottom: 15px; font-size: 13px; color: #666;">We found <strong>' + clusters.length + '</strong> clusters of duplicate entities.</p>';
+			const mergeAllBtnFooter = document.getElementById('btn-smart-merge-all');
+			if (mergeAllBtnFooter) {
+				mergeAllBtnFooter.style.display = clusters.length > 0 ? 'inline-flex' : 'none';
+				mergeAllBtnFooter.disabled = false;
+				mergeAllBtnFooter.innerHTML = `<span class="dashicons dashicons-admin-links" style="margin-top:2px;"></span> Merge All (${clusters.length} Clusters)`;
+			}
+
+			let html = `
+				<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding-bottom:12px; border-bottom:1px solid #e5e7eb;">
+					<p style="margin:0; font-size: 13px; color: #475569;">
+						We found <strong>${clusters.length}</strong> clusters of duplicate entities.
+					</p>
+					<button class="charts-btn-primary" onclick="mergeAllSmartClusters()" id="btn-smart-merge-all-top" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px; border-radius: 6px; cursor: pointer;">
+						<span class="dashicons dashicons-admin-links" style="margin-top:1px;"></span> Merge All Clusters
+					</button>
+				</div>
+			`;
 			
 			clusters.forEach((cluster, idx) => {
-				html += `<div style="background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+				html += `<div id="cluster-card-${idx}" style="background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
 					<h4 style="margin: 0 0 10px 0; font-size: 14px;">Cluster ${idx + 1}: <span style="color:#d946ef;">${cluster.normalized_name}</span></h4>
 					<div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 15px;">`;
 				
@@ -974,6 +990,96 @@ window.closeSmartDeduplicatorModal = function() {
 	document.getElementById('smart-dedup-modal').style.display = 'none';
 };
 
+window.mergeAllSmartClusters = async function() {
+	if (!window.smartClusters || !window.smartClusters.length) {
+		alert('No clusters available to merge.');
+		return;
+	}
+
+	const batch = [];
+	window.smartClusters.forEach((cluster, idx) => {
+		const master = cluster.entities.find(e => e.is_master);
+		const duplicates = cluster.entities.filter(e => !e.is_master).map(e => e.id);
+		if (master && duplicates.length > 0) {
+			batch.push({
+				cluster_idx: idx,
+				master_id: master.id,
+				duplicate_ids: duplicates
+			});
+		}
+	});
+
+	if (batch.length === 0) {
+		alert('No duplicates found in clusters.');
+		return;
+	}
+
+	if (!confirm(`Merge all ${batch.length} duplicate clusters into their suggested masters? This cannot be undone.`)) {
+		return;
+	}
+
+	const topBtn = document.getElementById('btn-smart-merge-all-top');
+	const footerBtn = document.getElementById('btn-smart-merge-all');
+	if (topBtn) { topBtn.disabled = true; topBtn.innerHTML = 'Merging All...'; }
+	if (footerBtn) { footerBtn.disabled = true; footerBtn.innerHTML = 'Merging All...'; }
+
+	// Set each cluster button to pending
+	batch.forEach(item => {
+		const b = document.getElementById('btn-smart-merge-' + item.cluster_idx);
+		if (b) { b.disabled = true; b.innerHTML = 'Merging...'; }
+	});
+
+	const formData = new FormData();
+	formData.append('action', 'charts_process_merge');
+	formData.append('_wpnonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
+	formData.append('type', bulkMergeType);
+	formData.append('batch', JSON.stringify(batch));
+
+	try {
+		const response = await fetch(ajaxurl, { method: 'POST', body: formData });
+		const res = await response.json();
+
+		if (res.success) {
+			batch.forEach(item => {
+				const b = document.getElementById('btn-smart-merge-' + item.cluster_idx);
+				if (b) {
+					b.innerHTML = 'Merged!';
+					b.style.background = '#166534';
+					b.style.borderColor = '#166534';
+				}
+				const card = document.getElementById('cluster-card-' + item.cluster_idx);
+				if (card) {
+					card.style.opacity = '0.7';
+					card.style.background = '#f0fdf4';
+				}
+			});
+
+			if (topBtn) {
+				topBtn.innerHTML = 'All Merged!';
+				topBtn.style.background = '#166534';
+			}
+			if (footerBtn) {
+				footerBtn.innerHTML = 'All Merged!';
+				footerBtn.style.background = '#166534';
+			}
+
+			alert(res.data?.message || 'All duplicate clusters merged successfully!');
+		} else {
+			alert('Merge failed: ' + (res.data?.message || 'Unknown error'));
+			if (topBtn) { topBtn.disabled = false; topBtn.innerHTML = 'Merge All Clusters'; }
+			if (footerBtn) { footerBtn.disabled = false; footerBtn.innerHTML = 'Merge All Clusters'; }
+			batch.forEach(item => {
+				const b = document.getElementById('btn-smart-merge-' + item.cluster_idx);
+				if (b) { b.disabled = false; b.innerHTML = 'Retry'; }
+			});
+		}
+	} catch (err) {
+		alert('Network error while merging all: ' + err.message);
+		if (topBtn) { topBtn.disabled = false; topBtn.innerHTML = 'Merge All Clusters'; }
+		if (footerBtn) { footerBtn.disabled = false; footerBtn.innerHTML = 'Merge All Clusters'; }
+	}
+};
+
 window.processSmartMerge = function(clusterIndex) {
 	const cluster = window.smartClusters[clusterIndex];
 	const master = cluster.entities.find(e => e.is_master);
@@ -1007,11 +1113,21 @@ window.processSmartMerge = function(clusterIndex) {
 			btn.innerHTML = 'Merged!';
 			btn.style.background = '#166534';
 			btn.style.borderColor = '#166534';
+			const card = document.getElementById('cluster-card-' + clusterIndex);
+			if (card) {
+				card.style.opacity = '0.7';
+				card.style.background = '#f0fdf4';
+			}
 		} else {
 			alert('Merge failed: ' + res.data.message);
 			btn.disabled = false;
 			btn.innerHTML = 'Retry';
 		}
+	})
+	.catch(err => {
+		alert('Network error: ' + err.message);
+		btn.disabled = false;
+		btn.innerHTML = 'Retry';
 	});
 };
 
@@ -1097,8 +1213,15 @@ window.processSmartMerge = function(clusterIndex) {
 		<div id="smart-dedup-results" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
 			<!-- Results dynamically injected here -->
 		</div>
-		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; text-align: right;">
-			<button class="charts-btn-secondary" onclick="window.location.reload()">Done</button>
+		<div style="padding: 15px 20px; background: #f9fafb; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+			<div>
+				<button id="btn-smart-merge-all" class="charts-btn-primary" onclick="mergeAllSmartClusters()" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-admin-links" style="margin-top:2px;"></span> Merge All Clusters
+				</button>
+			</div>
+			<div>
+				<button class="charts-btn-secondary" onclick="window.location.reload()">Done</button>
+			</div>
 		</div>
 	</div>
 </div>

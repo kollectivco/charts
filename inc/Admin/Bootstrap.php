@@ -2000,14 +2000,74 @@ class Bootstrap {
 		}
 
 		$type = sanitize_text_field( $_POST['type'] ?? '' );
+		require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
+
+		// Support batch merge in handle_process_merge
+		$batch = array();
+		if ( ! empty( $_POST['batch'] ) ) {
+			$raw_batch = wp_unslash( $_POST['batch'] );
+			$decoded = is_string( $raw_batch ) ? json_decode( $raw_batch, true ) : $raw_batch;
+			if ( is_array( $decoded ) ) {
+				$batch = $decoded;
+			}
+		}
+
+		if ( ! empty( $batch ) ) {
+			$merged_count = 0;
+			$errors = array();
+
+			foreach ( $batch as $item ) {
+				$m_id = intval( $item['master_id'] ?? 0 );
+				$d_ids = isset( $item['duplicate_ids'] ) ? array_map( 'intval', (array) $item['duplicate_ids'] ) : array();
+				if ( ! $m_id || empty( $d_ids ) ) {
+					continue;
+				}
+
+				if ( $type === 'artists' ) {
+					$res = \Charts\Core\MergeEngine::merge_artists( $m_id, $d_ids, false );
+				} elseif ( $type === 'tracks' ) {
+					$res = \Charts\Core\MergeEngine::merge_tracks( $m_id, $d_ids, false );
+				} elseif ( $type === 'videos' ) {
+					$res = \Charts\Core\MergeEngine::merge_videos( $m_id, $d_ids, false );
+				} elseif ( $type === 'albums' ) {
+					$res = \Charts\Core\MergeEngine::merge_albums( $m_id, $d_ids, false );
+				} else {
+					wp_send_json_error( array( 'message' => 'Invalid merge type.' ) );
+					return;
+				}
+
+				if ( ! empty( $res['success'] ) ) {
+					$merged_count += count( $d_ids );
+				} else {
+					$errors[] = $res['message'] ?? 'Merge error';
+				}
+			}
+
+			if ( $merged_count > 0 ) {
+				\Charts\Core\Intelligence::recalculate_all();
+			}
+			self::clear_frontend_caches();
+
+			if ( $merged_count > 0 ) {
+				wp_send_json_success( array(
+					'message' => sprintf( 'Successfully merged %d duplicates across %d clusters.', $merged_count, count( $batch ) ),
+					'merged_count' => $merged_count,
+					'errors' => $errors,
+				) );
+			} else {
+				wp_send_json_error( array(
+					'message' => ! empty( $errors ) ? implode( '; ', $errors ) : 'No entities merged.',
+				) );
+			}
+			return;
+		}
+
 		$master_id = intval( $_POST['master_id'] ?? 0 );
 		$duplicate_ids = isset( $_POST['duplicate_ids'] ) ? array_map( 'intval', (array) $_POST['duplicate_ids'] ) : array();
 
 		if ( ! $master_id || empty( $duplicate_ids ) ) {
 			wp_send_json_error( array( 'message' => 'Missing data.' ) );
 		}
-
-		require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
 
 		if ( $type === 'artists' ) {
 			$result = \Charts\Core\MergeEngine::merge_artists( $master_id, $duplicate_ids );
@@ -2507,6 +2567,69 @@ class Bootstrap {
 		$entity_type = sanitize_text_field( $_POST['entity_type'] ?? '' );
 		
 		if ( $action_type === 'merge' ) {
+			require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
+			$recalculate = ! empty( $_POST['recalculate'] );
+
+			// Check if a batch of merges was sent: $_POST['batch'] as JSON string or array
+			$batch = array();
+			if ( ! empty( $_POST['batch'] ) ) {
+				$raw_batch = wp_unslash( $_POST['batch'] );
+				$decoded = is_string( $raw_batch ) ? json_decode( $raw_batch, true ) : $raw_batch;
+				if ( is_array( $decoded ) ) {
+					$batch = $decoded;
+				}
+			}
+
+			if ( ! empty( $batch ) ) {
+				$merged_count = 0;
+				$errors = array();
+
+				foreach ( $batch as $item ) {
+					$m_id = intval( $item['master_id'] ?? 0 );
+					$d_ids = isset( $item['duplicate_ids'] ) ? array_map( 'intval', (array) $item['duplicate_ids'] ) : array();
+					if ( ! $m_id || empty( $d_ids ) ) {
+						continue;
+					}
+
+					if ( $entity_type === 'artists' ) {
+						$res = \Charts\Core\MergeEngine::merge_artists( $m_id, $d_ids, false );
+					} elseif ( $entity_type === 'tracks' ) {
+						$res = \Charts\Core\MergeEngine::merge_tracks( $m_id, $d_ids, false );
+					} elseif ( $entity_type === 'videos' ) {
+						$res = \Charts\Core\MergeEngine::merge_videos( $m_id, $d_ids, false );
+					} elseif ( $entity_type === 'albums' ) {
+						$res = \Charts\Core\MergeEngine::merge_albums( $m_id, $d_ids, false );
+					} else {
+						wp_send_json_error( array( 'message' => 'Invalid entity type for merge.' ) );
+						return;
+					}
+
+					if ( ! empty( $res['success'] ) ) {
+						$merged_count += count( $d_ids );
+					} else {
+						$errors[] = $res['message'] ?? 'Merge error';
+					}
+				}
+
+				if ( $recalculate && $merged_count > 0 ) {
+					\Charts\Core\Intelligence::recalculate_all();
+				}
+				self::clear_frontend_caches();
+
+				if ( $merged_count > 0 ) {
+					wp_send_json_success( array(
+						'message' => sprintf( 'Successfully merged %d duplicates.', $merged_count ),
+						'merged_count' => $merged_count,
+						'errors' => $errors,
+					) );
+				} else {
+					wp_send_json_error( array(
+						'message' => ! empty( $errors ) ? implode( '; ', $errors ) : 'No entities merged.',
+					) );
+				}
+				return;
+			}
+
 			$master_id = intval( $_POST['master_id'] ?? 0 );
 			$duplicate_ids = isset( $_POST['duplicate_ids'] ) ? array_map( 'intval', (array) $_POST['duplicate_ids'] ) : array();
 
@@ -2514,15 +2637,17 @@ class Bootstrap {
 				wp_send_json_error( array( 'message' => 'Missing master or duplicate IDs.' ) );
 			}
 
-			require_once CHARTS_PATH . 'inc/Core/MergeEngine.php';
+			// Single merge operation
+			$run_recalc = isset( $_POST['recalculate'] ) ? (bool) $_POST['recalculate'] : true;
+
 			if ( $entity_type === 'artists' ) {
-				$result = \Charts\Core\MergeEngine::merge_artists( $master_id, $duplicate_ids );
+				$result = \Charts\Core\MergeEngine::merge_artists( $master_id, $duplicate_ids, $run_recalc );
 			} elseif ( $entity_type === 'tracks' ) {
-				$result = \Charts\Core\MergeEngine::merge_tracks( $master_id, $duplicate_ids );
+				$result = \Charts\Core\MergeEngine::merge_tracks( $master_id, $duplicate_ids, $run_recalc );
 			} elseif ( $entity_type === 'videos' ) {
-				$result = \Charts\Core\MergeEngine::merge_videos( $master_id, $duplicate_ids );
+				$result = \Charts\Core\MergeEngine::merge_videos( $master_id, $duplicate_ids, $run_recalc );
 			} elseif ( $entity_type === 'albums' ) {
-				$result = \Charts\Core\MergeEngine::merge_albums( $master_id, $duplicate_ids );
+				$result = \Charts\Core\MergeEngine::merge_albums( $master_id, $duplicate_ids, $run_recalc );
 			} else {
 				wp_send_json_error( array( 'message' => 'Invalid entity type for merge.' ) );
 				return;
@@ -2691,13 +2816,13 @@ class Bootstrap {
 
 				if (!empty($to_merge)) {
 					if ( $type === 'artists' ) {
-						$res = \Charts\Core\MergeEngine::merge_artists( $master->id, $to_merge );
+						$res = \Charts\Core\MergeEngine::merge_artists( $master->id, $to_merge, false );
 					} elseif ( $type === 'tracks' ) {
-						$res = \Charts\Core\MergeEngine::merge_tracks( $master->id, $to_merge );
+						$res = \Charts\Core\MergeEngine::merge_tracks( $master->id, $to_merge, false );
 					} elseif ( $type === 'videos' ) {
-						$res = \Charts\Core\MergeEngine::merge_videos( $master->id, $to_merge );
+						$res = \Charts\Core\MergeEngine::merge_videos( $master->id, $to_merge, false );
 					} elseif ( $type === 'albums' ) {
-						$res = \Charts\Core\MergeEngine::merge_albums( $master->id, $to_merge );
+						$res = \Charts\Core\MergeEngine::merge_albums( $master->id, $to_merge, false );
 					}
 					if (isset($res['success']) && $res['success']) {
 						$total_merged += count($to_merge);

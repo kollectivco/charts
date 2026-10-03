@@ -1084,8 +1084,8 @@ $pending_review = 0; // Calculated via AJAX duplicate scanner
 <div id="bento-reconcile-overlay" class="bento-reconcile-overlay">
     <div class="bento-reconcile-box">
         <div class="bento-spin"></div>
-        <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px;">Reconciling Database</div>
-        <div style="font-size:13px;color:#64748b;">Auto-merging spelling variations &amp; transliterated alternates…</div>
+        <div id="bento-reconcile-title" style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px;">Reconciling Database</div>
+        <div id="bento-reconcile-sub" style="font-size:13px;color:#64748b;">Auto-merging spelling variations &amp; transliterated alternates…</div>
     </div>
 </div>
 
@@ -1307,26 +1307,39 @@ function executeMerge(masterId, duplicateIds) {
 }
 
 function _doMerge(masterId, duplicateIds) {
+    const overlay = document.getElementById('bento-reconcile-overlay');
+    const titleEl = document.getElementById('bento-reconcile-title');
+    const subEl   = document.getElementById('bento-reconcile-sub');
+    if (titleEl) titleEl.textContent = 'Merging Entities';
+    if (subEl) subEl.textContent = 'Transferring history and relationships…';
+    if (overlay) overlay.classList.add('open');
+
     const fd = new FormData();
     fd.append('action', 'charts_bulk_action_ajax');
     fd.append('_wpnonce', _nonce);
     fd.append('action_type', 'merge');
     fd.append('entity_type', currentEntityType);
     fd.append('master_id', masterId);
+    fd.append('recalculate', '1');
     duplicateIds.forEach(id => fd.append('duplicate_ids[]', id));
 
     fetch(ajaxurl, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
+            if (overlay) overlay.classList.remove('open');
             if (res.success) {
                 showToast(res.data?.message || 'Merge successful.', 'success');
                 loadClusters(currentEntityType);
                 loadRecentMerges();
+                clearSelection();
             } else {
                 showToast(res.data?.message || 'Merge failed.', 'error');
             }
         })
-        .catch(() => showToast('Network error during merge.', 'error'));
+        .catch(err => {
+            if (overlay) overlay.classList.remove('open');
+            showToast('Network error during merge.', 'error');
+        });
 }
 
 function executeDelete(id) {
@@ -1373,26 +1386,51 @@ function bulkMergeSelected() {
         merges[m].push(parseInt(c.value));
     });
 
+    const batchList = Object.entries(merges).map(([mId, dIds]) => ({
+        master_id: parseInt(mId),
+        duplicate_ids: dIds
+    }));
+
     bentoConfirm({
         icon: '🔗',
         title: 'Bulk Merge',
         msg: `Merge ${chks.length} selected duplicate(s) into their respective masters?`,
         confirmLabel: 'Merge All',
         confirmClass: 'bento-btn-violet',
-        onConfirm: () => {
-            const promises = Object.entries(merges).map(([mId, dIds]) => {
+        onConfirm: async () => {
+            const overlay = document.getElementById('bento-reconcile-overlay');
+            const titleEl = document.getElementById('bento-reconcile-title');
+            const subEl   = document.getElementById('bento-reconcile-sub');
+            if (titleEl) titleEl.textContent = 'Merging Selected Entities';
+            if (subEl) subEl.textContent = `Merging ${chks.length} item(s) across ${batchList.length} master group(s)…`;
+            if (overlay) overlay.classList.add('open');
+
+            try {
                 const fd = new FormData();
                 fd.append('action', 'charts_bulk_action_ajax');
                 fd.append('_wpnonce', _nonce);
                 fd.append('action_type', 'merge');
                 fd.append('entity_type', currentEntityType);
-                fd.append('master_id', mId);
-                dIds.forEach(id => fd.append('duplicate_ids[]', id));
-                return fetch(ajaxurl, { method: 'POST', body: fd });
-            });
-            Promise.all(promises)
-                .then(() => { showToast('Bulk merge completed.', 'success'); loadClusters(currentEntityType); loadRecentMerges(); clearSelection(); })
-                .catch(() => showToast('Some merges failed.', 'error'));
+                fd.append('recalculate', '1');
+                fd.append('batch', JSON.stringify(batchList));
+
+                const response = await fetch(ajaxurl, { method: 'POST', body: fd });
+                const res = await response.json();
+
+                if (overlay) overlay.classList.remove('open');
+
+                if (res.success) {
+                    showToast(res.data?.message || 'Bulk merge completed successfully.', 'success');
+                    clearSelection();
+                    loadClusters(currentEntityType);
+                    loadRecentMerges();
+                } else {
+                    showToast(res.data?.message || 'Some merges could not be completed.', 'error');
+                }
+            } catch (err) {
+                if (overlay) overlay.classList.remove('open');
+                showToast('Network error during bulk merge.', 'error');
+            }
         }
     });
 }
@@ -1425,6 +1463,10 @@ function triggerAutoReconcile() {
         confirmLabel: 'Run',
         confirmClass: 'bento-btn-violet',
         onConfirm: () => {
+            const titleEl = document.getElementById('bento-reconcile-title');
+            const subEl   = document.getElementById('bento-reconcile-sub');
+            if (titleEl) titleEl.textContent = 'Reconciling Database';
+            if (subEl) subEl.textContent = 'Auto-merging spelling variations & transliterated alternates…';
             document.getElementById('bento-reconcile-overlay').classList.add('open');
             const fd = new FormData();
             fd.append('action', 'charts_auto_reconcile');

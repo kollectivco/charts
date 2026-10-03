@@ -11,6 +11,20 @@ class Templates {
     
     public static function force_elementor_template( $template ) {
         if ( is_singular( 'charts_template' ) ) {
+            // If Elementor is in preview/edit mode or has a custom page template (e.g., Canvas, Header/Footer), respect it
+            if ( class_exists( '\Elementor\Plugin' ) ) {
+                $document = \Elementor\Plugin::$instance->documents->get( get_the_ID() );
+                if ( $document && $document->is_built_with_elementor() ) {
+                    $page_template = $document->get_meta( '_wp_page_template' );
+                    if ( $page_template && 'default' !== $page_template ) {
+                        $elementor_template = \Elementor\Plugin::$instance->modules_manager->get_modules( 'page-templates' )->template_include( $template );
+                        if ( $elementor_template ) {
+                            return $elementor_template;
+                        }
+                    }
+                }
+            }
+
             // Provide a guaranteed safe fallback template that outputs the_content() so Elementor can hook into it
             $fallback = CHARTS_PATH . 'public/templates/single-charts_template.php';
             if ( file_exists( $fallback ) ) {
@@ -53,6 +67,12 @@ class Templates {
     }
 
     public static function enable_elementor() {
+        add_post_type_support( 'charts_template', 'elementor' );
+
+        add_filter( 'elementor/editor/is_edit_mode', function( $is_edit ) {
+            return $is_edit;
+        } );
+
         $cpt_support = get_option( 'elementor_cpt_support' );
         if ( ! $cpt_support ) {
             $cpt_support = [ 'page', 'post' ];

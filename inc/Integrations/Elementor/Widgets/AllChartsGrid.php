@@ -206,7 +206,7 @@ class AllChartsGrid extends Widget_Base {
 
 		/* COVER */
 		.<?php echo $uid; ?> .kc-acg-cover { position: relative; height: 200px; overflow: hidden; }
-		.<?php echo $uid; ?> .kc-acg-cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s ease; }
+		.<?php echo $uid; ?> .kc-acg-cover img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; transition: transform 0.6s ease; }
 		.<?php echo $uid; ?> .kc-acg-card:hover .kc-acg-cover img { transform: scale(1.05); }
 		.<?php echo $uid; ?> .kc-acg-cover-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0) 100%); }
 		.<?php echo $uid; ?> .kc-acg-cover-meta { position: absolute; bottom: 16px; right: 16px; left: 16px; }

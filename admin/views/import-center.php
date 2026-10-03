@@ -110,29 +110,33 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 						<!-- Market Selection -->
 						<?php 
 						$markets = get_option('charts_markets', []);
-						if (empty($markets)) : ?>
-							<div class="market-warning">
-								<span class="dashicons dashicons-warning"></span>
-								<span>No Markets defined. <a href="<?php echo admin_url('admin.php?page=charts-settings#markets'); ?>">Configure Territories &rarr;</a></span>
-							</div>
-						<?php else : ?>
-							<div class="market-selector-wrap">
-								<label class="premium-label"><?php _e( 'Target Market / Region', 'charts' ); ?></label>
-								<div class="market-dropdown-custom">
-									<select name="country" id="import-country" class="premium-select" required>
-										<option value=""><?php _e( '— Select Market —', 'charts' ); ?></option>
-										<?php foreach ($markets as $m) : ?>
-											<option value="<?php echo esc_attr(strtolower($m['code'])); ?>">
-												🌍 <?php echo esc_html($m['name']); ?> (<?php echo esc_html(strtoupper($m['code'])); ?>)
-											</option>
-										<?php endforeach; ?>
-									</select>
-									<div class="select-affordance">
-										<span class="dashicons dashicons-arrow-down-alt2"></span>
-									</div>
+						if (empty($markets) || !is_array($markets)) {
+							$markets = [
+								['code' => 'eg', 'name' => 'Egypt'],
+								['code' => 'sa', 'name' => 'Saudi Arabia'],
+								['code' => 'ae', 'name' => 'UAE'],
+								['code' => 'kw', 'name' => 'Kuwait'],
+								['code' => 'qa', 'name' => 'Qatar'],
+								['code' => 'global', 'name' => 'Global']
+							];
+						}
+						?>
+						<div class="market-selector-wrap">
+							<label class="premium-label"><?php _e( 'Target Market / Region', 'charts' ); ?></label>
+							<div class="market-dropdown-custom">
+								<select name="country" id="import-country" class="premium-select" required>
+									<option value=""><?php _e( '— Select Market —', 'charts' ); ?></option>
+									<?php foreach ($markets as $m) : ?>
+										<option value="<?php echo esc_attr(strtolower($m['code'])); ?>">
+											🌍 <?php echo esc_html($m['name']); ?> (<?php echo esc_html(strtoupper($m['code'])); ?>)
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<div class="select-affordance">
+									<span class="dashicons dashicons-arrow-down-alt2"></span>
 								</div>
 							</div>
-						<?php endif; ?>
+						</div>
 
 						<div class="platform-grid">
 							<label class="platform-option">
@@ -693,16 +697,30 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 	font-size: 14px;
 	font-weight: 600;
 	background: #fff;
+	color: #0f172a;
+}
+
+select.premium-select {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	padding-right: 44px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 14px center;
+	background-size: 16px;
+}
+
+select.premium-select:disabled {
+	background-color: #f8fafc;
+	color: #94a3b8;
+	opacity: 0.85;
+	cursor: not-allowed;
 }
 
 .market-dropdown-custom { position: relative; }
 .select-affordance {
-	position: absolute;
-	right: 15px;
-	top: 50%;
-	transform: translateY(-50%);
-	pointer-events: none;
-	color: #94a3b8;
+	display: none;
 }
 
 .market-warning {

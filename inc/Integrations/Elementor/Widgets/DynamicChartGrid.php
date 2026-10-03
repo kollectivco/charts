@@ -117,7 +117,7 @@ class DynamicChartGrid extends Widget_Base {
 		.' . $uid . '-artist { color: #cbd5e1; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 		.' . $uid . '-meta { display: flex; gap: 8px; margin-top: 12px; }
 		.' . $uid . '-badge { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 4px; }
-		.' . $uid . '-img { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1; }
+		.' . $uid . '-img { position: absolute; inset: 0; background-size: cover; background-position: top center; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1; }
 		.' . $uid . '-card { background: #0f172a; border-radius: 16px; position: relative; overflow: hidden; cursor: pointer; transition: all 0.4s; }
 		';
 

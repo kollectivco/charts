@@ -11,9 +11,10 @@ class MergeEngine {
 	 *
 	 * @param int   $master_id     The canonical artist ID to keep.
 	 * @param array $duplicate_ids Array of artist IDs to merge into the master.
+	 * @param bool  $recalculate   Whether to trigger full intelligence recalculation immediately.
 	 * @return array
 	 */
-	public static function merge_artists( $master_id, $duplicate_ids ) {
+	public static function merge_artists( $master_id, $duplicate_ids, $recalculate = true ) {
 		global $wpdb;
 		
 		$master_id = intval( $master_id );
@@ -140,9 +141,12 @@ class MergeEngine {
 					$master_artist, $master_id
 				) );
 			}
-			\Charts\Core\Intelligence::recalculate_all();
-
 			$wpdb->query( 'COMMIT' );
+
+			if ( $recalculate ) {
+				\Charts\Core\Intelligence::recalculate_all();
+			}
+
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d artists into master ID %d.', count($duplicate_ids), $master_id ) );
 
 		} catch ( \Exception $e ) {
@@ -156,9 +160,10 @@ class MergeEngine {
 	 *
 	 * @param int   $master_id     The canonical track ID to keep.
 	 * @param array $duplicate_ids Array of track IDs to merge into the master.
+	 * @param bool  $recalculate   Whether to trigger full intelligence recalculation immediately.
 	 * @return array
 	 */
-	public static function merge_tracks( $master_id, $duplicate_ids ) {
+	public static function merge_tracks( $master_id, $duplicate_ids, $recalculate = true ) {
 		global $wpdb;
 		
 		$master_id = intval( $master_id );
@@ -263,9 +268,13 @@ class MergeEngine {
 				 WHERE e.item_type = 'track' AND e.item_id = %d",
 				$master_id
 			) );
-			\Charts\Core\Intelligence::recalculate_all();
 
 			$wpdb->query( 'COMMIT' );
+
+			if ( $recalculate ) {
+				\Charts\Core\Intelligence::recalculate_all();
+			}
+
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d tracks into master ID %d.', count($duplicate_ids), $master_id ) );
 
 		} catch ( \Exception $e ) {
@@ -279,9 +288,10 @@ class MergeEngine {
 	 *
 	 * @param int   $master_id     The canonical video ID to keep.
 	 * @param array $duplicate_ids Array of video IDs to merge into the master.
+	 * @param bool  $recalculate   Whether to trigger full intelligence recalculation immediately.
 	 * @return array
 	 */
-	public static function merge_videos( $master_id, $duplicate_ids ) {
+	public static function merge_videos( $master_id, $duplicate_ids, $recalculate = true ) {
 		global $wpdb;
 		
 		$master_id = intval( $master_id );
@@ -361,6 +371,11 @@ class MergeEngine {
 			) );
 
 			$wpdb->query( 'COMMIT' );
+
+			if ( $recalculate ) {
+				\Charts\Core\Intelligence::recalculate_all();
+			}
+
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d videos into master ID %d.', count($duplicate_ids), $master_id ) );
 		} catch ( \Exception $e ) {
 			$wpdb->query( 'ROLLBACK' );
@@ -373,9 +388,10 @@ class MergeEngine {
 	 *
 	 * @param int   $master_id     The canonical album ID to keep.
 	 * @param array $duplicate_ids Array of album IDs to merge into the master.
+	 * @param bool  $recalculate   Whether to trigger full intelligence recalculation immediately.
 	 * @return array
 	 */
-	public static function merge_albums( $master_id, $duplicate_ids ) {
+	public static function merge_albums( $master_id, $duplicate_ids, $recalculate = true ) {
 		global $wpdb;
 		
 		$master_id = intval( $master_id );
@@ -440,6 +456,11 @@ class MergeEngine {
 			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_albums WHERE id IN ($ids_in)" );
 
 			$wpdb->query( 'COMMIT' );
+
+			if ( $recalculate ) {
+				\Charts\Core\Intelligence::recalculate_all();
+			}
+
 			return array( 'success' => true, 'message' => sprintf( 'Successfully merged %d albums into master ID %d.', count($duplicate_ids), $master_id ) );
 		} catch ( \Exception $e ) {
 			$wpdb->query( 'ROLLBACK' );
