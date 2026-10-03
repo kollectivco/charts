@@ -267,6 +267,8 @@ $entity_type = $type;
 					<div style="padding: 15px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; background: #fafafa;">
 						<select name="bulk_action_type" id="bulk_action_type" class="charts-input" style="width: 200px; margin: 0;">
 							<option value=""><?php _e( 'Bulk Actions', 'charts' ); ?></option>
+							<option value="bulk_find_duplicates"><?php _e( 'Search for Duplicates', 'charts' ); ?></option>
+							<option value="bulk_sync_selected"><?php _e( 'Sync Selected', 'charts' ); ?></option>
 							<option value="bulk_promote"><?php _e( 'Migrate to Native', 'charts' ); ?></option>
 							<option value="bulk_merge"><?php _e( 'Merge Selected', 'charts' ); ?></option>
 							<option value="delete" style="color:red;"><?php _e( 'Delete Permanently', 'charts' ); ?></option>
@@ -431,7 +433,7 @@ $entity_type = $type;
 	<!-- Sync Modal -->
 	<div id="sync-progress-modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;">
 		<div class="charts-card" style="width: 500px; padding: 40px; text-align: center;">
-			<h2 id="sync-status-title"><?php printf( __( 'Syncing %s...', 'charts' ), $type === 'artist' ? 'Artist Profiles' : 'Track Metadata' ); ?></h2>
+			<h2 id="sync-status-title"><?php printf( __( 'Syncing %s...', 'charts' ), $type === 'artist' ? 'Artist Profiles' : ( $type === 'video' ? 'Clip Metadata' : 'Track Metadata' ) ); ?></h2>
 			<div style="margin: 30px 0;">
 				<div style="height: 10px; background: #eee; border-radius: 5px; overflow: hidden;">
 					<div id="sync-progress-bar" style="width: 0%; height: 100%; background: #6366f1; transition: width 0.3s;"></div>
@@ -442,8 +444,8 @@ $entity_type = $type;
 				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
 					<div>Processed: <b id="res-processed">0</b></div>
 					<div>Updated: <b id="res-updated">0</b></div>
-					<div>Spotify Linked: <b id="res-spotify">0</b></div>
-					<div id="res-platform-label"><?php echo $type === 'artist' ? 'YouTube Linked' : 'Covers Updated'; ?>: <b id="res-platform">0</b></div>
+					<div><span id="res-linked-label"><?php echo $type === 'video' ? 'YouTube Linked' : 'Spotify Linked'; ?></span>: <b id="res-spotify">0</b></div>
+					<div id="res-platform-label"><?php echo $type === 'artist' ? 'YouTube Enriched' : ( $type === 'video' ? 'Thumbnails Updated' : 'Covers Updated' ); ?>: <b id="res-platform">0</b></div>
 				</div>
 			</div>
 			<button id="close-sync-modal" class="charts-btn-primary" style="display:none;"><?php _e( 'Close & Reload', 'charts' ); ?></button>
@@ -541,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	function runBatch(offset) {
 		const type = '<?php echo $type; ?>';
 		const formData = new FormData();
-		formData.append('action', type === 'artist' ? 'charts_sync_artists' : 'charts_sync_tracks');
+		formData.append('action', type === 'artist' ? 'charts_sync_artists' : (type === 'video' ? 'charts_sync_videos' : 'charts_sync_tracks'));
 		formData.append('nonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
 		formData.append('offset', offset);
 		formData.append('mode', syncMode);
@@ -562,8 +564,8 @@ document.addEventListener('DOMContentLoaded', function() {
 				} else {
 					totalProcessed += res.data.processed;
 					totalUpdated += res.data.updated;
-					totalSpotify += res.data.spotify_linked;
-					totalPlatform += (type === 'artist') ? res.data.youtube_linked : res.data.covers_updated;
+				totalSpotify += (type === 'video') ? (res.data.youtube_linked || 0) : (res.data.spotify_linked || 0);
+				totalPlatform += (type === 'artist') ? (res.data.youtube_linked || 0) : (res.data.covers_updated || 0);
 
 					updateStats();
 					runBatch(offset + 20);
@@ -753,6 +755,19 @@ window.handleBulkActionSubmit = function(e) {
 		e.preventDefault();
 		openBulkMergeModal();
 		return false;
+	} else if (action === 'bulk_find_duplicates') {
+		e.preventDefault();
+		openSmartDeduplicatorModal();
+		return false;
+	} else if (action === 'bulk_sync_selected') {
+		e.preventDefault();
+		const checked = document.querySelectorAll('.entity-checkbox:checked');
+		if (!checked.length) {
+			alert('<?php echo esc_js( __( 'Select at least one item to sync.', 'charts' ) ); ?>');
+			return false;
+		}
+		document.getElementById('sync-selected-trigger').click();
+		return false;
 	} else if (action !== '') {
 		if (confirm('<?php _e( "Are you sure you want to apply this action to all selected items?", "charts" ); ?>')) {
 			document.getElementById('entities-bulk-form').submit();
@@ -856,7 +871,7 @@ window.openSmartDeduplicatorModal = function() {
 	resultsDiv.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;"><span class="dashicons dashicons-update" style="animation: spin 2s linear infinite;"></span><br>Scanning database for duplicates...</div>';
 
 	const formData = new FormData();
-	formData.append('action', 'charts_scan_duplicates');
+	formData.append('action', 'charts_resolve_potential_duplicates');
 	formData.append('_wpnonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
 	formData.append('type', bulkMergeType);
 
@@ -867,7 +882,13 @@ window.openSmartDeduplicatorModal = function() {
 	.then(res => res.json())
 	.then(res => {
 		if (res.success && res.data.clusters) {
-			const clusters = res.data.clusters;
+			const clusters = res.data.clusters.map(cluster => ({
+				normalized_name: cluster.master.name,
+				entities: [
+					Object.assign({ is_master: true }, cluster.master),
+					...(cluster.duplicates || []).map(entity => Object.assign({ is_master: false }, entity))
+				]
+			}));
 			if (clusters.length === 0) {
 				resultsDiv.innerHTML = '<div style="padding: 40px; text-align: center; color: #166534; background: #f0fdf4;">No duplicates found! Your database is clean.</div>';
 				return;
@@ -881,10 +902,15 @@ window.openSmartDeduplicatorModal = function() {
 					<div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 15px;">`;
 				
 				cluster.entities.forEach(ent => {
+					const idMatches = [
+						ent.spotify_id ? 'Spotify ID: ' + ent.spotify_id : '',
+						ent.youtube_id ? 'YouTube ID: ' + ent.youtube_id : ''
+					].filter(Boolean).join(' · ');
 					html += `<div style="display:flex; align-items:center; gap:10px; font-size: 12px; background: #fff; padding: 8px; border: 1px solid #e5e7eb; border-radius: 4px;">
 						<span style="color: #999;">ID: ${ent.id}</span>
 						<strong>${ent.name}</strong>
-						<span class="charts-badge charts-badge-neutral">${ent.entries} entries</span>
+						${idMatches ? '<span class="charts-badge charts-badge-neutral">' + idMatches + '</span>' : ''}
+						${ent.confidence ? '<span class="charts-badge charts-badge-neutral">' + ent.confidence + '% match</span>' : ''}
 						${ent.is_master ? '<span class="charts-badge" style="background:#d946ef; color:#fff;">Suggested Master</span>' : ''}
 					</div>`;
 				});

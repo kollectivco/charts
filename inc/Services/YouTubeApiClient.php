@@ -71,6 +71,18 @@ class YouTubeApiClient {
 		return $data['items'] ?? array();
 	}
 
+	/** Search for videos by title and artist when a clip has no YouTube ID. */
+	public function search_videos( $query, $limit = 5 ) {
+		$data = $this->request( 'search', array(
+			'part'       => 'snippet',
+			'q'          => $query,
+			'type'       => 'video',
+			'maxResults' => min( 50, max( 1, intval( $limit ) ) ),
+		) );
+		if ( is_wp_error( $data ) ) return $data;
+		return $data['items'] ?? array();
+	}
+
 	/**
 	 * Search for channels.
 	 */

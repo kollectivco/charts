@@ -24,6 +24,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
+		add_action( 'wp_ajax_charts_sync_videos', array( self::class, 'handle_sync_videos' ) );
 		add_action( 'wp_ajax_charts_migration_step', array( self::class, 'handle_migration_step' ) );
 		add_action( 'wp_ajax_charts_search_entities', array( self::class, 'handle_search_entities' ) );
 		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
@@ -1281,6 +1282,99 @@ class Bootstrap {
 			'spotify_linked' => $spotify_linked,
 			'covers_updated' => $covers_updated,
 			'next_offset'    => $offset + count( $tracks )
+		) );
+	}
+
+	/** Sync YouTube IDs and metadata for selected clips or a paged clip batch. */
+	public static function handle_sync_videos() {
+		if ( ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'charts' ) ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'charts' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_videos';
+		$limit = 20;
+		$offset = max( 0, intval( $_POST['offset'] ?? 0 ) );
+		$mode = sanitize_text_field( $_POST['mode'] ?? 'missing' );
+		$ids = isset( $_POST['ids'] ) ? array_filter( array_map( 'intval', explode( ',', $_POST['ids'] ) ) ) : array();
+
+		if ( $mode === 'selected' && ! empty( $ids ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			$videos = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table WHERE id IN ($placeholders) LIMIT $limit", ...$ids ) );
+		} elseif ( $mode === 'missing' ) {
+			$videos = $wpdb->get_results( "SELECT * FROM $table WHERE youtube_id IS NULL OR youtube_id = '' OR thumbnail IS NULL OR thumbnail = '' ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		} else {
+			$videos = $wpdb->get_results( "SELECT * FROM $table ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		}
+
+		if ( empty( $videos ) ) {
+			wp_send_json_success( array( 'complete' => true, 'processed' => 0 ) );
+		}
+
+		$youtube = new \Charts\Services\YouTubeApiClient();
+		if ( ! $youtube->is_configured() ) {
+			wp_send_json_error( array( 'message' => __( 'Configure a YouTube API key before syncing clips.', 'charts' ) ) );
+		}
+
+		$updated = 0;
+		$youtube_linked = 0;
+		$covers_updated = 0;
+		foreach ( $videos as $video ) {
+			$youtube_id = trim( (string) $video->youtube_id );
+			if ( $youtube_id === '' ) {
+				$artist_name = $video->primary_artist_id
+					? $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $video->primary_artist_id ) )
+					: '';
+				$query = trim( $video->title . ' ' . $artist_name );
+				$matches = $youtube->search_videos( $query, 1 );
+				if ( ! is_wp_error( $matches ) && ! empty( $matches[0]['id']['videoId'] ) ) {
+					$youtube_id = sanitize_text_field( $matches[0]['id']['videoId'] );
+					$youtube_linked++;
+				}
+			}
+			if ( $youtube_id === '' ) {
+				continue;
+			}
+
+			$details = $youtube->get_videos( array( $youtube_id ) );
+			if ( is_wp_error( $details ) || empty( $details[0] ) ) {
+				continue;
+			}
+
+			$snippet = $details[0]['snippet'] ?? array();
+			$statistics = $details[0]['statistics'] ?? array();
+			$thumbnails = $snippet['thumbnails'] ?? array();
+			$thumbnail = $thumbnails['maxres']['url'] ?? $thumbnails['high']['url'] ?? $thumbnails['medium']['url'] ?? $thumbnails['default']['url'] ?? '';
+			$metadata = ! empty( $video->metadata_json ) ? json_decode( $video->metadata_json, true ) : array();
+			if ( ! is_array( $metadata ) ) $metadata = array();
+			$metadata['youtube_views'] = intval( $statistics['viewCount'] ?? 0 );
+			$metadata['youtube_channel_title'] = $snippet['channelTitle'] ?? '';
+			$metadata['youtube_last_sync'] = current_time( 'mysql' );
+			$metadata['sync_status'] = 'synced';
+
+			$update = array( 'youtube_id' => $youtube_id, 'metadata_json' => wp_json_encode( $metadata ) );
+			if ( $thumbnail !== '' ) {
+				$update['thumbnail'] = esc_url_raw( $thumbnail );
+				$covers_updated++;
+			}
+			if ( empty( $video->video_url ) ) {
+				$update['video_url'] = 'https://www.youtube.com/watch?v=' . rawurlencode( $youtube_id );
+			}
+			if ( $wpdb->update( $table, $update, array( 'id' => $video->id ) ) !== false ) {
+				$updated++;
+			}
+		}
+
+		wp_send_json_success( array(
+			'complete' => false,
+			'processed' => count( $videos ),
+			'updated' => $updated,
+			'youtube_linked' => $youtube_linked,
+			'covers_updated' => $covers_updated,
+			'next_offset' => $offset + count( $videos ),
 		) );
 	}
 
