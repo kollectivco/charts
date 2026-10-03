@@ -477,7 +477,7 @@ class PublicIntegration {
 		$target_type = is_numeric( $item ) ? $type : ( isset($item->item_type) ? $item->item_type : $type );
 
 		if ( ! empty($target_id) ) {
-			$table = ( $target_type === 'artist' ) ? 'artists' : ( ( $target_type === 'video' ) ? 'videos' : 'tracks' );
+			$table = ( $target_type === 'artist' ) ? 'artists' : ( ( $target_type === 'video' ) ? 'videos' : ( ( $target_type === 'album' ) ? 'albums' : 'tracks' ) );
 			$col   = ( $target_type === 'artist' ) ? 'image' : ( ( $target_type === 'video' ) ? 'thumbnail' : 'cover_image' );
 			$row = $wpdb->get_row( $wpdb->prepare( "SELECT $col, metadata_json FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $target_id ) );
 			if ( $row ) {
@@ -619,7 +619,7 @@ class PublicIntegration {
 			
 			// Healing: Resolve missing slugs or titles
 			if ( empty($e->item_slug) || $e->item_slug === 'unknown-youtube-item' ) {
-				$table = ( $e->item_type === 'artist' ) ? 'artists' : ( ( $e->item_type === 'video' ) ? 'videos' : 'tracks' );
+				$table = ( $e->item_type === 'artist' ) ? 'artists' : ( ( $e->item_type === 'video' ) ? 'videos' : ( ( $e->item_type === 'album' ) ? 'albums' : 'tracks' ) );
 				$e->item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id ) );
 			}
 		}

@@ -16,7 +16,7 @@ class EntityManager {
 	 */
 	public static function get_entity_by_slug( $type, $slug ) {
 		global $wpdb;
-		$table = $wpdb->prefix . ( $type === 'artist' ? 'charts_artists' : ( ($type === 'video') ? 'charts_videos' : 'charts_tracks' ) );
+	$table = $wpdb->prefix . ( $type === 'artist' ? 'charts_artists' : ( ($type === 'video') ? 'charts_videos' : ( ($type === 'album') ? 'charts_albums' : 'charts_tracks' ) ) );
 		
 		if ( ! $wpdb->get_var("SHOW TABLES LIKE '$table'") ) {
 			return null;

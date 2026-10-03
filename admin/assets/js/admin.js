@@ -78,9 +78,105 @@ jQuery(document).ready(function($) {
     const $submitBtn = $('#run-import-btn');
     const $form = $('#unified-import-form');
     const $chartSelect = $('#chart_id');
+    const $countrySelect = $('[name="country"]');
+    const $soundchartsControls = $('.soundcharts-import-controls');
+    const $soundchartsType = $('#soundcharts_entity_type');
+    const $soundchartsPlatform = $('#soundcharts_platform');
+    const $soundchartsChart = $('#soundcharts_chart_slug');
+    const $soundchartsLoad = $('.soundcharts-load-charts');
+    const $soundchartsStatus = $('.soundcharts-catalog-status');
 
     if ($fileInput.length) {
-        
+
+        const selectedSource = () => $('[name="platform"]:checked').val() || '';
+        const isSoundcharts = () => selectedSource() === 'soundcharts';
+
+        const ajaxSoundcharts = (platform = '') => $.ajax({
+            url: charts_admin.ajax_url,
+            method: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'charts_soundcharts_catalog',
+                nonce: charts_admin.nonce,
+                entity_type: $soundchartsType.val() || 'song',
+                soundcharts_platform: platform,
+                country: $countrySelect.val() || ''
+            }
+        });
+
+        const resetSoundchartsCharts = (message) => {
+            $soundchartsChart.empty().append($('<option>', { value: '', text: message })).prop('disabled', true);
+            $soundchartsStatus.text(message);
+        };
+
+        const loadSoundchartsPlatforms = () => {
+            $soundchartsLoad.prop('disabled', true);
+            $soundchartsPlatform.prop('disabled', true).empty().append($('<option>', { value: '', text: 'Loading platforms…' }));
+            resetSoundchartsCharts('Select a platform, then load its charts.');
+            ajaxSoundcharts().done((response) => {
+                if (!response || !response.success) throw new Error(response?.data?.message || 'Could not load Soundcharts platforms.');
+                const platforms = response.data?.items || [];
+                $soundchartsPlatform.empty().append($('<option>', { value: '', text: '— Select Platform —' }));
+                platforms.forEach((item) => $soundchartsPlatform.append($('<option>', { value: item.code, text: item.name })));
+                $soundchartsPlatform.prop('disabled', !platforms.length);
+                if (!platforms.length) resetSoundchartsCharts('No platforms are available for this content type.');
+            }).fail((xhr) => {
+                const message = xhr.responseJSON?.data?.message || 'Could not connect to Soundcharts. Check API credentials in Settings.';
+                $soundchartsPlatform.empty().append($('<option>', { value: '', text: 'Platforms unavailable' })).prop('disabled', true);
+                resetSoundchartsCharts(message);
+            });
+        };
+
+        const loadSoundchartsCharts = () => {
+            const platform = $soundchartsPlatform.val();
+            if (!platform || !$countrySelect.val()) {
+                resetSoundchartsCharts('Choose a market and Soundcharts platform first.');
+                checkReadiness();
+                return;
+            }
+            $soundchartsLoad.prop('disabled', true).text('Loading…');
+            $soundchartsChart.empty().append($('<option>', { value: '', text: 'Loading charts…' })).prop('disabled', true);
+            $soundchartsStatus.text('Fetching available charts from Soundcharts…');
+            ajaxSoundcharts(platform).done((response) => {
+                if (!response || !response.success) throw new Error(response?.data?.message || 'Could not load Soundcharts charts.');
+                const charts = response.data?.items || [];
+                $soundchartsChart.empty().append($('<option>', { value: '', text: '— Select Chart —' }));
+                charts.forEach((chart) => {
+                    const country = chart.countryName || chart.countryCode || '';
+                    const label = [chart.name, country, chart.frequency].filter(Boolean).join(' · ');
+                    $soundchartsChart.append($('<option>', {
+                        value: chart.slug,
+                        text: label,
+                        'data-frequency': chart.frequency || 'weekly',
+                        'data-chart-name': chart.name || chart.slug
+                    }));
+                });
+                $soundchartsChart.prop('disabled', !charts.length);
+                $soundchartsStatus.text(charts.length ? `${charts.length} charts available. Select one to continue.` : 'No charts found for this market and platform.');
+                filterChartsByPlatform();
+            }).fail((xhr) => {
+                const message = xhr.responseJSON?.data?.message || 'Could not load Soundcharts charts.';
+                resetSoundchartsCharts(message);
+            }).always(() => {
+                $soundchartsLoad.prop('disabled', false).text('Load Charts');
+                checkReadiness();
+            });
+        };
+
+        const updateSourceInterface = () => {
+            const soundcharts = isSoundcharts();
+            $soundchartsControls.toggle(soundcharts);
+            $dropZone.toggle(!soundcharts);
+            $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : 'Upload Chart Data');
+            $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : 'Provide the raw export file for intelligence parsing.');
+            if (soundcharts) {
+                loadSoundchartsPlatforms();
+            } else {
+                filterChartsByPlatform();
+            }
+            checkReadiness();
+        };
+
         // Helper to validate and stage file
         const stageFile = (file) => {
             if (!file) return;
@@ -104,12 +200,15 @@ jQuery(document).ready(function($) {
 
         // Readiness Engine
         const checkReadiness = () => {
-            const hasSource = $('[name="country"]').val() !== '';
+            const hasSource = $countrySelect.val() !== '';
             const hasPlatform = $('[name="platform"]:checked').length > 0;
             const hasFile = $fileInput[0].files.length > 0;
             const hasTarget = $chartSelect.val() !== '';
+            const sourceReady = isSoundcharts()
+                ? Boolean($soundchartsPlatform.val() && $soundchartsChart.val())
+                : hasFile;
 
-            if (hasSource && hasPlatform && hasFile && hasTarget) {
+            if (hasSource && hasPlatform && sourceReady && hasTarget) {
                 $submitBtn.prop('disabled', false);
                 $('#readiness-msg').text('Intelligence pipeline polarized. Ready for execution.').css('color', '#10b981');
                 $('.import-stage[data-step="4"]').addClass('active');
@@ -121,7 +220,8 @@ jQuery(document).ready(function($) {
 
             // Update active stages visually
             if (hasSource && hasPlatform) $('.import-stage[data-step="2"]').addClass('active');
-            if (hasFile) $('.import-stage[data-step="3"]').addClass('active');
+            if (hasFile || (isSoundcharts() && $soundchartsChart.val())) $('.import-stage[data-step="3"]').addClass('active');
+            else $('.import-stage[data-step="3"]').removeClass('active');
         };
 
         // Input Change
@@ -164,17 +264,31 @@ jQuery(document).ready(function($) {
 
         // Form Logic
         const filterChartsByPlatform = () => {
-            const platform = $('[name="platform"]:checked').val();
+            const platform = isSoundcharts() ? ($soundchartsPlatform.val() || '') : selectedSource();
+            const country = ($countrySelect.val() || '').toLowerCase();
+            const requiredType = isSoundcharts() ? ($soundchartsType.val() === 'album' ? 'album' : 'track') : '';
+            const requiredFrequency = isSoundcharts() ? ($soundchartsChart.find(':selected').data('frequency') || '') : '';
             let selectedCompatible = false;
             $chartSelect.find('option').each(function() {
                 const $option = $(this);
                 if (!$option.val()) return;
                 const chartPlatform = $option.data('platform') || 'all';
-                const compatible = chartPlatform === 'all' || chartPlatform === platform;
+                const chartCountry = String($option.data('country') || '').toLowerCase();
+                const chartType = String($option.data('type') || 'track');
+                const chartFrequency = String($option.data('frequency') || 'weekly').toLowerCase();
+                const compatible = (chartPlatform === 'all' || chartPlatform === platform)
+                    && (!isSoundcharts() || (chartCountry === country && chartType === requiredType && (!requiredFrequency || chartFrequency === requiredFrequency)));
                 $option.prop('disabled', !compatible).toggle(compatible);
                 if (compatible && $option.is(':selected')) selectedCompatible = true;
             });
             if (!selectedCompatible) $chartSelect.val('');
+            if (isSoundcharts()) {
+                const count = $chartSelect.find('option:not(:disabled)').length - 1;
+                $soundchartsStatus.toggleClass('has-no-target', count <= 0).attr('data-compatible-targets', count);
+                if (count <= 0 && $soundchartsChart.children().length > 1) {
+                    $soundchartsStatus.text('Charts loaded, but no destination profile matches the chart type, platform, market, and frequency.');
+                }
+            }
         };
 
         $chartSelect.on('change', function() {
@@ -190,6 +304,28 @@ jQuery(document).ready(function($) {
 
         $('[name="country"]').on('change', checkReadiness);
         $('[name="platform"]').on('change', function() {
+            updateSourceInterface();
+        });
+
+        $soundchartsType.on('change', function() {
+            filterChartsByPlatform();
+            loadSoundchartsPlatforms();
+            checkReadiness();
+        });
+        $soundchartsPlatform.on('change', function() {
+            resetSoundchartsCharts($countrySelect.val() ? 'Click Load Charts to get this platform’s catalog.' : 'Choose a market first.');
+            $soundchartsLoad.prop('disabled', !($countrySelect.val() && $soundchartsPlatform.val()));
+            filterChartsByPlatform();
+            checkReadiness();
+        });
+        $countrySelect.on('change', function() {
+            if (isSoundcharts()) resetSoundchartsCharts('Market changed. Click Load Charts to refresh the catalog.');
+            $soundchartsLoad.prop('disabled', !(isSoundcharts() && $countrySelect.val() && $soundchartsPlatform.val()));
+            filterChartsByPlatform();
+            checkReadiness();
+        });
+        $soundchartsLoad.on('click', loadSoundchartsCharts);
+        $soundchartsChart.on('change', function() {
             filterChartsByPlatform();
             checkReadiness();
         });
@@ -203,6 +339,7 @@ jQuery(document).ready(function($) {
 
         // Initial check
         filterChartsByPlatform();
+        updateSourceInterface();
         checkReadiness();
     }
 

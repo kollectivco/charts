@@ -477,7 +477,7 @@ class SourceManager {
 			$item_type = sanitize_text_field( $item['type'] ?? $definition->item_type );
 
 			// Fetch metadata for flat record
-			$table = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'video' ) ? 'videos' : 'tracks' );
+			$table = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'video' ) ? 'videos' : ( ( $item_type === 'album' ) ? 'albums' : 'tracks' ) );
 			$meta = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $item_id ) );
 			
 			if ( ! $meta ) continue;

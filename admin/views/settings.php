@@ -163,6 +163,14 @@ $panel = [
                     [ 'id' => 'api.youtube_api_key', 'type' => 'password', 'label' => 'Google Cloud API Key' ],
                 ]
             ],
+            'soundcharts' => [
+                'title' => 'Soundcharts Import API',
+                'fields' => [
+                    [ 'id' => 'api.soundcharts_client_id', 'type' => 'text', 'label' => 'Soundcharts Client ID', 'desc' => 'Create API credentials in your Soundcharts developer console.' ],
+                    [ 'id' => 'api.soundcharts_client_secret', 'type' => 'password', 'label' => 'Soundcharts Client Secret' ],
+                    [ 'id' => 'api.soundcharts_team_id', 'type' => 'text', 'label' => 'Soundcharts Team ID (Optional)', 'desc' => 'Only needed if your API account belongs to multiple teams.' ],
+                ]
+            ],
             'github' => [
                 'title' => 'Update Authorization',
                 'fields' => [

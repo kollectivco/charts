@@ -19,6 +19,9 @@ if ( $type === 'video' ) {
     $item->cover_image = $item->thumbnail;
     $related_track = ! empty( $item->related_track_id ) ? $wpdb->get_row( $wpdb->prepare( "SELECT id, title, slug, cover_image FROM {$wpdb->prefix}charts_tracks WHERE id = %d", (int) $item->related_track_id ) ) : null;
     $related_clips = array();
+} elseif ( $type === 'album' ) {
+    $related_track = null;
+    $related_clips = array();
 } else {
     $related_track = null;
     $related_clips = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, slug, thumbnail FROM {$wpdb->prefix}charts_videos WHERE related_track_id = %d ORDER BY title ASC", (int) $item->id ) );

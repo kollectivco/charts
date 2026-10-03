@@ -73,7 +73,7 @@ if ( $definition ) {
 
                 // Healing: If slug is generic or missing, resolve from relational table
                 if ( empty($e->item_slug) || $e->item_slug === 'unknown-youtube-item' ) {
-                    $table = ($e->item_type === 'artist') ? 'artists' : (($e->item_type === 'video') ? 'videos' : 'tracks');
+                    $table = ($e->item_type === 'artist') ? 'artists' : (($e->item_type === 'video') ? 'videos' : (($e->item_type === 'album') ? 'albums' : 'tracks'));
                     $e->item_slug = $wpdb->get_var($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}charts_{$table} WHERE id = %d", $e->item_id));
                 }
 			}

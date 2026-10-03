@@ -11,7 +11,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 	<header class="charts-admin-header">
 		<div>
 			<h1 class="charts-admin-title"><?php esc_html_e( 'Data Intelligence Import', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle"><?php _e( 'Unified workflow for Spotify and YouTube chart synchronization.', 'charts' ); ?></p>
+			<p class="charts-admin-subtitle"><?php _e( 'Unified workflow for CSV imports and live chart providers.', 'charts' ); ?></p>
 		</div>
 		<div class="charts-admin-actions">
 			<a href="<?php echo admin_url( 'admin.php?page=charts-imports' ); ?>" class="charts-btn-back">
@@ -30,7 +30,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 			SELECT r.*, s.source_name, s.platform, d.slug as chart_slug
 			FROM {$wpdb->prefix}charts_import_runs r
 			JOIN {$wpdb->prefix}charts_sources s ON s.id = r.source_id
-			LEFT JOIN {$wpdb->prefix}charts_definitions d ON (d.chart_type = s.chart_type AND d.country_code = s.country_code)
+			LEFT JOIN {$wpdb->prefix}charts_definitions d ON ((d.chart_type = s.chart_type AND d.country_code = s.country_code) OR s.chart_type = CONCAT('cid-', d.id))
 			WHERE r.id = %d
 		", $run_id ) );
 		
@@ -119,7 +119,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 							<div class="market-selector-wrap">
 								<label class="premium-label"><?php _e( 'Target Market / Region', 'charts' ); ?></label>
 								<div class="market-dropdown-custom">
-									<select name="country" class="premium-select" required>
+									<select name="country" id="import-country" class="premium-select" required>
 										<option value=""><?php _e( '— Select Market —', 'charts' ); ?></option>
 										<?php foreach ($markets as $m) : ?>
 											<option value="<?php echo esc_attr(strtolower($m['code'])); ?>">
@@ -180,6 +180,14 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									</div>
 								</div>
 							</label>
+							<label class="platform-option">
+								<input type="radio" name="platform" value="soundcharts" <?php checked($pre_source, 'soundcharts'); ?>>
+								<div class="platform-box">
+									<div class="platform-icon soundcharts-icon"><span class="dashicons dashicons-chart-line"></span></div>
+									<div class="platform-text"><strong>Soundcharts</strong><span>Live API Import</span></div>
+									<div class="platform-check"><span class="dashicons dashicons-yes-alt"></span></div>
+								</div>
+							</label>
 
 						</div>
 					</div>
@@ -190,11 +198,38 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 					<div class="stage-header">
 						<div class="stage-number">02</div>
 						<div class="stage-title">
-							<h3><?php esc_html_e( 'Upload Chart Data', 'charts' ); ?></h3>
-							<p><?php _e( 'Provide the raw export file for intelligence parsing.', 'charts' ); ?></p>
+							<h3 class="import-source-step-title"><?php esc_html_e( 'Upload Chart Data', 'charts' ); ?></h3>
+							<p class="import-source-step-description"><?php _e( 'Provide the raw export file for intelligence parsing.', 'charts' ); ?></p>
 						</div>
 					</div>
 					<div class="stage-body">
+						<div class="soundcharts-import-controls" style="display:none;">
+							<div class="soundcharts-controls-grid">
+								<div class="form-group">
+									<label class="premium-label" for="soundcharts_entity_type"><?php esc_html_e( 'Content Type', 'charts' ); ?></label>
+									<select name="soundcharts_entity_type" id="soundcharts_entity_type" class="premium-select">
+										<option value="song"><?php esc_html_e( 'Songs', 'charts' ); ?></option>
+										<option value="album"><?php esc_html_e( 'Albums', 'charts' ); ?></option>
+									</select>
+								</div>
+								<div class="form-group">
+									<label class="premium-label" for="soundcharts_platform"><?php esc_html_e( 'Soundcharts Platform', 'charts' ); ?></label>
+									<select name="soundcharts_platform" id="soundcharts_platform" class="premium-select" disabled>
+										<option value=""><?php esc_html_e( 'Select a market first', 'charts' ); ?></option>
+									</select>
+								</div>
+							</div>
+							<div class="form-group soundcharts-chart-picker">
+								<label class="premium-label" for="soundcharts_chart_slug"><?php esc_html_e( 'Chart to Import', 'charts' ); ?></label>
+								<div class="soundcharts-chart-picker-row">
+									<select name="soundcharts_chart_slug" id="soundcharts_chart_slug" class="premium-select" disabled>
+										<option value=""><?php esc_html_e( 'Choose a platform first', 'charts' ); ?></option>
+									</select>
+									<button type="button" class="charts-btn-back soundcharts-load-charts" disabled><?php esc_html_e( 'Load Charts', 'charts' ); ?></button>
+								</div>
+								<p class="soundcharts-catalog-status" aria-live="polite"><?php esc_html_e( 'Charts are loaded directly from Soundcharts.', 'charts' ); ?></p>
+							</div>
+						</div>
 						<div class="file-nexus-zone" id="drop-zone">
 							<div class="nexus-idle">
 								<div class="nexus-icon">
@@ -258,6 +293,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 								<select name="item_type" id="item_type" class="premium-select">
 									<option value="track"><?php esc_html_e( 'Tracks (Audio)', 'charts' ); ?></option>
 									<option value="artist"><?php esc_html_e( 'Artists', 'charts' ); ?></option>
+									<option value="album"><?php esc_html_e( 'Albums', 'charts' ); ?></option>
 									<option value="video"><?php esc_html_e( 'Clips & Videos', 'charts' ); ?></option>
 								</select>
 							</div>

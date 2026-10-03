@@ -82,6 +82,9 @@ class Settings {
                 'spotify_client_id'    => '',
                 'spotify_client_secret' => '',
                 'youtube_api_key'      => '',
+                'soundcharts_client_id' => '',
+                'soundcharts_client_secret' => '',
+                'soundcharts_team_id' => '',
             ],
             
             // Labels & Localization

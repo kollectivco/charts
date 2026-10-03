@@ -44,6 +44,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_billboard_sync', array( self::class, 'handle_billboard_sync' ) );
 		add_action( 'wp_ajax_charts_billboard_download_csv', array( self::class, 'handle_billboard_download_csv' ) );
 		add_action( 'wp_ajax_charts_billboard_get_weeks', array( self::class, 'handle_billboard_get_weeks' ) );
+		add_action( 'wp_ajax_charts_soundcharts_catalog', array( self::class, 'handle_soundcharts_catalog' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -795,7 +796,7 @@ class Bootstrap {
 
 	private static function process_unified_import() {
 		$platform = sanitize_text_field( $_POST['platform'] ?? 'spotify' );
-		if ( ! in_array( $platform, array( 'spotify', 'youtube', 'kontent', 'billboard' ), true ) ) {
+		if ( ! in_array( $platform, array( 'spotify', 'youtube', 'kontent', 'billboard', 'soundcharts' ), true ) ) {
 			\Charts\Core\Notify::error( __( 'Choose a supported import platform.', 'charts' ), __( 'Invalid Import Platform', 'charts' ) );
 			return false;
 		}
@@ -806,13 +807,31 @@ class Bootstrap {
 			\Charts\Core\Notify::error( __( 'Choose a valid destination chart.', 'charts' ), __( 'Invalid Chart', 'charts' ) );
 			return false;
 		}
-		$definition_platform = $definition->platform ?? 'all';
-		if ( $definition_platform !== 'all' && $definition_platform !== $platform ) {
+		$definition_platform = sanitize_key( $definition->platform ?? 'all' );
+		$data_platform = $platform === 'soundcharts' ? sanitize_key( $_POST['soundcharts_platform'] ?? '' ) : $platform;
+		if ( $definition_platform !== 'all' && $definition_platform !== $data_platform ) {
 			\Charts\Core\Notify::error( __( 'The selected chart is configured for a different platform.', 'charts' ), __( 'Chart Platform Mismatch', 'charts' ) );
 			return false;
 		}
 		// The selected chart profile is authoritative for the item type.
 		$_POST['item_type'] = $definition->item_type ?: ( $_POST['item_type'] ?? 'track' );
+
+		if ( $platform === 'soundcharts' ) {
+			$importer = new \Charts\Services\SoundchartsImporter();
+			$result = $importer->run( array(
+				'entity_type' => sanitize_key( $_POST['soundcharts_entity_type'] ?? '' ),
+				'platform'    => $data_platform,
+				'country_code'=> sanitize_text_field( $_POST['country'] ?? '' ),
+				'chart_slug'  => sanitize_text_field( $_POST['soundcharts_chart_slug'] ?? '' ),
+				'chart_id'    => $chart_id,
+			) );
+			if ( is_wp_error( $result ) ) {
+				\Charts\Core\Notify::error( $result->get_error_message(), __( 'Soundcharts Import Failed', 'charts' ) );
+				return false;
+			}
+			\Charts\Core\Notify::success( sprintf( __( 'Soundcharts imported %1$d entries (%2$d new records) from %3$d ranking rows.', 'charts' ), $result['saved'], $result['created'], $result['parsed'] ), __( 'Soundcharts Sync Complete', 'charts' ) );
+			return $result;
+		}
 		
 		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {
 			\Charts\Core\Notify::warning( __( 'No valid segment file was detected for the unified import stream.', 'charts' ), __( 'Upload Required', 'charts' ) );
@@ -833,6 +852,24 @@ class Bootstrap {
 			$_FILES['youtube_csv'] = $_FILES['import_file'];
 			return self::process_youtube_csv_upload();
 		}
+	}
+
+	/** AJAX endpoint for Soundcharts platform and chart selection. */
+	public static function handle_soundcharts_catalog() {
+		check_ajax_referer( 'charts_admin_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to access Soundcharts data.', 'charts' ) ), 403 );
+		}
+
+		$entity_type = sanitize_key( $_POST['entity_type'] ?? 'song' );
+		$platform    = sanitize_key( $_POST['soundcharts_platform'] ?? '' );
+		$country     = sanitize_text_field( $_POST['country'] ?? '' );
+		$client      = new \Charts\Services\SoundchartsApiClient();
+		$result      = $platform === '' ? $client->get_platforms( $entity_type ) : $client->get_charts( $entity_type, $platform, $country );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		wp_send_json_success( array( 'items' => $result ) );
 	}
 
 	private static function process_kontent_csv_upload() {
@@ -1675,6 +1712,9 @@ class Bootstrap {
 				'charts_spotify_client_id',
 				'charts_spotify_client_secret',
 				'charts_youtube_api_key',
+				'charts_soundcharts_client_id',
+				'charts_soundcharts_client_secret',
+				'charts_soundcharts_team_id',
 				'charts_logo_id_light',
 				'charts_logo_id_dark',
 				'charts_logo_alt',

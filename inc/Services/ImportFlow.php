@@ -196,7 +196,7 @@ class ImportFlow {
 		// Resolve canonical slug if missing
 		$item_slug = $flat['item_slug'] ?? null;
 		if ( ! $item_slug && $item_id ) {
-			$suffix = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'track' ) ? 'tracks' : 'videos' );
+			$suffix = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'album' ) ? 'albums' : ( ( $item_type === 'track' ) ? 'tracks' : 'videos' ) );
 			$item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$suffix} WHERE id = %d", $item_id ) );
 		}
 
