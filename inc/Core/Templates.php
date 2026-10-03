@@ -10,12 +10,19 @@ class Templates {
 
     
     public static function force_elementor_template( $template ) {
+        // If Elementor editor is loading or in preview mode, let Elementor handle template loading completely
+        if ( isset( $_GET['elementor-preview'] ) || ( isset( $_GET['action'] ) && $_GET['action'] === 'elementor' ) ) {
+            return $template;
+        }
+
+        if ( class_exists( '\Elementor\Plugin' ) ) {
+            if ( \Elementor\Plugin::$instance->preview->is_preview_mode() || \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+                return $template;
+            }
+        }
+
         if ( is_singular( 'charts_template' ) ) {
-            // When in Elementor preview or edit mode, let Elementor handle the template entirely
             if ( class_exists( '\Elementor\Plugin' ) ) {
-                if ( \Elementor\Plugin::$instance->preview->is_preview_mode() ) {
-                    return $template;
-                }
                 $document = \Elementor\Plugin::$instance->documents->get( get_the_ID() );
                 if ( $document && $document->is_built_with_elementor() ) {
                     $page_template = $document->get_meta( '_wp_page_template' );
@@ -73,13 +80,8 @@ class Templates {
     public static function enable_elementor() {
         add_post_type_support( 'charts_template', 'elementor' );
 
-        // Register document type for charts_template in Elementor
-        add_action( 'elementor/documents/register', function( $documents_manager ) {
-            $documents_manager->register_document_type( 'charts_template', \Elementor\Core\DocumentTypes\Page::class );
-        } );
-
         $cpt_support = get_option( 'elementor_cpt_support' );
-        if ( ! $cpt_support ) {
+        if ( ! is_array( $cpt_support ) ) {
             $cpt_support = [ 'page', 'post' ];
         }
         if ( ! in_array( 'charts_template', $cpt_support ) ) {
