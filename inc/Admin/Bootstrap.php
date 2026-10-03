@@ -564,6 +564,20 @@ class Bootstrap {
 		}
 		if ( $saved === false || ! $id ) return new \WP_Error( 'entity_save_failed', __( 'The record could not be saved. Check that the slug is unique.', 'charts' ) );
 
+		// A clip can belong to one track. Keep the editor usable from either side
+		// by syncing the selected clips when a track is saved.
+		if ( $type === 'track' ) {
+			$video_table = $wpdb->prefix . 'charts_videos';
+			$related_video_ids = array_values( array_unique( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['related_video_ids'] ?? array() ) ) ) ) );
+			$wpdb->update( $video_table, array( 'related_track_id' => null ), array( 'related_track_id' => $id ) );
+			foreach ( $related_video_ids as $related_video_id ) {
+				$video_exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $video_table WHERE id = %d", $related_video_id ) );
+				if ( $video_exists ) {
+					$wpdb->update( $video_table, array( 'related_track_id' => $id ), array( 'id' => $related_video_id ) );
+				}
+			}
+		}
+
 		self::sync_entity_chart_entries( $type, $id, $type === 'artist' ? ( $existing->display_name ?? '' ) : '', $type === 'artist' ? ( $existing->display_name_en ?? '' ) : '' );
 		if ( $type !== 'artist' ) {
 			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", (int) $data['primary_artist_id'] ) );

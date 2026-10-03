@@ -28,6 +28,11 @@ if ( ! $item ) {
 // Map SQL to object for template compatibility
 if ( $type === 'video' ) {
 	$item->cover_image = $item->thumbnail;
+	$related_track = ! empty( $item->related_track_id ) ? $wpdb->get_row( $wpdb->prepare( "SELECT id, title, slug, cover_image FROM {$wpdb->prefix}charts_tracks WHERE id = %d", (int) $item->related_track_id ) ) : null;
+	$related_clips = array();
+} else {
+	$related_track = null;
+	$related_clips = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, slug, thumbnail FROM {$wpdb->prefix}charts_videos WHERE related_track_id = %d ORDER BY title ASC", (int) $item->id ) );
 }
 
 // Fetch Appearances
@@ -141,6 +146,29 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 				</div>
 			</div>
 		</section>
+
+		<?php if ( $type === 'video' && $related_track ) : ?>
+		<section class="kc-section" style="margin: -24px 0 48px;">
+			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 14px;"><?php echo esc_html( \Charts\Core\Translation::get( 'Related Track' ) ); ?></h3>
+			<a href="<?php echo esc_url( home_url( '/charts/track/' . $related_track->slug . '/' ) ); ?>" class="kc-card" style="display:flex; align-items:center; gap:16px; padding:16px 20px; text-decoration:none; border-radius:12px; max-width:520px;">
+				<img src="<?php echo esc_url( $related_track->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png' ); ?>" alt="" style="width:56px; height:56px; border-radius:10px; object-fit:cover;">
+				<span style="font-size:16px; font-weight:800; color:var(--k-text);"><?php echo esc_html( \Charts\Core\Translation::get( $related_track->title ) ); ?></span>
+				<span style="margin-left:auto; color:var(--k-accent);">&rarr;</span>
+			</a>
+		</section>
+		<?php elseif ( $type === 'track' && ! empty( $related_clips ) ) : ?>
+		<section class="kc-section" style="margin: -24px 0 48px;">
+			<h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--k-text-muted); margin-bottom: 14px;"><?php echo esc_html( \Charts\Core\Translation::get( 'Related Clips' ) ); ?></h3>
+			<div class="kc-grid kc-grid-4" style="gap:16px;">
+				<?php foreach ( $related_clips as $related_clip ) : ?>
+				<a href="<?php echo esc_url( home_url( '/charts/video/' . $related_clip->slug . '/' ) ); ?>" class="kc-card" style="display:flex; align-items:center; gap:14px; padding:14px; text-decoration:none; border-radius:12px;">
+					<img src="<?php echo esc_url( $related_clip->thumbnail ?: CHARTS_URL . 'public/assets/img/placeholder.png' ); ?>" alt="" style="width:52px; height:52px; border-radius:10px; object-fit:cover;">
+					<span style="font-size:14px; font-weight:800; color:var(--k-text);"><?php echo esc_html( \Charts\Core\Translation::get( $related_clip->title ) ); ?></span>
+				</a>
+				<?php endforeach; ?>
+			</div>
+		</section>
+		<?php endif; ?>
 
 		<!-- CONTENT GRID -->
 		<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 60px;">

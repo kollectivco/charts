@@ -11,6 +11,10 @@ $table = $wpdb->prefix . 'charts_' . $types[ $type ];
 $entity = $id ? $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) ) : null;
 $artists = $type !== 'artist' ? $wpdb->get_results( "SELECT id, display_name FROM {$wpdb->prefix}charts_artists ORDER BY display_name ASC LIMIT 5000" ) : array();
 $tracks = $type === 'video' ? $wpdb->get_results( "SELECT id, title FROM {$wpdb->prefix}charts_tracks ORDER BY title ASC LIMIT 5000" ) : array();
+$related_clips = $type === 'track' ? $wpdb->get_results( $wpdb->prepare(
+	"SELECT id, title, related_track_id FROM {$wpdb->prefix}charts_videos ORDER BY (related_track_id = %d) DESC, title ASC LIMIT 5000",
+	$id
+) ) : array();
 $kind = $type === 'artist' ? __( 'Artist', 'charts' ) : ( $type === 'track' ? __( 'Track', 'charts' ) : __( 'Clip', 'charts' ) );
 $name = $entity ? ( $type === 'artist' ? $entity->display_name : $entity->title ) : '';
 $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ? $entity->cover_image : $entity->thumbnail ) ) : '';
@@ -38,6 +42,7 @@ $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ?
 				<div class="entity-edit-field"><label for="entity-artist"><?php esc_html_e( 'Primary artist', 'charts' ); ?></label><select id="entity-artist" name="primary_artist_id" required><option value=""><?php esc_html_e( 'Select artist', 'charts' ); ?></option><?php foreach ( $artists as $artist ) : ?><option value="<?php echo (int) $artist->id; ?>" <?php selected( (int) ( $entity->primary_artist_id ?? 0 ), (int) $artist->id ); ?>><?php echo esc_html( $artist->display_name ); ?> (#<?php echo (int) $artist->id; ?>)</option><?php endforeach; ?></select></div>
 				<?php if ( $type === 'track' ) : ?><div class="entity-edit-field"><label for="entity-spotify"><?php esc_html_e( 'Spotify ID', 'charts' ); ?></label><input id="entity-spotify" name="spotify_id" type="text" value="<?php echo esc_attr( $entity->spotify_id ?? '' ); ?>" dir="ltr"></div><?php endif; ?>
 				<div class="entity-edit-field"><label for="entity-youtube"><?php esc_html_e( 'YouTube ID', 'charts' ); ?></label><input id="entity-youtube" name="youtube_id" type="text" value="<?php echo esc_attr( $entity->youtube_id ?? '' ); ?>" dir="ltr"></div>
+				<?php if ( $type === 'track' ) : ?><div class="entity-edit-field wide"><label for="entity-related-clips"><?php esc_html_e( 'Related clips', 'charts' ); ?></label><select id="entity-related-clips" name="related_video_ids[]" multiple size="8" aria-describedby="entity-related-clips-help"><?php foreach ( $related_clips as $clip ) : ?><option value="<?php echo (int) $clip->id; ?>" <?php selected( (int) $clip->related_track_id, $id ); ?>><?php echo esc_html( $clip->title ); ?> (#<?php echo (int) $clip->id; ?>)<?php if ( $clip->related_track_id && (int) $clip->related_track_id !== $id ) : ?> — <?php esc_html_e( 'linked to another track; selecting moves it here', 'charts' ); ?><?php endif; ?></option><?php endforeach; ?></select><small id="entity-related-clips-help"><?php esc_html_e( 'Hold Ctrl (Windows) or Command (Mac) to select multiple clips. Each clip can be linked to one track.', 'charts' ); ?></small></div><?php endif; ?>
 				<?php if ( $type === 'video' ) : ?><div class="entity-edit-field"><label for="entity-video-url"><?php esc_html_e( 'Video URL', 'charts' ); ?></label><input id="entity-video-url" name="video_url" type="url" value="<?php echo esc_attr( $entity->video_url ?? '' ); ?>" dir="ltr"></div><div class="entity-edit-field"><label for="entity-related-track"><?php esc_html_e( 'Related track (optional)', 'charts' ); ?></label><select id="entity-related-track" name="related_track_id"><option value="0"><?php esc_html_e( 'No related track', 'charts' ); ?></option><?php foreach ( $tracks as $track ) : ?><option value="<?php echo (int) $track->id; ?>" <?php selected( (int) ( $entity->related_track_id ?? 0 ), (int) $track->id ); ?>><?php echo esc_html( $track->title ); ?> (#<?php echo (int) $track->id; ?>)</option><?php endforeach; ?></select></div><?php endif; ?>
 			<?php endif; ?>
 			<div class="entity-edit-field wide"><label for="entity-image"><?php echo esc_html( $type === 'artist' ? __( 'Artist image URL', 'charts' ) : ( $type === 'track' ? __( 'Cover image URL', 'charts' ) : __( 'Thumbnail URL', 'charts' ) ) ); ?></label><input id="entity-image" name="image" type="url" value="<?php echo esc_attr( $image ); ?>" dir="ltr"><?php if ( $image ) : ?><img class="entity-edit-preview" src="<?php echo esc_url( $image ); ?>" alt=""><?php endif; ?></div>
@@ -64,6 +69,8 @@ $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ?
 .entity-edit-field label { font-size: 13px; font-weight: 600; color: #334155; }
 .entity-edit-field input, .entity-edit-field select { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; transition: all 0.2s; background: #f8fafc; }
 .entity-edit-field input:focus, .entity-edit-field select:focus { background: #fff; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); outline: none; }
+.entity-edit-field select[multiple] { min-height: 180px; }
+.entity-edit-field small { color: #64748b; font-size: 12px; }
 .entity-edit-preview { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; border: 1px solid #e2e8f0; margin-top: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .entity-edit-footer { padding: 20px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; }
 .charts-btn-primary { background: #0f172a; color: #fff; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; }
@@ -71,4 +78,3 @@ $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ?
 .charts-btn-secondary { background: #fff; color: #475569; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; }
 .charts-btn-secondary:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
 </style>
-

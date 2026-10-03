@@ -6,10 +6,13 @@
  */
 global $wpdb;
 
-$page = $_GET['page'] ?? 'charts-entities';
+$page = sanitize_key( wp_unslash( $_GET['page'] ?? 'charts-entities' ) );
 $type = ( $page === 'charts-artists' ) ? 'artist' : ( ( $page === 'charts-tracks' ) ? 'track' : ( ( $page === 'charts-clips' ) ? 'video' : 'advanced' ) );
 
-$search = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
+$search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+$search_placeholder = $type === 'track'
+	? __( 'Search songs, artists, Spotify ID, or YouTube ID…', 'charts' )
+	: ( $type === 'video' ? __( 'Search clips, artists, or YouTube ID…', 'charts' ) : __( 'Search by name, English name, or ID…', 'charts' ) );
 
 // 1. Initialize Tables
 $artists_table = $wpdb->prefix . 'charts_artists';
@@ -63,9 +66,11 @@ $current_page = max( 1, isset( $_GET['paged'] ) ? intval( $_GET['paged'] ) : 1 )
 $offset = ( $current_page - 1 ) * $per_page;
 
 // 4. Filters & Search
-$filter_spotify = isset( $_GET['spotify_linked'] ) ? $_GET['spotify_linked'] : '';
-$filter_image   = isset( $_GET['has_image'] ) ? $_GET['has_image'] : '';
-$filter_en   = isset( $_GET['missing_en'] ) ? $_GET['missing_en'] : '';
+$filter_spotify = in_array( $_GET['spotify_linked'] ?? '', array( 'yes', 'no' ), true ) ? sanitize_key( wp_unslash( $_GET['spotify_linked'] ) ) : '';
+$filter_image   = in_array( $_GET['has_image'] ?? '', array( 'yes', 'no' ), true ) ? sanitize_key( wp_unslash( $_GET['has_image'] ) ) : '';
+$filter_en      = in_array( $_GET['missing_en'] ?? '', array( 'yes', 'no' ), true ) ? sanitize_key( wp_unslash( $_GET['missing_en'] ) ) : '';
+$filter_artist  = $type === 'track' ? absint( $_GET['artist_id'] ?? 0 ) : 0;
+$artists = $type === 'track' ? $wpdb->get_results( "SELECT id, display_name FROM $artists_table ORDER BY display_name ASC" ) : array();
 
 $items = array();
 $total = 0;
@@ -73,7 +78,8 @@ $total = 0;
 if ( $type === 'artist' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
-		$where .= $wpdb->prepare( " AND (display_name LIKE %s OR slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+		$like = '%' . $wpdb->esc_like( $search ) . '%';
+		$where .= $wpdb->prepare( " AND (display_name LIKE %s OR display_name_en LIKE %s OR slug LIKE %s OR spotify_id LIKE %s)", $like, $like, $like, $like );
 	}
 	if ( $filter_spotify === 'yes' ) $where .= " AND spotify_id IS NOT NULL AND spotify_id != ''";
 	if ( $filter_spotify === 'no' ) $where .= " AND (spotify_id IS NULL OR spotify_id = '')";
@@ -81,13 +87,18 @@ if ( $type === 'artist' ) {
 	if ( $filter_image === 'no' ) $where .= " AND (image IS NULL OR image = '')";
 
 	if ( $filter_en === 'yes' ) $where .= " AND (display_name_en IS NULL OR display_name_en = '')";
+	if ( $filter_en === 'no' ) $where .= " AND display_name_en IS NOT NULL AND display_name_en != ''";
 	$items = $wpdb->get_results( "SELECT * FROM $artists_table {$where} ORDER BY display_name ASC LIMIT $per_page OFFSET $offset" );
 	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $artists_table {$where}" );
 	$title = __( 'Artists', 'charts' );
 } elseif ( $type === 'track' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
-		$where .= $wpdb->prepare( " AND (t.title LIKE %s OR t.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+		$like = '%' . $wpdb->esc_like( $search ) . '%';
+		$where .= $wpdb->prepare( " AND (t.title LIKE %s OR t.title_en LIKE %s OR t.slug LIKE %s OR t.spotify_id LIKE %s OR t.youtube_id LIKE %s OR EXISTS (SELECT 1 FROM $artists_table sa WHERE (sa.id = t.primary_artist_id OR sa.id IN (SELECT ta.artist_id FROM {$wpdb->prefix}charts_track_artists ta WHERE ta.track_id = t.id)) AND (sa.display_name LIKE %s OR sa.display_name_en LIKE %s)))", $like, $like, $like, $like, $like, $like, $like );
+	}
+	if ( $filter_artist ) {
+		$where .= $wpdb->prepare( " AND (t.primary_artist_id = %d OR EXISTS (SELECT 1 FROM {$wpdb->prefix}charts_track_artists ta WHERE ta.track_id = t.id AND ta.artist_id = %d))", $filter_artist, $filter_artist );
 	}
 	if ( $filter_spotify === 'yes' ) $where .= " AND t.spotify_id IS NOT NULL AND t.spotify_id != ''";
 	if ( $filter_spotify === 'no' ) $where .= " AND (t.spotify_id IS NULL OR t.spotify_id = '')";
@@ -95,10 +106,15 @@ if ( $type === 'artist' ) {
 	if ( $filter_image === 'no' ) $where .= " AND (t.cover_image IS NULL OR t.cover_image = '')";
 
 	if ( $filter_en === 'yes' ) $where .= " AND (t.title_en IS NULL OR t.title_en = '')";
+	if ( $filter_en === 'no' ) $where .= " AND t.title_en IS NOT NULL AND t.title_en != ''";
 	$items = $wpdb->get_results( "
-		SELECT t.*, a.display_name AS artist_name 
-		FROM $tracks_table t 
-		LEFT JOIN $artists_table a ON a.id = t.primary_artist_id
+		SELECT t.*,
+			(SELECT GROUP_CONCAT(DISTINCT ar.display_name ORDER BY ar.display_name SEPARATOR ', ')
+			 FROM $artists_table ar
+			 WHERE ar.id = t.primary_artist_id
+			    OR ar.id IN (SELECT ta.artist_id FROM {$wpdb->prefix}charts_track_artists ta WHERE ta.track_id = t.id)
+			) AS artist_name
+		FROM $tracks_table t
 		{$where} 
 		ORDER BY t.title ASC LIMIT $per_page OFFSET $offset
 	" );
@@ -107,14 +123,13 @@ if ( $type === 'artist' ) {
 } elseif ( $type === 'video' ) {
 	$where = "WHERE 1=1";
 	if ( $search ) {
-		$where .= $wpdb->prepare( " AND (v.title LIKE %s OR v.slug LIKE %s)", '%' . $wpdb->esc_like( $search ) . '%', '%' . $wpdb->esc_like( $search ) . '%' );
+		$like = '%' . $wpdb->esc_like( $search ) . '%';
+		$where .= $wpdb->prepare( " AND (v.title LIKE %s OR v.slug LIKE %s OR v.youtube_id LIKE %s OR EXISTS (SELECT 1 FROM $artists_table sa WHERE (sa.id = v.primary_artist_id OR sa.id IN (SELECT va.artist_id FROM {$wpdb->prefix}charts_video_artists va WHERE va.video_id = v.id)) AND (sa.display_name LIKE %s OR sa.display_name_en LIKE %s)))", $like, $like, $like, $like, $like );
 	}
 	if ( $filter_spotify === 'yes' ) $where .= " AND v.youtube_id IS NOT NULL AND v.youtube_id != ''";
 	if ( $filter_spotify === 'no' ) $where .= " AND (v.youtube_id IS NULL OR v.youtube_id = '')";
 	if ( $filter_image === 'yes' ) $where .= " AND v.thumbnail IS NOT NULL AND v.thumbnail != ''";
 	if ( $filter_image === 'no' ) $where .= " AND (v.thumbnail IS NULL OR v.thumbnail = '')";
-	if ( $filter_en === 'yes' ) $where .= " AND (v.title_en IS NULL OR v.title_en = '')";
-
 	$items = $wpdb->get_results( "
 		SELECT v.*, a.display_name AS artist_name 
 		FROM $videos_table v 
@@ -194,13 +209,21 @@ $entity_type = $type;
 	<div style="background: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
 		<form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; width: 100%;">
 			<!-- Search -->
-			<div style="flex: 1; min-width: 250px;">
+			<div style="flex: 1 1 320px; min-width: 250px;">
 			<input type="hidden" name="page" value="<?php echo esc_attr($page); ?>">
 			
-			<input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php _e( 'Search by name...', 'charts' ); ?>" class="charts-input" style="width: 100%; margin: 0;">
+			<input type="search" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php echo esc_attr( $search_placeholder ); ?>" class="charts-input" style="width: 100%; margin: 0;" aria-label="<?php esc_attr_e( 'Search entities', 'charts' ); ?>">
 			</div>
 			<!-- Filters -->
 			<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+			<?php if ( $type === 'track' ) : ?>
+				<select name="artist_id" class="charts-input" style="margin: 0; min-width: 190px;" aria-label="<?php esc_attr_e( 'Filter tracks by artist', 'charts' ); ?>">
+					<option value=""><?php esc_html_e( 'All Artists', 'charts' ); ?></option>
+					<?php foreach ( $artists as $artist ) : ?>
+						<option value="<?php echo (int) $artist->id; ?>" <?php selected( $filter_artist, (int) $artist->id ); ?>><?php echo esc_html( $artist->display_name ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			<?php endif; ?>
 				<select name="spotify_linked" class="charts-input" style="margin: 0;">
 				<option value=""><?php echo $type === 'video' ? __( 'YouTube Status', 'charts' ) : __( 'Spotify Sync Status', 'charts' ); ?></option>
 				<option value="yes" <?php selected($filter_spotify, 'yes'); ?>><?php _e( 'Linked Only', 'charts' ); ?></option>
@@ -213,12 +236,15 @@ $entity_type = $type;
 				<option value="no" <?php selected($filter_image, 'no'); ?>><?php _e( 'Missing Artwork', 'charts' ); ?></option>
 			</select>
 
-			<select name="missing_en" class="charts-input" style="margin: 0;">
-				<option value="">English Name Status</option>
-				<option value="yes" <?php selected($filter_en, 'yes'); ?>>Missing English Name</option>
-			</select>
+			<?php if ( $type === 'artist' || $type === 'track' ) : ?>
+				<select name="missing_en" class="charts-input" style="margin: 0;">
+					<option value=""><?php esc_html_e( 'English Name Status', 'charts' ); ?></option>
+					<option value="yes" <?php selected($filter_en, 'yes'); ?>><?php esc_html_e( 'Missing English Name', 'charts' ); ?></option>
+					<option value="no" <?php selected($filter_en, 'no'); ?>><?php esc_html_e( 'Has English Name', 'charts' ); ?></option>
+				</select>
+			<?php endif; ?>
 			<button type="submit" class="charts-btn-secondary" style="margin: 0; padding: 8px 20px;"><?php _e( 'Filter', 'charts' ); ?></button>
-			<?php if($search || $filter_spotify || $filter_image || $filter_en): ?>
+			<?php if($search || $filter_spotify || $filter_image || $filter_en || $filter_artist): ?>
 				<a href="<?php echo admin_url('admin.php?page='.$page); ?>" style="font-size: 11px; text-decoration: none; color: #666;"><?php _e( 'Clear All', 'charts' ); ?></a>
 			<?php endif; ?>
 		</form>
@@ -226,7 +252,11 @@ $entity_type = $type;
 		<!-- Pagination Navigation -->
 		<div class="kc-pagination" style="display: flex; align-items: center; gap: 10px;">
 			<span style="font-size: 13px; font-weight: 700; color: #666;">
-				<?php printf( __( 'Showing %d - %d of %d', 'charts' ), $offset + 1, min($offset + $per_page, $total), $total ); ?>
+				<?php if ( $total > 0 ) : ?>
+					<?php printf( __( 'Showing %d - %d of %d', 'charts' ), $offset + 1, min($offset + $per_page, $total), $total ); ?>
+				<?php else : ?>
+					<?php esc_html_e( 'Showing 0 of 0', 'charts' ); ?>
+				<?php endif; ?>
 			</span>
 			<div style="display: flex; gap: 4px;">
 				<?php if($current_page > 1): ?>

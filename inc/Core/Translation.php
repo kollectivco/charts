@@ -40,6 +40,8 @@ class Translation {
         'Week of' => 'أسبوع',
         'More by' => 'المزيد من',
         'View Artist' => 'عرض الفنان',
+        'Related Track' => 'التراك المرتبط',
+        'Related Clips' => 'الكليبات المرتبطة',
         'More Charts' => 'قوائم أخرى',
         'View All Charts' => 'عرض كل القوائم',
         'Chart History' => 'تاريخ الظهور',
