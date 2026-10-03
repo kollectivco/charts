@@ -273,6 +273,9 @@ class BillboardService {
 		if ( $chart_id && ( ! $definition || $definition->item_type !== $chart['item_type'] ) ) {
 			return new \WP_Error( 'billboard_target_mismatch', __( 'Choose a destination chart with the same item type as the selected Billboard list.', 'charts' ) );
 		}
+		if ( $definition && ! in_array( $definition->platform ?? 'all', array( 'all', 'billboard' ), true ) ) {
+			return new \WP_Error( 'billboard_platform_mismatch', __( 'Choose a chart configured for Billboard Arabia or all platforms.', 'charts' ) );
+		}
 		$target_chart_type = $definition ? 'cid-' . (int) $definition->id : ( $chart['item_type'] === 'artist' ? 'top-artists' : 'top-songs' );
 		$source_id = $wpdb->get_var( $wpdb->prepare(
 			"SELECT id FROM $source_table WHERE platform = 'billboard' AND chart_type = %s LIMIT 1",

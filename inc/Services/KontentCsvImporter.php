@@ -35,6 +35,9 @@ class KontentCsvImporter {
 				'is_active' => 1
 			]);
 			$source_id = $wpdb->insert_id;
+		} else {
+			// An explicit import means this source is in use and should be visible on its chart.
+			$wpdb->update($source_table, ['is_active' => 1], ['id' => $source_id]);
 		}
 
 		// Create run record

@@ -450,6 +450,9 @@ class YouTubeCsvImporter {
 				'created_at' => current_time( 'mysql' ) 
 			) );
 			$id = $wpdb->insert_id;
+		} else {
+			// An explicit import means this source is in use and should be visible on its chart.
+			$wpdb->update( $table, array( 'is_active' => 1 ), array( 'id' => $id ) );
 		}
 		return $id;
 	}

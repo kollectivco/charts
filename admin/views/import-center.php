@@ -243,6 +243,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									?>
 										<option value="<?php echo (int) $definition->id; ?>" 
 												data-type="<?php echo esc_attr( $definition->item_type ?: 'track' ); ?>" 
+												data-platform="<?php echo esc_attr( $definition->platform ?: 'all' ); ?>"
 												data-chart-type="<?php echo esc_attr( $definition->chart_type ?: 'top-songs' ); ?>"
 												data-country="<?php echo esc_attr( $definition->country_code ?: 'eg' ); ?>"
 												data-frequency="<?php echo esc_attr( $definition->frequency ?: 'weekly' ); ?>">

@@ -186,13 +186,13 @@ class MergeEngine {
 				$master_id
 			) );
 
-			// 2. Move track_artists links to master track
-			// (We just reassign track_id. If artist is already linked to master track, it will be ignored by UNIQUE index)
+			// 2. Move track artist links to the master track. The schema stores these
+			// relations in charts_track_artists using track_id (not item_id).
 			$wpdb->query( $wpdb->prepare(
-				"UPDATE IGNORE {$wpdb->prefix}charts_item_artists SET item_id = %d WHERE item_type = 'track' AND item_id IN ($ids_in)",
+				"UPDATE IGNORE {$wpdb->prefix}charts_track_artists SET track_id = %d WHERE track_id IN ($ids_in)",
 				$master_id
 			) );
-			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_item_artists WHERE item_type = 'track' AND item_id IN ($ids_in)" );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}charts_track_artists WHERE track_id IN ($ids_in)" );
 
 			// 3. Update chart entries
 			$wpdb->query( $wpdb->prepare(

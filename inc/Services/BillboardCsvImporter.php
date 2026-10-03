@@ -12,6 +12,10 @@ class BillboardCsvImporter {
 		
 		$chart_id = absint( $meta['chart_id'] ?? 0 );
 		$definition = $chart_id ? ( new \Charts\Admin\SourceManager() )->get_definition( $chart_id ) : null;
+		if ( $chart_id && ! $definition ) return new \WP_Error( 'invalid_chart', __( 'Choose a valid destination chart.', 'charts' ) );
+		if ( $definition && ! in_array( $definition->platform ?? 'all', array( 'all', 'billboard' ), true ) ) {
+			return new \WP_Error( 'billboard_platform_mismatch', __( 'Choose a chart configured for Billboard Arabia or all platforms.', 'charts' ) );
+		}
 		$item_type = $definition && $definition->item_type === 'artist' ? 'artist' : 'track';
 		$chart_type = $chart_id ? 'cid-' . $chart_id : 'top-songs';
 		$country = $definition ? strtolower( $definition->country_code ) : 'global';
@@ -30,6 +34,9 @@ class BillboardCsvImporter {
 				'is_active' => 1,
 			) );
 			$source_id = $wpdb->insert_id;
+		} else {
+			// An explicit import means this source is in use and should be visible on its chart.
+			$wpdb->update( $source_table, array( 'is_active' => 1 ), array( 'id' => $source_id ) );
 		}
 		if ( ! $source_id ) return new \WP_Error( 'billboard_source_failed', __( 'Could not create the Billboard import source.', 'charts' ) );
 

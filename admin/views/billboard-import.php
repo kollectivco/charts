@@ -56,7 +56,7 @@ $nonce       = wp_create_nonce( 'charts_admin_action' );
 				<select id="bb-select-chart" required>
 					<option value=""><?php esc_html_e( 'اختار الشارت الوجهة', 'charts' ); ?></option>
 					<?php foreach ( $definitions as $definition ) : ?>
-						<option value="<?php echo (int) $definition->id; ?>" data-item-type="<?php echo esc_attr( $definition->item_type ); ?>" data-slug="<?php echo esc_attr( $definition->slug ); ?>"><?php echo esc_html( $definition->title ); ?></option>
+						<option value="<?php echo (int) $definition->id; ?>" data-item-type="<?php echo esc_attr( $definition->item_type ); ?>" data-platform="<?php echo esc_attr( $definition->platform ?: 'all' ); ?>" data-slug="<?php echo esc_attr( $definition->slug ); ?>"><?php echo esc_html( $definition->title ); ?></option>
 					<?php endforeach; ?>
 				</select>
 				<small><?php esc_html_e( 'هنعرض هنا الشارتات المتوافقة مع نوع القائمة.', 'charts' ); ?></small>
@@ -133,9 +133,11 @@ jQuery(function($) {
 		var $sourceOption = $source.find(':selected');
 		var itemType = $sourceOption.data('item-type');
 		var matchSlug = $sourceOption.data('target-slug');
+		var platform = $sourceOption.data('platform') || 'billboard';
 		var chosen = '';
 		$target.find('option').each(function() {
-			var $option = $(this), compatible = !$option.val() || $option.data('item-type') === itemType;
+			var $option = $(this), chartPlatform = $option.data('platform') || 'all';
+			var compatible = !$option.val() || ($option.data('item-type') === itemType && (chartPlatform === 'all' || chartPlatform === platform));
 			$option.prop('disabled', !compatible).toggle(compatible);
 			if (preferMatch && $option.data('slug') === matchSlug && compatible) chosen = $option.val();
 		});

@@ -163,6 +163,20 @@ jQuery(document).ready(function($) {
         });
 
         // Form Logic
+        const filterChartsByPlatform = () => {
+            const platform = $('[name="platform"]:checked').val();
+            let selectedCompatible = false;
+            $chartSelect.find('option').each(function() {
+                const $option = $(this);
+                if (!$option.val()) return;
+                const chartPlatform = $option.data('platform') || 'all';
+                const compatible = chartPlatform === 'all' || chartPlatform === platform;
+                $option.prop('disabled', !compatible).toggle(compatible);
+                if (compatible && $option.is(':selected')) selectedCompatible = true;
+            });
+            if (!selectedCompatible) $chartSelect.val('');
+        };
+
         $chartSelect.on('change', function() {
             const $opt = $(this).find('option:selected');
             if ($opt.val()) {
@@ -174,7 +188,11 @@ jQuery(document).ready(function($) {
             checkReadiness();
         });
 
-        $('[name="country"], [name="platform"]').on('change', checkReadiness);
+        $('[name="country"]').on('change', checkReadiness);
+        $('[name="platform"]').on('change', function() {
+            filterChartsByPlatform();
+            checkReadiness();
+        });
 
         $form.on('submit', function() {
             $submitBtn.addClass('processing').prop('disabled', true);
@@ -184,6 +202,7 @@ jQuery(document).ready(function($) {
         });
 
         // Initial check
+        filterChartsByPlatform();
         checkReadiness();
     }
 

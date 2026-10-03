@@ -299,7 +299,7 @@ class Bootstrap {
 				$run_id = self::process_unified_import();
 				if ( is_numeric($run_id) || (is_array($run_id) && isset($run_id['run_id'])) ) {
 					\Charts\Core\Notify::success( __( 'Unified segment ingest complete. Live signals are being calibrated in the nexus.', 'charts' ), __( 'Nexus Sync Complete', 'charts' ) );
-					wp_redirect( admin_url( 'admin.php?page=charts-billboard-import&sync_complete=1&run_id=' . (is_array($run_id) ? $run_id['run_id'] : $run_id) ) );
+					wp_redirect( admin_url( 'admin.php?page=charts-import&sync_complete=1&run_id=' . (is_array($run_id) ? $run_id['run_id'] : $run_id) ) );
 					exit;
 				}
 				$processed = true;
@@ -755,6 +755,24 @@ class Bootstrap {
 
 	private static function process_unified_import() {
 		$platform = sanitize_text_field( $_POST['platform'] ?? 'spotify' );
+		if ( ! in_array( $platform, array( 'spotify', 'youtube', 'kontent', 'billboard' ), true ) ) {
+			\Charts\Core\Notify::error( __( 'Choose a supported import platform.', 'charts' ), __( 'Invalid Import Platform', 'charts' ) );
+			return false;
+		}
+
+		$chart_id = absint( $_POST['chart_id'] ?? 0 );
+		$definition = $chart_id ? ( new SourceManager() )->get_definition( $chart_id ) : null;
+		if ( ! $definition ) {
+			\Charts\Core\Notify::error( __( 'Choose a valid destination chart.', 'charts' ), __( 'Invalid Chart', 'charts' ) );
+			return false;
+		}
+		$definition_platform = $definition->platform ?? 'all';
+		if ( $definition_platform !== 'all' && $definition_platform !== $platform ) {
+			\Charts\Core\Notify::error( __( 'The selected chart is configured for a different platform.', 'charts' ), __( 'Chart Platform Mismatch', 'charts' ) );
+			return false;
+		}
+		// The selected chart profile is authoritative for the item type.
+		$_POST['item_type'] = $definition->item_type ?: ( $_POST['item_type'] ?? 'track' );
 		
 		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {
 			\Charts\Core\Notify::warning( __( 'No valid segment file was detected for the unified import stream.', 'charts' ), __( 'Upload Required', 'charts' ) );
