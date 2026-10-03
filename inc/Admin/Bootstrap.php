@@ -2042,13 +2042,17 @@ class Bootstrap {
 		foreach ($entities as $e) {
 			$nodes[$e->id] = $e;
 			$edges[$e->id] = [];
-			$s_id = $e->spotify_id ?? '';
-			$y_id = $e->youtube_id ?? '';
+			$s_id = trim($e->spotify_id ?? '');
+			if (strtolower($s_id) === 'null' || $s_id === '0') $s_id = '';
+			$y_id = trim($e->youtube_id ?? '');
+			if (strtolower($y_id) === 'null' || $y_id === '0') $y_id = '';
 			$b_key = self::generate_blocking_key($e->name);
+			$b_key_en = self::generate_blocking_key($e->name_en ?? '');
 			
 			if (!empty($s_id)) $index_s[$s_id][] = $e->id;
 			if (!empty($y_id)) $index_y[$y_id][] = $e->id;
 			if (!empty($b_key)) $index_n[$b_key][] = $e->id;
+			if (!empty($b_key_en)) $index_n[$b_key_en][] = $e->id;
 		}
 
 		foreach ([$index_s, $index_y, $index_n] as $index) {

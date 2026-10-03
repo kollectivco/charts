@@ -20,7 +20,15 @@ $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ?
 	<?php if ( $id && ! $entity ) : ?><div class="notice notice-error"><p><?php esc_html_e( 'This record could not be found.', 'charts' ); ?></p></div><?php else : ?>
 	<form method="post" class="entity-edit-card">
 		<?php wp_nonce_field( 'charts_admin_action' ); ?><input type="hidden" name="charts_action" value="save_entity"><input type="hidden" name="entity_type" value="<?php echo esc_attr( $type ); ?>"><input type="hidden" name="entity_id" value="<?php echo (int) $id; ?>">
-		<div class="entity-edit-card-head"><span class="dashicons <?php echo esc_attr( $type === 'artist' ? 'dashicons-groups' : ( $type === 'track' ? 'dashicons-playlist-audio' : 'dashicons-video-alt3' ) ); ?>"></span><div><strong><?php echo esc_html( $kind ); ?> <?php esc_html_e( 'details', 'charts' ); ?></strong><small><?php echo $id ? esc_html( sprintf( __( 'Record ID #%d', 'charts' ), $id ) ) : esc_html__( 'New library record', 'charts' ); ?></small></div></div>
+		
+		<div class="entity-edit-card-head">
+			<div class="dashicons <?php echo esc_attr( $type === 'artist' ? 'dashicons-groups' : ( $type === 'track' ? 'dashicons-playlist-audio' : 'dashicons-video-alt3' ) ); ?>"></div>
+			<div>
+				<h2><?php echo esc_html( $kind ); ?> <?php esc_html_e( 'details', 'charts' ); ?></h2>
+				<p><?php echo $id ? esc_html( sprintf( __( 'Record ID #%d', 'charts' ), $id ) ) : esc_html__( 'New library record', 'charts' ); ?></p>
+			</div>
+		</div>
+</div>
 		<div class="entity-edit-fields">
 			<div class="entity-edit-field wide"><label for="entity-name"><?php echo esc_html( $type === 'artist' ? __( 'Arabic display name', 'charts' ) : __( 'Arabic title', 'charts' ) ); ?></label><input id="entity-name" name="entity_name" type="text" value="<?php echo esc_attr( $name ); ?>" required></div>
 			<div class="entity-edit-field"><label for="entity-slug"><?php esc_html_e( 'English slug', 'charts' ); ?></label><input id="entity-slug" name="slug" type="text" value="<?php echo esc_attr( $entity->slug ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Generated from the name if blank', 'charts' ); ?>" dir="ltr"></div>
@@ -35,9 +43,33 @@ $image = $entity ? ( $type === 'artist' ? $entity->image : ( $type === 'track' ?
 			<?php endif; ?>
 			<div class="entity-edit-field wide"><label for="entity-image"><?php echo esc_html( $type === 'artist' ? __( 'Artist image URL', 'charts' ) : ( $type === 'track' ? __( 'Cover image URL', 'charts' ) : __( 'Thumbnail URL', 'charts' ) ) ); ?></label><input id="entity-image" name="image" type="url" value="<?php echo esc_attr( $image ); ?>" dir="ltr"><?php if ( $image ) : ?><img class="entity-edit-preview" src="<?php echo esc_url( $image ); ?>" alt=""><?php endif; ?></div>
 		</div>
-		<footer class="entity-edit-footer"><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $page ) ); ?>"><?php esc_html_e( 'Cancel', 'charts' ); ?></a><button type="submit" class="button button-primary"><span class="dashicons dashicons-saved" aria-hidden="true"></span><?php esc_html_e( 'Save changes', 'charts' ); ?></button></footer>
+		
+		<footer class="entity-edit-footer">
+			<a class="charts-btn-secondary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $page ) ); ?>"><?php esc_html_e( 'Cancel', 'charts' ); ?></a>
+			<button type="submit" class="charts-btn-primary"><span class="dashicons dashicons-saved" aria-hidden="true" style="margin-top:2px;"></span> <?php esc_html_e( 'Save changes', 'charts' ); ?></button>
+		</footer>
+
 	</form><?php endif; ?>
 </div>
+
 <style>
-.entity-edit-page{max-width:1080px}.entity-edit-eyebrow{margin:0 0 5px;color:#5e54b2;font-size:10px;font-weight:800;letter-spacing:.13em}.entity-edit-card{max-width:860px;margin-top:23px;border:1px solid #e4e8f0;border-radius:14px;background:#fff;box-shadow:0 12px 32px rgba(28,39,63,.06)}.entity-edit-card-head{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid #edf0f5}.entity-edit-card-head>.dashicons{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:#f1efff;color:#5c49b6;font-size:21px}.entity-edit-card-head div{display:flex;flex-direction:column;gap:3px;color:#273247}.entity-edit-card-head small{color:#8a94a6;font-size:11px}.entity-edit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:24px}.entity-edit-field{display:flex;flex-direction:column;gap:7px;min-width:0}.entity-edit-field.wide{grid-column:1/-1}.entity-edit-field label{color:#3d485c;font-size:12px;font-weight:700}.entity-edit-field input,.entity-edit-field select{width:100%;min-height:42px;border:1px solid #dce1ea;border-radius:7px;padding:8px 11px;color:#1f2937}.entity-edit-field input:focus,.entity-edit-field select:focus{border-color:#6a58c7;box-shadow:0 0 0 3px rgba(106,88,199,.12);outline:0}.entity-edit-preview{width:72px;height:72px;margin-top:3px;border-radius:10px;object-fit:cover}.entity-edit-footer{display:flex;justify-content:flex-end;gap:9px;padding:16px 24px;border-top:1px solid #edf0f5;background:#fafbfc;border-radius:0 0 14px 14px}.entity-edit-footer .button-primary{display:inline-flex;align-items:center;gap:6px;background:#5644b6;border-color:#5644b6}.entity-edit-footer .button-primary .dashicons{font-size:16px;width:16px;height:16px}@media(max-width:600px){.entity-edit-fields{grid-template-columns:1fr;padding:18px}.entity-edit-field.wide{grid-column:auto}.entity-edit-card-head,.entity-edit-footer{padding-left:18px;padding-right:18px}}
+.entity-edit-page { max-width: 900px; margin: 20px auto; }
+.entity-edit-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); overflow: hidden; margin-top: 24px; }
+.entity-edit-card-head { background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 16px; }
+.entity-edit-card-head .dashicons { font-size: 28px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: #e0e7ff; color: #4f46e5; border-radius: 12px; }
+.entity-edit-card-head h2 { margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; }
+.entity-edit-card-head p { margin: 4px 0 0; font-size: 13px; color: #64748b; }
+.entity-edit-fields { padding: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.entity-edit-field { display: flex; flex-direction: column; gap: 8px; }
+.entity-edit-field.wide { grid-column: 1 / -1; }
+.entity-edit-field label { font-size: 13px; font-weight: 600; color: #334155; }
+.entity-edit-field input, .entity-edit-field select { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; transition: all 0.2s; background: #f8fafc; }
+.entity-edit-field input:focus, .entity-edit-field select:focus { background: #fff; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); outline: none; }
+.entity-edit-preview { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; border: 1px solid #e2e8f0; margin-top: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.entity-edit-footer { padding: 20px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; }
+.charts-btn-primary { background: #0f172a; color: #fff; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+.charts-btn-primary:hover { background: #1e293b; color: #fff; }
+.charts-btn-secondary { background: #fff; color: #475569; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; }
+.charts-btn-secondary:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
 </style>
+

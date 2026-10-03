@@ -256,9 +256,7 @@ $entity_type = $type;
 		</div>
 	<?php endif; ?>
 
-	<div class="charts-grid" style="margin-top: 24px;">
-		<div class="charts-card" style="grid-column: span 12; padding: 0; overflow: visible;">
-			
+	<div style="margin-top: 24px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
 			<form method="post" id="entities-bulk-form">
 				<?php wp_nonce_field( 'charts_admin_action' ); ?>
 				<input type="hidden" name="charts_action" value="bulk_action">
@@ -273,8 +271,8 @@ $entity_type = $type;
 							<option value="bulk_merge"><?php _e( 'Merge Selected', 'charts' ); ?></option>
 							<option value="delete" style="color:red;"><?php _e( 'Delete Permanently', 'charts' ); ?></option>
 						</select>
-						<button type="button" class="charts-btn-secondary" style="margin: 0;" onclick="handleBulkActionSubmit(event)">
-							<?php _e( 'Apply', 'charts' ); ?>
+						<button type="button" class="charts-btn-secondary" style="margin: 0; height: 36px;" onclick="handleBulkActionSubmit(event)">
+							<?php _e( 'Apply Bulk Action', 'charts' ); ?>
 						</button>
 					</div>
 				<?php endif; ?>
@@ -429,7 +427,6 @@ $entity_type = $type;
 				<?php endif; ?>
 			</form>
 		</div>
-	</div>
 
 	<!-- Sync Modal -->
 	<div id="sync-progress-modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;">
