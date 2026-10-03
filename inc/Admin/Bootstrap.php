@@ -2032,15 +2032,55 @@ class Bootstrap {
 		$groups = [];
 		$clusters = [];
 
-		// Group by blocking key
-		foreach ($entities as $e) {
-			$blocking_key = self::generate_blocking_key($e->name);
-			if (empty($blocking_key)) continue;
+		// Connected Components Clustering (Matches by Spotify ID, YouTube ID, OR Name)
+		$nodes = [];
+		$edges = [];
+		$index_s = [];
+		$index_y = [];
+		$index_n = [];
 
-			if (!isset($groups[$blocking_key])) {
-				$groups[$blocking_key] = [];
+		foreach ($entities as $e) {
+			$nodes[$e->id] = $e;
+			$edges[$e->id] = [];
+			$s_id = $e->spotify_id ?? '';
+			$y_id = $e->youtube_id ?? '';
+			$b_key = self::generate_blocking_key($e->name);
+			
+			if (!empty($s_id)) $index_s[$s_id][] = $e->id;
+			if (!empty($y_id)) $index_y[$y_id][] = $e->id;
+			if (!empty($b_key)) $index_n[$b_key][] = $e->id;
+		}
+
+		foreach ([$index_s, $index_y, $index_n] as $index) {
+			foreach ($index as $ids) {
+				if (count($ids) > 1) {
+					$first = $ids[0];
+					for ($i = 1; $i < count($ids); $i++) {
+						$edges[$first][] = $ids[$i];
+						$edges[$ids[$i]][] = $first;
+					}
+				}
 			}
-			$groups[$blocking_key][] = $e;
+		}
+
+		$visited = [];
+		$groups = [];
+		foreach ($nodes as $id => $e) {
+			if (isset($visited[$id])) continue;
+			$group = [];
+			$queue = [$id];
+			$visited[$id] = true;
+			while (!empty($queue)) {
+				$curr = array_shift($queue);
+				$group[] = $nodes[$curr];
+				foreach ($edges[$curr] as $neighbor) {
+					if (!isset($visited[$neighbor])) {
+						$visited[$neighbor] = true;
+						$queue[] = $neighbor;
+					}
+				}
+			}
+			if (count($group) > 1) $groups[] = $group;
 		}
 
 		// Process groups to build clusters with confidence scores
@@ -2228,16 +2268,55 @@ class Bootstrap {
 
 			if (empty($entities)) continue;
 
-			// Group by blocking key
-			$groups = [];
-			foreach ($entities as $e) {
-				$blocking_key = self::generate_blocking_key($e->name);
-				if (empty($blocking_key)) continue;
+			// Connected Components Clustering (Matches by Spotify ID, YouTube ID, OR Name)
+			$nodes = [];
+			$edges = [];
+			$index_s = [];
+			$index_y = [];
+			$index_n = [];
 
-				if (!isset($groups[$blocking_key])) {
-					$groups[$blocking_key] = [];
+			foreach ($entities as $e) {
+				$nodes[$e->id] = $e;
+				$edges[$e->id] = [];
+				$s_id = $e->spotify_id ?? '';
+				$y_id = $e->youtube_id ?? '';
+				$b_key = self::generate_blocking_key($e->name);
+				
+				if (!empty($s_id)) $index_s[$s_id][] = $e->id;
+				if (!empty($y_id)) $index_y[$y_id][] = $e->id;
+				if (!empty($b_key)) $index_n[$b_key][] = $e->id;
+			}
+
+			foreach ([$index_s, $index_y, $index_n] as $index) {
+				foreach ($index as $ids) {
+					if (count($ids) > 1) {
+						$first = $ids[0];
+						for ($i = 1; $i < count($ids); $i++) {
+							$edges[$first][] = $ids[$i];
+							$edges[$ids[$i]][] = $first;
+						}
+					}
 				}
-				$groups[$blocking_key][] = $e;
+			}
+
+			$visited = [];
+			$groups = [];
+			foreach ($nodes as $id => $e) {
+				if (isset($visited[$id])) continue;
+				$group = [];
+				$queue = [$id];
+				$visited[$id] = true;
+				while (!empty($queue)) {
+					$curr = array_shift($queue);
+					$group[] = $nodes[$curr];
+					foreach ($edges[$curr] as $neighbor) {
+						if (!isset($visited[$neighbor])) {
+							$visited[$neighbor] = true;
+							$queue[] = $neighbor;
+						}
+					}
+				}
+				if (count($group) > 1) $groups[] = $group;
 			}
 
 			// Find auto-merge groups (confidence >= 95%)
