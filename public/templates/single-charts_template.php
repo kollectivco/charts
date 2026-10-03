@@ -1,18 +1,25 @@
 <?php
 /**
- * Template for displaying single Chart Templates inside the Elementor Editor.
+ * Template for displaying single Chart Templates inside the Elementor Editor / Frontend.
  */
 get_header();
 
-while ( have_posts() ) :
-    the_post();
-    ?>
-    <div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-        <div class="entry-content">
-            <?php the_content(); ?>
-        </div>
-    </div>
+?>
+<main id="primary" class="site-main charts-template-container">
     <?php
-endwhile;
+    while ( have_posts() ) :
+        the_post();
+        ?>
+        <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+            <div class="entry-content">
+                <?php the_content(); ?>
+            </div>
+        </article>
+        <?php
+    endwhile;
+    ?>
+</main>
+<?php
 
 get_footer();
+

@@ -11,8 +11,11 @@ class Templates {
     
     public static function force_elementor_template( $template ) {
         if ( is_singular( 'charts_template' ) ) {
-            // If Elementor is in preview/edit mode or has a custom page template (e.g., Canvas, Header/Footer), respect it
+            // When in Elementor preview or edit mode, let Elementor handle the template entirely
             if ( class_exists( '\Elementor\Plugin' ) ) {
+                if ( \Elementor\Plugin::$instance->preview->is_preview_mode() ) {
+                    return $template;
+                }
                 $document = \Elementor\Plugin::$instance->documents->get( get_the_ID() );
                 if ( $document && $document->is_built_with_elementor() ) {
                     $page_template = $document->get_meta( '_wp_page_template' );
@@ -54,13 +57,14 @@ class Templates {
             'publicly_queryable' => true,
             'show_ui'            => true,
             'show_in_menu'       => 'charts-dashboard',
+            'show_in_rest'       => true,
             'query_var'          => true,
             'rewrite'            => [ 'slug' => 'chart-template' ],
             'capability_type'    => 'post',
             'has_archive'        => false,
             'hierarchical'       => false,
             'menu_position'      => null,
-            'supports'           => [ 'title', 'editor', 'elementor' ],
+            'supports'           => [ 'title', 'editor', 'elementor', 'custom-fields', 'page-attributes' ],
         ];
 
         register_post_type( 'charts_template', $args );
@@ -69,8 +73,9 @@ class Templates {
     public static function enable_elementor() {
         add_post_type_support( 'charts_template', 'elementor' );
 
-        add_filter( 'elementor/editor/is_edit_mode', function( $is_edit ) {
-            return $is_edit;
+        // Register document type for charts_template in Elementor
+        add_action( 'elementor/documents/register', function( $documents_manager ) {
+            $documents_manager->register_document_type( 'charts_template', \Elementor\Core\DocumentTypes\Page::class );
         } );
 
         $cpt_support = get_option( 'elementor_cpt_support' );
