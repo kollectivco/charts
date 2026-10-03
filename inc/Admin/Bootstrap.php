@@ -122,6 +122,16 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'auto_link_clips_to_tracks':
+				$result = self::auto_link_clips_to_tracks();
+				if ( is_wp_error( $result ) ) {
+					\Charts\Core\Notify::error( $result->get_error_message(), __( 'Automatic linking failed', 'charts' ) );
+				} else {
+					\Charts\Core\Notify::success( sprintf( __( 'Automatically linked %d clips with a unique track match.', 'charts' ), (int) $result ), __( 'Automatic linking complete', 'charts' ) );
+				}
+				$processed = true;
+				break;
+
 			case 'save_settings_v2':
 				if ( ! current_user_can( 'manage_options' ) ) return;
 				check_admin_referer( 'kcharts_save_v2' );
@@ -468,7 +478,7 @@ class Bootstrap {
 				} else {
 					$module = 'artists';
 				}
-			} elseif ( $action === 'save_clip_track_mappings' ) {
+			} elseif ( in_array( $action, array( 'save_clip_track_mappings', 'auto_link_clips_to_tracks' ), true ) ) {
 				$module = 'clips';
 			} elseif ( strpos( $action, 'definition' ) !== false ) {
 				$module = 'definitions';
@@ -490,7 +500,7 @@ class Bootstrap {
 				$target_url = $referer;
 			} else {
 				// Fallback to clean module URL
-				$target_url = $action === 'save_clip_track_mappings'
+				$target_url = in_array( $action, array( 'save_clip_track_mappings', 'auto_link_clips_to_tracks' ), true )
 					? admin_url( 'admin.php?page=charts-clip-track-linker' )
 					: \Charts\Core\Router::get_dashboard_url( $module );
 				
@@ -1081,6 +1091,65 @@ class Bootstrap {
 		}
 
 		return count( $validated );
+	}
+
+	/** Link currently unlinked clips only when their matching track is unique. */
+	private static function auto_link_clips_to_tracks() {
+		global $wpdb;
+		$matches = self::get_auto_clip_track_matches();
+		if ( ! $matches ) return 0;
+
+		$clips_table = $wpdb->prefix . 'charts_videos';
+		$by_track = array();
+		foreach ( $matches as $match ) {
+			$by_track[ (int) $match->track_id ][] = (int) $match->clip_id;
+		}
+
+		$linked = 0;
+		foreach ( $by_track as $track_id => $clip_ids ) {
+			foreach ( array_chunk( $clip_ids, 200 ) as $chunk ) {
+				$ids = implode( ',', array_map( 'absint', $chunk ) );
+				$result = $wpdb->query( $wpdb->prepare( "UPDATE $clips_table SET related_track_id = %d WHERE id IN ($ids) AND (related_track_id IS NULL OR related_track_id = 0)", $track_id ) );
+				if ( $result === false ) {
+					return new \WP_Error( 'clip_auto_link_failed', __( 'The automatic links could not be saved. Please retry.', 'charts' ) );
+				}
+				$linked += (int) $result;
+			}
+		}
+
+		return $linked;
+	}
+
+	/** Return safe, unique candidates by matching YouTube ID or exact normalized title plus primary artist. */
+	public static function count_auto_clip_track_matches() {
+		return self::get_auto_clip_track_matches( true );
+	}
+
+	private static function get_auto_clip_track_matches( $count_only = false ) {
+		global $wpdb;
+		$clips_table = $wpdb->prefix . 'charts_videos';
+		$tracks_table = $wpdb->prefix . 'charts_tracks';
+		$from_sql = "
+			FROM $clips_table v
+			LEFT JOIN (
+				SELECT youtube_id, MIN(id) AS track_id
+				FROM $tracks_table
+				WHERE youtube_id IS NOT NULL AND youtube_id != ''
+				GROUP BY youtube_id
+				HAVING COUNT(*) = 1
+			) y ON y.youtube_id = v.youtube_id AND v.youtube_id IS NOT NULL AND v.youtube_id != ''
+			LEFT JOIN (
+				SELECT normalized_title, primary_artist_id, MIN(id) AS track_id
+				FROM $tracks_table
+				WHERE normalized_title IS NOT NULL AND normalized_title != '' AND primary_artist_id IS NOT NULL AND primary_artist_id > 0
+				GROUP BY normalized_title, primary_artist_id
+				HAVING COUNT(*) = 1
+			) n ON n.normalized_title = v.normalized_title AND n.primary_artist_id = v.primary_artist_id
+			WHERE (v.related_track_id IS NULL OR v.related_track_id = 0)
+				AND (y.track_id IS NOT NULL OR n.track_id IS NOT NULL)
+		";
+		if ( $count_only ) return (int) $wpdb->get_var( "SELECT COUNT(*) $from_sql" );
+		return $wpdb->get_results( "SELECT v.id AS clip_id, COALESCE(y.track_id, n.track_id) AS track_id $from_sql ORDER BY v.id ASC" );
 	}
 
 	public static function render_insights() {

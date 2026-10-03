@@ -6,7 +6,7 @@ $clips_table = $wpdb->prefix . 'charts_videos';
 $tracks_table = $wpdb->prefix . 'charts_tracks';
 $artists_table = $wpdb->prefix . 'charts_artists';
 $search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
-$status = in_array( $_GET['status'] ?? '', array( 'linked', 'unlinked' ), true ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
+$status = in_array( $_GET['status'] ?? '', array( 'all', 'linked', 'unlinked' ), true ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : 'unlinked';
 $per_page = 50;
 $current_page = max( 1, absint( $_GET['paged'] ?? 1 ) );
 $offset = ( $current_page - 1 ) * $per_page;
@@ -21,6 +21,7 @@ if ( $status === 'unlinked' ) $where .= ' AND (v.related_track_id IS NULL OR v.r
 
 $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $clips_table v LEFT JOIN $tracks_table t ON t.id = v.related_track_id LEFT JOIN $artists_table a ON a.id = v.primary_artist_id $where" );
 $num_pages = max( 1, (int) ceil( $total / $per_page ) );
+$auto_match_count = \Charts\Admin\Bootstrap::count_auto_clip_track_matches();
 if ( $current_page > $num_pages ) {
 	$current_page = $num_pages;
 	$offset = ( $current_page - 1 ) * $per_page;
@@ -32,7 +33,7 @@ $base_url = admin_url( 'admin.php?page=charts-clip-track-linker' );
 	<header class="charts-admin-header">
 		<div>
 			<h1 class="charts-admin-title"><?php esc_html_e( 'Clip-Track Linking', 'charts' ); ?></h1>
-			<p class="charts-admin-subtitle"><?php esc_html_e( 'Match clips to their tracks in one workspace. Search a track for each clip, then save the whole page together.', 'charts' ); ?></p>
+			<p class="charts-admin-subtitle"><?php esc_html_e( 'Automatically link confident matches, then review only the clips that still need attention.', 'charts' ); ?></p>
 		</div>
 		<a class="charts-btn-secondary" href="<?php echo esc_url( admin_url( 'admin.php?page=charts-clips' ) ); ?>">&larr; <?php esc_html_e( 'Back to Clips', 'charts' ); ?></a>
 	</header>
@@ -42,16 +43,28 @@ $base_url = admin_url( 'admin.php?page=charts-clip-track-linker' );
 			<input type="hidden" name="page" value="charts-clip-track-linker">
 			<input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" class="charts-input ctm-search" placeholder="<?php esc_attr_e( 'Search clips, tracks, artists, or YouTube ID…', 'charts' ); ?>">
 			<select name="status" class="charts-input" aria-label="<?php esc_attr_e( 'Link status', 'charts' ); ?>">
-				<option value=""><?php esc_html_e( 'All clips', 'charts' ); ?></option>
+				<option value="all" <?php selected( $status, 'all' ); ?>><?php esc_html_e( 'All clips', 'charts' ); ?></option>
 				<option value="unlinked" <?php selected( $status, 'unlinked' ); ?>><?php esc_html_e( 'Unlinked clips', 'charts' ); ?></option>
 				<option value="linked" <?php selected( $status, 'linked' ); ?>><?php esc_html_e( 'Linked clips', 'charts' ); ?></option>
 			</select>
 			<button class="button button-primary" type="submit"><?php esc_html_e( 'Search', 'charts' ); ?></button>
-			<?php if ( $search || $status ) : ?><a href="<?php echo esc_url( $base_url ); ?>" class="ctm-clear"><?php esc_html_e( 'Clear filters', 'charts' ); ?></a><?php endif; ?>
+			<?php if ( $search || $status !== 'unlinked' ) : ?><a href="<?php echo esc_url( $base_url ); ?>" class="ctm-clear"><?php esc_html_e( 'Clear filters', 'charts' ); ?></a><?php endif; ?>
 		</form>
 		<div class="ctm-count">
 			<?php if ( $total ) : ?><?php printf( esc_html__( 'Showing %1$d–%2$d of %3$d clips', 'charts' ), $offset + 1, min( $offset + $per_page, $total ), $total ); ?><?php else : ?><?php esc_html_e( 'Showing 0 of 0 clips', 'charts' ); ?><?php endif; ?>
 		</div>
+	</div>
+
+	<div class="ctm-auto-match">
+		<div>
+			<h2><?php esc_html_e( 'Automatic matching', 'charts' ); ?></h2>
+			<p><?php esc_html_e( 'One click links unlinked clips when a unique track matches by YouTube ID, or by exact normalized title and primary artist. Existing links and ambiguous matches are left untouched.', 'charts' ); ?></p>
+		</div>
+		<form method="post" onsubmit="return confirm('<?php echo esc_js( __( 'Automatically link every clip with a unique match?', 'charts' ) ); ?>');">
+			<?php wp_nonce_field( 'charts_admin_action' ); ?>
+			<input type="hidden" name="charts_action" value="auto_link_clips_to_tracks">
+			<button type="submit" class="button button-primary" <?php disabled( $auto_match_count < 1 ); ?>><?php printf( esc_html__( 'Auto-link %d confident matches', 'charts' ), $auto_match_count ); ?></button>
+		</form>
 	</div>
 
 	<?php if ( $clips ) : ?>
@@ -108,6 +121,9 @@ $base_url = admin_url( 'admin.php?page=charts-clip-track-linker' );
 .ctm-filter-form { display:flex; align-items:center; gap:10px; flex:1; flex-wrap:wrap; }
 .ctm-search { flex:1 1 320px; min-width:240px; }
 .ctm-count,.ctm-meta { color:#64748b; font-size:12px; }
+.ctm-auto-match { margin:0 0 14px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:18px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; }
+.ctm-auto-match h2 { margin:0 0 5px; color:#166534; font-size:15px; }
+.ctm-auto-match p { margin:0; max-width:850px; color:#475569; }
 .ctm-table-wrap { overflow:visible; background:#fff; border:1px solid #e2e8f0; border-radius:12px; }
 .ctm-table { border:0; border-radius:12px; }
 .ctm-table th,.ctm-table td { padding:14px 16px; vertical-align:middle; }
@@ -126,7 +142,7 @@ $base_url = admin_url( 'admin.php?page=charts-clip-track-linker' );
 .ctm-savebar p { margin:0; color:#64748b; }
 .ctm-pagination { display:flex; justify-content:center; align-items:center; gap:16px; margin:18px 0; }
 .ctm-empty { margin-top:20px; padding:48px; text-align:center; background:#fff; border:1px solid #e2e8f0; border-radius:12px; }
-@media (max-width:782px) { .ctm-savebar { align-items:stretch; flex-direction:column; } .ctm-track-input-row { align-items:stretch; flex-direction:column; } .ctm-unlink { align-self:flex-start; } .ctm-suggestions { right:0; } }
+@media (max-width:782px) { .ctm-auto-match { align-items:stretch; flex-direction:column; } .ctm-savebar { align-items:stretch; flex-direction:column; } .ctm-track-input-row { align-items:stretch; flex-direction:column; } .ctm-unlink { align-self:flex-start; } .ctm-suggestions { right:0; } }
 </style>
 
 <script>
