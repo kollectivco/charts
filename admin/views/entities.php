@@ -191,13 +191,17 @@ $entity_type = $type;
 	</header>
 
 	<!-- Filters & Pagination Bar -->
-	<div style="background: #fff; padding: 16px 24px; border-radius: 12px; box-shadow: var(--k-shadow-sm); margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-		<form method="get" style="display: flex; gap: 12px; align-items: center;">
+	<div style="background: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+		<form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; width: 100%;">
+			<!-- Search -->
+			<div style="flex: 1; min-width: 250px;">
 			<input type="hidden" name="page" value="<?php echo esc_attr($page); ?>">
 			
-			<input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php _e( 'Search by name...', 'charts' ); ?>" class="charts-input" style="width: 250px; margin: 0;">
-			
-			<select name="spotify_linked" class="charts-input" style="margin: 0;">
+			<input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php _e( 'Search by name...', 'charts' ); ?>" class="charts-input" style="width: 100%; margin: 0;">
+			</div>
+			<!-- Filters -->
+			<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+				<select name="spotify_linked" class="charts-input" style="margin: 0;">
 				<option value=""><?php echo $type === 'video' ? __( 'YouTube Status', 'charts' ) : __( 'Spotify Sync Status', 'charts' ); ?></option>
 				<option value="yes" <?php selected($filter_spotify, 'yes'); ?>><?php _e( 'Linked Only', 'charts' ); ?></option>
 				<option value="no" <?php selected($filter_spotify, 'no'); ?>><?php _e( 'Missing Only', 'charts' ); ?></option>
@@ -319,11 +323,19 @@ $entity_type = $type;
 												$label = ( $type === 'artist' ) ? ($item->display_name ?? '—') : ($item->title ?? $item->track_name ?? '—');
 												?>
 											<?php if ( $img ) : ?>
-												<img src="<?php echo esc_url( $img ); ?>" style="width: 32px; height: 32px; border-radius: <?php echo $type === 'artist' ? '50%' : '4px'; ?>; object-fit: cover;">
+												<img src="<?php echo esc_url( $img ); ?>" style="width: 38px; height: 38px; border-radius: <?php echo $type === 'artist' ? '50%' : '8px'; ?>; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
 											<?php else : ?>
-												<div style="width: 32px; height: 32px; border-radius: 4px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;"><?php echo esc_html( strtoupper( substr( $label, 0, 1 ) ) ); ?></div>
+												<div style="width: 38px; height: 38px; border-radius: <?php echo $type === 'artist' ? '50%' : '8px'; ?>; background: #f1f5f9; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: #94a3b8;"><?php echo esc_html( strtoupper( mb_substr( $label, 0, 1 ) ) ); ?></div>
 											<?php endif; ?>
-												<div class="charts-primary" style="font-weight: 700;"><?php echo esc_html( $label ); ?></div>
+												<div style="display: flex; flex-direction: column; justify-content: center;">
+													<div class="charts-primary" style="font-weight: 700; color: #0f172a; font-size: 14px;"><?php echo esc_html( $label ); ?></div>
+													<div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+														<?php 
+														$en_name = ($type === 'artist') ? ($item->display_name_en ?? '') : (($type === 'track' || $type === 'video') ? ($item->title_en ?? '') : '');
+														echo esc_html( $en_name ?: urldecode( $item->slug ?? '' ) ); 
+														?>
+													</div>
+												</div>
 										</div>
 									</td>
 
@@ -359,7 +371,7 @@ $entity_type = $type;
 									?>
 									<td style="text-align: right; padding-right: 24px;">
 										<div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
-											<span class="charts-badge" style="background: <?php echo $s_cfg['bg']; ?>; color: <?php echo $s_cfg['color']; ?>; border: 1px solid <?php echo $s_cfg['color']; ?>30; font-size: 10px; padding: 2px 8px; font-weight: 700;" title="<?php echo esc_attr($meta['sync_error'] ?? ''); ?>">
+											<span class="charts-badge" style="background: <?php echo $s_cfg['bg']; ?>; color: <?php echo $s_cfg['color']; ?>; border: 1px solid <?php echo $s_cfg['color']; ?>30; font-size: 11px; padding: 4px 10px; font-weight: 600; border-radius: 20px;" title="<?php echo esc_attr($meta['sync_error'] ?? ''); ?>">
 												<?php echo esc_html( $s_cfg['label'] ); ?>
 											</span>
 
@@ -949,6 +961,13 @@ window.processSmartMerge = function(clusterIndex) {
 
 
 <style>
+
+.kc-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.kc-card .kc-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.kc-card .kc-value { font-size: 28px; font-weight: 800; color: #0f172a; margin-top: 8px; }
+.kc-card .kc-card-icon { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.kc-card .kc-card-icon .dashicons { font-size: 18px; width: 18px; height: 18px; }
+
 .charts-input { background: #fdfdfd; border: 1px solid #dcdfe6; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #334155; transition: border-color 0.2s, box-shadow 0.2s; }
 .charts-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); outline: none; }
 .charts-btn-secondary { background: #fff; border: 1px solid #dcdfe6; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
