@@ -290,10 +290,10 @@ class ChartTabsShowcase extends Widget_Base {
 		.kc-variant-list .<?php echo $uid; ?>-artist { font-size: 14px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 		/* Style 1: Pills */
-		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-nav-wrap { background: #f1f5f9; padding: 6px; border-radius: 40px; display: inline-flex; margin: 0 auto; }
-		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-nav { margin-bottom: 40px; }
-		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab { padding: 12px 24px; border-radius: 40px; color: #64748b; font-size: 15px; }
-		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab.is-active { background: #fff; color: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-nav-wrap { background: #f1f5f9; padding: 4px; border-radius: 30px; display: inline-flex; margin: 0 auto; }
+		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-nav { margin-bottom: 30px; }
+		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab { padding: 8px 18px; border-radius: 30px; color: #64748b; font-size: 14px; }
+		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab.is-active { background: #fff; color: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-row { padding: 16px 24px; border-bottom: 1px solid #f1f5f9; background: #fff; }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-row:hover { background: #f8fafc; transform: translateX(-4px); }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-img { border-radius: 12px; }
@@ -336,19 +336,21 @@ class ChartTabsShowcase extends Widget_Base {
 		/* Circles: Classic Tab Nav (matching reference image) */
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-nav-wrap {
 			background: #ededf3;
-			padding: 8px;
-			border-radius: 60px;
+			padding: 5px;
+			border-radius: 40px;
 			display: inline-flex;
 			position: relative;
-			border-top: 3px solid transparent;
+			border-top: 2.5px solid transparent;
 			background-clip: padding-box;
+			max-width: 100%;
+			overflow-x: auto;
 		}
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-nav-wrap::before {
 			content: '';
 			position: absolute;
-			top: -3px; left: 0; right: 0;
-			height: 3px;
-			border-radius: 60px 60px 0 0;
+			top: -2.5px; left: 0; right: 0;
+			height: 2.5px;
+			border-radius: 40px 40px 0 0;
 			background: linear-gradient(to left, var(--kc-ring-1, #FF8000), var(--kc-ring-2, #FF2E93));
 		}
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-nav {
@@ -356,21 +358,23 @@ class ChartTabsShowcase extends Widget_Base {
 			gap: 4px;
 			margin-bottom: 0;
 			flex-wrap: nowrap;
+			align-items: center;
 		}
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-tab {
-			padding: 14px 32px;
-			border-radius: 50px;
-			font-size: 18px;
+			padding: 8px 18px;
+			border-radius: 30px;
+			font-size: 14px;
 			font-weight: 700;
 			color: #64748b;
 			transition: all 0.25s;
 			white-space: nowrap;
+			line-height: 1.4;
 		}
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-tab.is-active {
 			background: #ffffff;
 			color: #1e293b;
-			font-weight: 900;
-			box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+			font-weight: 800;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 		}
 
 
