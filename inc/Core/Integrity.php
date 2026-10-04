@@ -72,84 +72,19 @@ class Integrity {
 		$entries_tbl = $wpdb->prefix . 'charts_entries';
 		$artists_tbl = $wpdb->prefix . 'charts_artists';
 		$tracks_tbl  = $wpdb->prefix . 'charts_tracks';
+		$clips_tbl   = $wpdb->prefix . 'charts_videos';
 
-		// 1. Repair Artists with missing item_id
-		$orphan_artists = $wpdb->get_results("SELECT DISTINCT artist_names, artist_names_en FROM $entries_tbl WHERE item_id = 0");
-		foreach ( $orphan_artists as $row ) {
-			if ( empty($row->artist_names) ) continue;
-			$name = trim($row->artist_names);
-			$name_en = isset($row->artist_names_en) ? trim($row->artist_names_en) : '';
-			$normalized = mb_strtolower($name);
-			
-			$id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $artists_tbl WHERE normalized_name = %s", $normalized));
-			if ( !$id ) {
-				$slug_base = ! empty( $name_en ) ? $name_en : $name;
-				$wpdb->insert($artists_tbl, array(
-					'display_name'    => $name,
-					'display_name_en' => $name_en ?: null,
-					'normalized_name' => $normalized,
-					'slug'            => \Charts\Services\Slugger::make( $slug_base, 'artist' ),
-					'created_at'      => current_time('mysql')
-				));
-				$id = $wpdb->insert_id;
-			}
-			if ( $id ) {
-				$wpdb->update($entries_tbl, array('item_id' => $id), array('artist_names' => $name, 'item_id' => 0));
-			}
-		}
+		// 1. Purge explicit ghost entries (where the entity was unlinked but entry left behind)
+		$wpdb->query("DELETE FROM $entries_tbl WHERE item_id = 0");
 
-		// 2. Repair Tracks with missing item_id
-		$orphan_tracks = $wpdb->get_results("SELECT DISTINCT track_name, track_name_en, artist_names, artist_names_en FROM $entries_tbl WHERE item_type = 'track' AND item_id = 0 LIMIT 1000");
-		foreach ( $orphan_tracks as $row ) {
-			if ( empty($row->track_name) ) continue;
-			$title = trim($row->track_name);
-			$title_en = isset($row->track_name_en) ? trim($row->track_name_en) : '';
-			
-			$artists = explode(',', $row->artist_names);
-			$primary_artist = trim($artists[0]);
-			
-			$artists_en = !empty($row->artist_names_en) ? explode(',', $row->artist_names_en) : array();
-			$primary_artist_en = !empty($artists_en[0]) ? trim($artists_en[0]) : '';
-			
-			// Resolve Artist first
-			$normalized_artist = mb_strtolower($primary_artist);
-			$artist_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $artists_tbl WHERE normalized_name = %s", $normalized_artist));
-			if ( !$artist_id ) {
-				$slug_base = ! empty( $primary_artist_en ) ? $primary_artist_en : $primary_artist;
-				$wpdb->insert($artists_tbl, array(
-					'display_name'    => $primary_artist,
-					'display_name_en' => $primary_artist_en ?: null,
-					'normalized_name' => $normalized_artist,
-					'slug'            => \Charts\Services\Slugger::make( $slug_base, 'artist' ),
-					'created_at'      => current_time('mysql')
-				));
-				$artist_id = $wpdb->insert_id;
-			}
+		// 2. Purge orphaned artist entries
+		$wpdb->query("DELETE e FROM $entries_tbl e LEFT JOIN $artists_tbl a ON e.item_id = a.id AND e.item_type = 'artist' WHERE e.item_type = 'artist' AND a.id IS NULL");
 
-			// Resolve Track
-			$normalized_track = mb_strtolower($title);
-			$track_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $tracks_tbl WHERE normalized_title = %s AND primary_artist_id = %d", $normalized_track, $artist_id));
-			if ( !$track_id ) {
-				$slug_base = ! empty( $title_en ) ? $title_en . '-' . $artist_id : $title . '-' . $artist_id;
-				$wpdb->insert($tracks_tbl, array(
-					'title'             => $title,
-					'title_en'          => $title_en ?: null,
-					'normalized_title'  => $normalized_track,
-					'slug'              => \Charts\Services\Slugger::make( $slug_base, 'track-' . $artist_id ),
-					'primary_artist_id' => $artist_id,
-					'created_at'        => current_time('mysql')
-				));
-				$track_id = $wpdb->insert_id;
-			}
+		// 3. Purge orphaned track entries
+		$wpdb->query("DELETE e FROM $entries_tbl e LEFT JOIN $tracks_tbl t ON e.item_id = t.id AND e.item_type = 'track' WHERE e.item_type = 'track' AND t.id IS NULL");
 
-			if ( $track_id ) {
-				$wpdb->update($entries_tbl, array('item_id' => $track_id), array(
-					'item_type'  => 'track', 
-					'track_name' => $row->track_name,
-					'item_id'    => 0
-				));
-			}
-		}
+		// 4. Purge orphaned video entries
+		$wpdb->query("DELETE e FROM $entries_tbl e LEFT JOIN $clips_tbl c ON e.item_id = c.id AND e.item_type = 'video' WHERE e.item_type = 'video' AND c.id IS NULL");
 	}
 
 	/**

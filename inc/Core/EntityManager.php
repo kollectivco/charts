@@ -256,8 +256,8 @@ class EntityManager {
 		}
 
 		// 4. Create new track record
-		$slug_base = ! empty( $title_en ) ? $title_en . '-' . $artist_id : $title . '-' . $artist_id;
-		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'track-' . $artist_id );
+		$slug_base = ! empty( $title_en ) ? $title_en : $title;
+		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'track' );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
 			'title_en'          => $title_en ?: null,
