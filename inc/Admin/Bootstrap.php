@@ -242,6 +242,19 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'name_sync_upload':
+				$result = self::process_name_sync();
+				$run_id = time();
+				set_transient( 'charts_name_sync_result_' . $run_id, $result, HOUR_IN_SECONDS );
+				\Charts\Core\Notify::success(
+					sprintf( __( 'Name Sync complete. Artists: %d, Tracks: %d, Slugs: %d, Not found: %d.', 'charts' ), $result['artists_updated'], $result['tracks_updated'], $result['slugs_updated'], $result['not_found'] ),
+					__( 'Sync Done', 'charts' )
+				);
+				$processed = true;
+				// Redirect to sync page with run ID to display results
+				wp_safe_redirect( admin_url( 'admin.php?page=charts-name-sync&sync_run_id=' . $run_id ) );
+				exit;
+
 			case 'factory_reset_data':
 				if ( ! current_user_can( 'manage_options' ) ) wp_die('Unauthorized');
 				$report = self::wipe_all_data( false ); // False = Do not wipe definitions/sources
@@ -680,6 +693,7 @@ class Bootstrap {
 			array( 'title' => 'Forecast', 'slug' => 'charts-forecast', 'callback' => 'render_forecast' ),
 			array( 'title' => 'Insights', 'slug' => 'charts-insights', 'callback' => 'render_insights' ),
 			array( 'title' => 'Quick Translation', 'slug' => 'charts-translations', 'callback' => 'render_translations' ),
+		array( 'title' => 'Name Sync', 'slug' => 'charts-name-sync', 'callback' => 'render_name_sync' ),
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
 			array( 'title' => 'Settings', 'slug' => 'charts-settings', 'callback' => 'render_settings' ),
 		);
@@ -745,6 +759,10 @@ class Bootstrap {
 			echo '<pre>' . esc_html( $e->getTraceAsString() ) . '</pre>';
 			echo '</div>';
 		}
+	}
+
+	public static function render_name_sync() {
+		include CHARTS_PATH . 'admin/views/name-sync.php';
 	}
 
 	/**
@@ -1677,6 +1695,178 @@ class Bootstrap {
 		$data = array( 'track_name' => $entity->title, 'item_slug' => $entity->slug, 'cover_image' => $image, 'youtube_id' => $entity->youtube_id );
 		if ( $type === 'track' ) $data['spotify_id'] = $entity->spotify_id;
 		$wpdb->update( "{$wpdb->prefix}charts_entries", $data, array( 'item_type' => $entry_type, 'item_id' => $id ) );
+	}
+
+	/**
+	 * Process the Name Sync CSV upload.
+	 * Reads arabic_artist, english_artist, arabic_title, english_title from a CSV
+	 * and updates matching records in charts_artists / charts_tracks.
+	 */
+	private static function process_name_sync(): array {
+		global $wpdb;
+
+		$result = [
+			'total'           => 0,
+			'artists_updated' => 0,
+			'tracks_updated'  => 0,
+			'slugs_updated'   => 0,
+			'not_found'       => 0,
+			'log'             => [],
+		];
+
+		// ── File validation ──────────────────────────────────────────────────
+		if ( empty( $_FILES['name_sync_file']['tmp_name'] ) || ! is_uploaded_file( $_FILES['name_sync_file']['tmp_name'] ) ) {
+			$result['log'][] = 'ERROR: No file uploaded.';
+			return $result;
+		}
+
+		$csv_content = file_get_contents( $_FILES['name_sync_file']['tmp_name'] );
+		if ( ! $csv_content ) {
+			$result['log'][] = 'ERROR: Could not read file.';
+			return $result;
+		}
+
+		// ── Parse CSV ────────────────────────────────────────────────────────
+		$lines = array_filter( explode( "\n", str_replace( "\r\n", "\n", str_replace( "\r", "\n", $csv_content ) ) ) );
+		if ( empty( $lines ) ) {
+			$result['log'][] = 'ERROR: Empty CSV.';
+			return $result;
+		}
+
+		$header_line = array_shift( $lines );
+		$headers     = array_map( 'strtolower', array_map( 'trim', str_getcsv( $header_line ) ) );
+		// Normalise header keys (strip BOM, spaces)
+		$headers = array_map( function( $h ) { return preg_replace('/[^a-z0-9_]/', '_', trim( $h, "\xEF\xBB\xBF " ) ); }, $headers );
+
+		// ── Options ──────────────────────────────────────────────────────────
+		$sync_artists      = ! empty( $_POST['sync_artists'] );
+		$sync_tracks       = ! empty( $_POST['sync_tracks'] );
+		$overwrite_en      = ! empty( $_POST['overwrite_existing'] );
+		$refresh_slugs     = ! empty( $_POST['refresh_slugs'] );
+
+		// ── Helper: slug from english name ───────────────────────────────────
+		$make_slug = function( string $en_name, string $table, ?int $exclude_id = null ): string {
+			global $wpdb;
+			$base   = \Charts\Services\Slugger::make( $en_name, 'entity' );
+			$slug   = $base;
+			$suffix = 2;
+			while ( true ) {
+				$exists = $wpdb->get_var( $wpdb->prepare(
+					"SELECT id FROM $table WHERE slug = %s" . ( $exclude_id ? " AND id != %d" : "" ),
+					...( $exclude_id ? [ $slug, $exclude_id ] : [ $slug ] )
+				) );
+				if ( ! $exists ) break;
+				$slug = $base . '-' . $suffix++;
+			}
+			return $slug;
+		};
+
+		// ── Row loop ─────────────────────────────────────────────────────────
+		foreach ( $lines as $raw_line ) {
+			$raw_line = trim( $raw_line );
+			if ( $raw_line === '' ) continue;
+
+			$cols     = str_getcsv( $raw_line );
+			$row      = array_combine( $headers, array_pad( array_slice( $cols, 0, count( $headers ) ), count( $headers ), '' ) );
+			$result['total']++;
+
+			$ar_artist = trim( $row['arabic_artist']  ?? '' );
+			$en_artist = trim( $row['english_artist'] ?? '' );
+			$ar_title  = trim( $row['arabic_title']   ?? '' );
+			$en_title  = trim( $row['english_title']  ?? '' );
+
+			// ── ARTIST sync ──────────────────────────────────────────────────
+			if ( $sync_artists && $ar_artist !== '' ) {
+				$a_table     = $wpdb->prefix . 'charts_artists';
+				$artist_row  = $wpdb->get_row( $wpdb->prepare(
+					"SELECT id, display_name_en, slug FROM $a_table WHERE display_name = %s OR normalized_name = %s LIMIT 1",
+					$ar_artist, mb_strtolower( $ar_artist )
+				) );
+
+				if ( ! $artist_row ) {
+					// Fallback: try English name in display_name_en
+					if ( $en_artist !== '' ) {
+						$artist_row = $wpdb->get_row( $wpdb->prepare(
+							"SELECT id, display_name_en, slug FROM $a_table WHERE display_name_en = %s LIMIT 1",
+							$en_artist
+						) );
+					}
+				}
+
+				if ( $artist_row ) {
+					$updates = [];
+					// Update English name
+					if ( $en_artist !== '' && ( $overwrite_en || empty( $artist_row->display_name_en ) ) ) {
+						$updates['display_name_en'] = $en_artist;
+					}
+					// Refresh slug based on english name
+					$slug_base = $updates['display_name_en'] ?? $artist_row->display_name_en ?? '';
+					if ( $refresh_slugs && $slug_base !== '' ) {
+						$new_slug = $make_slug( $slug_base, $a_table, (int) $artist_row->id );
+						if ( $new_slug !== $artist_row->slug ) {
+							$updates['slug'] = $new_slug;
+							$result['slugs_updated']++;
+							$result['log'][] = "Artist [{$ar_artist}]: slug {$artist_row->slug} → {$new_slug}";
+						}
+					}
+					if ( ! empty( $updates ) ) {
+						$wpdb->update( $a_table, $updates, [ 'id' => $artist_row->id ] );
+						$result['artists_updated']++;
+						$result['log'][] = "Artist [{$ar_artist}] → en: " . ( $updates['display_name_en'] ?? '(no change)' );
+					}
+				} else {
+					$result['not_found']++;
+					$result['log'][] = "NOT FOUND — Artist: {$ar_artist}";
+				}
+			}
+
+			// ── TRACK sync ───────────────────────────────────────────────────
+			if ( $sync_tracks && $ar_title !== '' ) {
+				$t_table   = $wpdb->prefix . 'charts_tracks';
+				$track_row = $wpdb->get_row( $wpdb->prepare(
+					"SELECT id, title_en, slug FROM $t_table WHERE title = %s OR normalized_title = %s LIMIT 1",
+					$ar_title, mb_strtolower( $ar_title )
+				) );
+
+				if ( ! $track_row && $en_title !== '' ) {
+					$track_row = $wpdb->get_row( $wpdb->prepare(
+						"SELECT id, title_en, slug FROM $t_table WHERE title_en = %s LIMIT 1",
+						$en_title
+					) );
+				}
+
+				if ( $track_row ) {
+					$updates = [];
+					if ( $en_title !== '' && ( $overwrite_en || empty( $track_row->title_en ) ) ) {
+						$updates['title_en'] = $en_title;
+					}
+					$slug_base = $updates['title_en'] ?? $track_row->title_en ?? '';
+					if ( $refresh_slugs && $slug_base !== '' ) {
+						$new_slug = $make_slug( $slug_base, $t_table, (int) $track_row->id );
+						if ( $new_slug !== $track_row->slug ) {
+							$updates['slug'] = $new_slug;
+							$result['slugs_updated']++;
+							$result['log'][] = "Track [{$ar_title}]: slug {$track_row->slug} → {$new_slug}";
+						}
+					}
+					if ( ! empty( $updates ) ) {
+						$wpdb->update( $t_table, $updates, [ 'id' => $track_row->id ] );
+						$result['tracks_updated']++;
+						$result['log'][] = "Track [{$ar_title}] → en: " . ( $updates['title_en'] ?? '(no change)' );
+					}
+				} else {
+					$result['not_found']++;
+					$result['log'][] = "NOT FOUND — Track: {$ar_title}";
+				}
+			}
+		}
+
+		// Clear frontend caches after mass update
+		if ( $result['artists_updated'] > 0 || $result['tracks_updated'] > 0 ) {
+			self::clear_frontend_caches();
+		}
+
+		return $result;
 	}
 
 	/**
