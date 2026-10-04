@@ -20,9 +20,9 @@ class Templates {
 
     public static function register_cpt() {
         $labels = [
-            'name'               => __( 'Chart Templates', 'charts' ),
-            'singular_name'      => __( 'Chart Template', 'charts' ),
-            'menu_name'          => __( 'Chart Templates', 'charts' ),
+            'name'               => __( 'Chart Templates (Legacy)', 'charts' ),
+            'singular_name'      => __( 'Chart Template (Legacy)', 'charts' ),
+            'menu_name'          => __( 'Templates (Legacy)', 'charts' ),
             'add_new'            => __( 'Add New', 'charts' ),
             'add_new_item'       => __( 'Add New Template', 'charts' ),
             'edit_item'          => __( 'Edit Template', 'charts' ),
@@ -67,14 +67,32 @@ class Templates {
     public static function get_options() {
         $options = [ '0' => __( 'Native Default Layout', 'charts' ) ];
         
-        $templates = get_posts([
+        // 1. Native Elementor Templates (Reliable & Built-in)
+        if ( class_exists( '\Elementor\Plugin' ) ) {
+            $elementor_templates = get_posts([
+                'post_type' => 'elementor_library',
+                'posts_per_page' => -1,
+                'post_status' => 'publish'
+            ]);
+            
+            foreach ($elementor_templates as $t) {
+                $type = get_post_meta($t->ID, '_elementor_template_type', true);
+                if ( ! $type ) $type = 'Template';
+                $options[$t->ID] = $t->post_title . ' (' . ucfirst($type) . ')';
+            }
+        }
+
+        // 2. Legacy Chart Templates (For backward compatibility)
+        $legacy = get_posts([
             'post_type' => 'charts_template',
             'posts_per_page' => -1,
             'post_status' => 'publish'
         ]);
         
-        foreach ($templates as $t) {
-            $options[$t->ID] = $t->post_title;
+        foreach ($legacy as $t) {
+            if ( ! isset( $options[$t->ID] ) ) {
+                $options[$t->ID] = $t->post_title . ' [Legacy CPT]';
+            }
         }
         
         return $options;
