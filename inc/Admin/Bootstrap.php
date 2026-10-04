@@ -624,10 +624,9 @@ class Bootstrap {
 		// 1. Delete the canonical metadata
 		$wpdb->delete( $table, array( 'id' => $id ) );
 		
-		// 2. Prevent orphaned relationships in historical entries
-		$wpdb->update( 
+		// 2. Eradicate completely from charts history
+		$wpdb->delete( 
 			$wpdb->prefix . 'charts_entries', 
-			array( 'item_id' => 0 ), 
 			array( 'item_id' => $id, 'item_type' => $type ) 
 		);
 		
