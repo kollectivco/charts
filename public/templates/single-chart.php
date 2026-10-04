@@ -125,6 +125,13 @@ if ( $page_state === 'ready' && $custom_template_id > 0 && class_exists('\Elemen
         $elementor->frontend->init();
     }
 
+    add_action('wp_enqueue_scripts', function() use ($custom_template_id) {
+        if ( class_exists( '\Elementor\Core\Files\CSS\Post' ) ) {
+            $css_file = new \Elementor\Core\Files\CSS\Post( $custom_template_id );
+            $css_file->enqueue();
+        }
+    }, 500);
+
     \Charts\Core\PublicIntegration::get_header();
     echo $elementor->frontend->get_builder_content_for_display( $custom_template_id, true );
     \Charts\Core\PublicIntegration::get_footer();

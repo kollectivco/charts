@@ -292,7 +292,7 @@ class ChartTabsShowcase extends Widget_Base {
 		/* Style 1: Pills */
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-nav-wrap { background: #f1f5f9; padding: 4px; border-radius: 30px; display: inline-flex; margin: 0 auto; }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-nav { margin-bottom: 30px; }
-		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab { padding: 8px 18px; border-radius: 30px; color: #64748b; font-size: 14px; }
+		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab { padding: 6px 14px; border-radius: 30px; color: #64748b; font-size: 13px; }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-tab.is-active { background: #fff; color: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-row { padding: 16px 24px; border-bottom: 1px solid #f1f5f9; background: #fff; }
 		.<?php echo $uid; ?>-pills .<?php echo $uid; ?>-row:hover { background: #f8fafc; transform: translateX(-4px); }
@@ -300,7 +300,7 @@ class ChartTabsShowcase extends Widget_Base {
 
 		/* Style 2: Minimal */
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-nav { border-bottom: 2px solid #e2e8f0; gap: 32px; justify-content: flex-start; }
-		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-tab { padding: 0 0 16px 0; color: #94a3b8; font-size: 18px; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-tab { padding: 0 0 10px 0; color: #94a3b8; font-size: 15px; border-bottom: 3px solid transparent; margin-bottom: -2px; }
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-tab.is-active { color: #0f172a; border-bottom-color: #0f172a; }
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-row { padding: 24px 0; border-bottom: 1px solid #f1f5f9; }
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-row:hover { opacity: 0.8; }
@@ -308,15 +308,15 @@ class ChartTabsShowcase extends Widget_Base {
 
 		/* Style 3: Glass */
 		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-nav { gap: 16px; }
-		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-tab { padding: 12px 24px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: rgba(255,255,255,0.7); }
+		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-tab { padding: 8px 16px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: rgba(255,255,255,0.7); font-size: 13px; }
 		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-tab.is-active { background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.3); }
 		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-row { padding: 16px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; margin-bottom: 12px; color: #fff; }
 		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-row:hover { background: rgba(255,255,255,0.1); }
 		.<?php echo $uid; ?>-glass .<?php echo $uid; ?>-img { border-radius: 50%; }
 
 		/* Style 4: Blocks */
-		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-nav { gap: 8px; background: #0f172a; padding: 8px; border-radius: 12px; }
-		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-tab { padding: 14px 28px; background: transparent; color: #64748b; border-radius: 8px; font-size: 13px; }
+		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-nav { gap: 8px; background: #0f172a; padding: 6px; border-radius: 10px; }
+		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-tab { padding: 8px 16px; background: transparent; color: #64748b; border-radius: 6px; font-size: 13px; }
 		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-tab.is-active { background: #334155; color: #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
 		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-row { padding: 20px; background: #0f172a; border-radius: 16px; margin-bottom: 8px; border-left: 4px solid #3b82f6; color: #fff; }
 		.<?php echo $uid; ?>-blocks .<?php echo $uid; ?>-row:hover { transform: scale(1.01); background: #1e293b; }
@@ -361,9 +361,9 @@ class ChartTabsShowcase extends Widget_Base {
 			align-items: center;
 		}
 		.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-tab {
-			padding: 8px 18px;
+			padding: 6px 14px;
 			border-radius: 30px;
-			font-size: 14px;
+			font-size: 13px;
 			font-weight: 700;
 			color: #64748b;
 			transition: all 0.25s;
