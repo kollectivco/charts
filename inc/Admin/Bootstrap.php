@@ -70,7 +70,7 @@ class Bootstrap {
 	 * Works for both wp-admin and the external dashboard.
 	 */
 	public static function process_admin_actions() {
-		if ( ! isset( $_POST['charts_action'] ) ) {
+		if ( ! isset( $_REQUEST['charts_action'] ) ) {
 			return;
 		}
 
@@ -81,7 +81,7 @@ class Bootstrap {
 
 		// Unified Nonce & Integrity Check
 		$nonce = $_POST['_wpnonce'] ?? ($_REQUEST['_wpnonce'] ?? '');
-		$action = $_POST['charts_action'] ?? '';
+		$action = $_REQUEST['charts_action'] ?? '';
 
 		// Verify Nonce against expected contexts
 		$is_valid_v2 = wp_verify_nonce( $nonce, 'kcharts_save_v2' );
@@ -521,6 +521,9 @@ class Bootstrap {
 					$target_url = home_url( '/charts-dashboard/' . $module . '/' );
 				}
 			}
+
+			// Clean the target URL of the action triggers to prevent loops if referer was dirty
+			$target_url = remove_query_arg( array( 'charts_action', '_wpnonce' ), $target_url );
 
 			// 4. Append persistent notices if necessary
 			if ( $action === 'save_settings' || $action === 'save_translations' ) {
