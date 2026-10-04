@@ -602,12 +602,7 @@
 	
 	/* Mobile Nav Logic Removed */
 
-	/* Table Responsiveness */
-	.kc-rankings-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-	.kc-table-head th:nth-child(4), .kc-table-head th:nth-child(5),
-	.kc-rank-row td:nth-child(4), .kc-rank-row td:nth-child(5) {
-		display: none; /* Hide secondary stats on small mobile */
-	}
+	/* Table Responsiveness handled in Section 14 */
 }
 
 @keyframes kc-slide-down {
@@ -1577,16 +1572,17 @@
     .kc-featured-subtitle { font-size: 16px !important; margin-top: 6px; }
     .kc-featured-stats { justify-content: center; gap: 20px !important; margin-top: 16px !important; }
     
-    /* Rankings Table Mobile Layout */
+    /* Rankings Table Mobile Layout (Flexbox to fix colspan issues) */
     .kc-rankings-section { padding-top: 20px !important; padding-bottom: 60px !important; }
-    .kc-rankings-table { width: 100% !important; table-layout: fixed; border-collapse: separate; border-spacing: 0; display: table !important; }
-    .kc-table-head { display: table-header-group !important; }
-    .kc-rank-row { display: table-row !important; }
-    .kc-details-row { display: table-row !important; }
+    .kc-rankings-table, .kc-rankings-table tbody, .kc-table-head { display: block !important; width: 100% !important; }
+    .kc-table-head tr { display: flex !important; width: 100%; border-bottom: 2px solid var(--k-border); }
+    .kc-rank-row { display: flex !important; width: 100%; align-items: center; border-bottom: 1px solid var(--k-divider); }
+    .kc-details-row { display: block !important; width: 100%; }
+    .kc-details-row td { display: block !important; width: 100%; box-sizing: border-box; padding: 0 !important; border: none !important; }
     
     /* Cell Spacing & Widths on Mobile */
-    .kc-rank-row td { padding: 10px 6px !important; vertical-align: middle; }
-    .kc-table-head th { padding: 8px 6px !important; font-size: 11px; }
+    .kc-rank-row td { padding: 12px 6px !important; border-bottom: none !important; }
+    .kc-table-head th { padding: 10px 6px !important; border-bottom: none !important; font-size: 11px; }
     
     /* Hide non-essential columns on mobile */
     .kc-col-prev-rank,
@@ -1596,19 +1592,21 @@
     }
     
     /* Visible Columns Sizing */
-    .kc-col-rank { width: 44px !important; text-align: center; }
-    .kc-rank-num { width: 44px !important; text-align: center !important; font-size: 16px !important; font-weight: 850 !important; }
-    .kc-col-movement { width: 40px !important; text-align: center; }
+    .kc-col-rank { width: 44px !important; text-align: center; flex-shrink: 0; }
+    .kc-rank-num { width: 44px !important; text-align: center !important; font-size: 16px !important; font-weight: 850 !important; flex-shrink: 0; }
+    
+    .kc-col-movement { width: 44px !important; text-align: center; flex-shrink: 0; }
     .kc-rank-move { display: flex; justify-content: center; }
     .kc-move-up, .kc-move-down, .kc-move-new { font-size: 11px !important; padding: 2px 4px; }
     
-    .kc-col-main { width: auto !important; }
-    .kc-entry-info-cell { gap: 10px !important; }
-    .kc-rank-thumb { width: 42px !important; height: 42px !important; border-radius: 6px; }
-    .kc-track-name { font-size: 14px !important; max-width: 150px; }
-    .kc-artist-name { font-size: 11px !important; max-width: 150px; }
+    .kc-col-main { flex: 1; min-width: 0; width: auto !important; }
+    .kc-entry-info-cell { gap: 10px !important; display: flex; align-items: center; width: 100%; }
+    .kc-rank-thumb { width: 42px !important; height: 42px !important; border-radius: 6px; flex-shrink: 0; }
+    .kc-entry-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .kc-track-name { font-size: 14px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100% !important; display: block; }
+    .kc-artist-name { font-size: 11px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100% !important; display: block; }
     
-    .kc-col-action { width: 36px !important; text-align: center !important; }
+    .kc-col-action { width: 36px !important; text-align: center !important; flex-shrink: 0; }
     .kc-chevron-toggle { width: 26px !important; height: 26px !important; margin: 0 auto; }
     .kc-chevron-toggle svg { width: 10px; height: 10px; }
 
