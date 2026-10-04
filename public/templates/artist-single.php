@@ -111,10 +111,9 @@ $popular_tracks_raw = $wpdb->get_results( $wpdb->prepare( "
 	WHERE e.item_type != 'artist' AND (
 		(e.item_id IN (SELECT track_id FROM {$wpdb->prefix}charts_track_artists WHERE artist_id = %d) AND e.item_type = 'track')
 		OR (e.item_id IN (SELECT video_id FROM {$wpdb->prefix}charts_video_artists WHERE artist_id = %d) AND e.item_type = 'video')
-		OR (e.artist_names LIKE %s AND e.item_type IN ('track', 'video'))
 	)
 	ORDER BY e.rank_position ASC LIMIT 50
-", $artist->id, $artist->id, $artist_name_escaped ) );
+", $artist->id, $artist->id ) );
 
 $unique_tracks = array();
 foreach($popular_tracks_raw as $pt) {
@@ -149,12 +148,11 @@ $chart_rankings_raw = $wpdb->get_results( $wpdb->prepare( "
 	INNER JOIN (
 		SELECT MAX(e2.id) as max_id 
 		FROM {$wpdb->prefix}charts_entries e2
-		WHERE (e2.item_id = %d AND e2.item_type = 'artist')
-		   OR (e2.artist_names LIKE %s AND e2.item_type = 'artist')
+		WHERE e2.item_id = %d AND e2.item_type = 'artist'
 		GROUP BY e2.source_id
 	) latest ON latest.max_id = e.id
 	ORDER BY e.rank_position ASC LIMIT 20
-", $artist->id, $artist_name_escaped ) );
+", $artist->id ) );
 
 $unique_charts = array();
 foreach($chart_rankings_raw as $cr) {
