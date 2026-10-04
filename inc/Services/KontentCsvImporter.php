@@ -100,7 +100,7 @@ class KontentCsvImporter {
 				if (!$title || !$artist_str) continue;
 				$streams = $this->parse_number($data['Streams'] ?? '');
 
-				$artists = explode('،', str_replace(',', '،', $artist_str));
+				$artists = \Charts\Services\Normalizer::split_artists($artist_str);
 				$primary_artist = trim($artists[0]);
 
 				$artist_id = \Charts\Core\EntityManager::ensure_artist($primary_artist, array(

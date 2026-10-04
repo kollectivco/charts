@@ -166,7 +166,7 @@ class BillboardService {
 				}
 			}
 			if ( empty( $artists ) ) {
-				$artists = preg_split( '/[،,]\s*/u', $primary_artist );
+				$artists = \Charts\Services\Normalizer::split_artists( $primary_artist );
 			}
 
 			// Image URL

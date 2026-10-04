@@ -72,7 +72,7 @@ class SpotifyCsvParser {
 		$artist_string = $raw['artist_names'] ?? ($raw['arabic_artist'] ?? '');
 		$track_name    = $raw['track_name'] ?? ($raw['arabic_title'] ?? 'Unknown');
 		
-		$artist_array  = array_map( 'trim', explode( ',', $artist_string ) );
+		$artist_array  = \Charts\Services\Normalizer::split_artists( $artist_string );
 
 		return array(
 			'rank'             => intval( $raw['rank'] ?? 0 ),
