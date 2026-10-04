@@ -81,8 +81,14 @@ class SpotifyCsvImporter {
 					continue;
 				}
 
+				// Prepare Primary Artist Metadata (including custom english CSV headers)
+				$artist_meta = $row['enrichment']['artists'][0] ?? array();
+				if ( ! empty( $row['raw_payload']['english_artist'] ) && empty( $artist_meta['display_name_en'] ) ) {
+					$artist_meta['display_name_en'] = $row['raw_payload']['english_artist'];
+				}
+
 				// Resolve / create primary artist
-				$primary_artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_name, $row['enrichment']['artists'][0] ?? null );
+				$primary_artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_name, $artist_meta );
 
 				if ( ! $primary_artist_id ) {
 					global $wpdb;
@@ -106,10 +112,14 @@ class SpotifyCsvImporter {
 
 				$track_id = null;
 				if ( $item_type !== 'artist' ) {
-					$track_id = \Charts\Core\EntityManager::ensure_track( $official_name, $primary_artist_id, array(
+					$track_meta = array(
 						'spotify_id' => $spotify_id,
-						'cover_image' => $cover_image
-					) );
+						'cover_image' => $cover_image,
+					);
+					if ( ! empty( $row['raw_payload']['english_title'] ) ) {
+						$track_meta['title_en'] = $row['raw_payload']['english_title'];
+					}
+					$track_id = \Charts\Core\EntityManager::ensure_track( $official_name, $primary_artist_id, $track_meta );
 
 					if ( ! $track_id ) {
 						global $wpdb;
@@ -120,10 +130,16 @@ class SpotifyCsvImporter {
 				}
 
 				$artist_ids = array();
-				foreach ( $all_artists as $a_name ) {
+				foreach ( $all_artists as $index => $a_name ) {
 					$a_name = trim($a_name);
 					if ( empty($a_name) ) continue;
-					$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name );
+					
+					$a_meta = array();
+					if ( $index === 0 && ! empty( $row['raw_payload']['english_artist'] ) ) {
+						$a_meta['display_name_en'] = $row['raw_payload']['english_artist'];
+					}
+					
+					$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name, $a_meta );
 					if ( $a_id ) $artist_ids[] = $a_id;
 				}
 

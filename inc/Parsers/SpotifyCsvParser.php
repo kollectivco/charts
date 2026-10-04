@@ -68,15 +68,17 @@ class SpotifyCsvParser {
 		$uri = $raw['uri'] ?? '';
 		$track_id = str_replace( 'spotify:track:', '', $uri );
 
-		// Handle artist names list
-		$artist_string = $raw['artist_names'] ?? '';
+		// Handle artist names list (Support standard Spotify AND custom Arabic CSV formats)
+		$artist_string = $raw['artist_names'] ?? ($raw['arabic_artist'] ?? '');
+		$track_name    = $raw['track_name'] ?? ($raw['arabic_title'] ?? 'Unknown');
+		
 		$artist_array  = array_map( 'trim', explode( ',', $artist_string ) );
 
 		return array(
 			'rank'             => intval( $raw['rank'] ?? 0 ),
 			'spotify_uri'      => $uri,
 			'spotify_track_id' => $track_id,
-			'track_name'       => $raw['track_name'] ?? 'Unknown',
+			'track_name'       => $track_name,
 			'artist_names_raw' => $artist_string,
 			'artist_names_arr' => $artist_array,
 			'source'           => $raw['source'] ?? '', // actually label/distributor
