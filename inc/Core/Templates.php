@@ -5,25 +5,11 @@ class Templates {
     public static function init() {
         add_action( 'init', [ self::class, 'register_cpt' ] );
         add_action( 'elementor/init', [ self::class, 'enable_elementor' ] );
-        add_filter( 'template_include', [ self::class, 'force_elementor_template' ], 99 );
+        add_filter( 'template_include', [ self::class, 'force_elementor_template' ], 20 );
     }
 
-    
     public static function force_elementor_template( $template ) {
         if ( is_singular( 'charts_template' ) ) {
-            // 1. If Elementor page templates module has a specific template (e.g. Canvas, Header & Footer), honor it
-            if ( class_exists( '\Elementor\Plugin' ) ) {
-                $page_templates_module = \Elementor\Plugin::$instance->modules_manager->get_modules( 'page-templates' );
-                if ( $page_templates_module && method_exists( $page_templates_module, 'template_include' ) ) {
-                    $elementor_template = $page_templates_module->template_include( $template );
-                    if ( $elementor_template && file_exists( $elementor_template ) ) {
-                        return $elementor_template;
-                    }
-                }
-            }
-
-            // 2. Otherwise, ensure our dedicated fallback template containing the_content() is loaded
-            // so Elementor editor / preview can find the content container without hanging on loading
             $fallback = CHARTS_PATH . 'public/templates/single-charts_template.php';
             if ( file_exists( $fallback ) ) {
                 return $fallback;
