@@ -122,12 +122,17 @@ class BillboardCsvImporter {
 				if (!$title || !$artist_str) continue;
 			}
 
-			$artists = explode(',', $artist_str);
-			$primary_artist = trim($artists[0]);
+			$artists = \Charts\Services\Normalizer::split_artists($artist_str);
+			$primary_artist = trim($artists[0] ?? '');
+			
+			$artists_en = \Charts\Services\Normalizer::split_artists($artist_en);
+			$primary_artist_en = trim($artists_en[0] ?? '');
+
+			if (!$primary_artist) continue;
 
 			$artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_artist, array(
 				'image'           => $image,
-				'display_name_en' => $artist_en ?: null,
+				'display_name_en' => $primary_artist_en ?: null,
 			) );
 			$track_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_tracks WHERE title = %s AND primary_artist_id = %d LIMIT 1", $title, $artist_id));
 			$track_id = \Charts\Core\EntityManager::ensure_track( $title, $artist_id, array(
@@ -137,6 +142,26 @@ class BillboardCsvImporter {
 
 			if ($track_id) {
 				if (!$track_exists) $created++;
+
+				// Link all secondary artists
+				if ( count( $artists ) > 1 ) {
+					$a_ids = array();
+					foreach ( $artists as $index => $a_name ) {
+						$a_name = trim( $a_name );
+						if ( empty( $a_name ) ) continue;
+						
+						$a_meta = array();
+						if ( ! empty( $artists_en[$index] ) ) {
+							$a_meta['display_name_en'] = trim( $artists_en[$index] );
+						}
+						
+						$a_id = \Charts\Core\EntityManager::ensure_artist( $a_name, $a_meta );
+						if ( $a_id ) $a_ids[] = $a_id;
+					}
+					if ( ! empty( $a_ids ) ) {
+						\Charts\Core\EntityManager::link_artists( $track_id, $a_ids, 'track' );
+					}
+				}
 
 				// Download billboard image safely
 				$safe_image = \Charts\Services\BillboardService::sideload_image($image);

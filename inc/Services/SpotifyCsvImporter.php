@@ -105,7 +105,7 @@ class SpotifyCsvImporter {
 				$enrichment   = $row['enrichment'] ?? array();
 				$spotify_id   = ! empty( $enrichment['spotify_id'] ) ? $enrichment['spotify_id'] : ( $row['spotify_track_id'] ?? null );
 				$cover_image  = $enrichment['album']['cover_image'] ?? null;
-				$official_name = ! empty( $enrichment['official_name'] ) ? $enrichment['official_name'] : $track_name;
+				$official_name = ! empty( $track_name ) ? $track_name : ( ! empty( $enrichment['official_name'] ) ? $enrichment['official_name'] : 'Unknown' );
 				$official_name = $this->import_flow->normalize_title( $official_name );
 
 				$item_type = $meta['item_type'] ?? 'track';
