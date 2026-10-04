@@ -1531,8 +1531,24 @@
 
 /* Single Chart Featured Hero (#1) */
 .kc-featured-hero { min-height: 320px; }
-.kc-featured-inner { padding: 40px 60px; }
-.kc-featured-title { font-size: 54px; }
+.kc-featured-inner { position: relative; z-index: 10; display: flex; align-items: center; width: 100%; gap: 40px; padding: 40px 60px; }
+.kc-featured-media { position: relative; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.kc-featured-rank-num { font-size: 140px; font-weight: 950; line-height: 1; letter-spacing: -0.05em; text-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-bottom: -10px; margin-inline-end: 10px; }
+.kc-featured-img { width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md); flex-shrink: 0; }
+.kc-featured-info { flex-grow: 1; min-width: 0; }
+.kc-featured-badge-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.kc-featured-badge { color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+.kc-featured-movement { font-size: 14px; font-weight: 800; color: #2ecc71; }
+.kc-featured-title { font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1; word-break: break-word; }
+.kc-featured-subtitle { font-weight: 700; color: var(--k-text-muted); margin-top: 12px; }
+.kc-featured-stats { display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim); }
+
+/* Table Base Layout */
+.kc-entry-info-cell { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.kc-entry-meta { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.kc-rank-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.kc-track-name { display: block; font-size: 16px; font-weight: 800; color: var(--k-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kc-artist-name { display: block; font-size: 12px; font-weight: 500; color: var(--k-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
 @media (max-width: 1024px) {
     .kc-featured-inner { padding: 30px 40px; gap: 30px; }
@@ -1550,22 +1566,84 @@
     .charts-product-header .header-inner { flex-wrap: wrap; gap: 12px; }
     .charts-nav { display: none; }
     
+    /* Hero #1 Section on Mobile */
     .kc-featured-hero { min-height: auto; height: auto !important; }
-    .kc-featured-inner { flex-direction: column; text-align: center; padding: 24px 16px; gap: 20px; }
-    .kc-featured-media { justify-content: center; }
-    .kc-featured-rank-num { font-size: 80px !important; margin-right: 0 !important; }
-    .kc-featured-img { width: 140px !important; height: 140px !important; }
-    .kc-featured-title { font-size: 28px !important; }
-    .kc-featured-subtitle { font-size: 18px !important; }
-    .kc-featured-stats { justify-content: center; gap: 20px !important; margin-top: 20px !important; }
+    .kc-featured-inner { flex-direction: column; text-align: center; padding: 24px 16px !important; gap: 16px; }
+    .kc-featured-media { flex-direction: column; justify-content: center; align-items: center; gap: 4px; }
+    .kc-featured-rank-num { font-size: 64px !important; margin-inline-end: 0 !important; margin-bottom: 0 !important; line-height: 1; }
+    .kc-featured-img { width: 140px !important; height: 140px !important; border-radius: 14px; }
+    .kc-featured-badge-row { justify-content: center; margin-bottom: 12px; }
+    .kc-featured-title { font-size: 26px !important; line-height: 1.2; }
+    .kc-featured-subtitle { font-size: 16px !important; margin-top: 6px; }
+    .kc-featured-stats { justify-content: center; gap: 20px !important; margin-top: 16px !important; }
     
-    /* Rankings Table Mobile Enhancements */
-    .kc-rankings-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-    .kc-rank-row td { padding: 12px 8px !important; }
-    .kc-table-head th { padding: 10px 8px !important; font-size: 12px; }
-    .kc-table-head th:nth-child(4), .kc-table-head th:nth-child(5), .kc-table-head th:nth-child(6),
-    .kc-rank-row td:nth-child(4), .kc-rank-row td:nth-child(5), .kc-rank-row td:nth-child(6) {
+    /* Rankings Table Mobile Layout */
+    .kc-rankings-section { padding-top: 20px !important; padding-bottom: 60px !important; }
+    .kc-rankings-table { width: 100% !important; table-layout: fixed; border-collapse: separate; border-spacing: 0; display: table !important; }
+    .kc-table-head { display: table-header-group !important; }
+    .kc-rank-row { display: table-row !important; }
+    .kc-details-row { display: table-row !important; }
+    
+    /* Cell Spacing & Widths on Mobile */
+    .kc-rank-row td { padding: 10px 6px !important; vertical-align: middle; }
+    .kc-table-head th { padding: 8px 6px !important; font-size: 11px; }
+    
+    /* Hide non-essential columns on mobile */
+    .kc-col-prev-rank,
+    .kc-col-peak-rank,
+    .kc-col-weeks {
         display: none !important;
+    }
+    
+    /* Visible Columns Sizing */
+    .kc-col-rank { width: 44px !important; text-align: center; }
+    .kc-rank-num { width: 44px !important; text-align: center !important; font-size: 16px !important; font-weight: 850 !important; }
+    .kc-col-movement { width: 40px !important; text-align: center; }
+    .kc-rank-move { display: flex; justify-content: center; }
+    .kc-move-up, .kc-move-down, .kc-move-new { font-size: 11px !important; padding: 2px 4px; }
+    
+    .kc-col-main { width: auto !important; }
+    .kc-entry-info-cell { gap: 10px !important; }
+    .kc-rank-thumb { width: 42px !important; height: 42px !important; border-radius: 6px; }
+    .kc-track-name { font-size: 14px !important; max-width: 150px; }
+    .kc-artist-name { font-size: 11px !important; max-width: 150px; }
+    
+    .kc-col-action { width: 36px !important; text-align: center !important; }
+    .kc-chevron-toggle { width: 26px !important; height: 26px !important; margin: 0 auto; }
+    .kc-chevron-toggle svg { width: 10px; height: 10px; }
+
+    /* Expandable Row Details on Mobile */
+    .kc-details-inner { padding: 0 12px !important; }
+    .is-expanded .kc-details-inner { padding: 16px 12px !important; }
+    .kc-details-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    .kc-details-item {
+        background: var(--k-surface);
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--k-border);
+    }
+    .kc-details-item label { font-size: 9px !important; margin-bottom: 4px; }
+    .kc-details-item span { font-size: 13px !important; }
+    .kc-details-item.kc-details-cta {
+        grid-column: span 2 !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 4px 0 0 !important;
+        text-align: center !important;
+    }
+    .kc-details-item.kc-details-cta .kc-view-all {
+        display: inline-block;
+        padding: 6px 16px;
+        background: var(--k-surface-alt);
+        border: 1px solid var(--k-border);
+        border-radius: 6px;
+        font-size: 11px !important;
+        font-weight: 700;
+        text-decoration: none;
     }
 
     /* Motion Carousel on mobile */
@@ -1582,12 +1660,15 @@
 }
 
 @media (max-width: 480px) {
-    .kc-featured-title { font-size: 24px !important; }
-    .kc-featured-rank-num { font-size: 60px !important; }
-    .kc-featured-img { width: 110px !important; height: 110px !important; }
-    .kc-rank-row td.kc-rank-num { font-size: 16px !important; width: 40px !important; }
-    .kc-rank-thumb { width: 44px !important; height: 44px !important; }
-    .kc-track-name { font-size: 14px !important; }
-    .kc-artist-name { font-size: 12px !important; }
+    .kc-featured-title { font-size: 22px !important; }
+    .kc-featured-rank-num { font-size: 54px !important; }
+    .kc-featured-img { width: 120px !important; height: 120px !important; }
+    .kc-track-name { font-size: 13px !important; max-width: 120px; }
+    .kc-artist-name { font-size: 10px !important; max-width: 120px; }
+    .kc-rank-thumb { width: 38px !important; height: 38px !important; }
+    .kc-col-rank { width: 38px !important; }
+    .kc-rank-num { width: 38px !important; font-size: 14px !important; }
+    .kc-col-movement { width: 34px !important; }
+    .kc-col-action { width: 30px !important; }
 }
 
