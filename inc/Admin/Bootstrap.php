@@ -242,6 +242,17 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'factory_reset_data':
+				if ( ! current_user_can( 'manage_options' ) ) wp_die('Unauthorized');
+				$report = self::wipe_all_data( false ); // False = Do not wipe definitions/sources
+				$summary = sprintf( 
+					__( 'Factory Reset successful. Purged: %d entries, %d tracks, %d artists. Your configuration and definitions were preserved.', 'charts' ),
+					$report['entries'], $report['tracks'], $report['artists']
+				);
+				\Charts\Core\Notify::success( $summary, __( 'Data Reset Complete', 'charts' ) );
+				$processed = true;
+				break;
+
 			case 'run_integrity_check_v2':
 				\Charts\Core\Integrity::recalculate_entity_links();
 				$redundant = \Charts\Core\Integrity::detect_redundant_sources();
@@ -469,7 +480,7 @@ class Bootstrap {
 				$module = 'settings';
 			} elseif ( strpos( $action, 'source' ) !== false ) {
 				$module = 'sources';
-			} elseif ( in_array( $action, array( 'promote_entity', 'bulk_promote', 'delete_entity', 'save_entity' ), true ) ) {
+			} elseif ( in_array( $action, array( 'promote_entity', 'bulk_promote', 'delete_entity', 'save_entity', 'bulk_action' ), true ) ) {
 				// Route back to the correct entity screen based on submitted type
 				$entity_type = sanitize_text_field( $_POST['entity_type'] ?? ( $_POST['type'] ?? '' ) );
 				if ( $entity_type === 'track' ) {
@@ -1680,7 +1691,6 @@ class Bootstrap {
 
 		// 1. Tables to truncate
 		$tables = array(
-			'charts_sources',
 			'charts_periods',
 			'charts_artists',
 			'charts_albums',
@@ -1692,9 +1702,13 @@ class Bootstrap {
 			'charts_aliases',
 			'charts_import_runs',
 			'charts_insights',
-			'charts_definitions',
 			'charts_intelligence',
 		);
+
+		if ( $wipe_settings ) {
+			$tables[] = 'charts_sources';
+			$tables[] = 'charts_definitions';
+		}
 
 		foreach ( $tables as $table ) {
 			$fullname = $wpdb->prefix . $table;

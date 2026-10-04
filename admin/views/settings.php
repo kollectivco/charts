@@ -242,6 +242,18 @@ $panel = [
                     [ 'id' => 'maint_integrity', 'type' => 'custom', 'html' => '<button type="button" class="kb-btn kb-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=run_integrity_check_v2&_wpnonce='.wp_create_nonce('kcharts_save_v2')).'\'">Reconcile Entity Links</button>' ],
                 ]
             ],
+            'danger_data' => [
+                'title' => 'Factory Reset (Data Only)',
+                'fields' => [
+                    [ 'id' => 'maint_factory_reset', 'type' => 'custom', 'html' => '
+                        <div class="kb-field-wrap">
+                            <label>Wipe All Chart Data</label>
+                            <p class="kb-field-desc" style="margin-bottom:10px; color:#ef4444;">This will instantly delete ALL imported artists, tracks, and chart history. Your Data Sources and Definitions will remain intact so you can start fresh.</p>
+                            <button type="button" class="kb-btn kb-btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="if(confirm(\'Are you absolutely sure you want to delete ALL data? This cannot be undone.\')){ location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=factory_reset_data&_wpnonce='.wp_create_nonce('kcharts_save_v2')).'\'; }">Wipe Data & Reset Charts</button>
+                        </div>
+                    ' ],
+                ]
+            ],
             'danger' => [
                 'title' => 'Structural Reset',
                 'fields' => [
