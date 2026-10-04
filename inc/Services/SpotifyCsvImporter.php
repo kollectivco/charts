@@ -63,6 +63,7 @@ class SpotifyCsvImporter {
 
 			// 6. Process rows
 			$saved        = 0;
+			$created      = 0;
 			$parse_errors = 0;
 			$current_row  = 0;
 			$error_reasons = array();
@@ -127,6 +128,9 @@ class SpotifyCsvImporter {
 						$error_reasons[] = "Row {$current_row}: Failed to ensure track ($official_name) - DB: {$wpdb->last_error}";
 						continue;
 					}
+					if ( \Charts\Core\EntityManager::$last_ensure_was_insert ) {
+						$created++;
+					}
 				}
 
 				$artist_ids = array();
@@ -190,6 +194,7 @@ class SpotifyCsvImporter {
 				'status'              => 'completed',
 				'parsed_rows'         => count( $rows ),
 				'matched_items'       => $saved,
+				'created_items'       => $created,
 				'enrichment_attempts' => count( $rows ),
 				'enrichment_failures' => count( $rows ) - $enriched_count,
 				'error_message'       => $err_msg,
@@ -205,6 +210,7 @@ class SpotifyCsvImporter {
 
 			return array(
 				'saved'     => $saved,
+				'created'   => $created,
 				'parsed'    => count( $rows ),
 				'run_id'    => $run_id,
 				'enriched'  => $enriched_count,

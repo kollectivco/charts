@@ -11,6 +11,8 @@ namespace Charts\Core;
  */
 class EntityManager {
 
+	public static $last_ensure_was_insert = false;
+
 	/**
 	 * Get entity by slug, prioritizing SQL baseline for stability.
 	 */
@@ -120,6 +122,7 @@ class EntityManager {
 	 * Supports multi-lingual and cross-script resolution (Arabic vs English vs Franko).
 	 */
 	public static function ensure_artist( $display_name, $data = array() ) {
+		self::$last_ensure_was_insert = false;
 		global $wpdb;
 		$display_name = trim( $display_name );
 		if ( empty( $display_name ) ) return 0;
@@ -190,6 +193,7 @@ class EntityManager {
 		}
 
 		// 6. Create new artist record
+		self::$last_ensure_was_insert = true;
 		$slug_base = ! empty( $name_en ) ? $name_en : $display_name;
 		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'artist' );
 
@@ -210,6 +214,7 @@ class EntityManager {
 	 * Cross-checks title in Arabic and English, and prevents duplicate tracks.
 	 */
 	public static function ensure_track( $title, $artist_id, $data = array() ) {
+		self::$last_ensure_was_insert = false;
 		global $wpdb;
 		$title = trim( $title );
 		if ( empty( $title ) ) return 0;
@@ -256,6 +261,7 @@ class EntityManager {
 		}
 
 		// 4. Create new track record
+		self::$last_ensure_was_insert = true;
 		$slug_base = ! empty( $title_en ) ? $title_en : $title;
 		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'track' );
 		$wpdb->insert( $table, array(
