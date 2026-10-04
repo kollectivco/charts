@@ -2934,20 +2934,25 @@ class Bootstrap {
 
 		global $wpdb;
 		$updated = 0;
+		
+		// Map tables to their respective Arabic and English columns
 		$tables = [
-			'charts_artists' => ['id', 'display_name', 'slug'],
-			'charts_tracks' => ['id', 'title', 'slug'],
-			'charts_videos' => ['id', 'title', 'slug'],
-			'charts_albums' => ['id', 'title', 'slug']
+			'charts_artists' => ['id', 'display_name as title', 'display_name_en as title_en', 'slug'],
+			'charts_tracks' => ['id', 'title', 'title_en', 'slug'],
+			'charts_videos' => ['id', 'title', 'NULL as title_en', 'slug'],
+			'charts_albums' => ['id', 'title', 'NULL as title_en', 'slug']
 		];
 
 		foreach ($tables as $table_suffix => $cols) {
 			$table = $wpdb->prefix . $table_suffix;
-			$items = $wpdb->get_results("SELECT {$cols[0]} as id, {$cols[1]} as title, {$cols[2]} as slug FROM $table");
+			$items = $wpdb->get_results("SELECT {$cols[0]} as id, {$cols[1]}, {$cols[2]}, {$cols[3]} FROM $table");
 			
 			foreach ($items as $item) {
-				if (preg_match('/[^\x20-\x7e]/', urldecode($item->slug)) || urldecode($item->slug) !== $item->slug) {
-					$expected = \Charts\Services\Slugger::unique($table, $item->title);
+				// We want to force a new slug if the current one has non-ASCII OR if it was purely Franco-generated and we now have a real English title
+				$slug_base = ! empty( $item->title_en ) ? $item->title_en : $item->title;
+				$expected = \Charts\Services\Slugger::unique($table, $slug_base);
+				
+				if ( $item->slug !== $expected && ( preg_match('/[^\x20-\x7e]/', urldecode($item->slug)) || urldecode($item->slug) !== $item->slug || ! empty($item->title_en) ) ) {
 					$wpdb->update($table, ['slug' => $expected], ['id' => $item->id]);
 					$updated++;
 				}

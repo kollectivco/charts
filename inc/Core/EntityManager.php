@@ -183,14 +183,15 @@ class EntityManager {
 			return $existing_id;
 		}
 
-		// 6. Create new artist record
-		$slug = \Charts\Services\Slugger::unique( $table, $display_name, 'artist' );
-
 		// Auto-derive display_name_en if missing
 		if ( empty( $name_en ) && class_exists( '\Charts\Services\Normalizer' ) ) {
 			$name_en = \Charts\Services\Normalizer::to_franko( $display_name );
 			if ( $name_en === $display_name ) $name_en = null;
 		}
+
+		// 6. Create new artist record
+		$slug_base = ! empty( $name_en ) ? $name_en : $display_name;
+		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'artist' );
 
 		$wpdb->insert( $table, array(
 			'display_name'    => $display_name,
@@ -255,7 +256,8 @@ class EntityManager {
 		}
 
 		// 4. Create new track record
-		$slug = \Charts\Services\Slugger::unique( $table, $title . '-' . $artist_id, 'track-' . $artist_id );
+		$slug_base = ! empty( $title_en ) ? $title_en . '-' . $artist_id : $title . '-' . $artist_id;
+		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'track-' . $artist_id );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
 			'title_en'          => $title_en ?: null,
