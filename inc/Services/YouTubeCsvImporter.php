@@ -73,6 +73,10 @@ class YouTubeCsvImporter {
 				throw new \Exception( 'Could not create or find a matching period.' );
 			}
 
+			if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+				$this->import_flow->wipe_period( $source_id, $period_id );
+			}
+
 			// Diagnostic: Pipeline Start
 			$this->log_to_run( $run_id, sprintf( "Starting pipeline for %d rows. Mode: %s. Chart: %s.", count($rows), $detected_mode, $chart_type ) );
 

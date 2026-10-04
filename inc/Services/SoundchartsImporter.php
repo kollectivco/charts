@@ -109,6 +109,10 @@ class SoundchartsImporter {
 		$period_id = $this->flow->ensure_period( $chart['frequency'], $period_date );
 		if ( ! $period_id ) return new \WP_Error( 'soundcharts_period_failed', __( 'Could not create a chart period for this Soundcharts snapshot.', 'charts' ) );
 
+		if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+			$this->flow->wipe_period( $source_id, $period_id );
+		}
+
 		$wpdb->insert( $wpdb->prefix . 'charts_import_runs', array(
 			'source_id'   => $source_id,
 			'run_type'    => 'csv',

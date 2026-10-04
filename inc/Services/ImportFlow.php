@@ -170,6 +170,18 @@ class ImportFlow {
 	}
 
 	/**
+	 * Completely wipes existing entries for a specific chart period.
+	 * Used when the import mode is "Replace".
+	 */
+	public function wipe_period( $source_id, $period_id ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->prefix}charts_entries WHERE source_id = %d AND period_id = %d",
+			$source_id, $period_id
+		) );
+	}
+
+	/**
 	 * Upsert a chart entry row.
 	 * Unique key: (source_id, period_id, rank_position).
 	 * Stores both relational item_id and flat denormalized columns for direct frontend queries.

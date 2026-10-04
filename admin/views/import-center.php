@@ -313,6 +313,22 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 								<label class="premium-label"><?php esc_html_e( 'Base Sync Date', 'charts' ); ?></label>
 								<input type="date" name="period_date" id="period_date" value="<?php echo date('Y-m-d'); ?>" class="premium-input">
 							</div>
+							<div class="form-group full-width" style="margin-top: 15px;">
+								<label class="premium-label" style="display:flex;align-items:center;gap:8px;">
+									<?php esc_html_e( 'Import Mode', 'charts' ); ?>
+									<span class="dashicons dashicons-info" title="Merge: Updates overlapping ranks, keeps remaining old entries. Replace: Wipes the entire existing chart for this date before inserting the new one." style="color:#64748b;font-size:16px;width:16px;height:16px;"></span>
+								</label>
+								<div style="display:flex; gap:20px; margin-top:8px;">
+									<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+										<input type="radio" name="import_mode" value="merge" checked style="accent-color:#5B21B6; width:16px; height:16px;">
+										<span style="font-weight:600; color:#1e293b;">Merge (Update & Add)</span>
+									</label>
+									<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+										<input type="radio" name="import_mode" value="replace" style="accent-color:#ef4444; width:16px; height:16px;">
+										<span style="font-weight:600; color:#1e293b;">Replace (Wipe & Insert)</span>
+									</label>
+								</div>
+							</div>
 							
 							<input type="hidden" name="chart_type" id="hidden_chart_type" value="top-songs">
 						</div>

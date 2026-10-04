@@ -55,6 +55,10 @@ class BillboardCsvImporter {
 		$period_date = sanitize_text_field( $meta['period_date'] ?? current_time( 'Y-m-d' ) );
 		$period_id = $import_flow->ensure_period( 'weekly', $period_date );
 
+		if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+			$import_flow->wipe_period( $source_id, $period_id );
+		}
+
 		$headers = str_getcsv(array_shift($lines));
 		if (strpos($headers[0], "\xEF\xBB\xBF") === 0) $headers[0] = substr($headers[0], 3);
 		$headers = array_map('trim', $headers);

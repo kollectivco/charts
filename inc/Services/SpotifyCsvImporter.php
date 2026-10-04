@@ -55,6 +55,10 @@ class SpotifyCsvImporter {
 				throw new \Exception( 'Could not create or find a matching period.' );
 			}
 
+			if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+				$this->import_flow->wipe_period( $source_id, $period_id );
+			}
+
 			// 5. Optionally enrich
 			$enriched_count = 0;
 			try {

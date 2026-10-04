@@ -52,6 +52,10 @@ class KontentCsvImporter {
 		$import_flow = new \Charts\Services\ImportFlow();
 		$period_id = $import_flow->ensure_period($meta['period_type'] ?? 'weekly', $meta['period_date'] ?? current_time('Y-m-d'));
 
+		if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+			$import_flow->wipe_period( $source_id, $period_id );
+		}
+
 		$imported = 0;
 		$created  = 0;
 		$errors   = [];
