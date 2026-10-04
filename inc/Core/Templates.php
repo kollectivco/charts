@@ -10,32 +10,20 @@ class Templates {
 
     
     public static function force_elementor_template( $template ) {
-        // If Elementor editor is loading or in preview mode, let Elementor handle template loading completely
-        if ( isset( $_GET['elementor-preview'] ) || ( isset( $_GET['action'] ) && $_GET['action'] === 'elementor' ) ) {
-            return $template;
-        }
-
-        if ( class_exists( '\Elementor\Plugin' ) ) {
-            if ( \Elementor\Plugin::$instance->preview->is_preview_mode() || \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
-                return $template;
-            }
-        }
-
         if ( is_singular( 'charts_template' ) ) {
+            // 1. If Elementor page templates module has a specific template (e.g. Canvas, Header & Footer), honor it
             if ( class_exists( '\Elementor\Plugin' ) ) {
-                $document = \Elementor\Plugin::$instance->documents->get( get_the_ID() );
-                if ( $document && $document->is_built_with_elementor() ) {
-                    $page_template = $document->get_meta( '_wp_page_template' );
-                    if ( $page_template && 'default' !== $page_template ) {
-                        $elementor_template = \Elementor\Plugin::$instance->modules_manager->get_modules( 'page-templates' )->template_include( $template );
-                        if ( $elementor_template ) {
-                            return $elementor_template;
-                        }
+                $page_templates_module = \Elementor\Plugin::$instance->modules_manager->get_modules( 'page-templates' );
+                if ( $page_templates_module && method_exists( $page_templates_module, 'template_include' ) ) {
+                    $elementor_template = $page_templates_module->template_include( $template );
+                    if ( $elementor_template && file_exists( $elementor_template ) ) {
+                        return $elementor_template;
                     }
                 }
             }
 
-            // Provide a guaranteed safe fallback template that outputs the_content() so Elementor can hook into it
+            // 2. Otherwise, ensure our dedicated fallback template containing the_content() is loaded
+            // so Elementor editor / preview can find the content container without hanging on loading
             $fallback = CHARTS_PATH . 'public/templates/single-charts_template.php';
             if ( file_exists( $fallback ) ) {
                 return $fallback;
