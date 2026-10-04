@@ -131,6 +131,10 @@ jQuery(document).ready(function($) {
             const platform = $soundchartsPlatform.val();
             if (!platform || !$countrySelect.val()) {
                 resetSoundchartsCharts('Choose a market and Soundcharts platform first.');
+                if (!$countrySelect.val()) {
+                    $countrySelect.closest('.market-selector-wrap').css({boxShadow: '0 0 0 2px #ef4444', borderRadius: '8px'});
+                    setTimeout(() => $countrySelect.closest('.market-selector-wrap').css({boxShadow: 'none'}), 2000);
+                }
                 checkReadiness();
                 return;
             }
@@ -313,8 +317,15 @@ jQuery(document).ready(function($) {
             checkReadiness();
         });
         $soundchartsPlatform.on('change', function() {
-            resetSoundchartsCharts($countrySelect.val() ? 'Click Load Charts to get this platform’s catalog.' : 'Choose a market first.');
-            $soundchartsLoad.prop('disabled', !($countrySelect.val() && $soundchartsPlatform.val()));
+            const hasCountry = $countrySelect.val();
+            resetSoundchartsCharts(hasCountry ? 'Click Load Charts to get this platform’s catalog.' : 'Choose a market first.');
+            $soundchartsLoad.prop('disabled', !(hasCountry && $soundchartsPlatform.val()));
+            
+            if (!hasCountry) {
+                $countrySelect.closest('.market-selector-wrap').css({boxShadow: '0 0 0 2px #ef4444', borderRadius: '8px'});
+                setTimeout(() => $countrySelect.closest('.market-selector-wrap').css({boxShadow: 'none'}), 2000);
+            }
+            
             filterChartsByPlatform();
             checkReadiness();
         });
