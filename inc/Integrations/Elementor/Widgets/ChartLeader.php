@@ -194,6 +194,27 @@ class ChartLeader extends Widget_Base {
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-meta-tag { align-self: center; margin: 0 auto 24px auto; }
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-title { font-size: 56px; }
 		.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-btn { align-self: center; margin: 32px auto 0 auto; }
+
+		@media (max-width: 768px) {
+			.<?php echo $uid; ?>-standard { flex-direction: column; }
+			.<?php echo $uid; ?>-img-wrap { min-width: 100%; min-height: 280px; height: 280px; }
+			.<?php echo $uid; ?>-rank { font-size: 60px; top: 16px; right: 16px; }
+			.<?php echo $uid; ?>-info { padding: 24px 20px; }
+			.<?php echo $uid; ?>-title { font-size: 32px; }
+			.<?php echo $uid; ?>-artist { font-size: 18px; margin-bottom: 20px; }
+			.<?php echo $uid; ?>-stats { gap: 16px; padding: 16px; }
+			.<?php echo $uid; ?>-stat-val { font-size: 20px; }
+			.<?php echo $uid; ?>-minimal { padding: 32px 16px; }
+			.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-title { font-size: 36px; }
+		}
+		@media (max-width: 480px) {
+			.<?php echo $uid; ?>-img-wrap { min-height: 220px; height: 220px; }
+			.<?php echo $uid; ?>-rank { font-size: 48px; }
+			.<?php echo $uid; ?>-title { font-size: 26px; }
+			.<?php echo $uid; ?>-artist { font-size: 16px; }
+			.<?php echo $uid; ?>-stats { justify-content: space-between; }
+			.<?php echo $uid; ?>-minimal .<?php echo $uid; ?>-title { font-size: 28px; }
+		}
 		</style>
 
 		<div class="<?php echo $uid; ?>-wrap kc-cl-wrap kc-widget-wrap">

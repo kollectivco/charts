@@ -475,6 +475,30 @@ class Top5HeroShowcase extends Widget_Base {
 			.' . $uid . '-header { flex-direction: column; align-items: flex-start; gap: 16px; }
 			.' . $uid . '-hero { min-height: 350px; }
 		}
+		@media (max-width: 768px) {
+			.' . $uid . '-wrap { padding: 24px 16px; border-radius: 16px; }
+			.' . $uid . '-titles h2 { font-size: 36px; }
+			.' . $uid . '-hero-text h3 { font-size: 28px; }
+			.' . $uid . '-hero-text p { font-size: 16px; }
+			.' . $uid . '-rank-big { font-size: 90px; }
+			.' . $uid . '-row { padding: 10px 14px; gap: 12px; }
+			.' . $uid . '-r-rank { font-size: 28px; width: 28px; }
+			.' . $uid . '-r-img { width: 52px; height: 52px; }
+			.' . $uid . '-r-info h4 { font-size: 16px; }
+		}
+		@media (max-width: 480px) {
+			.' . $uid . '-wrap { padding: 16px 12px; }
+			.' . $uid . '-titles h2 { font-size: 28px; }
+			.' . $uid . '-hero { min-height: 280px; }
+			.' . $uid . '-hero-text h3 { font-size: 22px; }
+			.' . $uid . '-hero-text p { font-size: 14px; }
+			.' . $uid . '-badge { font-size: 18px; padding: 6px 12px; }
+			.' . $uid . '-rank-big { font-size: 70px; top: 0; left: 10px; }
+			.' . $uid . '-play-btn { width: 48px; height: 48px; }
+			.' . $uid . '-r-img { width: 44px; height: 44px; }
+			.' . $uid . '-r-info h4 { font-size: 14px; }
+			.' . $uid . '-r-info p { font-size: 12px; }
+		}
 		</style>';
 
 		echo '<div class="' . $uid . '-wrap kc-t5-wrap">';

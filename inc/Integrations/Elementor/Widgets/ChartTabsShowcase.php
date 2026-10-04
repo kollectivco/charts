@@ -377,6 +377,19 @@ class ChartTabsShowcase extends Widget_Base {
 			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 		}
 
+		@media (max-width: 600px) {
+			.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-content.is-active { gap: 16px; }
+			.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-row { width: calc(50% - 10px); }
+			.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-img-wrap { width: 90px; height: 90px; margin-bottom: 8px; }
+			.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-rank-badge { width: 26px; height: 26px; font-size: 13px; }
+			.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-title { font-size: 13px; }
+			.<?php echo $uid; ?>-circles .<?php echo $uid; ?>-artist { font-size: 11px; }
+			.kc-variant-list .<?php echo $uid; ?>-row { gap: 12px; }
+			.kc-variant-list .<?php echo $uid; ?>-img-wrap { width: 48px; height: 48px; }
+			.kc-variant-list .<?php echo $uid; ?>-rank-list { font-size: 18px; width: 28px; }
+			.kc-variant-list .<?php echo $uid; ?>-title { font-size: 15px; }
+		}
+
 
 		/* Style 6: Cards Overlay */
 		.<?php echo $uid; ?>-cards_overlay .<?php echo $uid; ?>-rank-list { display: none; }

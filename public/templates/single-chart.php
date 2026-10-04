@@ -169,7 +169,7 @@ if ( ! $is_mobile ) {
 				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; 
 					$chart_color = $definition->accent_color ?: 'var(--k-accent)';
 				?>
-					<div class="kc-card" style="padding: 0; overflow: hidden; height: 320px; display: flex; position: relative;">
+					<div class="kc-card kc-featured-hero" style="padding: 0; overflow: hidden; position: relative;">
 					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
 					<?php 
 						$franco_mode = $definition->franco_mode ?? 'original';
@@ -177,12 +177,12 @@ if ( ! $is_mobile ) {
 						$top_track = $resolved['track'];
 						$top_artist = $resolved['artist'];
 					?>
-					<div style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; padding: 40px 60px; gap: 40px;">
-						<div style="position: relative; display: flex; align-items: center; gap: 10px;">
-							<div style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">١</div>
-							<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
+					<div class="kc-featured-inner" style="position: relative; z-index: 10; display: flex; align-items: center; width: 100%; gap: 40px;">
+						<div class="kc-featured-media" style="position: relative; display: flex; align-items: center; gap: 10px;">
+							<div class="kc-featured-rank-num" style="font-size: 140px; font-weight: 950; color: <?php echo esc_attr($chart_color); ?>; line-height: 1; opacity: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.1); letter-spacing: -0.05em; margin-bottom: -10px; margin-right: 10px;">١</div>
+							<img class="kc-featured-img" src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 240px; height: 240px; border-radius: 12px; object-fit: cover; box-shadow: var(--k-shadow-md);">
 						</div>
-						<div style="flex-grow: 1;">
+						<div class="kc-featured-info" style="flex-grow: 1;">
 							<div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
 								<span style="background: <?php echo esc_attr($chart_color); ?>; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em;">#١ الأسبوع ده</span>
 								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
@@ -198,15 +198,15 @@ if ( ! $is_mobile ) {
                                     $display_title = $top_artist;
                                 }
                             ?>
-                            <h2 style="font-size: 54px; font-weight: 950; margin: 0; line-height: 1.1;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($display_title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($display_title)); ?></h2>
+                            <h2 class="kc-featured-title <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($display_title)); ?>" style="font-weight: 950; margin: 0; line-height: 1.1;"><?php echo esc_html(\Charts\Core\Translation::get($display_title)); ?></h2>
 							
                             <?php 
                             // Rule: Disable subtitle for Artist Charts to prevent duplication
                             if ( ! $is_artist_chart && ! empty($top_artist) && strtolower($display_title) !== strtolower($top_artist) ) : ?>
-								<h3 style="font-size: 28px; font-weight: 700; color: var(--k-text-muted); margin-top: 12px;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($top_artist)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($top_artist)); ?></h3>
+								<h3 class="kc-featured-subtitle <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($top_artist)); ?>" style="font-weight: 700; color: var(--k-text-muted); margin-top: 12px;"><?php echo esc_html(\Charts\Core\Translation::get($top_artist)); ?></h3>
 							<?php endif; ?>
 							
-							<div style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
+							<div class="kc-featured-stats" style="display: flex; align-items: center; gap: 40px; margin-top: 40px; font-size: 14px; font-weight: 800; color: var(--k-text-dim);">
 								<span><?php echo \Charts\Core\Translation::get('Peak #'); ?><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->peak_rank ?: 1)); ?></span>
 								<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->weeks_on_chart ?: 1)); ?> <?php echo \Charts\Core\Translation::get('wks on chart'); ?></span>
 							</div>
