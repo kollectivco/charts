@@ -6,7 +6,7 @@
  */
 global $wpdb;
 
-$page = sanitize_key( wp_unslash( $_GET['page'] ?? 'charts-entities' ) );
+$page = sanitize_key( wp_unslash( $_GET['page'] ?? 'charts-artists' ) );
 $type = ( $page === 'charts-artists' ) ? 'artist' : ( ( $page === 'charts-tracks' ) ? 'track' : ( ( $page === 'charts-clips' ) ? 'video' : 'advanced' ) );
 
 $search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
@@ -203,7 +203,7 @@ $entity_type = $type;
 					<span class="dashicons dashicons-randomize" aria-hidden="true"></span><?php esc_html_e( 'Link Clips to Tracks', 'charts' ); ?>
 				</a>
 			<?php endif; ?>
-			<a href="<?php echo admin_url( 'admin.php?page=charts-entities&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
+			<a href="<?php echo admin_url( 'admin.php?page=' . esc_attr($page) . '&action=edit&type=' . $entity_type ); ?>" class="charts-btn-create">
 				<span class="dashicons dashicons-plus" style="margin-right:8px; vertical-align: middle;"></span>
 				<?php printf( __( 'Add New %s', 'charts' ), rtrim($page_title, 's') ); ?>
 			</a>
