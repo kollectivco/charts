@@ -186,12 +186,6 @@ class EntityManager {
 			return $existing_id;
 		}
 
-		// Auto-derive display_name_en if missing
-		if ( empty( $name_en ) && class_exists( '\Charts\Services\Normalizer' ) ) {
-			$name_en = \Charts\Services\Normalizer::to_franko( $display_name );
-			if ( $name_en === $display_name ) $name_en = null;
-		}
-
 		// 6. Create new artist record
 		self::$last_ensure_was_insert = true;
 		$slug_base = ! empty( $name_en ) ? $name_en : $display_name;
