@@ -74,7 +74,7 @@ class Settings {
                 'surface_color_dark'   => '#141414',
                 'text_color_dark'      => '#ffffff',
                 'card_radius_px'       => 24,
-                'franco_mode'          => 'original', // original, franco_auto, franco_manual
+                'name_display_mode'    => 'original', // original, english
             ],
             
             // External Integrations

@@ -318,11 +318,7 @@ class YouTubeCsvImporter {
 			if ( $image ) $wpdb->update( $table, array( 'image' => $image ), array( 'id' => $id ) );
 			return $id;
 		}
-		$franko = Normalizer::to_franko( $display_name );
 		$slug = \Charts\Services\Slugger::make( $display_name, 'artist' );
-		if ( empty( $slug ) ) {
-			$slug = \Charts\Services\Slugger::make( $franko, 'artist' );
-		}
 		if ( empty( $slug ) ) {
 			$slug = 'artist-' . wp_generate_password( 8, false );
 		}
@@ -352,11 +348,7 @@ class YouTubeCsvImporter {
 			if ( $cover_image ) $wpdb->update( $table, array( 'cover_image' => $cover_image ), array( 'id' => $id ) );
 			return $id;
 		}
-		$franko = Normalizer::to_franko( $title );
 		$slug = \Charts\Services\Slugger::make( $title . '-' . $artist_id, 'track-' . $artist_id );
-		if ( empty( $slug ) ) {
-			$slug = \Charts\Services\Slugger::make( $franko . '-' . $artist_id, 'track-' . $artist_id );
-		}
 		if ( empty( $slug ) ) {
 			$slug = 'track-' . wp_generate_password( 8, false );
 		}
@@ -388,7 +380,6 @@ class YouTubeCsvImporter {
 			if ( $youtube_id ) $wpdb->update( $table, array( 'youtube_id' => $youtube_id ), array( 'id' => $id ) );
 			return $id;
 		}
-		$franko = Normalizer::to_franko( $title );
 		$slug = $this->unique_slug( $table, \Charts\Services\Slugger::make( $title . '-' . $artist_id, 'video-' . $artist_id ) );
 		$wpdb->insert( $table, array(
 			'title'             => $title,

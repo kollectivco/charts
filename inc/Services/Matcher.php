@@ -29,18 +29,7 @@ class Matcher {
 			return $artist_id;
 		}
 
-		// 2b. Try Franko Match
-		$franko = Normalizer::to_franko( $display_name );
-		if ( $franko !== $display_name ) {
-			$english_name = Slugger::make( $display_name, 'artist' );
-			$artist_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE display_name_en = %s", $english_name ) );
-			if ( $artist_id ) {
-				return $artist_id;
-			}
-		}
-
 		// 3. Create fresh
-		$franko = Normalizer::to_franko( $display_name );
 		$slug = Slugger::unique( $table, $display_name, 'artist' );
 
 		$wpdb->insert( $table, array(
@@ -74,19 +63,7 @@ class Matcher {
 			return $track_id;
 		}
 
-		// 1b. Try Franko Match
-		$franko = Normalizer::to_franko( $title );
-		if ( $franko !== $title ) {
-			$english_title = Slugger::make( $title, 'track' );
-			$track_id = $wpdb->get_var( $wpdb->prepare( 
-				"SELECT id FROM $table WHERE title_en = %s AND primary_artist_id = %d",
-				$english_title, $primary_artist_id
-			) );
-			if ( $track_id ) return $track_id;
-		}
-
 		// 2. Create fresh
-		$franko = Normalizer::to_franko( $title );
 		$slug_base = $title . ' ' . $primary_artist_id;
 		$slug = Slugger::unique( $table, $slug_base, 'track-' . $primary_artist_id );
 
@@ -122,7 +99,6 @@ class Matcher {
 			return $video_id;
 		}
 
-		$franko = Normalizer::to_franko( $title );
 		$slug = Slugger::unique( $table, $title . ' ' . $primary_artist_id, 'video-' . $primary_artist_id );
 
 		$wpdb->insert( $table, array(

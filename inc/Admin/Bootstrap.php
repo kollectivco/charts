@@ -2355,22 +2355,7 @@ class Bootstrap {
 	 * AJAX: Generate Franco transliteration for a given string.
 	 */
 	public static function handle_generate_franco() {
-		if ( ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
-			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
-		}
-
-		$text = isset( $_POST['text'] ) ? wp_unslash( $_POST['text'] ) : '';
-		
-		if ( empty($text) ) {
-			wp_send_json_success( array( 'franco' => '' ) );
-			return;
-		}
-
-		$franco = \Charts\Core\Transliteration::to_franco( $text );
-		
-		wp_send_json_success( array( 
-			'franco' => ( $franco !== $text ) ? $franco : '' 
-		) );
+		wp_send_json_success( array( 'franco' => '' ) );
 	}
 
 	/**
@@ -2632,7 +2617,7 @@ class Bootstrap {
 
 		// Group by normalized name
 		foreach ($entities as $e) {
-			$norm = \Charts\Services\Normalizer::to_franko($e->name);
+			$norm = \Charts\Services\Normalizer::normalize_title($e->name);
 			$norm = strtolower(preg_replace('/[^a-zA-Z0-9\x{0600}-\x{06FF}\s]/u', '', $norm)); // remove punctuation
 			$norm = trim(preg_replace('/\s+/', ' ', $norm)); // clean spaces
 			
@@ -2719,13 +2704,11 @@ class Bootstrap {
 	 * Helper: Generate blocking key for duplicate matching.
 	 */
 	private static function generate_blocking_key( $name ) {
-		$franko = mb_strtolower( \Charts\Services\Normalizer::to_franko( $name ) );
-		// Replace typical Arabizi numbers with latin approximations
-		$franko = str_replace( array('3', '7', '2', '5', '9'), array('e', 'h', 'a', 'kh', 'k'), $franko );
-		// Strip vowels and spaces and reduce duplicate characters
-		$franko = preg_replace( '/[aeiou\s]/', '', $franko );
-		$franko = preg_replace( '/(.)\1+/', '$1', $franko );
-		return trim( $franko );
+		$clean = \Charts\Services\Normalizer::normalize_title( $name );
+		// Strip punctuation and reduce duplicate characters
+		$clean = preg_replace( '/[^\p{L}\p{N}]/u', '', $clean );
+		$clean = preg_replace( '/(.)\1+/u', '$1', $clean );
+		return trim( $clean );
 	}
 
 	/** Normalize provider URLs and URIs to the canonical external ID used for matching. */

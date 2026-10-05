@@ -197,8 +197,8 @@ class PublicIntegration {
 		if ( empty($entries) ) return;
 		$top = $entries[0];
 
-		$franco_mode = $def->franco_mode ?? 'original';
-		$resolved = Transliteration::resolve_entry_display($top, $franco_mode);
+		$display_mode = $def->name_display_mode ?? 'original';
+		$resolved = Transliteration::resolve_entry_display($top, $display_mode);
 		$title = $resolved['track'];
 		$subtitle = $resolved['artist'];
 
@@ -383,7 +383,7 @@ class PublicIntegration {
 	 * Centralized resolver for entity/entry names with Franco support.
 	 */
 	public static function resolve_display_name( $obj, $definition = null ) {
-		$mode = $definition ? ($definition->franco_mode ?? 'original') : Settings::get('design.franco_mode', 'original');
+		$mode = $definition ? ($definition->name_display_mode ?? 'original') : Settings::get('design.name_display_mode', 'original');
 		
 		// 1. If it's a Chart Entry object (has track_name, artist_names)
 		if ( isset($obj->track_name) || isset($obj->artist_names) ) {
@@ -416,7 +416,7 @@ class PublicIntegration {
 
 		// 2. If it's an Artist entity object
 		if ( isset($obj->display_name) ) {
-			$english = $obj->display_name_en ?? ($obj->display_name_franco_manual ?? ($obj->display_name_franco_auto ?? ''));
+			$english = $obj->display_name_en ?? '';
 			return [
 				'title'    => Transliteration::resolve_display($obj->display_name, $english, $mode),
 				'subtitle' => ''
@@ -425,7 +425,7 @@ class PublicIntegration {
 
 		// 3. If it's a Track entity object
 		if ( isset($obj->title) ) {
-			$english = $obj->title_en ?? ($obj->title_franco_manual ?? ($obj->title_franco_auto ?? ''));
+			$english = $obj->title_en ?? '';
 			return [
 				'title'    => Transliteration::resolve_display($obj->title, $english, $mode),
 				'subtitle' => ''

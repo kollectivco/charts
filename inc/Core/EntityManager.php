@@ -156,14 +156,6 @@ class EntityManager {
 			}
 		}
 
-		// 5. Match via Franko / Arabizi approximation
-		if ( ! $existing_id && class_exists( '\Charts\Services\Normalizer' ) ) {
-			$franko = \Charts\Services\Normalizer::to_franko( $display_name );
-			if ( $franko && $franko !== $display_name ) {
-				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(display_name_en) = %s OR normalized_name = %s", mb_strtolower( $franko ), mb_strtolower( $franko ) ) );
-			}
-		}
-
 		if ( $existing_id ) {
 			$existing_id = (int) $existing_id;
 			// Backfill missing metadata on existing artist
@@ -351,17 +343,15 @@ class EntityManager {
 
 		// Clean and generate variations for smarter search
 		$clean_query = \Charts\Services\Normalizer::normalize_title( $query );
-		$franko = \Charts\Services\Normalizer::to_franko( $clean_query );
 		
 		$search_query = '%' . $wpdb->esc_like( $query ) . '%';
 		$search_clean = '%' . $wpdb->esc_like( $clean_query ) . '%';
-		$search_franko = '%' . $wpdb->esc_like( $franko ) . '%';
 
-		$where = "$col LIKE %s OR slug LIKE %s OR $norm_col LIKE %s OR $norm_col LIKE %s";
-		$params = array( $search_query, $search_clean, $search_clean, $search_franko );
+		$where = "$col LIKE %s OR slug LIKE %s OR $norm_col LIKE %s";
+		$params = array( $search_query, $search_clean, $search_clean );
 		if ( $english_col ) {
 			$where .= " OR $english_col LIKE %s";
-			$params[] = $search_franko;
+			$params[] = $search_query;
 		}
 
 		if ( is_numeric( $query ) ) {

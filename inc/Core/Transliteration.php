@@ -37,7 +37,7 @@ class Transliteration {
         }
 
         // Rule #2: If Arabic, and English preferred mode is on
-        if ($mode === 'english' || $mode === 'franco_manual' || $mode === 'franco_auto') {
+        if ($mode === 'english') {
             return !empty($english_alt) ? $english_alt : $original;
         }
 
@@ -50,13 +50,13 @@ class Transliteration {
     public static function resolve_entry_display($entry, $mode = 'original') {
         // Resolve Track safely
         $track_name = $entry->track_name ?? '';
-        $track_en = $entry->track_name_en ?? ($entry->track_name_franco_manual ?? ($entry->track_name_franco_auto ?? ''));
+        $track_en = $entry->track_name_en ?? '';
         
         $track = self::resolve_display($track_name, $track_en, $mode);
 
         // Resolve Artist safely
         $artist_name = $entry->artist_names ?? '';
-        $artist_en = $entry->artist_names_en ?? ($entry->artist_names_franco_manual ?? ($entry->artist_names_franco_auto ?? ''));
+        $artist_en = $entry->artist_names_en ?? '';
         
         $artist = self::resolve_display($artist_name, $artist_en, $mode);
 
