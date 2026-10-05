@@ -242,6 +242,10 @@ class Bootstrap {
 				$processed = true;
 				break;
 
+			case 'export_name_sync':
+				self::process_name_sync_export();
+				exit;
+
 			case 'name_sync_upload':
 				$result = self::process_name_sync();
 				$run_id = time();

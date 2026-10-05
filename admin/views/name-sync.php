@@ -117,9 +117,10 @@ if ( isset( $_GET['sync_run_id'] ) ) {
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <?php foreach(['artists' => 'Artists', 'tracks' => 'Tracks', 'videos' => 'Clips', 'albums' => 'Albums'] as $key => $label): ?>
             <form method="post" action="" style="margin:0;">
+                <?php wp_nonce_field( 'charts_admin_action', '_wpnonce' ); ?>
                 <input type="hidden" name="charts_action" value="export_name_sync">
                 <input type="hidden" name="export_type" value="<?php echo esc_attr($key); ?>">
-                <button type="submit" class="kb-btn kb-btn-outline" style="background:#fff;border:2px solid #e2e8f0;border-radius:8px;padding:10px 20px;font-weight:700;color:#475569;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                <button type="submit" class="kb-btn kb-btn-outline" style="background:#fff;border:2px solid #e2e8f0;border-radius:8px;padding:10px 20px;font-weight:700;color:#475569;cursor:pointer;display:flex;align-items:center;gap:8px;transition:0.2s;">
                     <span class="dashicons dashicons-media-spreadsheet" style="color:#10b981;"></span>
                     Export <?php echo esc_html($label); ?>
                 </button>
@@ -136,7 +137,7 @@ if ( isset( $_GET['sync_run_id'] ) ) {
         </h2>
 
         <form method="post" enctype="multipart/form-data" action="" id="name-sync-form">
-            <?php wp_nonce_field( 'charts_name_sync', '_wpnonce' ); ?>
+            <?php wp_nonce_field( 'charts_admin_action', '_wpnonce' ); ?>
             <input type="hidden" name="charts_action" value="name_sync_upload">
 
             <!-- Drop Zone -->
