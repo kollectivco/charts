@@ -3417,7 +3417,8 @@ class Bootstrap {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 		}
-		@set_time_limit( 30 );
+		@set_time_limit( 60 );
+		@ini_set( 'max_execution_time', '60' );
 
 		$live_key   = ! empty( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : null;
 		$live_model = ! empty( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : null;
