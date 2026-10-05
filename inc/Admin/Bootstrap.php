@@ -645,7 +645,7 @@ class Bootstrap {
 	 */
 	private static function delete_single_entity( $id, $type ) {
 		global $wpdb;
-		$suffix = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'track' ) ? 'tracks' : 'videos' );
+		$suffix = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'track' ) ? 'tracks' : ( ( $type === 'album' ) ? 'albums' : 'videos' ) );
 		$table  = $wpdb->prefix . 'charts_' . $suffix;
 		
 		// 1. Delete the canonical metadata
@@ -683,6 +683,7 @@ class Bootstrap {
 			array( 'title' => 'Artists', 'slug' => 'charts-artists', 'callback' => 'render_entities' ),
 			array( 'title' => 'Tracks', 'slug' => 'charts-tracks', 'callback' => 'render_entities' ),
 			array( 'title' => 'Clips', 'slug' => 'charts-clips', 'callback' => 'render_entities' ),
+			array( 'title' => 'Albums', 'slug' => 'charts-albums', 'callback' => 'render_entities' ),
 			array( 'title' => 'Clip-Track Linking', 'slug' => 'charts-clip-track-linker', 'callback' => 'render_clip_track_linker' ),
 			array( 'title' => 'Sources', 'slug' => 'charts-sources', 'callback' => 'render_sources' ),
 			array( 'title' => 'Import Center', 'slug' => 'charts-import', 'callback' => 'render_import_center' ),

@@ -7,17 +7,18 @@
 global $wpdb;
 
 $page = sanitize_key( wp_unslash( $_GET['page'] ?? 'charts-artists' ) );
-$type = ( $page === 'charts-artists' ) ? 'artist' : ( ( $page === 'charts-tracks' ) ? 'track' : ( ( $page === 'charts-clips' ) ? 'video' : 'advanced' ) );
+$type = ( $page === 'charts-artists' ) ? 'artist' : ( ( $page === 'charts-tracks' ) ? 'track' : ( ( $page === 'charts-clips' ) ? 'video' : ( ( $page === 'charts-albums' ) ? 'album' : 'advanced' ) ) );
 
 $search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 $search_placeholder = $type === 'track'
 	? __( 'Search songs, artists, Spotify ID, or YouTube ID…', 'charts' )
-	: ( $type === 'video' ? __( 'Search clips, artists, or YouTube ID…', 'charts' ) : __( 'Search by name, English name, or ID…', 'charts' ) );
+	: ( $type === 'video' ? __( 'Search clips, artists, or YouTube ID…', 'charts' ) : ( $type === 'album' ? __( 'Search albums, artists, or Spotify ID…', 'charts' ) : __( 'Search by name, English name, or ID…', 'charts' ) ) );
 
 // 1. Initialize Tables
 $artists_table = $wpdb->prefix . 'charts_artists';
 $tracks_table  = $wpdb->prefix . 'charts_tracks';
 $videos_table  = $wpdb->prefix . 'charts_videos';
+$albums_table  = $wpdb->prefix . 'charts_albums';
 $entries_table = $wpdb->prefix . 'charts_entries';
 
 // 2. Fetch KPI Metrics (Data Integrity Audit)
@@ -57,6 +58,18 @@ if ( $type === 'artist' ) {
 		array( 'label' => __( 'Visual Thumbs', 'charts' ), 'value' => $stats['with_thumb'], 'icon' => 'dashicons-format-video', 'color' => '#22c55e' ),
 		array( 'label' => __( 'YouTube Linked', 'charts' ), 'value' => $stats['with_youtube'], 'icon' => 'dashicons-youtube', 'color' => '#FF0000' ),
 		array( 'label' => __( 'Active Views', 'charts' ), 'value' => $stats['active_items'], 'icon' => 'dashicons-visibility', 'color' => '#f59e0b' ),
+	);
+} elseif ( $type === 'album' ) {
+	$stats['total']        = $wpdb->get_var( "SELECT COUNT(*) FROM $albums_table" );
+	$stats['with_cover']    = $wpdb->get_var( "SELECT COUNT(*) FROM $albums_table WHERE cover_image IS NOT NULL AND cover_image != ''" );
+	$stats['with_spotify']  = $wpdb->get_var( "SELECT COUNT(*) FROM $albums_table WHERE spotify_id IS NOT NULL AND spotify_id != ''" );
+	$stats['active_items']  = $wpdb->get_var( "SELECT COUNT(DISTINCT item_id) FROM $entries_table WHERE item_type = 'album' AND item_id > 0" );
+
+	$kpis = array(
+		array( 'label' => __( 'Total Albums', 'charts' ), 'value' => $stats['total'], 'icon' => 'dashicons-album', 'color' => '#8b5cf6' ),
+		array( 'label' => __( 'Cover Artwork', 'charts' ), 'value' => $stats['with_cover'], 'icon' => 'dashicons-format-image', 'color' => '#22c55e' ),
+		array( 'label' => __( 'Spotify Linked', 'charts' ), 'value' => $stats['with_spotify'], 'icon' => 'dashicons-spotify', 'color' => '#1DB954' ),
+		array( 'label' => __( 'Chart Presence', 'charts' ), 'value' => $stats['active_items'], 'icon' => 'dashicons-chart-bar', 'color' => '#f59e0b' ),
 	);
 }
 
@@ -139,6 +152,28 @@ if ( $type === 'artist' ) {
 	" );
 	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $videos_table v {$where}" );
 	$title = __( 'Music Clips', 'charts' );
+} elseif ( $type === 'album' ) {
+	$where = "WHERE 1=1";
+	if ( $search ) {
+		$like = '%' . $wpdb->esc_like( $search ) . '%';
+		$where .= $wpdb->prepare( " AND (al.title LIKE %s OR al.slug LIKE %s OR al.spotify_id LIKE %s OR EXISTS (SELECT 1 FROM $artists_table sa WHERE sa.id = al.primary_artist_id AND (sa.display_name LIKE %s OR sa.display_name_en LIKE %s)))", $like, $like, $like, $like, $like );
+	}
+	if ( $filter_spotify === 'yes' ) $where .= " AND al.spotify_id IS NOT NULL AND al.spotify_id != ''";
+	if ( $filter_spotify === 'no' ) $where .= " AND (al.spotify_id IS NULL OR al.spotify_id = '')";
+	if ( $filter_image === 'yes' ) $where .= " AND al.cover_image IS NOT NULL AND al.cover_image != ''";
+	if ( $filter_image === 'no' ) $where .= " AND (al.cover_image IS NULL OR al.cover_image = '')";
+	if ( $filter_en === 'yes' ) $where .= " AND (al.title_en IS NULL OR al.title_en = '')";
+	if ( $filter_en === 'no' ) $where .= " AND al.title_en IS NOT NULL AND al.title_en != ''";
+
+	$items = $wpdb->get_results( "
+		SELECT al.*, a.display_name AS artist_name 
+		FROM $albums_table al 
+		LEFT JOIN $artists_table a ON a.id = al.primary_artist_id
+		{$where} 
+		ORDER BY al.title ASC LIMIT $per_page OFFSET $offset
+	" );
+	$total = $wpdb->get_var( "SELECT COUNT(*) FROM $albums_table al {$where}" );
+	$title = __( 'Albums', 'charts' );
 } else {
 	// Advanced Explorer
 	$where = "WHERE track_name != '' AND track_name IS NOT NULL";
@@ -329,7 +364,7 @@ $entity_type = $type;
 									</th>
 								<?php endif; ?>
 								<th style="<?php echo $type === 'advanced' ? 'padding-left: 24px;' : ''; ?>"><?php _e( 'Title / Name', 'charts' ); ?></th>
-								<?php if ( $type === 'track' || $type === 'video' || $type === 'advanced' ) : ?>
+								<?php if ( $type === 'track' || $type === 'video' || $type === 'album' || $type === 'advanced' ) : ?>
 									<th><?php _e( 'Artist', 'charts' ); ?></th>
 								<?php endif; ?>
 								<?php if ( $type === 'advanced' ) : ?>
@@ -366,7 +401,7 @@ $entity_type = $type;
 													<div class="charts-primary" style="font-weight: 700; color: #0f172a; font-size: 14px;"><?php echo esc_html( $label ); ?></div>
 													<div style="font-size: 11px; color: #64748b; margin-top: 2px;">
 														<?php 
-														$en_name = ($type === 'artist') ? ($item->display_name_en ?? '') : (($type === 'track' || $type === 'video') ? ($item->title_en ?? '') : '');
+														$en_name = ($type === 'artist') ? ($item->display_name_en ?? '') : (($type === 'track' || $type === 'video' || $type === 'album') ? ($item->title_en ?? '') : '');
 														echo esc_html( $en_name ?: urldecode( $item->slug ?? '' ) ); 
 														?>
 													</div>
@@ -374,7 +409,7 @@ $entity_type = $type;
 										</div>
 									</td>
 
-									<?php if ( $type === 'track' || $type === 'video' || $type === 'advanced' ) : ?>
+									<?php if ( $type === 'track' || $type === 'video' || $type === 'album' || $type === 'advanced' ) : ?>
 										<td><span style="font-size: 13px; color: #666;"><?php echo esc_html( $item->artist_name ?? $item->artist_names ?? '—' ); ?></span></td>
 									<?php endif; ?>
 

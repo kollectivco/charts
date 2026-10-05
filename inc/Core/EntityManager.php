@@ -71,7 +71,7 @@ class EntityManager {
 		$existing = self::get_post_id_by_legacy_id( $type, $legacy_id );
 		if ( $existing ) return $existing;
 
-		$table = $wpdb->prefix . ( $type === 'artist' ? 'charts_artists' : ( ($type==='video') ? 'charts_videos' : 'charts_tracks' ) );
+		$table = $wpdb->prefix . ( $type === 'artist' ? 'charts_artists' : ( ($type==='video') ? 'charts_videos' : ( ($type==='album') ? 'charts_albums' : 'charts_tracks' ) ) );
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $legacy_id ) );
 		if ( ! $row ) return false;
 
@@ -347,7 +347,7 @@ class EntityManager {
 		$col    = ( $type === 'artist' ? 'display_name' : 'title' );
 		$norm_col = ( $type === 'artist' ? 'normalized_name' : 'normalized_title' );
 		$image_col = array( 'artist' => 'image', 'track' => 'cover_image', 'video' => 'thumbnail', 'album' => 'cover_image' )[ $type ];
-		$english_col = array( 'artist' => 'display_name_en', 'track' => 'title_en', 'video' => null, 'album' => null )[ $type ];
+		$english_col = array( 'artist' => 'display_name_en', 'track' => 'title_en', 'video' => 'title_en', 'album' => 'title_en' )[ $type ];
 
 		// Clean and generate variations for smarter search
 		$clean_query = \Charts\Services\Normalizer::normalize_title( $query );
