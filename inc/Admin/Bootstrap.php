@@ -3417,19 +3417,24 @@ class Bootstrap {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 		}
+		@set_time_limit( 30 );
 
-		$client = new \Charts\Services\GeminiApiClient();
+		$live_key   = ! empty( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : null;
+		$live_model = ! empty( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : null;
+
+		$client = new \Charts\Services\GeminiApiClient( $live_key, $live_model );
 		$test   = $client->test_connection();
 
 		if ( is_wp_error( $test ) ) {
 			wp_send_json_error( array( 'message' => $test->get_error_message() ) );
 		}
 
-		if ( is_array( $test ) && ! empty( $test['message'] ) ) {
-			wp_send_json_success( array( 'message' => $test['message'] ) );
+		if ( ! empty( $live_key ) ) {
+			\Charts\Core\Settings::set( 'api.gemini_api_key', $live_key );
 		}
 
-		wp_send_json_success( array( 'message' => __( 'Gemini API handshake successful! Model is ready.', 'charts' ) ) );
+		$msg = ( is_array( $test ) && ! empty( $test['message'] ) ) ? $test['message'] : __( 'Gemini API handshake successful! Model is ready.', 'charts' );
+		wp_send_json_success( array( 'message' => $msg ) );
 	}
 
 	/**

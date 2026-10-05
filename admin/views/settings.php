@@ -193,19 +193,38 @@ $panel = [
                         function testGeminiConnection() {
                             var btn = jQuery("#btn-test-gemini");
                             var res = jQuery("#gemini-test-result");
+                            var keyEl = document.getElementById("api.gemini_api_key");
+                            var modelEl = document.getElementById("api.gemini_model");
+                            var apiKey = keyEl ? keyEl.value.trim() : "";
+                            var model = modelEl ? modelEl.value : "";
+
+                            if (!apiKey) {
+                                res.css("color", "#ef4444").text("✕ Please enter a Gemini API Key first.");
+                                return;
+                            }
+
                             btn.prop("disabled", true).text("Connecting...");
                             res.text("");
                             jQuery.post(ajaxurl, {
                                 action: "charts_test_gemini_api",
-                                _wpnonce: "' . wp_create_nonce("charts_admin_action") . '"
+                                _wpnonce: "' . wp_create_nonce("charts_admin_action") . '",
+                                api_key: apiKey,
+                                model: model
                             }).done(function(r) {
                                 if (r && r.success) {
                                     res.css("color", "#10b981").text("✓ " + (r.data.message || "Connected Successfully!"));
                                 } else {
-                                    res.css("color", "#ef4444").text("✕ " + (r.data ? r.data.message : "Connection Failed."));
+                                    var msg = (r && r.data && r.data.message) ? r.data.message : "Connection Failed.";
+                                    res.css("color", "#ef4444").text("✕ " + msg);
                                 }
-                            }).fail(function() {
-                                res.css("color", "#ef4444").text("✕ Server error contacting Gemini.");
+                            }).fail(function(xhr) {
+                                var msg = "Server error contacting Gemini.";
+                                if (xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                                    msg = xhr.responseJSON.data.message;
+                                } else if (xhr && xhr.statusText && xhr.statusText !== "error") {
+                                    msg += " (" + xhr.status + ": " + xhr.statusText + ")";
+                                }
+                                res.css("color", "#ef4444").text("✕ " + msg);
                             }).always(function() {
                                 btn.prop("disabled", false).html("<span class=\"dashicons dashicons-admin-generic\" style=\"font-size:16px;width:16px;height:16px;margin-top:2px;\"></span> Test Gemini Handshake");
                             });

@@ -13,13 +13,12 @@ class GeminiApiClient {
 	private $api_key;
 	private $model;
 	private $base_url = 'https://generativelanguage.googleapis.com/v1beta/models/';
-	private $_in_fallback = false;
 
 	public function __construct( $api_key = null, $model = null ) {
 		$this->api_key = $api_key ?: Settings::get( 'api.gemini_api_key' );
-		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-3.1-pro-preview' );
+		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-2.5-flash' );
 		if ( empty( $this->model ) ) {
-			$this->model = 'gemini-3.1-pro-preview';
+			$this->model = 'gemini-2.5-flash';
 		}
 	}
 
@@ -34,13 +33,13 @@ class GeminiApiClient {
 	/**
 	 * Retrieve all active models that support generateContent directly from Google for this API key.
 	 */
-	public function fetch_available_models() {
+	public function fetch_available_models( int $timeout = 10 ) {
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error( 'gemini_not_configured', __( 'API key is missing.', 'charts' ) );
 		}
 
 		$url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . urlencode( $this->api_key );
-		$res = wp_remote_get( $url, array( 'timeout' => 15 ) );
+		$res = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
@@ -50,7 +49,7 @@ class GeminiApiClient {
 		$body   = json_decode( wp_remote_retrieve_body( $res ), true );
 
 		if ( $status !== 200 ) {
-			$msg = $body['error']['message'] ?? sprintf( __( 'HTTP %d error listing models.', 'charts' ), $status );
+			$msg = $body['error']['message'] ?? sprintf( __( 'Google API error (HTTP %d)', 'charts' ), $status );
 			return new \WP_Error( 'gemini_list_error', $msg, $body );
 		}
 
@@ -72,9 +71,9 @@ class GeminiApiClient {
 	}
 
 	/**
-	 * Send request to Gemini generateContent endpoint with automatic fallback.
+	 * Send request to Gemini generateContent endpoint.
 	 */
-	public function generate_content( string $prompt, string $system_instruction = '', float $temperature = 0.2, bool $json_mode = false ) {
+	public function generate_content( string $prompt, string $system_instruction = '', float $temperature = 0.2, bool $json_mode = false, int $timeout = 25 ) {
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error( 'gemini_not_configured', __( 'Google Gemini API key is not configured in Settings.', 'charts' ) );
 		}
@@ -107,7 +106,7 @@ class GeminiApiClient {
 		}
 
 		$response = wp_remote_post( $endpoint, array(
-			'timeout' => 30,
+			'timeout' => $timeout,
 			'headers' => array(
 				'Content-Type' => 'application/json',
 			),
@@ -124,28 +123,6 @@ class GeminiApiClient {
 
 		if ( $status !== 200 ) {
 			$err_msg = $data['error']['message'] ?? sprintf( __( 'Gemini API error (HTTP %d)', 'charts' ), $status );
-
-			// Auto-fallback if the current model is deprecated or not available to user
-			if ( ( $status === 404 || stripos( $err_msg, 'not available' ) !== false || stripos( $err_msg, 'not found' ) !== false ) && empty( $this->_in_fallback ) ) {
-				$this->_in_fallback = true;
-				
-				// Dynamically ask Google for available models
-				$available = $this->fetch_available_models();
-				if ( ! is_wp_error( $available ) && ! empty( $available ) ) {
-					foreach ( $available as $candidate ) {
-						if ( $candidate['name'] === $this->model ) continue;
-						$this->model = $candidate['name'];
-						$retry = $this->generate_content( $prompt, $system_instruction, $temperature, $json_mode );
-						if ( ! is_wp_error( $retry ) ) {
-							Settings::set( 'api.gemini_model', $candidate['name'] );
-							$this->_in_fallback = false;
-							return $retry;
-						}
-					}
-				}
-				$this->_in_fallback = false;
-			}
-
 			return new \WP_Error( 'gemini_api_error', $err_msg, $data );
 		}
 
@@ -158,53 +135,49 @@ class GeminiApiClient {
 	}
 
 	/**
-	 * Test connection by dynamically discovering the active model from Google.
+	 * Test connection by dynamically discovering authorized models and verifying generateContent.
 	 */
 	public function test_connection() {
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error( 'gemini_not_configured', __( 'Google Gemini API key is not configured in Settings.', 'charts' ) );
 		}
 
-		$available = $this->fetch_available_models();
+		// 1. Ask Google what models are valid for this key
+		$available = $this->fetch_available_models( 8 );
 		if ( is_wp_error( $available ) ) {
 			return $available;
 		}
 
 		if ( empty( $available ) ) {
-			return new \WP_Error( 'gemini_no_models', __( 'No models supporting generateContent were found for this API key.', 'charts' ) );
+			return new \WP_Error( 'gemini_no_models', __( 'No models supporting generateContent found for this API key.', 'charts' ) );
 		}
 
 		$names = array_column( $available, 'name' );
 
-		// Preferred priority order
-		$priority = array(
-			$this->model,
-			'gemini-3.1-pro-preview',
-			'gemini-2.5-flash',
-			'gemini-2.0-flash',
-		);
-
-		$candidates = array_unique( array_merge(
-			array_intersect( $priority, $names ),
-			$names
-		) );
-
-		$last_error = null;
-		foreach ( $candidates as $candidate_model ) {
-			$this->model = $candidate_model;
-			$result = $this->generate_content( 'Respond with exact word: PONG' );
-			if ( ! is_wp_error( $result ) ) {
-				Settings::set( 'api.gemini_model', $candidate_model );
-				return array(
-					'success' => true,
-					'model'   => $candidate_model,
-					'message' => sprintf( __( 'Handshake successful using model %s!', 'charts' ), $candidate_model ),
-				);
-			}
-			$last_error = $result;
+		// Choose best working model: requested model, then latest flash/pro, or first available
+		$chosen_model = $names[0];
+		if ( in_array( $this->model, $names, true ) ) {
+			$chosen_model = $this->model;
+		} elseif ( in_array( 'gemini-2.5-flash', $names, true ) ) {
+			$chosen_model = 'gemini-2.5-flash';
+		} elseif ( in_array( 'gemini-3.1-pro-preview', $names, true ) ) {
+			$chosen_model = 'gemini-3.1-pro-preview';
+		} elseif ( in_array( 'gemini-2.0-flash', $names, true ) ) {
+			$chosen_model = 'gemini-2.0-flash';
 		}
 
-		return $last_error;
+		$this->model = $chosen_model;
+		$result = $this->generate_content( 'Respond with exact word: PONG', '', 0.1, false, 8 );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		Settings::set( 'api.gemini_model', $chosen_model );
+		return array(
+			'success' => true,
+			'model'   => $chosen_model,
+			'message' => sprintf( __( 'Handshake successful using model %s!', 'charts' ), $chosen_model ),
+		);
 	}
 
 	/**
