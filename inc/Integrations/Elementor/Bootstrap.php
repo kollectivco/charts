@@ -83,6 +83,7 @@ class Bootstrap {
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/Top5HeroShowcase.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/AllChartsGrid.php';
 		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/DynamicShowcaseGrid.php';
+		require_once CHARTS_PATH . 'inc/Integrations/Elementor/Widgets/AllChartsCoverflow.php';
 		
 		// Register widget instances
 		$widgets_manager->register( new Widgets\ChartGrid() );
@@ -103,5 +104,6 @@ class Bootstrap {
 		$widgets_manager->register( new Widgets\Top5HeroShowcase() );
 		$widgets_manager->register( new Widgets\AllChartsGrid() );
 		$widgets_manager->register( new Widgets\DynamicShowcaseGrid() );
+		$widgets_manager->register( new Widgets\AllChartsCoverflow() );
 	}
 }
