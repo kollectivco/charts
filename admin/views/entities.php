@@ -503,7 +503,7 @@ $entity_type = $type;
 	<!-- Sync Modal -->
 	<div id="sync-progress-modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;">
 		<div class="charts-card" style="width: 500px; padding: 40px; text-align: center;">
-			<h2 id="sync-status-title"><?php printf( __( 'Syncing %s...', 'charts' ), $type === 'artist' ? 'Artist Profiles' : ( $type === 'video' ? 'Clip Metadata' : 'Track Metadata' ) ); ?></h2>
+			<h2 id="sync-status-title"><?php printf( __( 'Syncing %s...', 'charts' ), $type === 'artist' ? 'Artist Profiles' : ( $type === 'video' ? 'Clip Metadata' : ( $type === 'album' ? 'Album Metadata' : 'Track Metadata' ) ) ); ?></h2>
 			<div style="margin: 30px 0;">
 				<div style="height: 10px; background: #eee; border-radius: 5px; overflow: hidden;">
 					<div id="sync-progress-bar" style="width: 0%; height: 100%; background: #6366f1; transition: width 0.3s;"></div>
@@ -613,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	function runBatch(offset) {
 		const type = '<?php echo $type; ?>';
 		const formData = new FormData();
-		formData.append('action', type === 'artist' ? 'charts_sync_artists' : (type === 'video' ? 'charts_sync_videos' : 'charts_sync_tracks'));
+		formData.append('action', type === 'artist' ? 'charts_sync_artists' : (type === 'video' ? 'charts_sync_videos' : (type === 'album' ? 'charts_sync_albums' : 'charts_sync_tracks')));
 		formData.append('nonce', '<?php echo wp_create_nonce("charts_admin_action"); ?>');
 		formData.append('offset', offset);
 		formData.append('mode', syncMode);

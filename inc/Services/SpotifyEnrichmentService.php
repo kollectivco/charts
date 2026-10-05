@@ -189,4 +189,87 @@ class SpotifyEnrichmentService {
 		$result = $wpdb->update( $table, $update, array( 'id' => $track_id ) );
 		return $result !== false;
 	}
+
+	/**
+	 * Enrich a specific album record.
+	 */
+	public function enrich_album( $album_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'charts_albums';
+
+		$album = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $album_id ) );
+		if ( ! $album ) return false;
+
+		$meta = ! empty( $album->metadata_json ) ? json_decode( $album->metadata_json, true ) : array();
+
+		if ( empty( $album->spotify_id ) ) {
+			$meta['sync_status'] = 'missing_spotify_id';
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $album_id ) );
+			return false;
+		}
+
+		$data = $this->api->get_album( $album->spotify_id );
+		if ( is_wp_error( $data ) ) {
+			$code = $data->get_error_code();
+			$meta['sync_status'] = ( strpos( $code, '404' ) !== false ) ? 'spotify_not_found' : 'api_error';
+			$wpdb->update( $table, array( 'metadata_json' => json_encode( $meta ) ), array( 'id' => $album_id ) );
+			return $data;
+		}
+
+		$meta['sync_status']   = 'synced';
+		$meta['spotify_url']   = $data['external_urls']['spotify'] ?? '';
+		$meta['total_tracks']  = $data['total_tracks'] ?? ( count( $data['tracks']['items'] ?? array() ) );
+		$meta['release_date']  = $data['release_date'] ?? '';
+		$meta['label']         = $data['label'] ?? '';
+		$meta['popularity']    = $data['popularity'] ?? 0;
+		$meta['genres']        = $data['genres'] ?? array();
+
+		// Tracklist preview
+		if ( ! empty( $data['tracks']['items'] ) ) {
+			$meta['tracks'] = array_map( function( $t ) {
+				return array(
+					'id'          => $t['id'] ?? '',
+					'name'        => $t['name'] ?? '',
+					'track_number'=> $t['track_number'] ?? 1,
+					'duration_ms' => $t['duration_ms'] ?? 0,
+					'preview_url' => $t['preview_url'] ?? '',
+				);
+			}, $data['tracks']['items'] );
+		}
+
+		$image = ! empty( $data['images'][0]['url'] ) ? \Charts\Core\ImageEnhancer::maximize( $data['images'][0]['url'] ) : $album->cover_image;
+		$release_date = ! empty( $data['release_date'] ) ? substr( $data['release_date'], 0, 10 ) : $album->release_date;
+
+		$update = array(
+			'cover_image'   => $image,
+			'release_date'  => $release_date,
+			'metadata_json' => json_encode( $meta ),
+			'updated_at'    => current_time( 'mysql' ),
+		);
+
+		if ( empty( $album->title_en ) && ! empty( $data['name'] ) && ! preg_match( '/[\x{0600}-\x{06FF}]/u', $data['name'] ) ) {
+			$update['title_en'] = sanitize_text_field( $data['name'] );
+		}
+
+		if ( empty( $album->primary_artist_id ) && ! empty( $data['artists'][0] ) ) {
+			$sp_artist = $data['artists'][0];
+			$sp_artist_id = $sp_artist['id'] ?? '';
+			if ( $sp_artist_id ) {
+				$found_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE spotify_id = %s", $sp_artist_id ) );
+				if ( $found_id ) {
+					$update['primary_artist_id'] = $found_id;
+				}
+			}
+			if ( empty( $update['primary_artist_id'] ) && ! empty( $sp_artist['name'] ) ) {
+				$norm_artist = \Charts\Services\Normalizer::normalize_artist( $sp_artist['name'] );
+				$found_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE normalized_name = %s", $norm_artist ) );
+				if ( $found_id ) {
+					$update['primary_artist_id'] = $found_id;
+				}
+			}
+		}
+
+		$result = $wpdb->update( $table, $update, array( 'id' => $album_id ) );
+		return $result !== false;
+	}
 }

@@ -67,6 +67,13 @@ class SpotifyApiClient {
 	}
 
 	/**
+	 * Fetch album metadata.
+	 */
+	public function get_album( $album_id ) {
+		return $this->request( "albums/{$album_id}" );
+	}
+
+	/**
 	 * Fetch artist metadata.
 	 */
 	public function get_artist( $artist_id ) {
@@ -89,6 +96,15 @@ class SpotifyApiClient {
 		$data = $this->request( 'search?q=' . urlencode($query) . '&type=track&limit=' . $limit );
 		if ( is_wp_error( $data ) ) return $data;
 		return $data['tracks']['items'] ?? array();
+	}
+
+	/**
+	 * Search for albums.
+	 */
+	public function search_album( $query, $limit = 5 ) {
+		$data = $this->request( 'search?q=' . urlencode($query) . '&type=album&limit=' . $limit );
+		if ( is_wp_error( $data ) ) return $data;
+		return $data['albums']['items'] ?? array();
 	}
 
 	/**

@@ -25,6 +25,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_sync_artists', array( self::class, 'handle_sync_artists' ) );
 		add_action( 'wp_ajax_charts_sync_tracks', array( self::class, 'handle_sync_tracks' ) );
 		add_action( 'wp_ajax_charts_sync_videos', array( self::class, 'handle_sync_videos' ) );
+		add_action( 'wp_ajax_charts_sync_albums', array( self::class, 'handle_sync_albums' ) );
 		add_action( 'wp_ajax_charts_migration_step', array( self::class, 'handle_migration_step' ) );
 		add_action( 'wp_ajax_charts_search_entities', array( self::class, 'handle_search_entities' ) );
 		add_action( 'wp_ajax_charts_manage_manual_row', array( self::class, 'handle_manage_manual_row' ) );
@@ -503,6 +504,8 @@ class Bootstrap {
 					$module = 'tracks';
 				} elseif ( $entity_type === 'video' ) {
 					$module = 'clips';
+				} elseif ( $entity_type === 'album' ) {
+					$module = 'albums';
 				} else {
 					$module = 'artists';
 				}
@@ -563,7 +566,7 @@ class Bootstrap {
 		global $wpdb;
 		$type = sanitize_key( wp_unslash( $_POST['entity_type'] ?? '' ) );
 		$id   = absint( $_POST['entity_id'] ?? 0 );
-		$map  = array( 'artist' => 'artists', 'track' => 'tracks', 'video' => 'videos' );
+		$map  = array( 'artist' => 'artists', 'track' => 'tracks', 'video' => 'videos', 'album' => 'albums' );
 		if ( ! isset( $map[ $type ] ) ) return new \WP_Error( 'invalid_entity_type', __( 'Unsupported entity type.', 'charts' ) );
 
 		$table = $wpdb->prefix . 'charts_' . $map[ $type ];
@@ -586,8 +589,26 @@ class Bootstrap {
 			$data['display_name'] = $name;
 			$data['normalized_name'] = \Charts\Services\Normalizer::normalize_artist( $name );
 			$data['display_name_en'] = sanitize_text_field( wp_unslash( $_POST['name_en'] ?? '' ) ) ?: null;
-			$data['spotify_id'] = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) ) ?: null;
+			$raw_spotify = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) );
+			$data['spotify_id'] = self::normalize_matching_identifier( $raw_spotify, 'spotify' ) ?: ( $raw_spotify ?: null );
 			$data['image'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
+		} elseif ( $type === 'album' ) {
+			$artist_id = absint( $_POST['primary_artist_id'] ?? 0 );
+			if ( ! $artist_id || ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) ) ) {
+				return new \WP_Error( 'primary_artist_required', __( 'Choose a valid primary artist.', 'charts' ) );
+			}
+			$data['title'] = $name;
+			$data['title_en'] = sanitize_text_field( wp_unslash( $_POST['name_en'] ?? '' ) ) ?: null;
+			$data['normalized_title'] = \Charts\Services\Normalizer::normalize_title( $name );
+			$data['primary_artist_id'] = $artist_id;
+			$raw_spotify = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) );
+			$clean_spotify = self::normalize_matching_identifier( $raw_spotify, 'spotify' ) ?: ( $raw_spotify ?: null );
+			$data['spotify_id'] = $clean_spotify;
+			$data['cover_image'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
+			$release_date = sanitize_text_field( wp_unslash( $_POST['release_date'] ?? '' ) );
+			if ( ! empty( $release_date ) ) {
+				$data['release_date'] = substr( $release_date, 0, 10 );
+			}
 		} else {
 			$artist_id = absint( $_POST['primary_artist_id'] ?? 0 );
 			if ( ! $artist_id || ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) ) ) {
@@ -598,7 +619,8 @@ class Bootstrap {
 			$data['primary_artist_id'] = $artist_id;
 			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) );
 			if ( $type === 'track' ) {
-				$data['spotify_id'] = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) ) ?: null;
+				$raw_spotify = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) );
+				$data['spotify_id'] = self::normalize_matching_identifier( $raw_spotify, 'spotify' ) ?: ( $raw_spotify ?: null );
 				$data['youtube_id'] = sanitize_text_field( wp_unslash( $_POST['youtube_id'] ?? '' ) ) ?: null;
 				$data['cover_image'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
 			} else {
@@ -619,6 +641,15 @@ class Bootstrap {
 		}
 		if ( $saved === false || ! $id ) return new \WP_Error( 'entity_save_failed', __( 'The record could not be saved. Check that the slug is unique.', 'charts' ) );
 
+		// If Spotify ID was set for album, auto-enrich cover and tracks
+		if ( $type === 'album' && ! empty( $data['spotify_id'] ) ) {
+			$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+			$spotify_service->enrich_album( $id );
+		} elseif ( $type === 'track' && ! empty( $data['spotify_id'] ) && empty( $data['cover_image'] ) ) {
+			$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+			$spotify_service->enrich_track( $id );
+		}
+
 		// A clip can belong to one track. Keep the editor usable from either side
 		// by syncing the selected clips when a track is saved.
 		if ( $type === 'track' ) {
@@ -636,7 +667,7 @@ class Bootstrap {
 		self::sync_entity_chart_entries( $type, $id, $type === 'artist' ? ( $existing->display_name ?? '' ) : '', $type === 'artist' ? ( $existing->display_name_en ?? '' ) : '' );
 		if ( $type !== 'artist' ) {
 			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", (int) $data['primary_artist_id'] ) );
-			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'artist_names' => $artist_name ), array( 'item_type' => $type === 'video' ? 'video' : 'track', 'item_id' => $id ) );
+			$wpdb->update( $wpdb->prefix . 'charts_entries', array( 'artist_names' => $artist_name ), array( 'item_type' => $type === 'video' ? 'video' : ( $type === 'album' ? 'album' : 'track' ), 'item_id' => $id ) );
 		}
 
 		self::clear_frontend_caches();
@@ -1608,6 +1639,83 @@ class Bootstrap {
 	}
 
 	/**
+	 * Sync Spotify IDs, covers, release dates, and tracklists for albums.
+	 */
+	public static function handle_sync_albums() {
+		if ( ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( array( 'message' => 'Unauthorized' ) );
+
+		global $wpdb;
+		$table         = $wpdb->prefix . 'charts_albums';
+		$artists_table = $wpdb->prefix . 'charts_artists';
+
+		$limit  = 20;
+		$offset = isset( $_POST['offset'] ) ? intval( $_POST['offset'] ) : 0;
+		$mode   = $_POST['mode'] ?? 'missing';
+		$ids    = isset( $_POST['ids'] ) ? array_map( 'intval', explode( ',', $_POST['ids'] ) ) : array();
+
+		if ( $mode === 'selected' && ! empty( $ids ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			$albums = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table WHERE id IN ($placeholders) LIMIT $limit", ...$ids ) );
+		} elseif ( $mode === 'missing' ) {
+			$albums = $wpdb->get_results( "SELECT * FROM $table WHERE (spotify_id IS NULL OR spotify_id = '') OR (cover_image IS NULL OR cover_image = '') ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		} else {
+			$albums = $wpdb->get_results( "SELECT * FROM $table ORDER BY id ASC LIMIT $limit OFFSET $offset" );
+		}
+
+		if ( empty( $albums ) ) {
+			wp_send_json_success( array( 'complete' => true, 'processed' => 0 ) );
+		}
+
+		$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+		$spotify_client  = new \Charts\Services\SpotifyApiClient();
+
+		$updated        = 0;
+		$spotify_linked = 0;
+		$covers_updated = 0;
+
+		foreach ( $albums as $album ) {
+			$has_update = false;
+			$s_id       = $album->spotify_id;
+
+			// 1. Spotify Resolution
+			if ( empty( $s_id ) ) {
+				$art_name = ! empty( $album->primary_artist_id ) ? $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM $artists_table WHERE id = %d", $album->primary_artist_id ) ) : '';
+				$query    = $album->title . ( $art_name ? ' ' . $art_name : '' );
+				$results  = $spotify_client->search_album( $query, 1 );
+				if ( ! empty( $results ) && ! is_wp_error( $results ) ) {
+					$s_id = $results[0]['id'];
+					$wpdb->update( $table, array( 'spotify_id' => $s_id ), array( 'id' => $album->id ) );
+					$spotify_linked++;
+					$has_update = true;
+				}
+			}
+
+			// 2. Spotify Enrichment
+			if ( ! empty( $s_id ) ) {
+				$res = $spotify_service->enrich_album( $album->id );
+				if ( ! is_wp_error( $res ) && $res ) {
+					$has_update = true;
+					$covers_updated++;
+				}
+			}
+
+			if ( $has_update ) $updated++;
+		}
+
+		wp_send_json_success( array(
+			'complete'       => false,
+			'processed'      => count( $albums ),
+			'updated'        => $updated,
+			'spotify_linked' => $spotify_linked,
+			'covers_updated' => $covers_updated,
+			'next_offset'    => $offset + count( $albums )
+		) );
+	}
+
+	/**
 	 * Render the Settings.
 	 */
 	public static function render_settings() {
@@ -2463,13 +2571,26 @@ class Bootstrap {
 		$id         = intval( $_POST['id'] ?? 0 );
 		$spotify_id = sanitize_text_field( $_POST['spotify_id'] ?? '' );
 
-		if ( ! $id || empty( $spotify_id ) || ! in_array( $type, array( 'artist', 'track' ), true ) ) {
+		if ( ! $id || empty( $spotify_id ) || ! in_array( $type, array( 'artist', 'track', 'album' ), true ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid parameters provided.' ) );
 		}
 
 		$table = $wpdb->prefix . 'charts_' . $type . 's';
 		$wpdb->update( $table, array( 'spotify_id' => $spotify_id ), array( 'id' => $id ) );
 		$wpdb->update( "{$wpdb->prefix}charts_entries", array( 'spotify_id' => $spotify_id ), array( 'item_type' => $type, 'item_id' => $id ) );
+
+		// Auto-enrich metadata and artwork
+		if ( $type === 'album' ) {
+			$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+			$spotify_service->enrich_album( $id );
+		} elseif ( $type === 'track' ) {
+			$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+			$spotify_service->enrich_track( $id );
+		} elseif ( $type === 'artist' ) {
+			$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+			$spotify_service->enrich_artist( $id );
+		}
+
 		self::clear_frontend_caches();
 
 		wp_send_json_success( array( 'message' => 'Linked successfully.' ) );
@@ -2491,6 +2612,8 @@ class Bootstrap {
 
 		require_once CHARTS_PATH . 'inc/Connectors/SpotifyConnector.php';
 		
+		$spotify_id = self::normalize_matching_identifier( $query, 'spotify' );
+
 		try {
 			// Get token
 			$token = \Charts\Connectors\SpotifyConnector::get_access_token();
@@ -2498,7 +2621,50 @@ class Bootstrap {
 				throw new \Exception( 'Failed to authenticate with Spotify API.' );
 			}
 
-			$url = 'https://api.spotify.com/v1/search?q=' . urlencode( $query ) . '&type=' . $type . '&limit=3';
+			$results = array();
+
+			// 1. If user supplied a direct Spotify URL or ID (e.g. open.spotify.com/album/0cC0RG32ZJeRWEUoOQFXO8)
+			if ( ! empty( $spotify_id ) ) {
+				// Detect endpoint from URL or fallback to $type
+				$endpoint_type = $type;
+				if ( preg_match( '~/album/([A-Za-z0-9]+)~i', $query ) || $type === 'album' ) {
+					$endpoint_type = 'album';
+				} elseif ( preg_match( '~/track/([A-Za-z0-9]+)~i', $query ) || $type === 'track' ) {
+					$endpoint_type = 'track';
+				} elseif ( preg_match( '~/artist/([A-Za-z0-9]+)~i', $query ) || $type === 'artist' ) {
+					$endpoint_type = 'artist';
+				}
+
+				$direct_url = "https://api.spotify.com/v1/{$endpoint_type}s/{$spotify_id}";
+				$direct_resp = wp_remote_get( $direct_url, array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+						'Content-Type'  => 'application/json',
+					),
+					'timeout' => 15,
+				) );
+
+				if ( ! is_wp_error( $direct_resp ) && wp_remote_retrieve_response_code( $direct_resp ) === 200 ) {
+					$item = json_decode( wp_remote_retrieve_body( $direct_resp ), true );
+					if ( ! empty( $item['id'] ) ) {
+						$img = ! empty( $item['images'][0]['url'] ) ? $item['images'][0]['url'] : ( ! empty( $item['album']['images'][0]['url'] ) ? $item['album']['images'][0]['url'] : '' );
+						$results[] = array(
+							'id'      => $item['id'],
+							'name'    => $item['name'] ?? '',
+							'image'   => \Charts\Core\ImageEnhancer::maximize( $img ),
+							'url'     => $item['external_urls']['spotify'] ?? '',
+							'artists' => isset( $item['artists'] ) ? implode( ', ', array_column( $item['artists'], 'name' ) ) : '',
+							'type'    => $endpoint_type,
+						);
+						wp_send_json_success( $results );
+						return;
+					}
+				}
+			}
+
+			// 2. Standard Search query
+			$search_type = in_array( $type, array( 'album', 'artist', 'track' ), true ) ? $type : 'track';
+			$url = 'https://api.spotify.com/v1/search?q=' . urlencode( $query ) . '&type=' . $search_type . '&limit=4';
 			$args = array(
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $token,
@@ -2519,17 +2685,18 @@ class Bootstrap {
 				throw new \Exception( 'Invalid response from Spotify API.' );
 			}
 
-			$results = array();
-			$key = $type . 's';
+			$key = $search_type . 's';
 			
 			if ( ! empty( $data[$key]['items'] ) ) {
 				foreach ( $data[$key]['items'] as $item ) {
+					$img = ! empty( $item['images'][0]['url'] ) ? $item['images'][0]['url'] : ( ! empty( $item['album']['images'][0]['url'] ) ? $item['album']['images'][0]['url'] : '' );
 					$results[] = array(
-						'id'    => $item['id'],
-						'name'  => $item['name'],
-						'image' => !empty($item['images'][0]['url']) ? $item['images'][0]['url'] : (!empty($item['album']['images'][0]['url']) ? $item['album']['images'][0]['url'] : ''),
-						'url'   => $item['external_urls']['spotify'] ?? '',
-						'artists' => isset($item['artists']) ? implode(', ', array_column($item['artists'], 'name')) : '',
+						'id'      => $item['id'],
+						'name'    => $item['name'] ?? '',
+						'image'   => \Charts\Core\ImageEnhancer::maximize( $img ),
+						'url'     => $item['external_urls']['spotify'] ?? '',
+						'artists' => isset( $item['artists'] ) ? implode( ', ', array_column( $item['artists'], 'name' ) ) : '',
+						'type'    => $search_type,
 					);
 				}
 			}
@@ -3273,12 +3440,22 @@ class Bootstrap {
 			wp_send_json_success( array( 'message' => 'Video updated.' ) );
 		}
 		else if ( $entity_type === 'album' || $entity_type === 'albums' ) {
-			$wpdb->update( "{$wpdb->prefix}charts_albums", array(
-				'title' => $primary_name, 'normalized_title' => $normalized, 'spotify_id' => $spotify_id
-			), array( 'id' => $id ) );
+			$album_data = array(
+				'title'            => $primary_name,
+				'title_en'         => $name_en,
+				'normalized_title' => $normalized,
+				'spotify_id'       => $spotify_id,
+			);
+			$wpdb->update( "{$wpdb->prefix}charts_albums", $album_data, array( 'id' => $id ) );
+
+			if ( ! empty( $spotify_id ) ) {
+				$spotify_service = new \Charts\Services\SpotifyEnrichmentService();
+				$spotify_service->enrich_album( $id );
+			}
+
 			self::clear_frontend_caches();
 
-			wp_send_json_success( array( 'message' => 'Album updated.' ) );
+			wp_send_json_success( array( 'message' => 'Album updated and enriched from Spotify.' ) );
 		}
 
 		wp_send_json_error( array( 'message' => 'Invalid entity type.' ) );
