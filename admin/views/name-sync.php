@@ -47,6 +47,8 @@ if ( isset( $_GET['sync_run_id'] ) ) {
                 [ 'label' => 'Total Rows',        'val' => $result['total'],           'color' => '#1e293b' ],
                 [ 'label' => 'Artists Updated',   'val' => $result['artists_updated'], 'color' => '#7c3aed' ],
                 [ 'label' => 'Tracks Updated',    'val' => $result['tracks_updated'],  'color' => '#0ea5e9' ],
+                [ 'label' => 'Clips Updated',     'val' => $result['videos_updated'],  'color' => '#f43f5e' ],
+                [ 'label' => 'Albums Updated',    'val' => $result['albums_updated'],  'color' => '#8b5cf6' ],
                 [ 'label' => 'Slugs Refreshed',   'val' => $result['slugs_updated'],   'color' => '#10b981' ],
                 [ 'label' => 'Not Found',         'val' => $result['not_found'],       'color' => '#f59e0b' ],
             ];
@@ -104,6 +106,28 @@ if ( isset( $_GET['sync_run_id'] ) ) {
         </div>
     </div>
 
+    <!-- Export Current Data -->
+    <div class="kb-table-card" style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:32px;margin-bottom:28px;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+        <h2 style="margin:0 0 16px;font-size:18px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:10px;">
+            <span class="dashicons dashicons-download" style="font-size:20px;width:20px;height:20px;color:#10b981;"></span>
+            تصدير الداتا (Export)
+        </h2>
+        <p style="color:#64748b;font-size:14px;margin:0 0 20px;">حمل الداتا الحالية بصيغة CSV جاهزة للتعديل وإعادة الرفع مرة أخرى.</p>
+        
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <?php foreach(['artists' => 'Artists', 'tracks' => 'Tracks', 'videos' => 'Clips', 'albums' => 'Albums'] as $key => $label): ?>
+            <form method="post" action="" style="margin:0;">
+                <input type="hidden" name="charts_action" value="export_name_sync">
+                <input type="hidden" name="export_type" value="<?php echo esc_attr($key); ?>">
+                <button type="submit" class="kb-btn kb-btn-outline" style="background:#fff;border:2px solid #e2e8f0;border-radius:8px;padding:10px 20px;font-weight:700;color:#475569;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                    <span class="dashicons dashicons-media-spreadsheet" style="color:#10b981;"></span>
+                    Export <?php echo esc_html($label); ?>
+                </button>
+            </form>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <!-- Upload Form -->
     <div class="kb-table-card" style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
         <h2 style="margin:0 0 24px;font-size:18px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:10px;">
@@ -144,6 +168,20 @@ if ( isset( $_GET['sync_run_id'] ) ) {
                     <div>
                         <div style="font-size:14px;font-weight:700;color:#1e293b;">تحديث الأغاني</div>
                         <div style="font-size:12px;color:#64748b;margin-top:2px;">يحدث <code>title_en</code> و <code>slug</code> للأغاني</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;background:#f8fafc;border-radius:10px;padding:16px;">
+                    <input type="checkbox" name="sync_videos" value="1" checked style="margin-top:3px;width:16px;height:16px;accent-color:#7c3aed;">
+                    <div>
+                        <div style="font-size:14px;font-weight:700;color:#1e293b;">تحديث الكليبات</div>
+                        <div style="font-size:12px;color:#64748b;margin-top:2px;">يحدث <code>title_en</code> و <code>slug</code> للكليبات</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;background:#f8fafc;border-radius:10px;padding:16px;">
+                    <input type="checkbox" name="sync_albums" value="1" checked style="margin-top:3px;width:16px;height:16px;accent-color:#7c3aed;">
+                    <div>
+                        <div style="font-size:14px;font-weight:700;color:#1e293b;">تحديث الألبومات</div>
+                        <div style="font-size:12px;color:#64748b;margin-top:2px;">يحدث <code>title_en</code> و <code>slug</code> للألبومات</div>
                     </div>
                 </label>
                 <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;background:#f8fafc;border-radius:10px;padding:16px;">

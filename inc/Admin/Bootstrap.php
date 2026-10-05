@@ -247,7 +247,7 @@ class Bootstrap {
 				$run_id = time();
 				set_transient( 'charts_name_sync_result_' . $run_id, $result, HOUR_IN_SECONDS );
 				\Charts\Core\Notify::success(
-					sprintf( __( 'Name Sync complete. Artists: %d, Tracks: %d, Slugs: %d, Not found: %d.', 'charts' ), $result['artists_updated'], $result['tracks_updated'], $result['slugs_updated'], $result['not_found'] ),
+					sprintf( __( 'Name Sync complete. Artists: %d, Tracks: %d, Clips: %d, Albums: %d, Slugs: %d, Not found: %d.', 'charts' ), $result['artists_updated'], $result['tracks_updated'], $result['videos_updated'], $result['albums_updated'], $result['slugs_updated'], $result['not_found'] ),
 					__( 'Sync Done', 'charts' )
 				);
 				$processed = true;
@@ -1709,6 +1709,8 @@ class Bootstrap {
 			'total'           => 0,
 			'artists_updated' => 0,
 			'tracks_updated'  => 0,
+			'videos_updated'  => 0,
+			'albums_updated'  => 0,
 			'slugs_updated'   => 0,
 			'not_found'       => 0,
 			'log'             => [],
@@ -1741,6 +1743,8 @@ class Bootstrap {
 		// ── Options ──────────────────────────────────────────────────────────
 		$sync_artists      = ! empty( $_POST['sync_artists'] );
 		$sync_tracks       = ! empty( $_POST['sync_tracks'] );
+		$sync_videos       = ! empty( $_POST['sync_videos'] );
+		$sync_albums       = ! empty( $_POST['sync_albums'] );
 		$overwrite_en      = ! empty( $_POST['overwrite_existing'] );
 		$refresh_slugs     = ! empty( $_POST['refresh_slugs'] );
 
@@ -1859,6 +1863,85 @@ class Bootstrap {
 					$result['log'][] = "NOT FOUND — Track: {$ar_title}";
 				}
 			}
+			// ── VIDEO (CLIP) sync ────────────────────────────────────────────
+			if ( $sync_videos && $ar_title !== '' ) {
+				$v_table   = $wpdb->prefix . 'charts_videos';
+				$video_row = $wpdb->get_row( $wpdb->prepare(
+					"SELECT id, title_en, slug FROM $v_table WHERE title = %s OR normalized_title = %s LIMIT 1",
+					$ar_title, mb_strtolower( $ar_title )
+				) );
+
+				if ( ! $video_row && $en_title !== '' ) {
+					$video_row = $wpdb->get_row( $wpdb->prepare(
+						"SELECT id, title_en, slug FROM $v_table WHERE title_en = %s LIMIT 1",
+						$en_title
+					) );
+				}
+
+				if ( $video_row ) {
+					$updates = [];
+					if ( $en_title !== '' && ( $overwrite_en || empty( $video_row->title_en ) ) ) {
+						$updates['title_en'] = $en_title;
+					}
+					$slug_base = $updates['title_en'] ?? $video_row->title_en ?? '';
+					if ( $refresh_slugs && $slug_base !== '' ) {
+						$new_slug = $make_slug( $slug_base, $v_table, (int) $video_row->id );
+						if ( $new_slug !== $video_row->slug ) {
+							$updates['slug'] = $new_slug;
+							$result['slugs_updated']++;
+							$result['log'][] = "Clip [{$ar_title}]: slug {$video_row->slug} → {$new_slug}";
+						}
+					}
+					if ( ! empty( $updates ) ) {
+						$wpdb->update( $v_table, $updates, [ 'id' => $video_row->id ] );
+						$result['videos_updated']++;
+						$result['log'][] = "Clip [{$ar_title}] → en: " . ( $updates['title_en'] ?? '(no change)' );
+					}
+				} else {
+					$result['not_found']++;
+					$result['log'][] = "NOT FOUND — Clip: {$ar_title}";
+				}
+			}
+
+			// ── ALBUM sync ───────────────────────────────────────────────────
+			if ( $sync_albums && $ar_title !== '' ) {
+				$al_table   = $wpdb->prefix . 'charts_albums';
+				$album_row = $wpdb->get_row( $wpdb->prepare(
+					"SELECT id, title_en, slug FROM $al_table WHERE title = %s OR normalized_title = %s LIMIT 1",
+					$ar_title, mb_strtolower( $ar_title )
+				) );
+
+				if ( ! $album_row && $en_title !== '' ) {
+					$album_row = $wpdb->get_row( $wpdb->prepare(
+						"SELECT id, title_en, slug FROM $al_table WHERE title_en = %s LIMIT 1",
+						$en_title
+					) );
+				}
+
+				if ( $album_row ) {
+					$updates = [];
+					if ( $en_title !== '' && ( $overwrite_en || empty( $album_row->title_en ) ) ) {
+						$updates['title_en'] = $en_title;
+					}
+					$slug_base = $updates['title_en'] ?? $album_row->title_en ?? '';
+					if ( $refresh_slugs && $slug_base !== '' ) {
+						$new_slug = $make_slug( $slug_base, $al_table, (int) $album_row->id );
+						if ( $new_slug !== $album_row->slug ) {
+							$updates['slug'] = $new_slug;
+							$result['slugs_updated']++;
+							$result['log'][] = "Album [{$ar_title}]: slug {$album_row->slug} → {$new_slug}";
+						}
+					}
+					if ( ! empty( $updates ) ) {
+						$wpdb->update( $al_table, $updates, [ 'id' => $album_row->id ] );
+						$result['albums_updated']++;
+						$result['log'][] = "Album [{$ar_title}] → en: " . ( $updates['title_en'] ?? '(no change)' );
+					}
+				} else {
+					$result['not_found']++;
+					$result['log'][] = "NOT FOUND — Album: {$ar_title}";
+				}
+			}
 		}
 
 		// Clear frontend caches after mass update
@@ -1867,6 +1950,74 @@ class Bootstrap {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Export entities for Name Sync.
+	 */
+	private static function process_name_sync_export() {
+		global $wpdb;
+		$type = sanitize_key( $_REQUEST['export_type'] ?? 'artists' );
+		
+		$filename = "charts_name_sync_{$type}_" . date('Y-m-d') . ".csv";
+		
+		header('Content-Type: text/csv; charset=utf-8');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+		
+		// Output BOM for Excel UTF-8 compatibility
+		echo "\xEF\xBB\xBF";
+		
+		$output = fopen('php://output', 'w');
+		fputcsv($output, ['arabic_artist', 'english_artist', 'arabic_title', 'english_title', 'slug']);
+		
+		if ( $type === 'artists' ) {
+			$table = $wpdb->prefix . 'charts_artists';
+			$results = $wpdb->get_results( "SELECT display_name, display_name_en, slug FROM $table" );
+			foreach ( $results as $r ) {
+				fputcsv($output, [
+					$r->display_name,
+					$r->display_name_en,
+					'',
+					'',
+					$r->slug
+				]);
+			}
+		} elseif ( in_array( $type, ['tracks', 'videos', 'albums'] ) ) {
+			$table = $wpdb->prefix . "charts_{$type}";
+			$artist_table = $wpdb->prefix . 'charts_artists';
+			
+			$col_title = $type === 'tracks' ? 'title' : 'title'; // wait, what about videos/albums?
+			// Let's dynamically check:
+			$title_col = ($type === 'videos') ? 'title' : 'title';
+			$title_en_col = ($type === 'videos') ? 'title_en' : 'title_en';
+			if ($type === 'albums') {
+				$title_en_col = 'title_en';
+			}
+
+			// In current schema, charts_tracks has title, title_en, slug
+			// charts_videos has title, title_en, slug
+			// charts_albums has title, title_en, slug
+			
+			$query = "
+				SELECT e.title, e.title_en, e.slug, a.display_name as artist_ar, a.display_name_en as artist_en
+				FROM $table e
+				LEFT JOIN $artist_table a ON e.primary_artist_id = a.id
+			";
+			
+			$results = $wpdb->get_results( $query );
+			foreach ( $results as $r ) {
+				fputcsv($output, [
+					$r->artist_ar,
+					$r->artist_en,
+					$r->title,
+					$r->title_en,
+					$r->slug
+				]);
+			}
+		}
+		
+		fclose($output);
+		exit;
 	}
 
 	/**

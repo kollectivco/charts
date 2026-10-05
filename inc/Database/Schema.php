@@ -86,6 +86,7 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_albums` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`title` VARCHAR(255) NOT NULL,
+				`title_en` VARCHAR(255) DEFAULT NULL,
 				`normalized_title` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`spotify_id` VARCHAR(100) DEFAULT NULL,
@@ -131,6 +132,7 @@ class Schema {
 			"CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}charts_videos` (
 				`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 				`title` VARCHAR(255) NOT NULL,
+				`title_en` VARCHAR(255) DEFAULT NULL,
 				`normalized_title` VARCHAR(255) NOT NULL,
 				`slug` VARCHAR(255) NOT NULL,
 				`thumbnail` TEXT DEFAULT NULL,
@@ -495,7 +497,7 @@ class Schema {
 			if ( ! in_array( 'youtube_id', $cols, true ) ) {
 				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `youtube_id` VARCHAR(100) DEFAULT NULL" );
 			}
-			if ( strpos($tbl, 'tracks') !== false ) {
+			if ( strpos($tbl, 'tracks') !== false || strpos($tbl, 'videos') !== false || strpos($tbl, 'albums') !== false ) {
 				if ( ! in_array( 'title_en', $cols, true ) ) {
 					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_en` VARCHAR(255) DEFAULT NULL" );
 				}
