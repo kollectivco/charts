@@ -378,6 +378,41 @@ class EntityManager {
 
 		$prepared = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $sql ), $params ) );
 		$results = $wpdb->get_results( $prepared );
+
+		// Gemini AI: Semantic Search & Nickname Expansion fallback
+		if ( empty( $results ) && mb_strlen( $query ) >= 3 ) {
+			$transient_key = 'charts_gem_alias_' . md5( $query );
+			$expanded = get_transient( $transient_key );
+			if ( false === $expanded ) {
+				$gemini = new \Charts\Services\GeminiApiClient();
+				if ( $gemini->is_configured() ) {
+					$expanded = $gemini->expand_search_query( $query );
+					set_transient( $transient_key, $expanded, DAY_IN_SECONDS * 7 );
+				} else {
+					$expanded = array();
+				}
+			}
+
+			if ( ! empty( $expanded ) && is_array( $expanded ) ) {
+				foreach ( $expanded as $alias ) {
+					if ( $alias === $query ) continue;
+					$sub_clean = \Charts\Services\Normalizer::normalize_title( $alias );
+					$extra = $wpdb->get_results( $wpdb->prepare(
+						"SELECT id, $col as title, slug, $image_col as image " . ( $english_col ? ", $english_col as name_en " : ", '' as name_en " ) . "
+						 FROM $table 
+						 WHERE $col LIKE %s OR $norm_col LIKE %s OR slug LIKE %s LIMIT %d",
+						'%' . $wpdb->esc_like( $alias ) . '%',
+						'%' . $wpdb->esc_like( $sub_clean ) . '%',
+						'%' . $wpdb->esc_like( $sub_clean ) . '%',
+						$limit
+					) );
+					if ( ! empty( $extra ) ) {
+						$results = array_merge( $results, $extra );
+						break;
+					}
+				}
+			}
+		}
 		
 		// If track or video, also try to find the artist name for subtitle
 		if ( in_array( $type, array( 'track', 'video' ), true ) ) {

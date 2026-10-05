@@ -129,6 +129,59 @@ if ( isset( $_GET['sync_run_id'] ) ) {
         </div>
     </div>
 
+    <!-- Gemini AI Auto-Translate -->
+    <div class="kb-table-card" style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);border-radius:16px;border:1px solid #cbd5e1;padding:32px;margin-bottom:28px;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+            <div>
+                <h2 style="margin:0 0 10px;font-size:18px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:22px;">✨</span>
+                    الترجمة الذكية عبر Google Gemini AI
+                </h2>
+                <p style="color:#64748b;font-size:14px;margin:0;max-width:640px;">
+                    يقوم Gemini بالتعرف التلقائي على أسماء الفنانين والأغاني العربية الناقصة وتوليد الاسم الإنجليزي الصوتي المعتمد (بدون فرانكو) والـ Slug تلقائياً بدقة عالية.
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+                <select id="gemini-translate-type" style="padding:10px 14px;border-radius:8px;border:1px solid #cbd5e1;font-weight:700;color:#334155;">
+                    <option value="all">كل السجلات الناقصة (All)</option>
+                    <option value="artists">الفنانين فقط (Artists)</option>
+                    <option value="tracks">الأغاني فقط (Tracks)</option>
+                </select>
+                <button type="button" id="btn-gemini-translate" class="kb-btn" style="background:#4338ca;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(67,56,202,0.25);" onclick="runGeminiTranslate()">
+                    <span>✨ ترجمة وتوليد الآن</span>
+                </button>
+            </div>
+        </div>
+        <div id="gemini-translate-status" style="margin-top:16px;font-size:13px;font-weight:700;display:none;"></div>
+        <script>
+        function runGeminiTranslate() {
+            var btn = jQuery('#btn-gemini-translate');
+            var status = jQuery('#gemini-translate-status');
+            var type = jQuery('#gemini-translate-type').val();
+            btn.prop('disabled', true).find('span').text('جاري المعالجة بواسطة Gemini...');
+            status.show().css('color', '#6366f1').text('جاري استدعاء نموذج Gemini وترجمة الكيانات...');
+
+            jQuery.post(ajaxurl, {
+                action: 'charts_gemini_translate_missing',
+                entity_type: type,
+                batch_size: 25,
+                _wpnonce: '<?php echo wp_create_nonce("charts_admin_action"); ?>'
+            }).done(function(r) {
+                if (r && r.success) {
+                    status.css('color', '#10b981').text('✓ ' + (r.data.message || 'تمت الترجمة بنجاح!'));
+                    setTimeout(function(){ location.reload(); }, 1200);
+                } else {
+                    status.css('color', '#ef4444').text('✕ ' + (r.data ? r.data.message : 'حدث خطأ أثناء الترجمة.'));
+                    btn.prop('disabled', false).find('span').text('✨ ترجمة وتوليد الآن');
+                }
+            }).fail(function() {
+                status.css('color', '#ef4444').text('✕ تعذر الاتصال بالخادم.');
+                btn.prop('disabled', false).find('span').text('✨ ترجمة وتوليد الآن');
+            });
+        }
+        </script>
+    </div>
+
     <!-- Upload Form -->
     <div class="kb-table-card" style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
         <h2 style="margin:0 0 24px;font-size:18px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:10px;">

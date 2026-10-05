@@ -171,6 +171,49 @@ $panel = [
                     [ 'id' => 'api.soundcharts_team_id', 'type' => 'text', 'label' => 'Soundcharts Team ID (Optional)', 'desc' => 'Only needed if your API account belongs to multiple teams.' ],
                 ]
             ],
+            'gemini' => [
+                'title' => 'Google Gemini AI',
+                'fields' => [
+                    [ 'id' => 'api.gemini_api_key', 'type' => 'password', 'label' => 'Gemini API Key', 'desc' => 'Get your API key from Google AI Studio (aistudio.google.com).' ],
+                    [ 'id' => 'api.gemini_model', 'type' => 'select', 'label' => 'Model Engine', 'options' => [
+                        'gemini-1.5-flash' => 'Gemini 1.5 Flash (Recommended - Fastest & High Quality)',
+                        'gemini-2.0-flash' => 'Gemini 2.0 Flash (Next-Gen)',
+                        'gemini-1.5-pro'   => 'Gemini 1.5 Pro (Deep Reasoning & Analysis)',
+                    ] ],
+                    [ 'id' => 'api.gemini_auto_enrich', 'type' => 'switch', 'label' => 'Auto-Translate on CSV Import', 'desc' => 'Automatically generate official English transliterations and slugs for new Arabic entries.' ],
+                    [ 'id' => 'gemini_test_btn', 'type' => 'custom', 'html' => '
+                        <div style="margin-top:12px;">
+                            <button type="button" class="kb-btn kb-btn-outline" id="btn-test-gemini" onclick="testGeminiConnection()">
+                                <span class="dashicons dashicons-admin-generic" style="font-size:16px;width:16px;height:16px;margin-top:2px;"></span>
+                                Test Gemini Handshake
+                            </button>
+                            <span id="gemini-test-result" style="margin-left:12px;font-size:13px;font-weight:600;"></span>
+                        </div>
+                        <script>
+                        function testGeminiConnection() {
+                            var btn = jQuery("#btn-test-gemini");
+                            var res = jQuery("#gemini-test-result");
+                            btn.prop("disabled", true).text("Connecting...");
+                            res.text("");
+                            jQuery.post(ajaxurl, {
+                                action: "charts_test_gemini_api",
+                                _wpnonce: "' . wp_create_nonce("charts_admin_action") . '"
+                            }).done(function(r) {
+                                if (r && r.success) {
+                                    res.css("color", "#10b981").text("✓ " + (r.data.message || "Connected Successfully!"));
+                                } else {
+                                    res.css("color", "#ef4444").text("✕ " + (r.data ? r.data.message : "Connection Failed."));
+                                }
+                            }).fail(function() {
+                                res.css("color", "#ef4444").text("✕ Server error contacting Gemini.");
+                            }).always(function() {
+                                btn.prop("disabled", false).html("<span class=\"dashicons dashicons-admin-generic\" style=\"font-size:16px;width:16px;height:16px;margin-top:2px;\"></span> Test Gemini Handshake");
+                            });
+                        }
+                        </script>
+                    ' ],
+                ]
+            ],
             'github' => [
                 'title' => 'Update Authorization',
                 'fields' => [

@@ -45,6 +45,9 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_billboard_download_csv', array( self::class, 'handle_billboard_download_csv' ) );
 		add_action( 'wp_ajax_charts_billboard_get_weeks', array( self::class, 'handle_billboard_get_weeks' ) );
 		add_action( 'wp_ajax_charts_soundcharts_catalog', array( self::class, 'handle_soundcharts_catalog' ) );
+		add_action( 'wp_ajax_charts_test_gemini_api', array( self::class, 'handle_test_gemini_api' ) );
+		add_action( 'wp_ajax_charts_gemini_translate_missing', array( self::class, 'handle_gemini_translate_missing' ) );
+		add_action( 'wp_ajax_charts_gemini_generate_editorial', array( self::class, 'handle_gemini_generate_editorial' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -3419,5 +3422,171 @@ class Bootstrap {
 		$week_id = intval( $_GET['week_id'] ?? 0 );
 		$billboard_chart_id = absint( $_GET['chart_id'] ?? 1 );
 		\Charts\Services\BillboardService::download_csv( $week_id, $billboard_chart_id );
+	}
+
+	/**
+	 * AJAX: Test Google Gemini API connection.
+	 */
+	public static function handle_test_gemini_api() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+
+		$client = new \Charts\Services\GeminiApiClient();
+		$test   = $client->test_connection();
+
+		if ( is_wp_error( $test ) ) {
+			wp_send_json_error( array( 'message' => $test->get_error_message() ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Gemini API handshake successful! Model is ready.', 'charts' ) ) );
+	}
+
+	/**
+	 * AJAX: Batch translate missing English names & slugs with Gemini AI.
+	 */
+	public static function handle_gemini_translate_missing() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+		@set_time_limit( 300 );
+
+		global $wpdb;
+		$type  = sanitize_key( $_POST['entity_type'] ?? 'artists' );
+		$limit = min( 50, max( 5, intval( $_POST['batch_size'] ?? 25 ) ) );
+
+		$client = new \Charts\Services\GeminiApiClient();
+		if ( ! $client->is_configured() ) {
+			wp_send_json_error( array( 'message' => __( 'Please enter your Gemini API key in Settings first.', 'charts' ) ) );
+		}
+
+		$updated_count = 0;
+
+		if ( $type === 'artists' || $type === 'all' ) {
+			$table = $wpdb->prefix . 'charts_artists';
+			$rows  = $wpdb->get_results( "SELECT id, display_name FROM $table WHERE display_name_en IS NULL OR display_name_en = '' ORDER BY id DESC LIMIT $limit" );
+			if ( ! empty( $rows ) ) {
+				$items = array();
+				foreach ( $rows as $r ) {
+					$items[] = array( 'id' => (int) $r->id, 'name' => $r->display_name, 'type' => 'artist' );
+				}
+				$translations = $client->translate_entities_batch( $items );
+				if ( ! is_wp_error( $translations ) && is_array( $translations ) ) {
+					foreach ( $translations as $tr ) {
+						if ( empty( $tr['id'] ) || empty( $tr['english_name'] ) ) continue;
+						$slug = ! empty( $tr['slug'] ) ? sanitize_title( $tr['slug'] ) : sanitize_title( $tr['english_name'] );
+						$wpdb->update( $table, array(
+							'display_name_en' => sanitize_text_field( $tr['english_name'] ),
+							'slug'            => $slug,
+						), array( 'id' => (int) $tr['id'] ) );
+						$updated_count++;
+					}
+				}
+			}
+		}
+
+		if ( ( $type === 'tracks' || $type === 'all' ) && ( $limit - $updated_count > 0 ) ) {
+			$table = $wpdb->prefix . 'charts_tracks';
+			$sub_limit = $limit - $updated_count;
+			$rows  = $wpdb->get_results( "SELECT id, title FROM $table WHERE title_en IS NULL OR title_en = '' ORDER BY id DESC LIMIT $sub_limit" );
+			if ( ! empty( $rows ) ) {
+				$items = array();
+				foreach ( $rows as $r ) {
+					$items[] = array( 'id' => (int) $r->id, 'name' => $r->title, 'type' => 'track' );
+				}
+				$translations = $client->translate_entities_batch( $items );
+				if ( ! is_wp_error( $translations ) && is_array( $translations ) ) {
+					foreach ( $translations as $tr ) {
+						if ( empty( $tr['id'] ) || empty( $tr['english_name'] ) ) continue;
+						$slug = ! empty( $tr['slug'] ) ? sanitize_title( $tr['slug'] ) : sanitize_title( $tr['english_name'] );
+						$wpdb->update( $table, array(
+							'title_en' => sanitize_text_field( $tr['english_name'] ),
+							'slug'     => $slug,
+						), array( 'id' => (int) $tr['id'] ) );
+						$updated_count++;
+					}
+				}
+			}
+		}
+
+		if ( $updated_count > 0 ) {
+			self::clear_frontend_caches();
+		}
+
+		wp_send_json_success( array(
+			'updated' => $updated_count,
+			'message' => sprintf( __( 'Successfully translated and enriched %d entities with Gemini.', 'charts' ), $updated_count ),
+		) );
+	}
+
+	/**
+	 * AJAX: Generate AI Editorial Insights with Gemini.
+	 */
+	public static function handle_gemini_generate_editorial() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+		@set_time_limit( 300 );
+
+		global $wpdb;
+		$entries_table = $wpdb->prefix . 'charts_entries';
+		$intel_table   = $wpdb->prefix . 'charts_intelligence';
+		$artists_table = $wpdb->prefix . 'charts_artists';
+
+		// Gather context data for Gemini prompt
+		$top_tracks = $wpdb->get_results( "
+			SELECT track_name, artist_names, rank_position, movement_direction, movement_value
+			FROM $entries_table
+			ORDER BY rank_position ASC LIMIT 10
+		", ARRAY_A );
+
+		$biggest_risers = $wpdb->get_results( "
+			SELECT track_name, artist_names, rank_position, movement_value
+			FROM $entries_table
+			WHERE movement_direction = 'up'
+			ORDER BY movement_value DESC LIMIT 5
+		", ARRAY_A );
+
+		$top_artists = $wpdb->get_results( "
+			SELECT a.display_name, i.artist_power_score, i.growth_rate
+			FROM $intel_table i
+			JOIN $artists_table a ON a.id = i.entity_id
+			WHERE i.entity_type = 'artist'
+			ORDER BY i.artist_power_score DESC LIMIT 5
+		", ARRAY_A );
+
+		$context = array(
+			'date'           => current_time( 'Y-m-d' ),
+			'top_10_songs'   => $top_tracks,
+			'biggest_risers' => $biggest_risers,
+			'top_artists'    => $top_artists,
+		);
+
+		$client = new \Charts\Services\GeminiApiClient();
+		$brief  = $client->generate_editorial_insights( $context );
+
+		if ( is_wp_error( $brief ) ) {
+			wp_send_json_error( array( 'message' => $brief->get_error_message() ) );
+		}
+
+		update_option( 'charts_gemini_weekly_editorial', array(
+			'content'    => $brief,
+			'updated_at' => current_time( 'mysql' ),
+		) );
+
+		wp_send_json_success( array(
+			'editorial' => $brief,
+			'updated'   => current_time( 'mysql' ),
+			'message'   => __( 'Gemini editorial brief generated successfully!', 'charts' ),
+		) );
 	}
 }
