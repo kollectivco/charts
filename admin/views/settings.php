@@ -188,7 +188,7 @@ $panel = [
                                 <span class="dashicons dashicons-admin-generic" style="font-size:16px;width:16px;height:16px;margin-top:2px;"></span>
                                 Test Gemini Handshake
                             </button>
-                            <span id="gemini-test-result" style="margin-left:12px;font-size:13px;font-weight:600;"></span>
+                            <div id="gemini-test-result" style="margin-top:12px;font-size:13px;line-height:1.6;display:none;padding:12px 16px;border-radius:8px;"></div>
                         </div>
                         <script>
                         function testGeminiConnection() {
@@ -202,12 +202,15 @@ $panel = [
                             var baseUrl = baseEl ? baseEl.value.trim() : "";
 
                             if (!apiKey) {
-                                res.css("color", "#ef4444").text("✕ Please enter a Gemini API Key first.");
+                                res.css({ display: "block", color: "#991b1b", background: "#fee2e2", border: "1px solid #fecaca" })
+                                   .text("✕ Please enter a Gemini API Key first.");
                                 return;
                             }
 
                             btn.prop("disabled", true).text("Connecting...");
-                            res.text("");
+                            res.css({ display: "block", color: "#1e40af", background: "#dbeafe", border: "1px solid #bfdbfe" })
+                               .text("Testing connection to Google Gemini...");
+
                             jQuery.post(ajaxurl, {
                                 action: "charts_test_gemini_api",
                                 _wpnonce: "' . wp_create_nonce("charts_admin_action") . '",
@@ -216,10 +219,12 @@ $panel = [
                                 base_url: baseUrl
                             }).done(function(r) {
                                 if (r && r.success) {
-                                    res.css("color", "#10b981").text("✓ " + (r.data.message || "Connected Successfully!"));
+                                    res.css({ display: "block", color: "#065f46", background: "#d1fae5", border: "1px solid #a7f3d0" })
+                                       .html("<strong>✓ Success:</strong> " + (r.data.message || "Connected Successfully!"));
                                 } else {
                                     var msg = (r && r.data && r.data.message) ? r.data.message : "Connection Failed.";
-                                    res.css("color", "#ef4444").text("✕ " + msg);
+                                    res.css({ display: "block", color: "#991b1b", background: "#fee2e2", border: "1px solid #fecaca" })
+                                       .html("<strong>✕ Error:</strong> " + msg);
                                 }
                             }).fail(function(xhr) {
                                 var msg = "Server error contacting Gemini.";
@@ -228,7 +233,8 @@ $panel = [
                                 } else if (xhr && xhr.statusText && xhr.statusText !== "error") {
                                     msg += " (" + xhr.status + ": " + xhr.statusText + ")";
                                 }
-                                res.css("color", "#ef4444").text("✕ " + msg);
+                                res.css({ display: "block", color: "#991b1b", background: "#fee2e2", border: "1px solid #fecaca" })
+                                   .html("<strong>✕ Server Failure:</strong> " + msg);
                             }).always(function() {
                                 btn.prop("disabled", false).html("<span class=\"dashicons dashicons-admin-generic\" style=\"font-size:16px;width:16px;height:16px;margin-top:2px;\"></span> Test Gemini Handshake");
                             });
