@@ -859,6 +859,8 @@ $nonce   = wp_create_nonce('charts_admin_action');
 
 <div class="bento-wrap">
 
+<?php include __DIR__ . '/intelligence-tabs.php'; ?>
+
 <!-- ═══════════════════════════════════════════════════════
      TOAST CONTAINER
      ═══════════════════════════════════════════════════════ -->
@@ -896,6 +898,7 @@ $nonce   = wp_create_nonce('charts_admin_action');
      ═══════════════════════════════════════════════════════ -->
 <form method="get" action="" class="bento-filter-bar">
     <input type="hidden" name="page" value="charts-intelligence">
+    <input type="hidden" name="tab" value="signals">
     <div class="bento-filter-group">
         <label class="bento-filter-label"><?php _e('Entity Type', 'charts'); ?></label>
         <select name="intel_type" class="bento-filter-select" onchange="this.form.submit()">

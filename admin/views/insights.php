@@ -162,6 +162,7 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 </style>
 
 <div class="bento-wrap">
+	<?php include __DIR__ . '/intelligence-tabs.php'; ?>
 	<header class="bento-header">
 		<div class="bento-title-group">
 			<h1>💡 Insights Engine</h1>

@@ -735,6 +735,8 @@ $offset        = $circumference * (1 - $ring_conf / 100);
 
 <div class="bento-wrap">
 
+	<?php include __DIR__ . '/intelligence-tabs.php'; ?>
+
 	<!-- ══════════ HEADER BAR ══════════ -->
 	<div class="bento-header">
 		<div class="bento-header-left">

@@ -694,8 +694,6 @@ class Bootstrap {
 			array( 'title' => 'Import Runs', 'slug' => 'charts-imports', 'callback' => 'render_results_history' ),
 			array( 'title' => 'Matching Center', 'slug' => 'charts-matching', 'callback' => 'render_matching' ),
 			array( 'title' => 'Intelligence', 'slug' => 'charts-intelligence', 'callback' => 'render_intelligence' ),
-			array( 'title' => 'Forecast', 'slug' => 'charts-forecast', 'callback' => 'render_forecast' ),
-			array( 'title' => 'Insights', 'slug' => 'charts-insights', 'callback' => 'render_insights' ),
 			array( 'title' => 'Quick Translation', 'slug' => 'charts-translations', 'callback' => 'render_translations' ),
 		array( 'title' => 'Name Sync', 'slug' => 'charts-name-sync', 'callback' => 'render_name_sync' ),
 			array( 'title' => 'Performance', 'slug' => 'charts-performance', 'callback' => 'render_performance' ),
@@ -1240,15 +1238,24 @@ class Bootstrap {
 	}
 
 	public static function render_insights() {
-		self::render_view( 'insights' );
+		wp_safe_redirect( admin_url( 'admin.php?page=charts-intelligence&tab=insights' ) );
+		exit;
 	}
 
 	public static function render_intelligence() {
-		self::render_view( 'intelligence' );
+		$tab = sanitize_key( $_GET['tab'] ?? 'signals' );
+		if ( $tab === 'forecast' ) {
+			self::render_view( 'forecast' );
+		} elseif ( $tab === 'insights' ) {
+			self::render_view( 'insights' );
+		} else {
+			self::render_view( 'intelligence' );
+		}
 	}
 
 	public static function render_forecast() {
-		self::render_view( 'forecast' );
+		wp_safe_redirect( admin_url( 'admin.php?page=charts-intelligence&tab=forecast' ) );
+		exit;
 	}
 
 	public static function render_matching() {
