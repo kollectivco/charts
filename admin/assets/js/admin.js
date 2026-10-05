@@ -178,9 +178,18 @@ jQuery(document).ready(function($) {
             $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : (billboard ? 'Configure Billboard API' : 'Upload Chart Data'));
             $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : (billboard ? 'Select the target Billboard chart and week to fetch directly.' : 'Provide the raw export file for intelligence parsing.'));
             
+            if (billboard) {
+                $countrySelect.prop('required', false);
+                if ($('#billboard_chart_id').val() && !$('#billboard_week_id').val()) {
+                    $('#billboard_chart_id').trigger('change');
+                }
+            } else {
+                $countrySelect.prop('required', true);
+            }
+
             if (soundcharts) {
                 loadSoundchartsPlatforms();
-            } else if (!billboard) {
+            } else {
                 filterChartsByPlatform();
             }
             checkReadiness();
@@ -209,11 +218,11 @@ jQuery(document).ready(function($) {
 
         // Readiness Engine
         const checkReadiness = () => {
-            const hasSource = $countrySelect.val() !== '';
+            const billboard = $('[name="platform"]:checked').val() === 'billboard';
+            const hasSource = billboard ? true : ($countrySelect.val() !== '');
             const hasPlatform = $('[name="platform"]:checked').length > 0;
             const hasFile = $fileInput[0].files.length > 0;
             const hasTarget = $chartSelect.val() !== '';
-            const billboard = $('[name="platform"]:checked').val() === 'billboard';
             
             let sourceReady = false;
             if (isSoundcharts()) {
@@ -285,7 +294,9 @@ jQuery(document).ready(function($) {
         const filterChartsByPlatform = () => {
             const platform = isSoundcharts() ? ($soundchartsPlatform.val() || '') : selectedSource();
             const country = ($countrySelect.val() || '').toLowerCase();
-            const requiredType = isSoundcharts() ? ($soundchartsType.val() === 'album' ? 'album' : 'track') : '';
+            const isBb = platform === 'billboard';
+            const bbItemType = isBb ? ($('#billboard_chart_id').find(':selected').data('item-type') || '') : '';
+            const requiredType = isSoundcharts() ? ($soundchartsType.val() === 'album' ? 'album' : 'track') : (isBb ? bbItemType : '');
             const requiredFrequency = isSoundcharts() ? ($soundchartsChart.find(':selected').data('frequency') || '') : '';
             let selectedCompatible = false;
             $chartSelect.find('option').each(function() {
@@ -296,7 +307,8 @@ jQuery(document).ready(function($) {
                 const chartType = String($option.data('type') || 'track');
                 const chartFrequency = String($option.data('frequency') || 'weekly').toLowerCase();
                 const compatible = (chartPlatform === 'all' || chartPlatform === platform)
-                    && (!isSoundcharts() || (chartCountry === country && chartType === requiredType && (!requiredFrequency || chartFrequency === requiredFrequency)));
+                    && (!isSoundcharts() || (chartCountry === country && chartType === requiredType && (!requiredFrequency || chartFrequency === requiredFrequency)))
+                    && (!isBb || !requiredType || chartType === requiredType);
                 $option.prop('disabled', !compatible).toggle(compatible);
                 if (compatible && $option.is(':selected')) selectedCompatible = true;
             });
@@ -357,6 +369,7 @@ jQuery(document).ready(function($) {
         });
 
         $('#billboard_chart_id').on('change', function() {
+            filterChartsByPlatform();
             const chartId = $(this).val();
             const $weekSelect = $('#billboard_week_id');
             const $status = $('.billboard-catalog-status');
@@ -370,10 +383,10 @@ jQuery(document).ready(function($) {
 
             $weekSelect.append($('<option>', { value: '', text: 'Loading weeks...' }));
             
-            $.post(chartsAdmin.ajaxUrl, {
+            $.post(charts_admin.ajax_url, {
                 action: 'charts_billboard_get_weeks',
                 billboard_chart_id: chartId,
-                nonce: chartsAdmin.nonce
+                nonce: charts_admin.nonce
             }).done((res) => {
                 $weekSelect.empty();
                 if (res && res.success && res.data.weeks && res.data.weeks.length) {

@@ -257,7 +257,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 								<select name="billboard_chart_id" id="billboard_chart_id" class="premium-select">
 									<option value=""><?php esc_html_e( 'Select a chart...', 'charts' ); ?></option>
 									<?php foreach ( $bb_catalog as $bb_id => $bb_chart ) : ?>
-										<option value="<?php echo (int) $bb_id; ?>"><?php echo esc_html( $bb_chart['label'] ); ?></option>
+										<option value="<?php echo (int) $bb_id; ?>" data-item-type="<?php echo esc_attr( $bb_chart['item_type'] ?? 'track' ); ?>"><?php echo esc_html( $bb_chart['label'] ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</div>
