@@ -380,7 +380,7 @@ class PublicIntegration {
 	}
 
 	/**
-	 * Centralized resolver for entity/entry names with Franco support.
+	 * Centralized resolver for entity/entry names with English alternate support.
 	 */
 	public static function resolve_display_name( $obj, $definition = null ) {
 		$mode = $definition ? ($definition->name_display_mode ?? 'original') : Settings::get('design.name_display_mode', 'original');

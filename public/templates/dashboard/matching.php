@@ -291,7 +291,7 @@ $albums_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}charts_album
 	<header class="kc-terminal-header">
 		<div>
 			<h1 class="kc-terminal-title">> ENTITY RESOLUTION CENTER</h1>
-			<p class="kc-terminal-subtitle">Calibrating Franco-Arabic alias clustering and multi-platform identity linkages.</p>
+			<p class="kc-terminal-subtitle">Calibrating alias clustering and multi-platform identity linkages.</p>
 		</div>
 		<div style="display:flex; gap:10px;">
 			<button onclick="triggerAutoReconcile()" class="kc-terminal-btn primary">

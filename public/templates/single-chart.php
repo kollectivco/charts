@@ -179,8 +179,8 @@ if ( ! $is_mobile ) {
 					<div class="kc-card kc-featured-hero" style="padding: 0; overflow: hidden; position: relative;">
 					<img src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; filter: blur(60px); transform: scale(1.5);">
 					<?php 
-						$franco_mode = $definition->franco_mode ?? 'original';
-						$resolved = \Charts\Core\Transliteration::resolve_entry_display($top, $franco_mode);
+						$display_mode = $definition->name_display_mode ?? 'original';
+						$resolved = \Charts\Core\Transliteration::resolve_entry_display($top, $display_mode);
 						$top_track = $resolved['track'];
 						$top_artist = $resolved['artist'];
 					?>
@@ -259,8 +259,8 @@ if ( ! $is_mobile ) {
 										<img class="kc-rank-thumb" src="<?php echo esc_url($e->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="<?php echo esc_attr($e->item_title); ?>">
 										<div class="kc-entry-meta">
 											<?php 
-												$franco_mode = $definition->franco_mode ?? 'original';
-												$resolved = \Charts\Core\Transliteration::resolve_entry_display($e, $franco_mode);
+												$display_mode = $definition->name_display_mode ?? 'original';
+												$resolved = \Charts\Core\Transliteration::resolve_entry_display($e, $display_mode);
 												$row_track = $resolved['track'];
 												$row_artist = $resolved['artist'];
 

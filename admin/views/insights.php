@@ -186,65 +186,6 @@ $has_data   = !empty($editorial_insights) || !empty($weekly_highlights) || !empt
 		</div>
 	<?php else: ?>
 
-	<?php 
-	$gemini_brief = get_option( 'charts_gemini_weekly_editorial', null );
-	?>
-	<!-- GEMINI AI NEWSROOM CARD -->
-	<div class="bento-card" style="margin-bottom: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px;">
-		<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom: 20px;">
-			<div>
-				<div style="display:inline-flex; align-items:center; gap:8px; background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.4); padding:4px 12px; border-radius:20px; font-size:11px; font-weight:800; color:#818cf8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">
-					✨ Google Gemini AI Music Intelligence
-				</div>
-				<h2 style="margin:0; font-size:22px; font-weight:900; color:#fff;">التقرير الصحفي والتحليلي الأسبوعي (Editorial AI Brief)</h2>
-				<p style="margin:6px 0 0; color:#94a3b8; font-size:13px;">تحليل صحفي ذكي لتحركات السوق والتريندات وتوقعات الصعود والهبوط بواسطة Gemini.</p>
-			</div>
-			<div>
-				<button type="button" id="btn-generate-editorial" class="bento-btn" style="background:#6366f1; color:#fff; border:none; padding:10px 20px; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" onclick="generateGeminiEditorial()">
-					<span>✨ توليد التقرير بالذكاء الاصطناعي</span>
-				</button>
-			</div>
-		</div>
-
-		<div id="gemini-editorial-content" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:24px; font-size:15px; line-height:1.8; color:#e2e8f0; white-space:pre-wrap; direction:rtl; text-align:right;">
-			<?php if ( ! empty( $gemini_brief['content'] ) ) : ?>
-				<?php echo esc_html( $gemini_brief['content'] ); ?>
-				<div style="margin-top:16px; font-size:12px; color:#64748b; direction:ltr; text-align:left;">
-					Generated on: <?php echo esc_html( $gemini_brief['updated_at'] ?? '' ); ?>
-				</div>
-			<?php else : ?>
-				<div style="color:#94a3b8; text-align:center; padding:20px 0; direction:rtl;">
-					لم يتم توليد التقرير التحليلي لهذا الأسبوع بعد. اضغط على زر "توليد التقرير بالذكاء الاصطناعي" أعلاه لتحليل الشارت وتوليد المقال فوراً.
-				</div>
-			<?php endif; ?>
-		</div>
-	</div>
-
-	<script>
-	function generateGeminiEditorial() {
-		var btn = jQuery('#btn-generate-editorial');
-		var box = jQuery('#gemini-editorial-content');
-		btn.prop('disabled', true).find('span').text('جاري التحليل والكتابة عبر Gemini...');
-		box.css('opacity', '0.6').text('جاري قراءة إشارات الشارتات وتحليل الأداء الموسيقي بواسطة الذكاء الاصطناعي...');
-
-		jQuery.post(ajaxurl, {
-			action: 'charts_gemini_generate_editorial',
-			_wpnonce: '<?php echo wp_create_nonce("charts_admin_action"); ?>'
-		}).done(function(r) {
-			if (r && r.success && r.data.editorial) {
-				box.css('opacity', '1').text(r.data.editorial);
-			} else {
-				alert(r && r.data ? r.data.message : 'فشل توليد التقرير.');
-			}
-		}).fail(function() {
-			alert('حدث خطأ في الاتصال بالسيرفر.');
-		}).always(function() {
-			btn.prop('disabled', false).find('span').text('✨ توليد التقرير بالذكاء الاصطناعي');
-			box.css('opacity', '1');
-		});
-	}
-	</script>
-
 	<!-- ROW 1 -->
 	<div class="bento-grid-2-1">
 		<!-- Editorial -->
