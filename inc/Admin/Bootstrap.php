@@ -3422,8 +3422,9 @@ class Bootstrap {
 
 		$live_key   = ! empty( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : null;
 		$live_model = ! empty( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : null;
+		$live_base  = ! empty( $_POST['base_url'] ) ? esc_url_raw( wp_unslash( $_POST['base_url'] ) ) : null;
 
-		$client = new \Charts\Services\GeminiApiClient( $live_key, $live_model );
+		$client = new \Charts\Services\GeminiApiClient( $live_key, $live_model, $live_base );
 		$test   = $client->test_connection();
 
 		if ( is_wp_error( $test ) ) {
@@ -3432,6 +3433,9 @@ class Bootstrap {
 
 		if ( ! empty( $live_key ) ) {
 			\Charts\Core\Settings::set( 'api.gemini_api_key', $live_key );
+		}
+		if ( ! empty( $live_base ) ) {
+			\Charts\Core\Settings::set( 'api.gemini_base_url', $live_base );
 		}
 
 		$msg = ( is_array( $test ) && ! empty( $test['message'] ) ) ? $test['message'] : __( 'Gemini API handshake successful! Model is ready.', 'charts' );

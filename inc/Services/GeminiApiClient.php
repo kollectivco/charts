@@ -12,13 +12,25 @@ class GeminiApiClient {
 
 	private $api_key;
 	private $model;
-	private $base_url = 'https://generativelanguage.googleapis.com/v1beta/models/';
+	private $base_domain;
+	private $base_url;
 
-	public function __construct( $api_key = null, $model = null ) {
+	public function __construct( $api_key = null, $model = null, $base_url = null ) {
 		$this->api_key = $api_key ?: Settings::get( 'api.gemini_api_key' );
 		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-2.5-flash' );
 		if ( empty( $this->model ) ) {
 			$this->model = 'gemini-2.5-flash';
+		}
+
+		$custom_base = $base_url ?: Settings::get( 'api.gemini_base_url' );
+		$domain = ! empty( $custom_base ) ? rtrim( trim( $custom_base ), '/' ) : 'https://generativelanguage.googleapis.com';
+
+		if ( strpos( $domain, '/v1beta/models' ) !== false ) {
+			$this->base_url    = $domain . '/';
+			$this->base_domain = parse_url( $domain, PHP_URL_HOST );
+		} else {
+			$this->base_domain = parse_url( $domain, PHP_URL_HOST );
+			$this->base_url    = $domain . '/v1beta/models/';
 		}
 	}
 
@@ -30,42 +42,26 @@ class GeminiApiClient {
 		return $this->model;
 	}
 
-	/**
-	 * Execute HTTP request ensuring IPv4 resolution to prevent cURL error 28 delays.
-	 */
-	private function make_http_request( callable $request_fn ) {
-		$ip_resolve_hook = function( $handle ) {
-			if ( defined( 'CURLOPT_IPRESOLVE' ) && defined( 'CURL_IPRESOLVE_V4' ) ) {
-				curl_setopt( $handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );
-			}
-		};
-
-		add_action( 'http_api_curl', $ip_resolve_hook, 10, 1 );
-
-		try {
-			return call_user_func( $request_fn );
-		} finally {
-			remove_action( 'http_api_curl', $ip_resolve_hook, 10 );
-		}
+	public function get_base_url(): string {
+		return $this->base_url;
 	}
 
 	/**
 	 * Retrieve all active models that support generateContent directly from Google for this API key.
 	 */
-	public function fetch_available_models( int $timeout = 25 ) {
+	public function fetch_available_models( int $timeout = 15 ) {
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error( 'gemini_not_configured', __( 'API key is missing.', 'charts' ) );
 		}
 
-		$url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . urlencode( $this->api_key );
-		
-		$res = $this->make_http_request( function() use ( $url, $timeout ) {
-			return wp_remote_get( $url, array(
-				'timeout'     => $timeout,
-				'httpversion' => '1.1',
-				'sslverify'   => true,
-			) );
-		} );
+		$clean_base = preg_replace( '#/models/?$#', '', rtrim( $this->base_url, '/' ) );
+		$url = $clean_base . '/models?key=' . urlencode( $this->api_key );
+
+		$res = wp_remote_get( $url, array(
+			'timeout'     => $timeout,
+			'httpversion' => '1.1',
+			'sslverify'   => true,
+		) );
 
 		if ( is_wp_error( $res ) ) {
 			return $res;
@@ -132,16 +128,14 @@ class GeminiApiClient {
 			);
 		}
 
-		$response = $this->make_http_request( function() use ( $endpoint, $body_data, $timeout ) {
-			return wp_remote_post( $endpoint, array(
-				'timeout'     => $timeout,
-				'httpversion' => '1.1',
-				'headers'     => array(
-					'Content-Type' => 'application/json',
-				),
-				'body'        => wp_json_encode( $body_data ),
-			) );
-		} );
+		$response = wp_remote_post( $endpoint, array(
+			'timeout'     => $timeout,
+			'httpversion' => '1.1',
+			'headers'     => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'        => wp_json_encode( $body_data ),
+		) );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -165,7 +159,38 @@ class GeminiApiClient {
 	}
 
 	/**
-	 * Test connection by directly pinging the requested model first, then falling back if needed.
+	 * Run network connection diagnostics on the target host.
+	 */
+	public function run_network_diagnostic(): array {
+		$host = $this->base_domain ?: 'generativelanguage.googleapis.com';
+		$ip   = @gethostbyname( $host );
+		$dns_ok = ( $ip !== $host && ! empty( $ip ) );
+
+		$tcp_ok = false;
+		$tcp_err = '';
+		if ( function_exists( 'fsockopen' ) ) {
+			$errno  = 0;
+			$errstr = '';
+			$fp     = @fsockopen( $host, 443, $errno, $errstr, 4 );
+			if ( $fp ) {
+				$tcp_ok = true;
+				@fclose( $fp );
+			} else {
+				$tcp_err = trim( "$errno: $errstr" );
+			}
+		}
+
+		return array(
+			'host'    => $host,
+			'ip'      => $dns_ok ? $ip : 'Failed',
+			'dns_ok'  => $dns_ok,
+			'tcp_ok'  => $tcp_ok,
+			'tcp_err' => $tcp_err,
+		);
+	}
+
+	/**
+	 * Test connection by directly pinging the requested model, with diagnostic error reporting.
 	 */
 	public function test_connection() {
 		if ( ! $this->is_configured() ) {
@@ -182,7 +207,7 @@ class GeminiApiClient {
 		$last_error = null;
 		foreach ( $candidates as $candidate ) {
 			$this->model = $candidate;
-			$result = $this->generate_content( 'Respond with exact word: PONG', '', 0.1, false, 25 );
+			$result = $this->generate_content( 'Respond with exact word: PONG', '', 0.1, false, 12 );
 
 			if ( ! is_wp_error( $result ) ) {
 				Settings::set( 'api.gemini_model', $candidate );
@@ -202,14 +227,29 @@ class GeminiApiClient {
 				return $result;
 			}
 
-			// If it's a cURL timeout, stop immediately and return clear message
-			if ( stripos( $msg, 'timed out' ) !== false || stripos( $msg, 'cURL error 28' ) !== false ) {
-				return new \WP_Error( 'gemini_timeout', sprintf( __( 'Connection to Google timed out: %s. Please check if your hosting server allows outbound HTTPS requests to Google APIs.', 'charts' ), $msg ) );
+			// If it's a cURL connection/timeout error, diagnose the network issue
+			if ( stripos( $msg, 'timed out' ) !== false || stripos( $msg, 'cURL error 28' ) !== false || stripos( $msg, 'cURL error 7' ) !== false ) {
+				$diag = $this->run_network_diagnostic();
+				$diag_str = sprintf(
+					'Host: %s | DNS: %s | Port 443 TCP: %s',
+					$diag['host'],
+					$diag['dns_ok'] ? 'Resolved (' . $diag['ip'] . ')' : 'DNS Failed',
+					$diag['tcp_ok'] ? 'Connected' : 'Blocked / Connection Refused (' . ( $diag['tcp_err'] ?: 'Timeout' ) . ')'
+				);
+
+				return new \WP_Error(
+					'gemini_network_blocked',
+					sprintf(
+						__( 'Outbound connection timed out. [%s]. The hosting server firewall is blocking outbound connections to %s. Please ask your hosting provider to allow outbound HTTPS to this host, or enter a Reverse Proxy / Cloudflare AI Gateway URL in Settings.', 'charts' ),
+						$diag_str,
+						$diag['host']
+					)
+				);
 			}
 		}
 
-		// If candidate models all failed due to model deprecation/unavailability, try dynamic discovery as fallback
-		$available = $this->fetch_available_models( 25 );
+		// Fallback dynamic model discovery
+		$available = $this->fetch_available_models( 12 );
 		if ( ! is_wp_error( $available ) && ! empty( $available ) ) {
 			$names = array_column( $available, 'name' );
 			foreach ( $names as $dyn_model ) {
@@ -217,7 +257,7 @@ class GeminiApiClient {
 					continue;
 				}
 				$this->model = $dyn_model;
-				$result = $this->generate_content( 'Respond with exact word: PONG', '', 0.1, false, 25 );
+				$result = $this->generate_content( 'Respond with exact word: PONG', '', 0.1, false, 12 );
 				if ( ! is_wp_error( $result ) ) {
 					Settings::set( 'api.gemini_model', $dyn_model );
 					return array(

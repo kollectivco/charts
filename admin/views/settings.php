@@ -180,6 +180,7 @@ $panel = [
                         'gemini-2.5-flash' => 'Gemini 2.5 Flash',
                         'gemini-2.0-flash' => 'Gemini 2.0 Flash',
                     ] ],
+                    [ 'id' => 'api.gemini_base_url', 'type' => 'text', 'label' => 'API Base URL / Reverse Proxy (Optional)', 'desc' => 'Default: https://generativelanguage.googleapis.com. If your hosting server blocks outbound connections to Google, enter your Cloudflare AI Gateway or Reverse Proxy URL here.' ],
                     [ 'id' => 'api.gemini_auto_enrich', 'type' => 'switch', 'label' => 'Auto-Translate on CSV Import', 'desc' => 'Automatically generate official English transliterations and slugs for new Arabic entries.' ],
                     [ 'id' => 'gemini_test_btn', 'type' => 'custom', 'html' => '
                         <div style="margin-top:12px;">
@@ -195,8 +196,10 @@ $panel = [
                             var res = jQuery("#gemini-test-result");
                             var keyEl = document.getElementById("api.gemini_api_key");
                             var modelEl = document.getElementById("api.gemini_model");
+                            var baseEl = document.getElementById("api.gemini_base_url");
                             var apiKey = keyEl ? keyEl.value.trim() : "";
                             var model = modelEl ? modelEl.value : "";
+                            var baseUrl = baseEl ? baseEl.value.trim() : "";
 
                             if (!apiKey) {
                                 res.css("color", "#ef4444").text("✕ Please enter a Gemini API Key first.");
@@ -209,7 +212,8 @@ $panel = [
                                 action: "charts_test_gemini_api",
                                 _wpnonce: "' . wp_create_nonce("charts_admin_action") . '",
                                 api_key: apiKey,
-                                model: model
+                                model: model,
+                                base_url: baseUrl
                             }).done(function(r) {
                                 if (r && r.success) {
                                     res.css("color", "#10b981").text("✓ " + (r.data.message || "Connected Successfully!"));
