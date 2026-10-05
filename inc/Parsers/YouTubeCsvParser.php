@@ -299,9 +299,12 @@ class YouTubeCsvParser {
 		// 3. Thumbnail Generation
 		$image = $raw['image'] ?? '';
 		if ( empty( $image ) && ! empty( $yt_id ) ) {
-			// Generate hqdefault thumbnail URL
-			$image = "https://img.youtube.com/vi/{$yt_id}/hqdefault.jpg";
+			// Generate maximum resolution thumbnail URL
+			$image = "https://img.youtube.com/vi/{$yt_id}/maxresdefault.jpg";
 			$raw['thumbnail_generated'] = true;
+		}
+		if ( ! empty( $image ) ) {
+			$image = \Charts\Core\ImageEnhancer::maximize( $image );
 		}
 
 		// Fallback: use youtube_id as title if blank

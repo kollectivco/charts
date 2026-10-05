@@ -442,6 +442,11 @@ class AllChartsCoverflow extends Widget_Base {
 			object-fit: cover;
 			border-radius: 14px;
 			display: block;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: crisp-edges;
+			backface-visibility: hidden;
+			-webkit-backface-visibility: hidden;
+			transform: translateZ(0);
 		}
 
 		/* Geometric / Neon corner accents on active slide (Reference frame design) */

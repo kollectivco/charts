@@ -132,15 +132,16 @@ class BillboardCsvImporter {
 			$artists_en = \Charts\Services\Normalizer::split_artists($artist_en);
 			$primary_artist_en = trim($artists_en[0] ?? '');
 
-			if (!$primary_artist) continue;
+			$safe_image = \Charts\Services\BillboardService::sideload_image( $image );
+			$safe_image = \Charts\Core\ImageEnhancer::maximize( $safe_image );
 
 			$artist_id = \Charts\Core\EntityManager::ensure_artist( $primary_artist, array(
-				'image'           => $image,
+				'image'           => $safe_image,
 				'display_name_en' => $primary_artist_en ?: null,
 			) );
 			$track_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}charts_tracks WHERE title = %s AND primary_artist_id = %d LIMIT 1", $title, $artist_id));
 			$track_id = \Charts\Core\EntityManager::ensure_track( $title, $artist_id, array(
-				'cover_image' => $image,
+				'cover_image' => $safe_image,
 				'title_en'    => $title_en ?: null,
 			) );
 

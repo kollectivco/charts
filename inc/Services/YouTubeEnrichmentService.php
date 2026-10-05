@@ -60,8 +60,11 @@ class YouTubeEnrichmentService {
 				$stats      = $item['statistics'] ?? array();
 				$thumbnails = $snippet['thumbnails'] ?? array();
 
-				// Pick best image
-				$image = $thumbnails['high']['url'] ?? $thumbnails['medium']['url'] ?? $thumbnails['default']['url'] ?? null;
+				// Pick best image (HD Priority: maxres -> standard -> high -> medium -> default)
+				$image = $thumbnails['maxres']['url'] ?? $thumbnails['standard']['url'] ?? $thumbnails['high']['url'] ?? $thumbnails['medium']['url'] ?? $thumbnails['default']['url'] ?? null;
+				if ( $image ) {
+					$image = \Charts\Core\ImageEnhancer::maximize( $image );
+				}
 
 				$metadata_map[ $id ] = array(
 					'api_title'        => $snippet['title'] ?? '',
@@ -128,9 +131,11 @@ class YouTubeEnrichmentService {
 		$snippet = $channel['snippet'] ?? array();
 		$stats = $channel['statistics'] ?? array();
 
-		$meta['youtube_subscribers'] = intval($stats['subscriberCount'] ?? 0);
-		$meta['youtube_video_count'] = intval($stats['videoCount'] ?? 0);
-		$meta['youtube_thumbnail']   = $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['medium']['url'] ?? null;
+		$thumb_url = $snippet['thumbnails']['maxres']['url'] ?? $snippet['thumbnails']['high']['url'] ?? $snippet['thumbnails']['medium']['url'] ?? null;
+		if ( $thumb_url ) {
+			$thumb_url = \Charts\Core\ImageEnhancer::maximize( $thumb_url );
+		}
+		$meta['youtube_thumbnail']   = $thumb_url;
 		$meta['youtube_url']         = 'https://www.youtube.com/channel/' . $channel_id;
 		$meta['youtube_last_sync']   = current_time( 'mysql' );
 		$meta['sync_status']         = 'synced'; // Success categorization

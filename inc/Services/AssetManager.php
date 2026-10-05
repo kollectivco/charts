@@ -61,6 +61,9 @@ class AssetManager {
 			foreach ( $metadata as $item ) {
 				$sp_id = $item['id'] ?? null;
 				$image = $item['album']['images'][0]['url'] ?? null;
+				if ( $image ) {
+					$image = \Charts\Core\ImageEnhancer::maximize( $image );
+				}
 
 				if ( $sp_id && $image && isset( $id_to_record_id[$sp_id] ) ) {
 					$wpdb->update( $table, array( 'cover_image' => $image ), array( 'id' => $id_to_record_id[$sp_id] ) );
@@ -106,6 +109,9 @@ class AssetManager {
 
 				$record = $id_to_record[$sp_id];
 				$image  = $item['images'][0]['url'] ?? null;
+				if ( $image ) {
+					$image = \Charts\Core\ImageEnhancer::maximize( $image );
+				}
 				
 				// Prepare enriched metadata
 				$meta = ! empty( $record->metadata_json ) ? json_decode( $record->metadata_json, true ) : array();
@@ -161,7 +167,10 @@ class AssetManager {
 
 			foreach ( $metadata as $item ) {
 				$yt_id = $item['id'] ?? null;
-				$image = $item['snippet']['thumbnails']['high']['url'] ?? $item['snippet']['thumbnails']['default']['url'] ?? null;
+				$image = $item['snippet']['thumbnails']['maxres']['url'] ?? $item['snippet']['thumbnails']['standard']['url'] ?? $item['snippet']['thumbnails']['high']['url'] ?? $item['snippet']['thumbnails']['default']['url'] ?? null;
+				if ( $image ) {
+					$image = \Charts\Core\ImageEnhancer::maximize( $image );
+				}
 
 				if ( $yt_id && $image && isset( $id_to_record_id[$yt_id] ) ) {
 					$wpdb->update( $table, array( 'thumbnail' => $image ), array( 'id' => $id_to_record_id[$yt_id] ) );
