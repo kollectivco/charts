@@ -687,7 +687,6 @@ class Bootstrap {
 			array( 'title' => 'Clip-Track Linking', 'slug' => 'charts-clip-track-linker', 'callback' => 'render_clip_track_linker' ),
 			array( 'title' => 'Sources', 'slug' => 'charts-sources', 'callback' => 'render_sources' ),
 			array( 'title' => 'Import Center', 'slug' => 'charts-import', 'callback' => 'render_import_center' ),
-			array( 'title' => 'Billboard Import', 'slug' => 'charts-billboard-import', 'callback' => 'render_billboard_import' ),
 			array( 'title' => 'Import Runs', 'slug' => 'charts-imports', 'callback' => 'render_results_history' ),
 			array( 'title' => 'Matching Center', 'slug' => 'charts-matching', 'callback' => 'render_matching' ),
 			array( 'title' => 'Intelligence', 'slug' => 'charts-intelligence', 'callback' => 'render_intelligence' ),
@@ -809,9 +808,7 @@ class Bootstrap {
 		self::render_view( 'import-center' );
 	}
 
-	public static function render_billboard_import() {
-		include CHARTS_PATH . 'admin/views/billboard-import.php';
-	}
+
 
 	public static function render_results_history() {
 		self::render_view( 'results' );
@@ -863,6 +860,23 @@ class Bootstrap {
 			}
 			\Charts\Core\Notify::success( sprintf( __( 'Soundcharts imported %1$d entries (%2$d new records) from %3$d ranking rows.', 'charts' ), $result['saved'], $result['created'], $result['parsed'] ), __( 'Soundcharts Sync Complete', 'charts' ) );
 			return $result;
+		}
+		
+		if ( $platform === 'billboard' && empty( $_FILES['import_file']['tmp_name'] ) ) {
+			// Billboard API Direct Sync
+			$week_id = intval( $_POST['billboard_week_id'] ?? 0 );
+			$bb_chart_id = absint( $_POST['billboard_chart_id'] ?? 0 );
+			if ( ! $week_id || ! $bb_chart_id ) {
+				\Charts\Core\Notify::error( __( 'Billboard API requires a selected chart and week.', 'charts' ), __( 'Missing Parameters', 'charts' ) );
+				return false;
+			}
+			$result = \Charts\Services\BillboardService::sync_to_chart( $week_id, $chart_id, $bb_chart_id );
+			if ( is_wp_error( $result ) ) {
+				\Charts\Core\Notify::error( $result->get_error_message(), __( 'Billboard API Failed', 'charts' ) );
+				return false;
+			}
+			\Charts\Core\Notify::success( sprintf( __( 'Billboard API imported %d entries.', 'charts' ), $result['imported_count'] ), __( 'Billboard Sync Complete', 'charts' ) );
+			return array( 'run_id' => $result['run_id'] ?? time() );
 		}
 		
 		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {

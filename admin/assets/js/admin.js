@@ -169,13 +169,18 @@ jQuery(document).ready(function($) {
 
         const updateSourceInterface = () => {
             const soundcharts = isSoundcharts();
+            const billboard = $('[name="platform"]:checked').val() === 'billboard';
+            
             $soundchartsControls.toggle(soundcharts);
-            $dropZone.toggle(!soundcharts);
-            $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : 'Upload Chart Data');
-            $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : 'Provide the raw export file for intelligence parsing.');
+            $('.billboard-import-controls').toggle(billboard);
+            $dropZone.toggle(!soundcharts && !billboard);
+            
+            $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : (billboard ? 'Configure Billboard API' : 'Upload Chart Data'));
+            $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : (billboard ? 'Select the target Billboard chart and week to fetch directly.' : 'Provide the raw export file for intelligence parsing.'));
+            
             if (soundcharts) {
                 loadSoundchartsPlatforms();
-            } else {
+            } else if (!billboard) {
                 filterChartsByPlatform();
             }
             checkReadiness();
@@ -208,9 +213,16 @@ jQuery(document).ready(function($) {
             const hasPlatform = $('[name="platform"]:checked').length > 0;
             const hasFile = $fileInput[0].files.length > 0;
             const hasTarget = $chartSelect.val() !== '';
-            const sourceReady = isSoundcharts()
-                ? Boolean($soundchartsPlatform.val() && $soundchartsChart.val())
-                : hasFile;
+            const billboard = $('[name="platform"]:checked').val() === 'billboard';
+            
+            let sourceReady = false;
+            if (isSoundcharts()) {
+                sourceReady = Boolean($soundchartsPlatform.val() && $soundchartsChart.val());
+            } else if (billboard) {
+                sourceReady = Boolean($('#billboard_chart_id').val() && $('#billboard_week_id').val());
+            } else {
+                sourceReady = hasFile;
+            }
 
             if (hasSource && hasPlatform && sourceReady && hasTarget) {
                 $submitBtn.prop('disabled', false);
@@ -224,8 +236,11 @@ jQuery(document).ready(function($) {
 
             // Update active stages visually
             if (hasSource && hasPlatform) $('.import-stage[data-step="2"]').addClass('active');
-            if (hasFile || (isSoundcharts() && $soundchartsChart.val())) $('.import-stage[data-step="3"]').addClass('active');
-            else $('.import-stage[data-step="3"]').removeClass('active');
+            if (hasFile || (isSoundcharts() && $soundchartsChart.val()) || (billboard && $('#billboard_week_id').val())) {
+                $('.import-stage[data-step="3"]').addClass('active');
+            } else {
+                $('.import-stage[data-step="3"]').removeClass('active');
+            }
         };
 
         // Input Change
@@ -340,6 +355,50 @@ jQuery(document).ready(function($) {
             filterChartsByPlatform();
             checkReadiness();
         });
+
+        $('#billboard_chart_id').on('change', function() {
+            const chartId = $(this).val();
+            const $weekSelect = $('#billboard_week_id');
+            const $status = $('.billboard-catalog-status');
+            
+            $weekSelect.empty().append($('<option>', { value: '', text: 'Select a week...' })).prop('disabled', true);
+            
+            if (!chartId) {
+                checkReadiness();
+                return;
+            }
+
+            $weekSelect.append($('<option>', { value: '', text: 'Loading weeks...' }));
+            
+            $.post(chartsAdmin.ajaxUrl, {
+                action: 'charts_billboard_get_weeks',
+                billboard_chart_id: chartId,
+                nonce: chartsAdmin.nonce
+            }).done((res) => {
+                $weekSelect.empty();
+                if (res && res.success && res.data.weeks && res.data.weeks.length) {
+                    $weekSelect.append($('<option>', { value: '', text: 'Select a week...' }));
+                    res.data.weeks.forEach((week, index) => {
+                        $weekSelect.append($('<option>', {
+                            value: week.week_id,
+                            text: week.label + (index === 0 ? ' (Latest)' : '')
+                        }));
+                    });
+                    $weekSelect.prop('disabled', false);
+                    $status.text('Weeks loaded successfully.');
+                } else {
+                    $weekSelect.append($('<option>', { value: '', text: 'No weeks found' }));
+                    $status.text('Could not load weeks for this chart.');
+                }
+            }).fail(() => {
+                $weekSelect.empty().append($('<option>', { value: '', text: 'Error loading weeks' }));
+                $status.text('Failed to contact Billboard Arabia API.');
+            }).always(() => {
+                checkReadiness();
+            });
+        });
+
+        $('#billboard_week_id').on('change', checkReadiness);
 
         $form.on('submit', function() {
             $submitBtn.addClass('processing').prop('disabled', true);

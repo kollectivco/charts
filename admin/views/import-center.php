@@ -192,6 +192,21 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									<div class="platform-check"><span class="dashicons dashicons-yes-alt"></span></div>
 								</div>
 							</label>
+							<label class="platform-option">
+								<input type="radio" name="platform" value="billboard" <?php checked($pre_source, 'billboard'); ?>>
+								<div class="platform-box">
+									<div class="platform-icon" style="background:#000; color:#fff;">
+										<span style="font-weight:900; font-family:serif; font-size:24px;">B</span>
+									</div>
+									<div class="platform-text">
+										<strong>Billboard</strong>
+										<span>Live API & CSV</span>
+									</div>
+									<div class="platform-check">
+										<span class="dashicons dashicons-yes-alt"></span>
+									</div>
+								</div>
+							</label>
 
 						</div>
 					</div>
@@ -232,6 +247,28 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									<button type="button" class="charts-btn-back soundcharts-load-charts" disabled><?php esc_html_e( 'Load Charts', 'charts' ); ?></button>
 								</div>
 								<p class="soundcharts-catalog-status" aria-live="polite"><?php esc_html_e( 'Charts are loaded directly from Soundcharts.', 'charts' ); ?></p>
+							</div>
+						</div>
+						
+						<div class="billboard-import-controls" style="display:none;">
+							<?php $bb_catalog = \Charts\Services\BillboardService::get_chart_catalog(); ?>
+							<div class="form-group">
+								<label class="premium-label" for="billboard_chart_id"><?php esc_html_e( 'Billboard Arabia Chart', 'charts' ); ?></label>
+								<select name="billboard_chart_id" id="billboard_chart_id" class="premium-select">
+									<option value=""><?php esc_html_e( 'Select a chart...', 'charts' ); ?></option>
+									<?php foreach ( $bb_catalog as $bb_id => $bb_chart ) : ?>
+										<option value="<?php echo (int) $bb_id; ?>"><?php echo esc_html( $bb_chart['label'] ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+							<div class="form-group soundcharts-chart-picker">
+								<label class="premium-label" for="billboard_week_id"><?php esc_html_e( 'Billboard Week', 'charts' ); ?></label>
+								<div class="soundcharts-chart-picker-row">
+									<select name="billboard_week_id" id="billboard_week_id" class="premium-select" disabled>
+										<option value=""><?php esc_html_e( 'Select a chart first', 'charts' ); ?></option>
+									</select>
+								</div>
+								<p class="billboard-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;color:#64748b;"><?php esc_html_e( 'Fetching directly from Billboard Arabia API.', 'charts' ); ?></p>
 							</div>
 						</div>
 						<div class="file-nexus-zone" id="drop-zone">
