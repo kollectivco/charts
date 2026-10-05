@@ -13,12 +13,13 @@ class GeminiApiClient {
 	private $api_key;
 	private $model;
 	private $base_url = 'https://generativelanguage.googleapis.com/v1beta/models/';
+	private $_in_fallback = false;
 
 	public function __construct( $api_key = null, $model = null ) {
 		$this->api_key = $api_key ?: Settings::get( 'api.gemini_api_key' );
-		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-2.5-flash' );
+		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-3.1-pro-preview' );
 		if ( empty( $this->model ) ) {
-			$this->model = 'gemini-2.5-flash';
+			$this->model = 'gemini-3.1-pro-preview';
 		}
 	}
 
@@ -31,7 +32,47 @@ class GeminiApiClient {
 	}
 
 	/**
-	 * Send request to Gemini generateContent endpoint with automatic fallback across versions.
+	 * Retrieve all active models that support generateContent directly from Google for this API key.
+	 */
+	public function fetch_available_models() {
+		if ( ! $this->is_configured() ) {
+			return new \WP_Error( 'gemini_not_configured', __( 'API key is missing.', 'charts' ) );
+		}
+
+		$url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . urlencode( $this->api_key );
+		$res = wp_remote_get( $url, array( 'timeout' => 15 ) );
+
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+
+		$status = wp_remote_retrieve_response_code( $res );
+		$body   = json_decode( wp_remote_retrieve_body( $res ), true );
+
+		if ( $status !== 200 ) {
+			$msg = $body['error']['message'] ?? sprintf( __( 'HTTP %d error listing models.', 'charts' ), $status );
+			return new \WP_Error( 'gemini_list_error', $msg, $body );
+		}
+
+		$models = array();
+		if ( ! empty( $body['models'] ) && is_array( $body['models'] ) ) {
+			foreach ( $body['models'] as $m ) {
+				$methods = $m['supportedGenerationMethods'] ?? array();
+				if ( in_array( 'generateContent', $methods, true ) ) {
+					$clean_name = str_replace( 'models/', '', $m['name'] );
+					$models[] = array(
+						'name'        => $clean_name,
+						'displayName' => $m['displayName'] ?? $clean_name,
+					);
+				}
+			}
+		}
+
+		return $models;
+	}
+
+	/**
+	 * Send request to Gemini generateContent endpoint with automatic fallback.
 	 */
 	public function generate_content( string $prompt, string $system_instruction = '', float $temperature = 0.2, bool $json_mode = false ) {
 		if ( ! $this->is_configured() ) {
@@ -84,18 +125,22 @@ class GeminiApiClient {
 		if ( $status !== 200 ) {
 			$err_msg = $data['error']['message'] ?? sprintf( __( 'Gemini API error (HTTP %d)', 'charts' ), $status );
 
-			// Auto-fallback if the current model is deprecated or not found on this API version
-			if ( ( $status === 404 || stripos( $err_msg, 'not found' ) !== false ) && empty( $this->_in_fallback ) ) {
+			// Auto-fallback if the current model is deprecated or not available to user
+			if ( ( $status === 404 || stripos( $err_msg, 'not available' ) !== false || stripos( $err_msg, 'not found' ) !== false ) && empty( $this->_in_fallback ) ) {
 				$this->_in_fallback = true;
-				$fallbacks = array( 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-2.5-pro' );
-				foreach ( $fallbacks as $fb ) {
-					if ( $fb === $this->model ) continue;
-					$this->model = $fb;
-					$retry = $this->generate_content( $prompt, $system_instruction, $temperature, $json_mode );
-					if ( ! is_wp_error( $retry ) ) {
-						Settings::set( 'api.gemini_model', $fb );
-						$this->_in_fallback = false;
-						return $retry;
+				
+				// Dynamically ask Google for available models
+				$available = $this->fetch_available_models();
+				if ( ! is_wp_error( $available ) && ! empty( $available ) ) {
+					foreach ( $available as $candidate ) {
+						if ( $candidate['name'] === $this->model ) continue;
+						$this->model = $candidate['name'];
+						$retry = $this->generate_content( $prompt, $system_instruction, $temperature, $json_mode );
+						if ( ! is_wp_error( $retry ) ) {
+							Settings::set( 'api.gemini_model', $candidate['name'] );
+							$this->_in_fallback = false;
+							return $retry;
+						}
 					}
 				}
 				$this->_in_fallback = false;
@@ -112,31 +157,48 @@ class GeminiApiClient {
 		return trim( $text );
 	}
 
-	private $_in_fallback = false;
-
 	/**
-	 * Test connection and dynamically discover which model works best.
+	 * Test connection by dynamically discovering the active model from Google.
 	 */
 	public function test_connection() {
-		$models_to_try = array_unique( array_filter( array(
+		if ( ! $this->is_configured() ) {
+			return new \WP_Error( 'gemini_not_configured', __( 'Google Gemini API key is not configured in Settings.', 'charts' ) );
+		}
+
+		$available = $this->fetch_available_models();
+		if ( is_wp_error( $available ) ) {
+			return $available;
+		}
+
+		if ( empty( $available ) ) {
+			return new \WP_Error( 'gemini_no_models', __( 'No models supporting generateContent were found for this API key.', 'charts' ) );
+		}
+
+		$names = array_column( $available, 'name' );
+
+		// Preferred priority order
+		$priority = array(
 			$this->model,
+			'gemini-3.1-pro-preview',
 			'gemini-2.5-flash',
 			'gemini-2.0-flash',
-			'gemini-1.5-flash-latest',
-			'gemini-2.5-pro',
-			'gemini-1.5-flash',
-		) ) );
+		);
+
+		$candidates = array_unique( array_merge(
+			array_intersect( $priority, $names ),
+			$names
+		) );
 
 		$last_error = null;
-		foreach ( $models_to_try as $m ) {
-			$this->model = $m;
+		foreach ( $candidates as $candidate_model ) {
+			$this->model = $candidate_model;
 			$result = $this->generate_content( 'Respond with exact word: PONG' );
 			if ( ! is_wp_error( $result ) ) {
-				Settings::set( 'api.gemini_model', $m );
+				Settings::set( 'api.gemini_model', $candidate_model );
 				return array(
 					'success' => true,
-					'model'   => $m,
-					'message' => sprintf( __( 'Handshake successful using model %s!', 'charts' ), $m ),
+					'model'   => $candidate_model,
+					'message' => sprintf( __( 'Handshake successful using model %s!', 'charts' ), $candidate_model ),
 				);
 			}
 			$last_error = $result;
