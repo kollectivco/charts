@@ -3442,6 +3442,10 @@ class Bootstrap {
 			wp_send_json_error( array( 'message' => $test->get_error_message() ) );
 		}
 
+		if ( is_array( $test ) && ! empty( $test['message'] ) ) {
+			wp_send_json_success( array( 'message' => $test['message'] ) );
+		}
+
 		wp_send_json_success( array( 'message' => __( 'Gemini API handshake successful! Model is ready.', 'charts' ) ) );
 	}
 

@@ -16,9 +16,9 @@ class GeminiApiClient {
 
 	public function __construct( $api_key = null, $model = null ) {
 		$this->api_key = $api_key ?: Settings::get( 'api.gemini_api_key' );
-		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-1.5-flash' );
+		$this->model   = $model ?: Settings::get( 'api.gemini_model', 'gemini-2.5-flash' );
 		if ( empty( $this->model ) ) {
-			$this->model = 'gemini-1.5-flash';
+			$this->model = 'gemini-2.5-flash';
 		}
 	}
 
@@ -26,8 +26,12 @@ class GeminiApiClient {
 		return ! empty( $this->api_key );
 	}
 
+	public function get_model(): string {
+		return $this->model;
+	}
+
 	/**
-	 * Send request to Gemini generateContent endpoint.
+	 * Send request to Gemini generateContent endpoint with automatic fallback across versions.
 	 */
 	public function generate_content( string $prompt, string $system_instruction = '', float $temperature = 0.2, bool $json_mode = false ) {
 		if ( ! $this->is_configured() ) {
@@ -73,12 +77,30 @@ class GeminiApiClient {
 			return $response;
 		}
 
-		$status = wp_remote_retrieve_response_code( $response );
+		$status   = wp_remote_retrieve_response_code( $response );
 		$raw_body = wp_remote_retrieve_body( $response );
-		$data   = json_decode( $raw_body, true );
+		$data     = json_decode( $raw_body, true );
 
 		if ( $status !== 200 ) {
 			$err_msg = $data['error']['message'] ?? sprintf( __( 'Gemini API error (HTTP %d)', 'charts' ), $status );
+
+			// Auto-fallback if the current model is deprecated or not found on this API version
+			if ( ( $status === 404 || stripos( $err_msg, 'not found' ) !== false ) && empty( $this->_in_fallback ) ) {
+				$this->_in_fallback = true;
+				$fallbacks = array( 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-2.5-pro' );
+				foreach ( $fallbacks as $fb ) {
+					if ( $fb === $this->model ) continue;
+					$this->model = $fb;
+					$retry = $this->generate_content( $prompt, $system_instruction, $temperature, $json_mode );
+					if ( ! is_wp_error( $retry ) ) {
+						Settings::set( 'api.gemini_model', $fb );
+						$this->_in_fallback = false;
+						return $retry;
+					}
+				}
+				$this->_in_fallback = false;
+			}
+
 			return new \WP_Error( 'gemini_api_error', $err_msg, $data );
 		}
 
@@ -90,22 +112,41 @@ class GeminiApiClient {
 		return trim( $text );
 	}
 
+	private $_in_fallback = false;
+
 	/**
-	 * Smoke test connection to verify API key.
+	 * Test connection and dynamically discover which model works best.
 	 */
 	public function test_connection() {
-		$result = $this->generate_content( 'Respond with exact word: PONG' );
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		$models_to_try = array_unique( array_filter( array(
+			$this->model,
+			'gemini-2.5-flash',
+			'gemini-2.0-flash',
+			'gemini-1.5-flash-latest',
+			'gemini-2.5-pro',
+			'gemini-1.5-flash',
+		) ) );
+
+		$last_error = null;
+		foreach ( $models_to_try as $m ) {
+			$this->model = $m;
+			$result = $this->generate_content( 'Respond with exact word: PONG' );
+			if ( ! is_wp_error( $result ) ) {
+				Settings::set( 'api.gemini_model', $m );
+				return array(
+					'success' => true,
+					'model'   => $m,
+					'message' => sprintf( __( 'Handshake successful using model %s!', 'charts' ), $m ),
+				);
+			}
+			$last_error = $result;
 		}
-		return true;
+
+		return $last_error;
 	}
 
 	/**
 	 * Translate or transliterate Arabic music entities to standard English names and slugs.
-	 *
-	 * @param array $items Array of [ 'id' => int|string, 'name' => string, 'type' => 'artist'|'track'|'video'|'album' ]
-	 * @return array|\WP_Error
 	 */
 	public function translate_entities_batch( array $items ) {
 		if ( empty( $items ) ) {
@@ -155,7 +196,6 @@ Structure your brief into 3 distinct sections with short headings:
 
 	/**
 	 * Expand an entity search query with popular nicknames, aliases, and spelling variations.
-	 * e.g. 'الهضبة' -> ['عمرو دياب', 'Amr Diab'], 'الكينج' -> ['محمد منير', 'Mohamed Mounir']
 	 */
 	public function expand_search_query( string $query ) {
 		$system = "You are a music search assistant for Arab and Middle Eastern music.

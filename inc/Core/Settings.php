@@ -86,7 +86,7 @@ class Settings {
                 'soundcharts_client_secret' => '',
                 'soundcharts_team_id' => '',
                 'gemini_api_key'       => '',
-                'gemini_model'         => 'gemini-1.5-flash',
+                'gemini_model'         => 'gemini-2.5-flash',
                 'gemini_auto_enrich'   => 1,
             ],
             

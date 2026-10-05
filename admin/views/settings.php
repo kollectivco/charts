@@ -176,9 +176,11 @@ $panel = [
                 'fields' => [
                     [ 'id' => 'api.gemini_api_key', 'type' => 'password', 'label' => 'Gemini API Key', 'desc' => 'Get your API key from Google AI Studio (aistudio.google.com).' ],
                     [ 'id' => 'api.gemini_model', 'type' => 'select', 'label' => 'Model Engine', 'options' => [
-                        'gemini-1.5-flash' => 'Gemini 1.5 Flash (Recommended - Fastest & High Quality)',
-                        'gemini-2.0-flash' => 'Gemini 2.0 Flash (Next-Gen)',
-                        'gemini-1.5-pro'   => 'Gemini 1.5 Pro (Deep Reasoning & Analysis)',
+                        'gemini-2.5-flash' => 'Gemini 2.5 Flash (Recommended - Fastest & Latest)',
+                        'gemini-2.0-flash' => 'Gemini 2.0 Flash (Fast & Stable)',
+                        'gemini-1.5-flash-latest' => 'Gemini 1.5 Flash (Latest Alias)',
+                        'gemini-2.5-pro'   => 'Gemini 2.5 Pro (Deep Reasoning & Analysis)',
+                        'gemini-1.5-flash' => 'Gemini 1.5 Flash (Legacy)',
                     ] ],
                     [ 'id' => 'api.gemini_auto_enrich', 'type' => 'switch', 'label' => 'Auto-Translate on CSV Import', 'desc' => 'Automatically generate official English transliterations and slugs for new Arabic entries.' ],
                     [ 'id' => 'gemini_test_btn', 'type' => 'custom', 'html' => '
