@@ -16,29 +16,110 @@ class Transliteration {
     }
 
     /**
-     * Resolve the final display name based on the new strict rules:
-     * 1. If original is English -> Keep original.
-     * 2. If original is Arabic:
-     *    - Show English alternate/override if provided.
-     *    - Otherwise fallback to original Arabic.
+     * Arabize text by searching in references, dictionaries, and database links.
+     * Guaranteed: Translates to real Arabic, NEVER Franco-Arabic.
+     */
+    public static function arabize_text($text, $type = 'any') {
+        $text = trim((string)$text);
+        if (empty($text)) return '';
+
+        // If it already contains Arabic, keep it as is
+        if (self::has_arabic($text)) {
+            return $text;
+        }
+
+        // 1. Check Reference Dictionary (Translation::$default_strings and kcharts_translations option)
+        if (class_exists('\Charts\Core\Translation')) {
+            $translated = \Charts\Core\Translation::get($text);
+            if ($translated !== $text && self::has_arabic($translated)) {
+                return $translated;
+            }
+        }
+
+        // 2. Check Database Links & References (Artists, Tracks, Albums)
+        global $wpdb;
+        $norm = mb_strtolower($text);
+
+        // Check charts_artists if type is artist or any
+        if (in_array($type, ['artist', 'any'], true)) {
+            $ar_artist = $wpdb->get_var($wpdb->prepare(
+                "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE (LOWER(display_name_en) = %s OR normalized_name = %s) AND display_name IS NOT NULL AND display_name != '' LIMIT 1",
+                $norm, $norm
+            ));
+            if ($ar_artist && self::has_arabic($ar_artist)) {
+                return $ar_artist;
+            }
+        }
+
+        // Check charts_tracks if type is track or any
+        if (in_array($type, ['track', 'any'], true)) {
+            $ar_track = $wpdb->get_var($wpdb->prepare(
+                "SELECT title FROM {$wpdb->prefix}charts_tracks WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
+                $norm, $norm
+            ));
+            if ($ar_track && self::has_arabic($ar_track)) {
+                return $ar_track;
+            }
+        }
+
+        // Check charts_albums if type is album or any
+        if (in_array($type, ['album', 'any'], true)) {
+            $ar_album = $wpdb->get_var($wpdb->prepare(
+                "SELECT title FROM {$wpdb->prefix}charts_albums WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
+                $norm, $norm
+            ));
+            if ($ar_album && self::has_arabic($ar_album)) {
+                return $ar_album;
+            }
+        }
+
+        // 3. Multi-artist / compound string handling (e.g. "Amr Diab, Mohamed Hamaki" or "Ahmed Saad feat. Nordo")
+        if ($type === 'artist' || $type === 'any') {
+            $delimiters = [' feat. ', ' feat ', ' ft. ', ' ft ', ' & ', ' and ', ', '];
+            foreach ($delimiters as $delim) {
+                if (stripos($text, $delim) !== false) {
+                    $parts = explode($delim, $text);
+                    $ar_parts = [];
+                    $any_changed = false;
+                    foreach ($parts as $p) {
+                        $p_trimmed = trim($p);
+                        $ar_p = self::arabize_text($p_trimmed, 'artist');
+                        if ($ar_p !== $p_trimmed && self::has_arabic($ar_p)) {
+                            $any_changed = true;
+                        }
+                        $ar_parts[] = $ar_p;
+                    }
+                    if ($any_changed) {
+                        return implode('، ', $ar_parts);
+                    }
+                }
+            }
+        }
+
+        // 4. Return clean original Latin/English name if no reference match found (NEVER Franco)
+        return $text;
+    }
+
+    /**
+     * Resolve the final display name:
+     * 1. If English preferred mode is on -> return English alternate if provided.
+     * 2. If original is in English/Latin, search references and links for Arabic name.
+     * 3. Otherwise return clean original name (No Franco).
      */
     public static function resolve_display($original, $english_alt, $mode = 'original') {
         if (empty($original)) return '';
         
-        // Check if our translation engine has a custom/default translation for this string
-        $translated = \Charts\Core\Translation::get($original);
-        if ($translated !== $original) {
-            return $translated;
-        }
-        
-        // Rule #1: If already English/Latin, keep it
-        if ( ! self::has_arabic($original) ) {
-            return $original;
+        // Mode English preferred
+        if ($mode === 'english' && !empty($english_alt)) {
+            return $english_alt;
         }
 
-        // Rule #2: If Arabic, and English preferred mode is on
-        if ($mode === 'english') {
-            return !empty($english_alt) ? $english_alt : $original;
+        // Check if original is English/Latin and can be Arabized via references & links
+        if (!self::has_arabic($original)) {
+            $arabized = self::arabize_text($original);
+            if ($arabized !== $original && self::has_arabic($arabized)) {
+                return $arabized;
+            }
         }
 
         return $original;

@@ -61,16 +61,19 @@ class SoundchartsImporter {
 
 		$ranking = array();
 		$offset  = 0;
-		$total   = min( 1000, max( 1, absint( $chart['maxResults'] ?? 100 ) ) );
+		$total   = 100; // Strict limit: Cap import data from Soundcharts to 100 (never 200)
 		for ( $page = 0; $page < 10 && $offset < $total; $page++ ) {
-			$response = $this->api->get_latest_ranking( $entity_type, $chart_slug, 100, $offset );
+			$limit_to_fetch = min( 100, $total - $offset );
+			$response = $this->api->get_latest_ranking( $entity_type, $chart_slug, $limit_to_fetch, $offset );
 			if ( is_wp_error( $response ) ) return $response;
 			$items = (array) ( $response['items'] ?? array() );
 			if ( empty( $items ) ) break;
 			$ranking = array_merge( $ranking, $items );
-			$total   = min( 1000, max( $total, absint( $response['page']['total'] ?? 0 ) ) );
 			$offset += count( $items );
-			if ( count( $items ) < 100 ) break;
+			if ( count( $ranking ) >= $total || count( $items ) < $limit_to_fetch ) break;
+		}
+		if ( count( $ranking ) > 100 ) {
+			$ranking = array_slice( $ranking, 0, 100 );
 		}
 		if ( empty( $ranking ) ) return new \WP_Error( 'soundcharts_empty_ranking', __( 'Soundcharts returned no entries for this chart.', 'charts' ) );
 
@@ -146,21 +149,32 @@ class SoundchartsImporter {
 			$primary_artist_id = $artist_ids[0] ?? 0;
 			if ( ! $primary_artist_id ) { $skipped++; continue; }
 
+			// Arabize title & credits by searching references & database links (No Franco)
+			$ar_title   = class_exists( '\Charts\Core\Transliteration' ) ? \Charts\Core\Transliteration::arabize_text( $title, ( $item_type === 'album' ? 'album' : 'track' ) ) : $title;
+			$ar_credits = class_exists( '\Charts\Core\Transliteration' ) ? \Charts\Core\Transliteration::arabize_text( $credits, 'artist' ) : $credits;
+
+			$effective_title   = ( $ar_title && \Charts\Core\Transliteration::has_arabic( $ar_title ) ) ? $ar_title : $title;
+			$effective_credits = ( $ar_credits && \Charts\Core\Transliteration::has_arabic( $ar_credits ) ) ? $ar_credits : $credits;
+			$title_en          = ( $effective_title !== $title ) ? $title : '';
+			$credits_en        = ( $effective_credits !== $credits ) ? $credits : '';
+
 			if ( $item_type === 'album' ) {
 				$existing_item = $wpdb->get_var( $wpdb->prepare(
-					"SELECT id FROM {$wpdb->prefix}charts_albums WHERE normalized_title = %s AND primary_artist_id = %d LIMIT 1",
+					"SELECT id FROM {$wpdb->prefix}charts_albums WHERE (normalized_title = %s OR normalized_title = %s) AND primary_artist_id = %d LIMIT 1",
+					mb_strtolower( $effective_title ),
 					mb_strtolower( $title ),
 					$primary_artist_id
 				) );
-				$item_id = $this->ensure_album( $title, $primary_artist_id, $image );
+				$item_id = $this->ensure_album( $effective_title, $primary_artist_id, $image, $title_en );
 				$item_slug = $item_id ? $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_albums WHERE id = %d", $item_id ) ) : '';
 			} else {
 				$existing_item = $wpdb->get_var( $wpdb->prepare(
-					"SELECT id FROM {$wpdb->prefix}charts_tracks WHERE normalized_title = %s AND primary_artist_id = %d LIMIT 1",
+					"SELECT id FROM {$wpdb->prefix}charts_tracks WHERE (normalized_title = %s OR normalized_title = %s) AND primary_artist_id = %d LIMIT 1",
+					mb_strtolower( $effective_title ),
 					mb_strtolower( $title ),
 					$primary_artist_id
 				) );
-				$item_id = \Charts\Core\EntityManager::ensure_track( $title, $primary_artist_id, array( 'cover_image' => $image ) );
+				$item_id = \Charts\Core\EntityManager::ensure_track( $effective_title, $primary_artist_id, array( 'cover_image' => $image, 'title_en' => $title_en ) );
 				if ( $item_id && count( $artist_ids ) > 1 ) \Charts\Core\EntityManager::link_artists( $item_id, $artist_ids, 'track' );
 				$item_slug = $item_id ? $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_tracks WHERE id = %d", $item_id ) ) : '';
 			}
@@ -176,12 +190,14 @@ class SoundchartsImporter {
 				'raw_payload'    => $item,
 			);
 			$flat = array(
-				'track_name'   => $title,
-				'artist_names' => $credits,
-				'cover_image'  => $image,
-				'item_slug'    => $item_slug,
-				'streams'      => ( strpos( $metric, 'stream' ) !== false ) ? $metric_value : 0,
-				'views_count'  => ( strpos( $metric, 'view' ) !== false ) ? $metric_value : 0,
+				'track_name'      => $effective_title,
+				'track_name_en'   => $title_en,
+				'artist_names'    => $effective_credits,
+				'artist_names_en' => $credits_en,
+				'cover_image'     => $image,
+				'item_slug'       => $item_slug,
+				'streams'         => ( strpos( $metric, 'stream' ) !== false ) ? $metric_value : 0,
+				'views_count'     => ( strpos( $metric, 'view' ) !== false ) ? $metric_value : 0,
 			);
 			$entry_id = $this->flow->upsert_entry( $source_id, $period_id, $item_type, $item_id, $row, $flat );
 			if ( $entry_id ) {
@@ -211,18 +227,28 @@ class SoundchartsImporter {
 		return array( 'saved' => $saved, 'parsed' => count( $ranking ), 'created' => $created, 'run_id' => $run_id, 'source_id' => $source_id, 'period_id' => $period_id );
 	}
 
-	private function ensure_album( $title, $artist_id, $image ) {
+	private function ensure_album( $title, $artist_id, $image, $title_en = '' ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_albums';
 		$normalized = mb_strtolower( trim( $title ) );
 		$id         = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d LIMIT 1", $normalized, $artist_id ) );
+		if ( ! $id && ! empty( $title_en ) ) {
+			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND primary_artist_id = %d LIMIT 1", mb_strtolower( $title_en ), mb_strtolower( $title_en ), $artist_id ) );
+		}
 		if ( $id ) {
-			if ( $image ) $wpdb->update( $table, array( 'cover_image' => $image ), array( 'id' => $id ), array( '%s' ), array( '%d' ) );
+			$updates = array();
+			if ( $image ) $updates['cover_image'] = $image;
+			if ( $title_en ) $updates['title_en'] = $title_en;
+			if ( ! empty( $updates ) ) {
+				$wpdb->update( $table, $updates, array( 'id' => $id ) );
+			}
 			return (int) $id;
 		}
-		$slug = \Charts\Services\Slugger::unique( $table, $title . '-' . $artist_id, 'album-' . $artist_id );
+		$slug_base = ! empty( $title_en ) ? $title_en : $title;
+		$slug = \Charts\Services\Slugger::unique( $table, $slug_base . '-' . $artist_id, 'album-' . $artist_id );
 		$wpdb->insert( $table, array(
 			'title'             => $title,
+			'title_en'          => $title_en ?: null,
 			'normalized_title'  => $normalized,
 			'slug'              => $slug,
 			'primary_artist_id' => $artist_id,

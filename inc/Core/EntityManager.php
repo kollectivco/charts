@@ -148,11 +148,16 @@ class EntityManager {
 			$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(display_name_en) = %s OR normalized_name = %s", mb_strtolower( $name_en ), mb_strtolower( $name_en ) ) );
 		}
 
-		// 4. Match via Translation Dictionary (Arabic -> English translation)
-		if ( ! $existing_id && class_exists( '\Charts\Core\Translation' ) ) {
-			$trans = \Charts\Core\Translation::get( $display_name );
-			if ( $trans && $trans !== $display_name ) {
-				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s OR LOWER(display_name_en) = %s", mb_strtolower( $trans ), mb_strtolower( $trans ) ) );
+		// 4. Match via Translation Dictionary or References / Database Links
+		if ( ! $existing_id && class_exists( '\Charts\Core\Transliteration' ) ) {
+			$ar_name = \Charts\Core\Transliteration::arabize_text( $display_name, 'artist' );
+			if ( $ar_name && $ar_name !== $display_name && \Charts\Core\Transliteration::has_arabic( $ar_name ) ) {
+				$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s OR display_name = %s OR LOWER(display_name_en) = %s", mb_strtolower( $ar_name ), $ar_name, mb_strtolower( $display_name ) ) );
+				if ( empty( $name_en ) && ! \Charts\Core\Transliteration::has_arabic( $display_name ) ) {
+					$name_en = $display_name;
+				}
+				$display_name = $ar_name;
+				$normalized   = mb_strtolower( $display_name );
 			}
 		}
 
@@ -178,7 +183,16 @@ class EntityManager {
 			return $existing_id;
 		}
 
-		// 6. Create new artist record
+		// 6. Create new artist record (Arabize if Latin name found in references)
+		if ( ! \Charts\Core\Transliteration::has_arabic( $display_name ) && class_exists( '\Charts\Core\Transliteration' ) ) {
+			$ar_name = \Charts\Core\Transliteration::arabize_text( $display_name, 'artist' );
+			if ( $ar_name && $ar_name !== $display_name && \Charts\Core\Transliteration::has_arabic( $ar_name ) ) {
+				if ( empty( $name_en ) ) $name_en = $display_name;
+				$display_name = $ar_name;
+				$normalized   = mb_strtolower( $display_name );
+			}
+		}
+
 		self::$last_ensure_was_insert = true;
 		$slug_base = ! empty( $name_en ) ? $name_en : $display_name;
 		$slug = \Charts\Services\Slugger::unique( $table, $slug_base, 'artist' );
@@ -225,6 +239,19 @@ class EntityManager {
 			$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND primary_artist_id = %d", mb_strtolower( $title_en ), mb_strtolower( $title_en ), $artist_id ) );
 		}
 
+		// 4. Match via References / Arabization lookup
+		if ( ! $sql_id && class_exists( '\Charts\Core\Transliteration' ) ) {
+			$ar_title = \Charts\Core\Transliteration::arabize_text( $title, 'track' );
+			if ( $ar_title && $ar_title !== $title && \Charts\Core\Transliteration::has_arabic( $ar_title ) ) {
+				$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (normalized_title = %s OR title = %s) AND primary_artist_id = %d", mb_strtolower( $ar_title ), $ar_title, $artist_id ) );
+				if ( empty( $title_en ) && ! \Charts\Core\Transliteration::has_arabic( $title ) ) {
+					$title_en = $title;
+				}
+				$title      = $ar_title;
+				$normalized = mb_strtolower( $title );
+			}
+		}
+
 		if ( $sql_id ) {
 			$sql_id = (int) $sql_id;
 			$updates = array();
@@ -244,6 +271,16 @@ class EntityManager {
 				$wpdb->update( $table, $updates, array( 'id' => $sql_id ) );
 			}
 			return $sql_id;
+		}
+
+		// 5. Create new track record (Arabize if Latin title found in references)
+		if ( ! \Charts\Core\Transliteration::has_arabic( $title ) && class_exists( '\Charts\Core\Transliteration' ) ) {
+			$ar_title = \Charts\Core\Transliteration::arabize_text( $title, 'track' );
+			if ( $ar_title && $ar_title !== $title && \Charts\Core\Transliteration::has_arabic( $ar_title ) ) {
+				if ( empty( $title_en ) ) $title_en = $title;
+				$title      = $ar_title;
+				$normalized = mb_strtolower( $title );
+			}
 		}
 
 		// 4. Create new track record
