@@ -491,16 +491,51 @@ class Schema {
 			$wpdb->query( "ALTER IGNORE TABLE `$entries` ADD UNIQUE KEY `entry_rank_unique` (`source_id`,`period_id`,`rank_position`)" );
 		}
 
+		// Ensure charts_albums table exists and has all required columns
+		$albums_tbl = $wpdb->prefix . 'charts_albums';
+		$wpdb->query( "CREATE TABLE IF NOT EXISTS `$albums_tbl` (
+			`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			`title` VARCHAR(255) NOT NULL,
+			`title_en` VARCHAR(255) DEFAULT NULL,
+			`normalized_title` VARCHAR(255) NOT NULL,
+			`slug` VARCHAR(255) NOT NULL,
+			`spotify_id` VARCHAR(100) DEFAULT NULL,
+			`cover_image` TEXT DEFAULT NULL,
+			`primary_artist_id` BIGINT(20) UNSIGNED DEFAULT NULL,
+			`release_date` DATE DEFAULT NULL,
+			`metadata_json` LONGTEXT DEFAULT NULL,
+			`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `slug` (`slug`),
+			KEY `spotify_id` (`spotify_id`),
+			KEY `primary_artist_id` (`primary_artist_id`),
+			KEY `normalized_title` (`normalized_title`)
+		) " . $wpdb->get_charset_collate() . ";" );
+
+		$album_cols = $wpdb->get_col( "DESCRIBE `$albums_tbl`", 0 );
+		$needed_album_cols = array(
+			'title_en'          => "VARCHAR(255) DEFAULT NULL",
+			'spotify_id'        => "VARCHAR(100) DEFAULT NULL",
+			'cover_image'       => "TEXT DEFAULT NULL",
+			'primary_artist_id' => "BIGINT(20) UNSIGNED DEFAULT NULL",
+			'release_date'      => "DATE DEFAULT NULL",
+			'metadata_json'     => "LONGTEXT DEFAULT NULL",
+		);
+		foreach ( $needed_album_cols as $c => $def ) {
+			if ( ! in_array( $c, $album_cols, true ) ) {
+				$wpdb->query( "ALTER TABLE `$albums_tbl` ADD COLUMN `$c` $def" );
+			}
+		}
+
 		// Also add youtube_id and Franko columns to relevant tables
-		foreach ( array( $wpdb->prefix . 'charts_tracks', $wpdb->prefix . 'charts_videos' ) as $tbl ) {
+		foreach ( array( $wpdb->prefix . 'charts_tracks', $wpdb->prefix . 'charts_videos', $wpdb->prefix . 'charts_albums' ) as $tbl ) {
 			$cols = $wpdb->get_col( "DESCRIBE $tbl", 0 );
-			if ( ! in_array( 'youtube_id', $cols, true ) ) {
+			if ( ! in_array( 'youtube_id', $cols, true ) && strpos( $tbl, 'albums' ) === false ) {
 				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `youtube_id` VARCHAR(100) DEFAULT NULL" );
 			}
-			if ( strpos($tbl, 'tracks') !== false || strpos($tbl, 'videos') !== false || strpos($tbl, 'albums') !== false ) {
-				if ( ! in_array( 'title_en', $cols, true ) ) {
-					$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_en` VARCHAR(255) DEFAULT NULL" );
-				}
+			if ( ! in_array( 'title_en', $cols, true ) ) {
+				$wpdb->query( "ALTER TABLE `$tbl` ADD COLUMN `title_en` VARCHAR(255) DEFAULT NULL" );
 			}
 		}
 		

@@ -594,13 +594,13 @@ class Bootstrap {
 			$data['image'] = esc_url_raw( wp_unslash( $_POST['image'] ?? '' ) ) ?: null;
 		} elseif ( $type === 'album' ) {
 			$artist_id = absint( $_POST['primary_artist_id'] ?? 0 );
-			if ( ! $artist_id || ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) ) ) {
-				return new \WP_Error( 'primary_artist_required', __( 'Choose a valid primary artist.', 'charts' ) );
+			if ( $artist_id && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) ) ) {
+				$artist_id = 0;
 			}
 			$data['title'] = $name;
 			$data['title_en'] = sanitize_text_field( wp_unslash( $_POST['name_en'] ?? '' ) ) ?: null;
 			$data['normalized_title'] = \Charts\Services\Normalizer::normalize_title( $name );
-			$data['primary_artist_id'] = $artist_id;
+			$data['primary_artist_id'] = $artist_id ?: null;
 			$raw_spotify = sanitize_text_field( wp_unslash( $_POST['spotify_id'] ?? '' ) );
 			$clean_spotify = self::normalize_matching_identifier( $raw_spotify, 'spotify' ) ?: ( $raw_spotify ?: null );
 			$data['spotify_id'] = $clean_spotify;
@@ -632,14 +632,46 @@ class Bootstrap {
 			}
 		}
 
+		// Self-healing: verify table and columns exist in active database
+		$cols = $wpdb->get_col( "DESCRIBE `$table`", 0 );
+		if ( empty( $cols ) ) {
+			$schema = new \Charts\Database\Schema();
+			$schema->install();
+			$cols = $wpdb->get_col( "DESCRIBE `$table`", 0 );
+		}
+
+		// Ensure title_en exists in table if saving title_en
+		if ( isset( $data['title_en'] ) && ! in_array( 'title_en', $cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table` ADD COLUMN `title_en` VARCHAR(255) DEFAULT NULL" );
+			$cols[] = 'title_en';
+		}
+
+		// Ensure release_date exists if saving release_date
+		if ( isset( $data['release_date'] ) && ! in_array( 'release_date', $cols, true ) ) {
+			$wpdb->query( "ALTER TABLE `$table` ADD COLUMN `release_date` DATE DEFAULT NULL" );
+			$cols[] = 'release_date';
+		}
+
+		// Filter $data to columns that actually exist in the table
+		$safe_data = array();
+		foreach ( $data as $k => $v ) {
+			if ( in_array( $k, $cols, true ) ) {
+				$safe_data[ $k ] = $v;
+			}
+		}
+
 		if ( $existing ) {
-			$saved = $wpdb->update( $table, $data, array( 'id' => $id ) );
+			$saved = $wpdb->update( $table, $safe_data, array( 'id' => $id ) );
 		} else {
-			$data['created_at'] = current_time( 'mysql' );
-			$saved = $wpdb->insert( $table, $data );
+			$safe_data['created_at'] = current_time( 'mysql' );
+			$saved = $wpdb->insert( $table, $safe_data );
 			$id = (int) $wpdb->insert_id;
 		}
-		if ( $saved === false || ! $id ) return new \WP_Error( 'entity_save_failed', __( 'The record could not be saved. Check that the slug is unique.', 'charts' ) );
+
+		if ( $saved === false ) {
+			$db_err = ! empty( $wpdb->last_error ) ? ' (' . $wpdb->last_error . ')' : '';
+			return new \WP_Error( 'entity_save_failed', sprintf( __( 'The record could not be saved%s. Check that the slug is unique.', 'charts' ), $db_err ) );
+		}
 
 		// If Spotify ID was set for album, auto-enrich cover and tracks
 		if ( $type === 'album' && ! empty( $data['spotify_id'] ) ) {
