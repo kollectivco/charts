@@ -231,7 +231,9 @@ class ImportFlow {
 			'views_count'      => $views_count,
 			// Flat display columns — no JOIN needed on frontend
 			'track_name'       => $track_name,
+			'track_name_en'    => ! empty( $flat['track_name_en'] ) ? $flat['track_name_en'] : ( $row['track_name_en'] ?? ( $row['english_title'] ?? null ) ),
 			'artist_names'     => $artist_names,
+			'artist_names_en'  => ! empty( $flat['artist_names_en'] ) ? $flat['artist_names_en'] : ( $row['artist_names_en'] ?? ( $row['english_artist'] ?? null ) ),
 			'cover_image'      => $cover_image ?: null,
 			'item_slug'        => $item_slug,
 			'spotify_id'       => $spotify_id ?: null,

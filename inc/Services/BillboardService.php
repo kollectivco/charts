@@ -28,6 +28,7 @@ class BillboardService {
 			8  => array( 'label' => 'Top 50 Indie Arabic', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-indie-arabic', 'source_path' => 'top-50-indie-arabic' ),
 			9  => array( 'label' => 'Top 50 Shelat', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-shelat', 'source_path' => 'top-50-shelat' ),
 			10 => array( 'label' => 'Top 50 Mahraganat', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-mahraganat', 'source_path' => 'top-50-mahraganat' ),
+			11 => array( 'label' => 'Top 50 TikTok', 'item_type' => 'track', 'endpoint' => 'songs-charts', 'target_slug' => 'top-50-tiktok', 'source_path' => 'top-50-tiktok' ),
 		);
 	}
 
@@ -127,7 +128,7 @@ class BillboardService {
 				if ( $name === '' ) continue;
 				$image_name = $item['artist_details']['image'] ?? $item['image'] ?? '';
 				if ( $image_name === '' && ! empty( $item['english_name'] ) ) $image_name = $item['english_name'] . '.jpg';
-				$image_url = $image_name ? self::sideload_image( self::ARTIST_IMG_BASE . ltrim( $image_name, '/' ) ) : '';
+				$image_url = $image_name ? ( self::ARTIST_IMG_BASE . ltrim( $image_name, '/' ) ) : '';
 				$stats = $item['artist_stats'] ?? array();
 				$items[] = array(
 					'item_type' => 'artist',
@@ -169,10 +170,10 @@ class BillboardService {
 				$artists = \Charts\Services\Normalizer::split_artists( $primary_artist );
 			}
 
-			// Image URL
+			// Image URL (Fast Cloudflare CDN direct link)
 			$image_url = '';
 			if ( ! empty( $item['image'] ) ) {
-				$image_url = self::sideload_image( self::IMG_BASE . ltrim( $item['image'], '/' ) );
+				$image_url = self::IMG_BASE . ltrim( $item['image'], '/' );
 			}
 
 			// Stats
@@ -314,6 +315,9 @@ class BillboardService {
 		$import_flow = new ImportFlow();
 		$period_id = $import_flow->ensure_period( 'weekly', $published_at );
 
+		// Clean slate: wipe existing entries for this period so the new sync doesn't mix old data
+		$import_flow->wipe_period( $source_id, $period_id );
+
 		// 3. Process entries
 		$imported_count = 0;
 		foreach ( $items as $row ) {
@@ -327,7 +331,16 @@ class BillboardService {
 					$artist_image = $wpdb->get_var( $wpdb->prepare( "SELECT image FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) );
 					if ( empty( $artist_image ) ) $wpdb->update( $wpdb->prefix . 'charts_artists', array( 'image' => $row['image'] ), array( 'id' => $artist_id ) );
 				}
-				$flat = array( 'track_name' => $row['title'], 'artist_names' => $row['title'], 'cover_image' => $row['image'] );
+				$artist_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_artists WHERE id = %d", $artist_id ) );
+				$flat = array(
+					'track_name'      => $row['title'],
+					'track_name_en'   => $row['english_title'] ?? '',
+					'artist_names'    => $row['title'],
+					'artist_names_en' => $row['english_artist'] ?? '',
+					'cover_image'     => $row['image'],
+					'item_slug'       => $artist_slug,
+					'streams'         => $row['streams'],
+				);
 				$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'artist', $artist_id, $row, $flat );
 				if ( $entry_id ) $imported_count++;
 				continue;
@@ -376,13 +389,18 @@ class BillboardService {
 
 			if ( ! $track_id ) continue;
 
+			$track_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_tracks WHERE id = %d", $track_id ) );
+
 			$flat = array(
-				'track_name'   => $row['title'],
-				'artist_names' => implode( ', ', $row['artists'] ),
-				'cover_image'  => $row['image'],
-				'spotify_id'   => null,
-				'youtube_id'   => null,
-				'streams'      => $row['streams'],
+				'track_name'      => $row['title'],
+				'track_name_en'   => $row['english_title'] ?? '',
+				'artist_names'    => implode( ', ', $row['artists'] ),
+				'artist_names_en' => $row['english_artist'] ?? '',
+				'cover_image'     => $row['image'],
+				'item_slug'       => $track_slug,
+				'spotify_id'      => null,
+				'youtube_id'      => null,
+				'streams'         => $row['streams'],
 			);
 
 			$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'track', $track_id, $row, $flat );

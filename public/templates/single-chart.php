@@ -163,16 +163,21 @@ if ( ! $is_mobile ) {
 			</header>
 
 			<?php
-			// Detect Artist-Chart Mode
+			// Detect Chart Item Mode
 			$is_artist_chart = ( 
 				($definition->item_type ?? '') === 'artist' || 
 				strpos(strtolower($definition->chart_type ?? ''), 'artist') !== false || 
 				strpos(strtolower($definition_slug), 'artist') !== false 
 			);
+			$is_album_chart = ( 
+				($definition->item_type ?? '') === 'album' || 
+				strpos(strtolower($definition->chart_type ?? ''), 'album') !== false || 
+				strpos(strtolower($definition_slug), 'album') !== false 
+			);
 			?>
 
-			<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0 40px; margin-bottom: 100px;">
-				<!-- #1 FEATURED TRACK -->
+			<div class="kc-slider-container" style="max-width: 1400px; margin: 0 auto; padding: 0; margin-bottom: 60px;">
+				<!-- #1 FEATURED TRACK / ALBUM / ARTIST -->
 				<?php if ( ! empty( $entries[0] ) ) : $top = $entries[0]; 
 					$chart_color = $definition->accent_color ?: 'var(--k-accent)';
 				?>
@@ -197,7 +202,7 @@ if ( ! $is_mobile ) {
 								<?php endif; ?>
 							</div>
 							<?php 
-                                // Rule: In artist mode, main title is Artist Name. In song mode, it's Track Name.
+                                // Rule: In artist mode, main title is Artist Name. In song/album mode, it's Track/Album Name.
                                 $display_title = $is_artist_chart ? ($top_artist ?: $top_track) : $top_track;
                                 
                                 // Auto-healing for stale "Unknown" data
@@ -230,7 +235,7 @@ if ( ! $is_mobile ) {
 						<tr>
 							<th class="kc-col-rank"><?php echo \Charts\Core\Translation::get('Rank'); ?></th>
 							<th class="kc-col-movement"><?php echo \Charts\Core\Translation::get('Movement'); ?></th>
-							<th class="kc-col-main"><?php echo \Charts\Core\Translation::get('Artist'); ?></th>
+							<th class="kc-col-main"><?php echo $is_artist_chart ? \Charts\Core\Translation::get('Artist') : ( $is_album_chart ? 'الألبوم' : \Charts\Core\Translation::get('Track') ); ?></th>
 							<th class="kc-col-prev-rank"><?php echo \Charts\Core\Translation::get('Previous Rank'); ?></th>
 							<th class="kc-col-peak-rank">أعلى مركز</th>
 							<th class="kc-col-weeks"><?php echo \Charts\Core\Translation::get('wks on chart'); ?></th>
@@ -316,8 +321,8 @@ if ( ! $is_mobile ) {
 												<span><?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($e->weeks_on_chart ?: 1)); ?></span>
 											</div>
 											<div class="kc-details-item kc-details-cta">
-												<?php $label = apply_filters('kcharts_more_details_label', \Charts\Core\Settings::get('label_breakdown', \Charts\Core\Translation::get('Details') . ' أكتر') . ' &larr;'); ?>
-												<a href="<?php echo home_url('/charts/' . ( $e->item_type ?: 'track' ) . '/' . $e->item_slug . '/'); ?>" class="kc-view-all"><?php echo $label; ?></a>
+												<?php $resolved_type = ! empty( $e->item_type ) ? $e->item_type : ( $is_album_chart ? 'album' : ( $is_artist_chart ? 'artist' : 'track' ) ); ?>
+												<a href="<?php echo home_url('/charts/' . $resolved_type . '/' . $e->item_slug . '/'); ?>" class="kc-view-all"><?php echo $label; ?></a>
 											</div>
 										</div>
 									</div>
