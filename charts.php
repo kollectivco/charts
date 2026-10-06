@@ -3,7 +3,7 @@
  * Plugin Name: Kontentainment Charts
  * Plugin URI: https://github.com/kollectivco/charts
  * Description: Music charts intelligence platform.
- * Version: 3.4.41
+ * Version: 3.4.42
  * Author: Kollectiv
  * Author URI: https://kollectiv.net
  * Update URI: https://github.com/kollectivco/charts
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'CHARTS_VERSION', '3.4.41' );
+define( 'CHARTS_VERSION', '3.4.42' );
 define( 'CHARTS_PLUGIN_SLUG', 'kontentainment-charts' ); // Canonical Slug
 define( 'CHARTS_PLUGIN_FILE', __FILE__ );
 define( 'CHARTS_PLUGIN_BASENAME', 'kontentainment-charts/charts.php' ); // Hardcoded for identity stability
@@ -348,6 +348,11 @@ final class Charts {
 		// Initialize Admin if we are in admin
 		if ( is_admin() ) {
 			\Charts\Admin\Bootstrap::init();
+		} else {
+			// Front-end Admin Bar hooks for administrators
+			add_action( 'admin_bar_menu', array( \Charts\Admin\Bootstrap::class, 'register_admin_bar_menu' ), 80 );
+			add_action( 'wp_head', array( \Charts\Admin\Bootstrap::class, 'admin_bar_styles' ) );
+			add_action( 'wp_enqueue_scripts', array( \Charts\Admin\Bootstrap::class, 'enqueue_admin_bar_assets' ) );
 		}
 
 		// Initialize Frontend

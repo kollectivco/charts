@@ -50,6 +50,12 @@ class Bootstrap {
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
+
+		// Admin Bar Dropdown Menu Integration
+		add_action( 'admin_bar_menu', array( self::class, 'register_admin_bar_menu' ), 80 );
+		add_action( 'admin_head', array( self::class, 'admin_bar_styles' ) );
+		add_action( 'wp_head', array( self::class, 'admin_bar_styles' ) );
+		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue_admin_bar_assets' ) );
 	}
 
 	/**
@@ -773,6 +779,260 @@ class Bootstrap {
 				$m['slug'],
 				array( self::class, $m['callback'] )
 			);
+		}
+	}
+
+	/**
+	 * Register the Charts dropdown menu in the WordPress Admin Top Bar.
+	 *
+	 * @param \WP_Admin_Bar $wp_admin_bar
+	 */
+	public static function register_admin_bar_menu( $wp_admin_bar ) {
+		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Root Node
+		$wp_admin_bar->add_node( array(
+			'id'    => 'charts-admin-bar',
+			'title' => '<span class="ab-icon"></span><span class="ab-label">' . esc_html__( 'Charts', 'charts' ) . '</span>',
+			'href'  => admin_url( 'admin.php?page=charts-dashboard' ),
+			'meta'  => array(
+				'title' => __( 'Charts Intelligence Platform', 'charts' ),
+			),
+		) );
+
+		// 1. Overview Dashboard
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-dashboard',
+			'parent' => 'charts-admin-bar',
+			'title'  => '📊 ' . esc_html__( 'Overview Dashboard', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-dashboard' ),
+		) );
+
+		// 2. Add New Chart
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-add-chart',
+			'parent' => 'charts-admin-bar',
+			'title'  => '➕ ' . esc_html__( 'Add New Chart', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-definitions&action=edit' ),
+		) );
+
+		// 3. Import Center
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-import',
+			'parent' => 'charts-admin-bar',
+			'title'  => '📥 ' . esc_html__( 'Import Center', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-import' ),
+		) );
+
+		// Import Center Sub-actions
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-import-yt',
+			'parent' => 'charts-ab-import',
+			'title'  => '▶️ ' . esc_html__( 'YouTube Egypt Charts', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-import&source=youtube' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-import-sp',
+			'parent' => 'charts-ab-import',
+			'title'  => '🟢 ' . esc_html__( 'Spotify Egypt & Playlists', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-import&source=spotify' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-import-bb',
+			'parent' => 'charts-ab-import',
+			'title'  => '🅱️ ' . esc_html__( 'Billboard Arabia API', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-import&source=billboard' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-import-sc',
+			'parent' => 'charts-ab-import',
+			'title'  => '📈 ' . esc_html__( 'Soundcharts Live API', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-import&source=soundcharts' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-import-history',
+			'parent' => 'charts-ab-import',
+			'title'  => '📜 ' . esc_html__( 'Import Runs History', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-imports' ),
+		) );
+
+		// 4. Matching Center
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-matching',
+			'parent' => 'charts-admin-bar',
+			'title'  => '⚡ ' . esc_html__( 'Matching Center', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-matching' ),
+		) );
+
+		// 5. All Charts Library
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-definitions',
+			'parent' => 'charts-admin-bar',
+			'title'  => '📋 ' . esc_html__( 'All Charts Library', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-definitions' ),
+		) );
+
+		// 6. Sources & Feeds
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-sources',
+			'parent' => 'charts-admin-bar',
+			'title'  => '🌐 ' . esc_html__( 'Sources & Feeds', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-sources' ),
+		) );
+
+		// 7. Clip-Track Linker
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-clip-linker',
+			'parent' => 'charts-admin-bar',
+			'title'  => '🎬 ' . esc_html__( 'Clip-Track Linker', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-clip-track-linker' ),
+		) );
+
+		// 8. Entities Submenu
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-entities',
+			'parent' => 'charts-admin-bar',
+			'title'  => '📁 ' . esc_html__( 'Music Library', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-tracks' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-artists',
+			'parent' => 'charts-ab-entities',
+			'title'  => '🎤 ' . esc_html__( 'Artists', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-artists' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-tracks',
+			'parent' => 'charts-ab-entities',
+			'title'  => '🎵 ' . esc_html__( 'Tracks', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-tracks' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-clips',
+			'parent' => 'charts-ab-entities',
+			'title'  => '🎥 ' . esc_html__( 'Clips & Videos', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-clips' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-albums',
+			'parent' => 'charts-ab-entities',
+			'title'  => '💿 ' . esc_html__( 'Albums', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-albums' ),
+		) );
+
+		// 9. Tools Submenu
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-tools',
+			'parent' => 'charts-admin-bar',
+			'title'  => '🛠️ ' . esc_html__( 'Charts Tools', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-intelligence' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-translations',
+			'parent' => 'charts-ab-tools',
+			'title'  => '🔤 ' . esc_html__( 'Quick Translation', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-translations' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-name-sync',
+			'parent' => 'charts-ab-tools',
+			'title'  => '🔄 ' . esc_html__( 'Name Sync', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-name-sync' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-intelligence',
+			'parent' => 'charts-ab-tools',
+			'title'  => '🧠 ' . esc_html__( 'Intelligence Hub', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-intelligence' ),
+		) );
+
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-performance',
+			'parent' => 'charts-ab-tools',
+			'title'  => '⚡ ' . esc_html__( 'Performance & Cache', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-performance' ),
+		) );
+
+		// 10. Settings
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-settings',
+			'parent' => 'charts-admin-bar',
+			'title'  => '⚙️ ' . esc_html__( 'Settings', 'charts' ),
+			'href'   => admin_url( 'admin.php?page=charts-settings' ),
+		) );
+
+		// 11. View Live Charts
+		$wp_admin_bar->add_node( array(
+			'id'     => 'charts-ab-view-public',
+			'parent' => 'charts-admin-bar',
+			'title'  => '🚀 ' . esc_html__( 'View Live Charts', 'charts' ),
+			'href'   => home_url( '/charts/' ),
+			'meta'   => array( 'target' => '_blank' ),
+		) );
+	}
+
+	/**
+	 * Output custom CSS for the Admin Bar icon & items.
+	 */
+	public static function admin_bar_styles() {
+		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<style type="text/css">
+			#wpadminbar #wp-admin-bar-charts-admin-bar .ab-icon:before {
+				content: "\f185" !important;
+				top: 2px !important;
+				font-family: dashicons !important;
+			}
+			#wpadminbar #wp-admin-bar-charts-admin-bar > .ab-item {
+				font-weight: 600;
+			}
+			#wpadminbar #wp-admin-bar-charts-ab-add-chart > .ab-item {
+				color: #818cf8 !important;
+				font-weight: 700 !important;
+			}
+			#wpadminbar #wp-admin-bar-charts-ab-add-chart:hover > .ab-item {
+				color: #a5b4fc !important;
+				background-color: #2e1065 !important;
+			}
+			#wpadminbar #wp-admin-bar-charts-ab-import > .ab-item,
+			#wpadminbar #wp-admin-bar-charts-ab-matching > .ab-item {
+				font-weight: 600 !important;
+			}
+			#wpadminbar #wp-admin-bar-charts-ab-view-public > .ab-item {
+				color: #34d399 !important;
+				font-weight: 600 !important;
+				border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+				margin-top: 4px !important;
+				padding-top: 4px !important;
+			}
+			#wpadminbar #wp-admin-bar-charts-ab-view-public:hover > .ab-item {
+				color: #6ee7b7 !important;
+			}
+		</style>
+		<?php
+	}
+
+	/**
+	 * Ensure dashicons are enqueued on frontend when admin bar is active.
+	 */
+	public static function enqueue_admin_bar_assets() {
+		if ( is_admin_bar_showing() && current_user_can( 'manage_options' ) ) {
+			wp_enqueue_style( 'dashicons' );
 		}
 	}
 
