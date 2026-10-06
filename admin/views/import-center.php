@@ -162,7 +162,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									</div>
 									<div class="platform-text">
 										<strong>YouTube</strong>
-										<span>Channel & Video CSV</span>
+										<span>Live Charts & CSV</span>
 									</div>
 									<div class="platform-check">
 										<span class="dashicons dashicons-yes-alt"></span>
@@ -269,6 +269,24 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									</select>
 								</div>
 								<p class="billboard-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;color:#64748b;"><?php esc_html_e( 'Fetching directly from Billboard Arabia API.', 'charts' ); ?></p>
+							</div>
+						</div>
+
+						<div class="youtube-import-controls" style="display:none;">
+							<?php $yt_catalog = \Charts\Services\YouTubeChartsService::get_chart_catalog(); ?>
+							<div class="form-group">
+								<label class="premium-label" for="youtube_chart_key"><?php esc_html_e( 'Official YouTube Chart', 'charts' ); ?></label>
+								<select name="youtube_chart_key" id="youtube_chart_key" class="premium-select">
+									<?php foreach ( $yt_catalog as $yt_k => $yt_c ) : ?>
+										<option value="<?php echo esc_attr( $yt_k ); ?>" data-item-type="<?php echo esc_attr( $yt_c['item_type'] ); ?>" data-frequency="<?php echo esc_attr( $yt_c['frequency'] ); ?>" data-target-slug="<?php echo esc_attr( $yt_c['target_slug'] ); ?>" data-url="<?php echo esc_attr( $yt_c['url'] ); ?>">
+											<?php echo esc_html( $yt_c['label'] ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p class="youtube-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;color:#ef4444;font-weight:600;">
+									<span class="dashicons dashicons-video-alt3" style="font-size:16px;vertical-align:middle;margin-right:4px;"></span>
+									<span id="youtube-selected-link"><?php echo esc_html( $yt_catalog['top-videos-daily']['url'] ); ?></span>
+								</p>
 							</div>
 						</div>
 						<div class="file-nexus-zone" id="drop-zone">

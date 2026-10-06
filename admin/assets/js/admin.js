@@ -170,18 +170,23 @@ jQuery(document).ready(function($) {
         const updateSourceInterface = () => {
             const soundcharts = isSoundcharts();
             const billboard = $('[name="platform"]:checked').val() === 'billboard';
+            const youtube = $('[name="platform"]:checked').val() === 'youtube';
             
             $soundchartsControls.toggle(soundcharts);
             $('.billboard-import-controls').toggle(billboard);
-            $dropZone.toggle(!soundcharts && !billboard);
+            $('.youtube-import-controls').toggle(youtube);
+            $dropZone.toggle(!soundcharts && !billboard && !youtube);
             
-            $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : (billboard ? 'Configure Billboard API' : 'Upload Chart Data'));
-            $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : (billboard ? 'Select the target Billboard chart and week to fetch directly.' : 'Provide the raw export file for intelligence parsing.'));
+            $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : (billboard ? 'Configure Billboard API' : (youtube ? 'Select YouTube Official Chart' : 'Upload Chart Data')));
+            $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : (billboard ? 'Select the target Billboard chart and week to fetch directly.' : (youtube ? 'Select the official YouTube charts list to stream directly.' : 'Provide the raw export file for intelligence parsing.')));
             
-            if (billboard) {
+            if (billboard || youtube) {
                 $countrySelect.prop('required', false);
-                if ($('#billboard_chart_id').val() && !$('#billboard_week_id').val()) {
+                if (billboard && $('#billboard_chart_id').val() && !$('#billboard_week_id').val()) {
                     $('#billboard_chart_id').trigger('change');
+                }
+                if (youtube) {
+                    $('#youtube_chart_key').trigger('change');
                 }
             } else {
                 $countrySelect.prop('required', true);
@@ -219,7 +224,8 @@ jQuery(document).ready(function($) {
         // Readiness Engine
         const checkReadiness = () => {
             const billboard = $('[name="platform"]:checked').val() === 'billboard';
-            const hasSource = billboard ? true : ($countrySelect.val() !== '');
+            const youtube = $('[name="platform"]:checked').val() === 'youtube';
+            const hasSource = (billboard || youtube) ? true : ($countrySelect.val() !== '');
             const hasPlatform = $('[name="platform"]:checked').length > 0;
             const hasFile = $fileInput[0].files.length > 0;
             const hasTarget = $chartSelect.val() !== '';
@@ -229,6 +235,8 @@ jQuery(document).ready(function($) {
                 sourceReady = Boolean($soundchartsPlatform.val() && $soundchartsChart.val());
             } else if (billboard) {
                 sourceReady = Boolean($('#billboard_chart_id').val() && $('#billboard_week_id').val());
+            } else if (youtube) {
+                sourceReady = Boolean($('#youtube_chart_key').val());
             } else {
                 sourceReady = hasFile;
             }
@@ -245,7 +253,7 @@ jQuery(document).ready(function($) {
 
             // Update active stages visually
             if (hasSource && hasPlatform) $('.import-stage[data-step="2"]').addClass('active');
-            if (hasFile || (isSoundcharts() && $soundchartsChart.val()) || (billboard && $('#billboard_week_id').val())) {
+            if (hasFile || (isSoundcharts() && $soundchartsChart.val()) || (billboard && $('#billboard_week_id').val()) || (youtube && $('#youtube_chart_key').val())) {
                 $('.import-stage[data-step="3"]').addClass('active');
             } else {
                 $('.import-stage[data-step="3"]').removeClass('active');
@@ -295,9 +303,11 @@ jQuery(document).ready(function($) {
             const platform = isSoundcharts() ? ($soundchartsPlatform.val() || '') : selectedSource();
             const country = ($countrySelect.val() || '').toLowerCase();
             const isBb = platform === 'billboard';
+            const isYt = platform === 'youtube';
             const bbItemType = isBb ? ($('#billboard_chart_id').find(':selected').data('item-type') || '') : '';
-            const requiredType = isSoundcharts() ? ($soundchartsType.val() === 'album' ? 'album' : 'track') : (isBb ? bbItemType : '');
-            const requiredFrequency = isSoundcharts() ? ($soundchartsChart.find(':selected').data('frequency') || '') : '';
+            const ytItemType = isYt ? ($('#youtube_chart_key').find(':selected').data('item-type') || '') : '';
+            const requiredType = isSoundcharts() ? ($soundchartsType.val() === 'album' ? 'album' : 'track') : (isBb ? bbItemType : (isYt ? ytItemType : ''));
+            const requiredFrequency = isSoundcharts() ? ($soundchartsChart.find(':selected').data('frequency') || '') : (isYt ? ($('#youtube_chart_key').find(':selected').data('frequency') || '') : '');
             let selectedCompatible = false;
             $chartSelect.find('option').each(function() {
                 const $option = $(this);
@@ -308,7 +318,8 @@ jQuery(document).ready(function($) {
                 const chartFrequency = String($option.data('frequency') || 'weekly').toLowerCase();
                 const compatible = (chartPlatform === 'all' || chartPlatform === platform)
                     && (!isSoundcharts() || (chartCountry === country && chartType === requiredType && (!requiredFrequency || chartFrequency === requiredFrequency)))
-                    && (!isBb || !requiredType || chartType === requiredType);
+                    && (!isBb || !requiredType || chartType === requiredType)
+                    && (!isYt || !requiredType || chartType === requiredType);
                 $option.prop('disabled', !compatible).toggle(compatible);
                 if (compatible && $option.is(':selected')) selectedCompatible = true;
             });
@@ -333,6 +344,18 @@ jQuery(document).ready(function($) {
                     $chartSelect.find('option:not(:disabled)').each(function() {
                         const optSlug = $(this).data('slug') || '';
                         if (optSlug === expectedSlug) {
+                            $chartSelect.val($(this).val()).trigger('change');
+                            return false;
+                        }
+                    });
+                }
+            }
+            if (isYt && !$chartSelect.val()) {
+                const targetSlug = $('#youtube_chart_key').find(':selected').data('target-slug') || '';
+                if (targetSlug) {
+                    $chartSelect.find('option:not(:disabled)').each(function() {
+                        const optSlug = $(this).data('slug') || '';
+                        if (optSlug === targetSlug) {
                             $chartSelect.val($(this).val()).trigger('change');
                             return false;
                         }
@@ -439,6 +462,16 @@ jQuery(document).ready(function($) {
         });
 
         $('#billboard_week_id').on('change', checkReadiness);
+
+        $('#youtube_chart_key').on('change', function() {
+            const $opt = $(this).find(':selected');
+            const url = $opt.data('url') || '';
+            if (url) {
+                $('#youtube-selected-link').text(url);
+            }
+            filterChartsByPlatform();
+            checkReadiness();
+        });
 
         $form.on('submit', function() {
             $submitBtn.addClass('processing').prop('disabled', true);

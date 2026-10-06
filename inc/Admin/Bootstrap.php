@@ -45,6 +45,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_billboard_download_csv', array( self::class, 'handle_billboard_download_csv' ) );
 		add_action( 'wp_ajax_charts_billboard_get_weeks', array( self::class, 'handle_billboard_get_weeks' ) );
 		add_action( 'wp_ajax_charts_soundcharts_catalog', array( self::class, 'handle_soundcharts_catalog' ) );
+		add_action( 'wp_ajax_charts_youtube_sync', array( self::class, 'handle_youtube_sync' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -941,6 +942,18 @@ class Bootstrap {
 			}
 			\Charts\Core\Notify::success( sprintf( __( 'Billboard API imported %d entries.', 'charts' ), $result['imported_count'] ), __( 'Billboard Sync Complete', 'charts' ) );
 			return array( 'run_id' => $result['run_id'] ?? time() );
+		}
+
+		if ( $platform === 'youtube' && empty( $_FILES['import_file']['tmp_name'] ) ) {
+			// YouTube Live Sync
+			$yt_chart_key = sanitize_text_field( $_POST['youtube_chart_key'] ?? 'top-songs-weekly' );
+			$result = \Charts\Services\YouTubeChartsService::sync_to_chart( $yt_chart_key, $chart_id );
+			if ( is_wp_error( $result ) ) {
+				\Charts\Core\Notify::error( $result->get_error_message(), __( 'YouTube Sync Failed', 'charts' ) );
+				return false;
+			}
+			\Charts\Core\Notify::success( sprintf( __( 'YouTube Charts imported %d entries directly from YouTube live streams.', 'charts' ), $result['imported_count'] ), __( 'YouTube Sync Complete', 'charts' ) );
+			return array( 'run_id' => time() );
 		}
 		
 		if ( empty( $_FILES['import_file']['tmp_name'] ) ) {
@@ -3604,6 +3617,35 @@ class Bootstrap {
 		$week_id = intval( $_GET['week_id'] ?? 0 );
 		$billboard_chart_id = absint( $_GET['chart_id'] ?? 1 );
 		\Charts\Services\BillboardService::download_csv( $week_id, $billboard_chart_id );
+	}
+
+	/**
+	 * AJAX: Direct 1-Click Sync YouTube Chart to Database
+	 */
+	public static function handle_youtube_sync() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		@set_time_limit(300);
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+
+		$chart_key = sanitize_text_field( $_POST['youtube_chart_key'] ?? 'top-songs-weekly' );
+		$chart_id  = intval( $_POST['chart_id'] ?? 0 );
+
+		$result = \Charts\Services\YouTubeChartsService::sync_to_chart( $chart_key, $chart_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array(
+			'message' => sprintf(
+				$result['item_type'] === 'artist' ? __( 'تم استيراد %d فنان بنجاح من قوائم YouTube الرسمية.', 'charts' ) : __( 'تم استيراد %d عنصر بنجاح من قوائم YouTube الرسمية.', 'charts' ),
+				$result['imported_count']
+			),
+			'data'    => $result,
+		) );
 	}
 
 }
