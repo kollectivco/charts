@@ -112,12 +112,33 @@ $site_title = get_bloginfo('name');
                         </div>
                         
                         <div style="text-align:right; margin-right: 12px;">
-                            <?php if ( $e->rank_position < $e->previous_rank ) : ?>
-                                <span style="color:#2ecc71; font-size:10px; font-weight:900;">▲ <?php echo ($e->previous_rank - $e->rank_position); ?></span>
-                            <?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
-                                <span style="color:#e74c3c; font-size:10px; font-weight:900;">▼ <?php echo ($e->rank_position - $e->previous_rank); ?></span>
-                            <?php elseif ( ! empty($e->previous_rank) && $e->previous_rank == 0 ) : ?>
+                            <?php 
+                            $dir = $e->movement_direction ?: '';
+                            $val = intval( $e->movement_value ?: 0 );
+                            $prev = ( isset($e->previous_rank) && $e->previous_rank !== null && $e->previous_rank !== '' ) ? intval($e->previous_rank) : 0;
+                            if ( empty($val) && $prev > 0 ) {
+                                $val = abs($e->rank_position - $prev);
+                            }
+                            if ( empty($dir) ) {
+                                if ( $prev > 0 ) {
+                                    if ( $e->rank_position < $prev ) $dir = 'up';
+                                    elseif ( $e->rank_position > $prev ) $dir = 'down';
+                                    else $dir = 'same';
+                                } else {
+                                    $dir = ! empty($e->is_reentry) ? 're-entry' : 'new';
+                                }
+                            }
+                            ?>
+                            <?php if ( $dir === 'up' && $val > 0 ) : ?>
+                                <span style="color:#2ecc71; font-size:10px; font-weight:900;">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($val); ?></span>
+                            <?php elseif ( $dir === 'down' && $val > 0 ) : ?>
+                                <span style="color:#e74c3c; font-size:10px; font-weight:900;">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($val); ?></span>
+                            <?php elseif ( $dir === 're-entry' || ! empty($e->is_reentry) ) : ?>
+                                <span style="color:#d97706; font-size:9px; font-weight:900;">RE</span>
+                            <?php elseif ( $dir === 'new' || ! empty($e->is_new_entry) || $prev === 0 ) : ?>
                                 <span style="color:var(--kc-primary); font-size:9px; font-weight:900;">NEW</span>
+                            <?php else : ?>
+                                <span style="opacity:0.3; font-size:10px;">–</span>
                             <?php endif; ?>
                         </div>
 

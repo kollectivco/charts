@@ -53,7 +53,7 @@ class BillboardService {
 			}
 		}
 
-		$response = wp_remote_get( self::API_BASE . 'list-weeks?chart_id=' . $chart_id, array(
+		$response = wp_remote_get( self::API_BASE . 'list-weeks?type=' . $chart_id, array(
 			'timeout'    => 15,
 			'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
 		) );
@@ -130,23 +130,65 @@ class BillboardService {
 				if ( $image_name === '' && ! empty( $item['english_name'] ) ) $image_name = $item['english_name'] . '.jpg';
 				$image_url = $image_name ? ( self::ARTIST_IMG_BASE . ltrim( $image_name, '/' ) ) : '';
 				$stats = $item['artist_stats'] ?? array();
+
+				$rank = intval( $item['rank'] ?? 0 );
+				$last_week_rank = isset( $stats['last_week_rank'] ) && is_numeric( $stats['last_week_rank'] ) 
+					? intval( $stats['last_week_rank'] ) 
+					: ( isset( $stats['last_week'] ) && is_numeric( $stats['last_week'] ) ? intval( $stats['last_week'] ) : 0 );
+				$last_week_entry = isset( $stats['last_week_entry'] ) ? intval( $stats['last_week_entry'] ) : 0;
+				$weeks_in_chart = isset( $stats['weeks_in_chart'] ) && is_numeric( $stats['weeks_in_chart'] ) && intval( $stats['weeks_in_chart'] ) > 0 
+					? intval( $stats['weeks_in_chart'] ) : 1;
+				$peak_rank = isset( $stats['peak_rank'] ) && is_numeric( $stats['peak_rank'] ) && intval( $stats['peak_rank'] ) > 0 
+					? intval( $stats['peak_rank'] ) : $rank;
+
+				$is_reentry = ( ! empty( $stats['re_entry'] ) ) || ( $last_week_rank <= 0 && $last_week_entry > 0 ) || ( $last_week_rank <= 0 && $weeks_in_chart > 1 );
+				$is_new = ( $last_week_rank <= 0 && ! $is_reentry );
+
+				$movement_dir = 'same';
+				$movement_val = 0;
+				if ( $is_reentry ) {
+					$movement_dir = 're-entry';
+					$movement_val = 0;
+				} elseif ( $is_new ) {
+					$movement_dir = 'new';
+					$movement_val = 0;
+				} elseif ( $last_week_rank > 0 ) {
+					if ( $rank < $last_week_rank ) {
+						$movement_dir = 'up';
+						$movement_val = $last_week_rank - $rank;
+					} elseif ( $rank > $last_week_rank ) {
+						$movement_dir = 'down';
+						$movement_val = $rank - $last_week_rank;
+					} else {
+						$movement_dir = 'same';
+						$movement_val = 0;
+					}
+				}
+
 				$items[] = array(
-					'item_type' => 'artist',
-					'rank' => intval( $item['rank'] ?? 0 ),
-					'title' => $name,
-					'arabic_title' => $item['arabic_name'] ?? $name,
-					'english_title' => $item['english_name'] ?? '',
-					'primary_artist' => $name,
-					'arabic_artist' => $item['arabic_name'] ?? $name,
-					'english_artist' => $item['english_name'] ?? '',
-					'artists' => array( $name ),
-					'image' => $image_url,
-					'previous_rank' => isset( $stats['last_week_rank'] ) && intval( $stats['last_week_rank'] ) > 0 ? intval( $stats['last_week_rank'] ) : null,
-					'peak_rank' => intval( $stats['peak_rank'] ?? $item['rank'] ?? 0 ),
-					'weeks_on_chart' => intval( $stats['weeks_in_chart'] ?? 1 ),
-					'streams' => intval( $item['total'] ?? 0 ),
-					'nb_top_one_weeks' => intval( $stats['nb_top_one_weeks'] ?? 0 ),
-					'published_at' => $item['published_at'] ?? '',
+					'item_type'          => 'artist',
+					'rank'               => $rank,
+					'rank_position'      => $rank,
+					'title'              => $name,
+					'arabic_title'       => $item['arabic_name'] ?? $name,
+					'english_title'      => $item['english_name'] ?? '',
+					'primary_artist'     => $name,
+					'arabic_artist'      => $item['arabic_name'] ?? $name,
+					'english_artist'     => $item['english_name'] ?? '',
+					'artists'            => array( $name ),
+					'image'              => $image_url,
+					'previous_rank'      => $last_week_rank > 0 ? $last_week_rank : null,
+					'peak_rank'          => $peak_rank,
+					'weeks_on_chart'     => $weeks_in_chart,
+					'movement_direction' => $movement_dir,
+					'movement_value'     => $movement_val,
+					'is_new_entry'       => $is_new ? 1 : 0,
+					'is_reentry'         => $is_reentry ? 1 : 0,
+					'score'              => floatval( $item['total'] ?? 0 ),
+					'streams'            => intval( $item['total'] ?? 0 ),
+					'streams_count'      => intval( $item['total'] ?? 0 ),
+					'nb_top_one_weeks'   => intval( $stats['nb_top_one_weeks'] ?? 0 ),
+					'published_at'       => $item['published_at'] ?? '',
 				);
 				continue;
 			}
@@ -162,8 +204,8 @@ class BillboardService {
 			$artists = array();
 			if ( ! empty( $item['artists'] ) && is_array( $item['artists'] ) ) {
 				foreach ( $item['artists'] as $art ) {
-					$name = trim( $art['arabic_name'] ?? $art['english_name'] ?? '' );
-					if ( $name ) $artists[] = $name;
+					$art_name = trim( $art['arabic_name'] ?? $art['english_name'] ?? '' );
+					if ( $art_name ) $artists[] = $art_name;
 				}
 			}
 			if ( empty( $artists ) ) {
@@ -178,30 +220,64 @@ class BillboardService {
 
 			// Stats
 			$stats = $item['song_stats'] ?? array();
-			$last_week_rank = isset( $stats['last_week_rank'] ) && is_numeric( $stats['last_week_rank'] ) && $stats['last_week_rank'] > 0
-				? intval( $stats['last_week_rank'] ) : null;
-			$peak_rank = isset( $stats['peak_rank'] ) && is_numeric( $stats['peak_rank'] )
-				? intval( $stats['peak_rank'] ) : intval( $item['rank'] );
-			$weeks_in_chart = isset( $stats['weeks_in_chart'] ) && is_numeric( $stats['weeks_in_chart'] )
+			$rank = intval( $item['rank'] ?? 0 );
+			$last_week_rank = isset( $stats['last_week_rank'] ) && is_numeric( $stats['last_week_rank'] ) 
+				? intval( $stats['last_week_rank'] ) 
+				: ( isset( $stats['last_week'] ) && is_numeric( $stats['last_week'] ) ? intval( $stats['last_week'] ) : 0 );
+			$last_week_entry = isset( $stats['last_week_entry'] ) ? intval( $stats['last_week_entry'] ) : 0;
+			$weeks_in_chart = isset( $stats['weeks_in_chart'] ) && is_numeric( $stats['weeks_in_chart'] ) && intval( $stats['weeks_in_chart'] ) > 0 
 				? intval( $stats['weeks_in_chart'] ) : 1;
+			$peak_rank = isset( $stats['peak_rank'] ) && is_numeric( $stats['peak_rank'] ) && intval( $stats['peak_rank'] ) > 0 
+				? intval( $stats['peak_rank'] ) : $rank;
+
+			$is_reentry = ( ! empty( $stats['re_entry'] ) ) || ( $last_week_rank <= 0 && $last_week_entry > 0 ) || ( $last_week_rank <= 0 && $weeks_in_chart > 1 );
+			$is_new = ( $last_week_rank <= 0 && ! $is_reentry );
+
+			$movement_dir = 'same';
+			$movement_val = 0;
+			if ( $is_reentry ) {
+				$movement_dir = 're-entry';
+				$movement_val = 0;
+			} elseif ( $is_new ) {
+				$movement_dir = 'new';
+				$movement_val = 0;
+			} elseif ( $last_week_rank > 0 ) {
+				if ( $rank < $last_week_rank ) {
+					$movement_dir = 'up';
+					$movement_val = $last_week_rank - $rank;
+				} elseif ( $rank > $last_week_rank ) {
+					$movement_dir = 'down';
+					$movement_val = $rank - $last_week_rank;
+				} else {
+					$movement_dir = 'same';
+					$movement_val = 0;
+				}
+			}
 
 			$items[] = array(
-				'item_type'        => 'track',
-				'rank'             => intval( $item['rank'] ),
-				'title'            => $title,
-				'arabic_title'     => $arabic_title,
-				'english_title'    => $english_title,
-				'primary_artist'   => $primary_artist,
-				'arabic_artist'    => $arabic_artist,
-				'english_artist'   => $english_artist,
-				'artists'          => $artists,
-				'image'            => $image_url,
-				'previous_rank'    => $last_week_rank,
-				'peak_rank'        => $peak_rank,
-				'weeks_on_chart'   => $weeks_in_chart,
-				'streams'          => intval( $item['total'] ?? 0 ),
-				'nb_top_one_weeks' => intval( $stats['nb_top_one_weeks'] ?? 0 ),
-				'published_at'     => $item['published_at'] ?? '',
+				'item_type'          => 'track',
+				'rank'               => $rank,
+				'rank_position'      => $rank,
+				'title'              => $title,
+				'arabic_title'       => $arabic_title,
+				'english_title'      => $english_title,
+				'primary_artist'     => $primary_artist,
+				'arabic_artist'      => $arabic_artist,
+				'english_artist'     => $english_artist,
+				'artists'            => $artists,
+				'image'              => $image_url,
+				'previous_rank'      => $last_week_rank > 0 ? $last_week_rank : null,
+				'peak_rank'          => $peak_rank,
+				'weeks_on_chart'     => $weeks_in_chart,
+				'movement_direction' => $movement_dir,
+				'movement_value'     => $movement_val,
+				'is_new_entry'       => $is_new ? 1 : 0,
+				'is_reentry'         => $is_reentry ? 1 : 0,
+				'score'              => floatval( $item['total'] ?? 0 ),
+				'streams'            => intval( $item['total'] ?? 0 ),
+				'streams_count'      => intval( $item['total'] ?? 0 ),
+				'nb_top_one_weeks'   => intval( $stats['nb_top_one_weeks'] ?? 0 ),
+				'published_at'       => $item['published_at'] ?? '',
 			);
 		}
 
@@ -268,22 +344,53 @@ class BillboardService {
 
 		$published_at = ! empty( $items[0]['published_at'] ) ? $items[0]['published_at'] : current_time( 'Y-m-d' );
 
-		// 1. Ensure Billboard Source exists
+		// 1. Ensure Destination Chart Definition exists
 		$source_table = $wpdb->prefix . 'charts_sources';
-		$definition = $chart_id ? ( new \Charts\Admin\SourceManager() )->get_definition( $chart_id ) : null;
-		if ( $chart_id && ( ! $definition || $definition->item_type !== $chart['item_type'] ) ) {
+		$source_mgr   = new \Charts\Admin\SourceManager();
+		$definition   = $chart_id ? $source_mgr->get_definition( $chart_id ) : null;
+		if ( ! $definition && ! empty( $chart['target_slug'] ) ) {
+			$definition = $source_mgr->get_definition_by_slug( $chart['target_slug'] );
+			if ( $definition ) {
+				$chart_id = (int) $definition->id;
+			}
+		}
+
+		// Auto-create definition if none exists yet for this Billboard chart
+		if ( ! $definition ) {
+			$def_data = array(
+				'title'          => $chart['label'],
+				'title_ar'       => $chart['label'],
+				'slug'           => $chart['target_slug'],
+				'item_type'      => $chart['item_type'],
+				'chart_type'     => $chart['item_type'] === 'artist' ? 'top-artists' : 'top-songs',
+				'platform'       => 'billboard',
+				'country_code'   => 'global',
+				'frequency'      => 'weekly',
+				'is_public'      => 1,
+				'accent_color'   => '#000000',
+				'chart_summary'  => 'Official ' . $chart['label'] . ' by Billboard Arabia',
+			);
+			$new_def_id = $source_mgr->save_definition( $def_data );
+			if ( $new_def_id ) {
+				$definition = $source_mgr->get_definition( $new_def_id );
+				$chart_id   = (int) $new_def_id;
+			}
+		}
+
+		if ( $definition && $definition->item_type !== $chart['item_type'] ) {
 			return new \WP_Error( 'billboard_target_mismatch', __( 'Choose a destination chart with the same item type as the selected Billboard list.', 'charts' ) );
 		}
 		if ( $definition && ! in_array( $definition->platform ?? 'all', array( 'all', 'billboard' ), true ) ) {
 			return new \WP_Error( 'billboard_platform_mismatch', __( 'Choose a chart configured for Billboard Arabia or all platforms.', 'charts' ) );
 		}
+
 		$target_chart_type = $definition ? 'cid-' . (int) $definition->id : ( $chart['item_type'] === 'artist' ? 'top-artists' : 'top-songs' );
 		$source_id = $wpdb->get_var( $wpdb->prepare(
 			"SELECT id FROM $source_table WHERE platform = 'billboard' AND chart_type = %s LIMIT 1",
 			$target_chart_type
 		) );
 		$source_name = $definition ? 'Billboard Arabia — ' . $definition->title : $chart['label'];
-		$source_url = 'https://www.billboardarabia.com/' . ( $chart['source_path'] ?? 'charts' );
+		$source_url  = 'https://www.billboardarabia.com/' . ( $chart['source_path'] ?? 'charts' );
 
 		if ( ! $source_id ) {
 			$wpdb->insert( $source_table, array(
@@ -300,16 +407,24 @@ class BillboardService {
 			$source_id = $wpdb->insert_id;
 		} else {
 			$wpdb->update( $source_table, array(
-				'source_name' => $source_name,
-				'source_type' => 'api',
-				'source_url' => $source_url,
+				'source_name'  => $source_name,
+				'source_type'  => 'api',
+				'source_url'   => $source_url,
 				'country_code' => $definition ? $definition->country_code : 'global',
-				'frequency' => 'weekly',
-				'parser_key' => 'billboard-' . $billboard_chart_id,
-				'is_active' => 1,
+				'frequency'    => 'weekly',
+				'parser_key'   => 'billboard-' . $billboard_chart_id,
+				'is_active'    => 1,
 			), array( 'id' => $source_id ) );
 		}
 		if ( ! $source_id ) return new \WP_Error( 'billboard_source_failed', __( 'Could not create the Billboard source.', 'charts' ) );
+
+		// Deactivate any other active sources bound to this same definition so Billboard is authoritative
+		if ( $definition ) {
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE $source_table SET is_active = 0 WHERE chart_type = %s AND id != %d",
+				$target_chart_type, $source_id
+			) );
+		}
 
 		// 2. Ensure Period for this week
 		$import_flow = new ImportFlow();
@@ -340,6 +455,7 @@ class BillboardService {
 					'cover_image'     => $row['image'],
 					'item_slug'       => $artist_slug,
 					'streams'         => $row['streams'],
+					'score'           => $row['score'],
 				);
 				$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'artist', $artist_id, $row, $flat );
 				if ( $entry_id ) $imported_count++;
@@ -401,11 +517,11 @@ class BillboardService {
 				'spotify_id'      => null,
 				'youtube_id'      => null,
 				'streams'         => $row['streams'],
+				'score'           => $row['score'],
 			);
 
 			$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'track', $track_id, $row, $flat );
 			if ( $entry_id ) {
-				try { ( new Analyzer() )->analyze_entry( $entry_id ); } catch ( \Exception $e ) {}
 				$imported_count++;
 			}
 		}

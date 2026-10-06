@@ -313,6 +313,32 @@ jQuery(document).ready(function($) {
                 if (compatible && $option.is(':selected')) selectedCompatible = true;
             });
             if (!selectedCompatible) $chartSelect.val('');
+            if (isBb && !$chartSelect.val()) {
+                const targetId = String($('#billboard_chart_id').val() || '');
+                const slugMap = {
+                    '1': 'hot-100',
+                    '2': '100-artists',
+                    '3': 'top-50-khaleeji',
+                    '4': 'top-50-egyptian',
+                    '5': 'top-50-levantine',
+                    '6': 'top-50-maghreb',
+                    '7': 'top-50-arabic-hip-hop',
+                    '8': 'top-50-indie-arabic',
+                    '9': 'top-50-shelat',
+                    '10': 'top-50-mahraganat',
+                    '11': 'top-50-tiktok'
+                };
+                const expectedSlug = slugMap[targetId] || '';
+                if (expectedSlug) {
+                    $chartSelect.find('option:not(:disabled)').each(function() {
+                        const optSlug = $(this).data('slug') || '';
+                        if (optSlug === expectedSlug) {
+                            $chartSelect.val($(this).val()).trigger('change');
+                            return false;
+                        }
+                    });
+                }
+            }
             if (isSoundcharts()) {
                 const count = $chartSelect.find('option:not(:disabled)').length - 1;
                 $soundchartsStatus.toggleClass('has-no-target', count <= 0).attr('data-compatible-targets', count);
@@ -397,6 +423,7 @@ jQuery(document).ready(function($) {
                             text: week.label + (index === 0 ? ' (Latest)' : '')
                         }));
                     });
+                    $weekSelect.val(res.data.weeks[0].week_id);
                     $weekSelect.prop('disabled', false);
                     $status.text('Weeks loaded successfully.');
                 } else {

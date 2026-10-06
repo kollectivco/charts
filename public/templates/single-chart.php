@@ -40,12 +40,25 @@ if ( $definition ) {
 		$source_ids = array_column( $sources, 'id' );
 		$placeholders = implode( ',', array_fill( 0, count( $source_ids ), '%d' ) );
 
-		$period = $wpdb->get_row( $wpdb->prepare( "
-			SELECT p.* FROM {$wpdb->prefix}charts_periods p
-			JOIN {$wpdb->prefix}charts_entries e ON e.period_id = p.id
-			WHERE e.source_id IN ($placeholders)
-			ORDER BY p.period_start DESC LIMIT 1
-		", ...$source_ids ) );
+		$requested_period_id = isset( $_GET['period'] ) ? absint( $_GET['period'] ) : 0;
+		if ( $requested_period_id ) {
+			$req_params = array_values( $source_ids );
+			$req_params[] = $requested_period_id;
+			$period = $wpdb->get_row( $wpdb->prepare( "
+				SELECT p.* FROM {$wpdb->prefix}charts_periods p
+				JOIN {$wpdb->prefix}charts_entries e ON e.period_id = p.id
+				WHERE e.source_id IN ($placeholders) AND p.id = %d
+				LIMIT 1
+			", ...$req_params ) );
+		}
+		if ( ! $period ) {
+			$period = $wpdb->get_row( $wpdb->prepare( "
+				SELECT p.* FROM {$wpdb->prefix}charts_periods p
+				JOIN {$wpdb->prefix}charts_entries e ON e.period_id = p.id
+				WHERE e.source_id IN ($placeholders)
+				ORDER BY p.period_start DESC LIMIT 1
+			", ...$source_ids ) );
+		}
 
 		if ( $period ) {
 			$query_params = array_values( $source_ids );
@@ -160,6 +173,13 @@ if ( ! $is_mobile ) {
 				<?php if ( ! empty($definition->chart_summary) ) : ?>
 					<p style="font-size: 13px; color: var(--k-text-dim); margin-top: 24px; max-width: 600px; font-weight: 500; font-family: inherit;"><?php echo esc_html($definition->chart_summary); ?></p>
 				<?php endif; ?>
+
+				<?php if ( ! empty($period) && ! empty($period->period_start) ) : ?>
+					<div class="kc-period-badge" style="display:inline-flex; align-items:center; gap:6px; margin-top:16px; padding:6px 14px; background:rgba(0,0,0,0.04); border-radius:999px; font-size:12px; font-weight:600; color:var(--k-text-dim);">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+						<span><?php echo esc_html( date_i18n( 'd F Y', strtotime( $period->period_start ) ) ); ?></span>
+					</div>
+				<?php endif; ?>
 			</header>
 
 			<?php
@@ -199,6 +219,12 @@ if ( ! $is_mobile ) {
 								<span class="kc-featured-badge" style="background: <?php echo esc_attr($chart_color); ?>;">#١ الأسبوع ده</span>
 								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
 									<span class="kc-featured-movement">+<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->movement_value)); ?></span>
+								<?php elseif ( $top->movement_direction === 'down' && ! empty($top->movement_value) ) : ?>
+									<span class="kc-featured-movement" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">-<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->movement_value)); ?></span>
+								<?php elseif ( $top->movement_direction === 're-entry' || ! empty($top->is_reentry) ) : ?>
+									<span class="kc-featured-movement" style="background: rgba(217, 119, 6, 0.15); color: #d97706;"><?php echo \Charts\Core\Translation::get('RE-ENTRY'); ?></span>
+								<?php elseif ( $top->movement_direction === 'new' || ! empty($top->is_new_entry) ) : ?>
+									<span class="kc-featured-movement" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;"><?php echo \Charts\Core\Translation::get('NEW'); ?></span>
 								<?php endif; ?>
 							</div>
 							<?php 
@@ -248,11 +274,30 @@ if ( ! $is_mobile ) {
 								<td class="kc-rank-num">#<?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></td>
 								<td class="kc-col-movement">
 									<div class="kc-rank-move">
-										<?php if ( $e->rank_position < $e->previous_rank ) : ?>
-											<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->previous_rank - $e->rank_position); ?></span>
-										<?php elseif ( $e->rank_position > $e->previous_rank && $e->previous_rank > 0 ) : ?>
-											<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position - $e->previous_rank); ?></span>
-										<?php elseif ( $e->previous_rank == 0 ) : ?>
+										<?php 
+										$dir = $e->movement_direction ?: '';
+										$val = intval( $e->movement_value ?: 0 );
+										$prev = ( isset($e->previous_rank) && $e->previous_rank !== null && $e->previous_rank !== '' ) ? intval($e->previous_rank) : 0;
+										if ( empty($val) && $prev > 0 ) {
+											$val = abs($e->rank_position - $prev);
+										}
+										if ( empty($dir) ) {
+											if ( $prev > 0 ) {
+												if ( $e->rank_position < $prev ) $dir = 'up';
+												elseif ( $e->rank_position > $prev ) $dir = 'down';
+												else $dir = 'same';
+											} else {
+												$dir = ! empty($e->is_reentry) ? 're-entry' : 'new';
+											}
+										}
+										?>
+										<?php if ( $dir === 'up' && $val > 0 ) : ?>
+											<span class="kc-move-up">▲ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($val); ?></span>
+										<?php elseif ( $dir === 'down' && $val > 0 ) : ?>
+											<span class="kc-move-down">▼ <?php echo \Charts\Core\Transliteration::to_arabic_numerals($val); ?></span>
+										<?php elseif ( $dir === 're-entry' || ! empty($e->is_reentry) ) : ?>
+											<span class="kc-move-reentry" style="color:#d97706; font-size:10px; font-weight:800;"><?php echo \Charts\Core\Translation::get('RE-ENTRY'); ?></span>
+										<?php elseif ( $dir === 'new' || ! empty($e->is_new_entry) || $prev === 0 ) : ?>
 											<span class="kc-move-new"><?php echo \Charts\Core\Translation::get('NEW'); ?></span>
 										<?php else : ?>
 											<span style="opacity: 0.3;">–</span>

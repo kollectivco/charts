@@ -322,6 +322,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 												data-platform="<?php echo esc_attr( $definition->platform ?: 'all' ); ?>"
 												data-chart-type="<?php echo esc_attr( $definition->chart_type ?: 'top-songs' ); ?>"
 												data-country="<?php echo esc_attr( $definition->country_code ?: 'eg' ); ?>"
+												data-slug="<?php echo esc_attr( $definition->slug ); ?>"
 												data-frequency="<?php echo esc_attr( $definition->frequency ?: 'weekly' ); ?>">
 											<?php echo esc_html( $definition->title ); ?> (Syncing to <?php echo esc_html( $type_label ); ?>)
 										</option>

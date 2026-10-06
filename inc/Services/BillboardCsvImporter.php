@@ -40,6 +40,13 @@ class BillboardCsvImporter {
 		}
 		if ( ! $source_id ) return new \WP_Error( 'billboard_source_failed', __( 'Could not create the Billboard import source.', 'charts' ) );
 
+		if ( $chart_id ) {
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE $source_table SET is_active = 0 WHERE chart_type = %s AND id != %d",
+				$chart_type, $source_id
+			) );
+		}
+
 		// Create run record
 		$wpdb->insert( $runs_table, array(
 			'source_id'  => $source_id,
@@ -66,6 +73,7 @@ class BillboardCsvImporter {
 		// Find columns dynamically
 		$idx_rank = -1; $idx_title = -1; $idx_artist = -1; $idx_image = -1;
 		$idx_artist_en = -1; $idx_title_en = -1;
+		$idx_prev_rank = -1; $idx_peak_rank = -1; $idx_weeks = -1; $idx_streams = -1;
 		$title_priority = $item_type === 'artist'
 			? array( 'arabic_artist', 'arabic_artist_name', 'artist', 'artist_name', 'name' )
 			: array( 'arabic_title', 'track_name', 'song_title', 'title', 'track', 'song' );
@@ -79,6 +87,10 @@ class BillboardCsvImporter {
 			if (strpos($h_low, 'rank') !== false || $h_low === '#') $idx_rank = $i;
 			if (in_array($h_low, ['english_artist', 'english_artist_name', 'artist_en', 'artist_english', 'name_en'], true)) $idx_artist_en = $i;
 			if (in_array($h_low, ['english_title', 'track_en', 'song_en', 'title_en'], true)) $idx_title_en = $i;
+			if (in_array($h_low, ['previous_rank', 'last_week', 'prev_rank', 'last_week_rank', 'previous'], true)) $idx_prev_rank = $i;
+			if (in_array($h_low, ['peak_rank', 'peak', 'highest_rank', 'highest'], true)) $idx_peak_rank = $i;
+			if (in_array($h_low, ['weeks_on_chart', 'weeks_in_chart', 'weeks', 'wks'], true)) $idx_weeks = $i;
+			if (in_array($h_low, ['streams', 'total', 'points', 'score'], true)) $idx_streams = $i;
 
 			$score = array_search( $h_low, $title_priority, true );
 			if ( $score === false && ( strpos( $h_low, 'track' ) !== false || strpos( $h_low, 'song' ) !== false || strpos( $h_low, 'title' ) !== false ) && strpos( $h_low, 'en' ) === false ) $score = 50;
@@ -103,6 +115,19 @@ class BillboardCsvImporter {
 			$image = $idx_image > -1 ? trim($row[$idx_image] ?? '') : '';
 			$artist_en = $idx_artist_en > -1 ? trim($row[$idx_artist_en] ?? '') : '';
 			$title_en = $idx_title_en > -1 ? trim($row[$idx_title_en] ?? '') : '';
+			$prev_rank = $idx_prev_rank > -1 && is_numeric($row[$idx_prev_rank] ?? null) ? intval($row[$idx_prev_rank]) : null;
+			$peak_rank = $idx_peak_rank > -1 && is_numeric($row[$idx_peak_rank] ?? null) ? intval($row[$idx_peak_rank]) : $rank;
+			$weeks = $idx_weeks > -1 && is_numeric($row[$idx_weeks] ?? null) ? intval($row[$idx_weeks]) : 1;
+			$streams = $idx_streams > -1 && is_numeric($row[$idx_streams] ?? null) ? intval($row[$idx_streams]) : 0;
+
+			$move_dir = 'same'; $move_val = 0;
+			if ( $prev_rank === null || $prev_rank <= 0 ) {
+				$move_dir = $weeks > 1 ? 're-entry' : 'new';
+			} elseif ( $rank < $prev_rank ) {
+				$move_dir = 'up'; $move_val = $prev_rank - $rank;
+			} elseif ( $rank > $prev_rank ) {
+				$move_dir = 'down'; $move_val = $rank - $prev_rank;
+			}
 
 			if ( $item_type === 'artist' ) {
 				$artist_name = $artist_str ?: $title;
@@ -113,7 +138,17 @@ class BillboardCsvImporter {
 					'display_name_en' => $artist_en ?: null,
 				) );
 				if ( ! $artist_id ) continue;
-				$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'artist', $artist_id, array( 'rank' => $rank ), array( 'track_name' => $artist_name, 'artist_names' => $artist_name, 'cover_image' => $safe_image ) );
+				$raw_data = array(
+					'rank'               => $rank,
+					'previous_rank'      => $prev_rank,
+					'peak_rank'          => $peak_rank,
+					'weeks_on_chart'     => $weeks,
+					'movement_direction' => $move_dir,
+					'movement_value'     => $move_val,
+					'score'              => (float) $streams,
+					'streams'            => $streams,
+				);
+				$entry_id = $import_flow->upsert_entry( $source_id, $period_id, 'artist', $artist_id, $raw_data, array( 'track_name' => $artist_name, 'artist_names' => $artist_name, 'cover_image' => $safe_image, 'streams' => $streams, 'score' => (float) $streams ) );
 				if ( $entry_id ) { $imported++; } else { $errors[] = "Entity Failure ($artist_name)"; }
 				continue;
 			}
@@ -171,8 +206,17 @@ class BillboardCsvImporter {
 				// Download billboard image safely
 				$safe_image = \Charts\Services\BillboardService::sideload_image($image);
 
-				$flat = [ 'track_name' => $title, 'artist_names' => $artist_str, 'cover_image' => $safe_image ];
-				$raw = [ 'rank' => $rank ];
+				$flat = [ 'track_name' => $title, 'artist_names' => $artist_str, 'cover_image' => $safe_image, 'streams' => $streams, 'score' => (float) $streams ];
+				$raw = [
+					'rank'               => $rank,
+					'previous_rank'      => $prev_rank,
+					'peak_rank'          => $peak_rank,
+					'weeks_on_chart'     => $weeks,
+					'movement_direction' => $move_dir,
+					'movement_value'     => $move_val,
+					'score'              => (float) $streams,
+					'streams'            => $streams,
+				];
 				
 				$entry_id = $import_flow->upsert_entry($source_id, $period_id, 'track', $track_id, $raw, $flat);
 				if ($entry_id) {

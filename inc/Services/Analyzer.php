@@ -30,7 +30,7 @@ class Analyzer {
 
 		// 1. Determine Movement
 		if ( $previous ) {
-			if ( ! isset( $entry->movement_direction ) || empty( $entry->movement_direction ) ) {
+			if ( empty( $entry->movement_direction ) || $entry->movement_direction === 'new' ) {
 				if ( $entry->rank_position < $previous->rank_position ) {
 					$update_data['movement_direction'] = 'up';
 					$update_data['movement_value']     = $previous->rank_position - $entry->rank_position;
@@ -43,7 +43,7 @@ class Analyzer {
 				}
 			}
 
-			// 2. Peaks & Weeks (Respect CSV if non-zero/not null)
+			// 2. Peaks & Weeks (Respect imported/official data if non-zero/not null)
 			if ( empty( $entry->peak_rank ) ) {
 				$update_data['peak_rank'] = min( $entry->rank_position, $previous->peak_rank ?: 1000 );
 			}
@@ -52,15 +52,17 @@ class Analyzer {
 				$update_data['weeks_on_chart'] = $previous->weeks_on_chart + 1;
 			}
 			
-			$update_data['is_new_entry'] = 0;
+			if ( ! isset( $entry->is_new_entry ) ) {
+				$update_data['is_new_entry'] = 0;
+			}
 			
 			// Re-entry detection
 			if ( ! isset( $entry->is_reentry ) ) {
-				$update_data['is_reentry'] = 0; // Simplified re-entry
+				$update_data['is_reentry'] = 0;
 			}
 		} else {
-			// Brand new entry
-			if ( ! isset( $entry->movement_direction ) || empty( $entry->movement_direction ) ) {
+			// Brand new entry or no previous local period
+			if ( empty( $entry->movement_direction ) ) {
 				$update_data['movement_direction'] = 'new';
 				$update_data['movement_value']     = 0;
 			}
@@ -73,11 +75,17 @@ class Analyzer {
 				$update_data['weeks_on_chart'] = 1;
 			}
 			
-			$update_data['is_new_entry'] = 1;
-			$update_data['is_reentry']   = 0;
+			if ( ! isset( $entry->is_new_entry ) ) {
+				$update_data['is_new_entry'] = ( empty( $entry->movement_direction ) || $entry->movement_direction === 'new' ) ? 1 : 0;
+			}
+			if ( ! isset( $entry->is_reentry ) ) {
+				$update_data['is_reentry']   = ( ! empty( $entry->movement_direction ) && $entry->movement_direction === 're-entry' ) ? 1 : 0;
+			}
 		}
 
-		$wpdb->update( $table, $update_data, array( 'id' => $entry_id ) );
+		if ( ! empty( $update_data ) ) {
+			$wpdb->update( $table, $update_data, array( 'id' => $entry_id ) );
+		}
 	}
 
 	/**
