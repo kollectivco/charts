@@ -21,43 +21,51 @@ class YouTubeChartsService {
 		return array(
 			'top-videos-daily' => array(
 				'id'          => 'top-videos-daily',
-				'label'       => 'YouTube Top Videos Egypt (Daily)',
+				'label'       => 'أفضل الفيديوهات الموسيقية في مصر (يومي) — YouTube Top Videos Egypt Daily',
+				'title_ar'    => 'أفضل الفيديوهات الموسيقية - مصر (يومي)',
 				'url'         => 'https://charts.youtube.com/charts/TopVideos/eg/daily',
 				'item_type'   => 'video',
 				'frequency'   => 'daily',
 				'country'     => 'eg',
 				'playlist_id' => 'VLPL4fGSI1pDJn7_GnLswAnmeMCCeShoAy2w',
-				'target_slug' => 'youtube-top-videos-daily',
+				'target_slug' => 'youtube-top-videos-eg-daily',
+				'alt_slugs'   => array( 'youtube-top-videos-daily', 'top-videos-egyptian', 'top-videos-eg' ),
 			),
 			'top-songs-weekly' => array(
 				'id'          => 'top-songs-weekly',
-				'label'       => 'YouTube Top Songs Egypt (Weekly)',
+				'label'       => 'أفضل الأغاني في مصر (أسبوعي) — YouTube Top Songs Egypt Weekly',
+				'title_ar'    => 'أفضل الأغاني - مصر (أسبوعي)',
 				'url'         => 'https://charts.youtube.com/charts/TopSongs/eg/weekly',
 				'item_type'   => 'track',
 				'frequency'   => 'weekly',
 				'country'     => 'eg',
 				'playlist_id' => 'VLPL4fGSI1pDJn510j-1L8bMgKTyeRwPrXWY',
-				'target_slug' => 'youtube-top-songs-weekly',
+				'target_slug' => 'youtube-top-songs-eg-weekly',
+				'alt_slugs'   => array( 'youtube-top-songs-weekly', 'top-songs-egyptian', 'top-50-egyptian', 'top-songs-eg' ),
 			),
 			'top-artists-weekly' => array(
 				'id'          => 'top-artists-weekly',
-				'label'       => 'YouTube Top Artists Egypt (Weekly)',
+				'label'       => 'أفضل الفنانين في مصر (أسبوعي) — YouTube Top Artists Egypt Weekly',
+				'title_ar'    => 'أفضل الفنانين - مصر (أسبوعي)',
 				'url'         => 'https://charts.youtube.com/charts/TopArtists/eg/weekly',
 				'item_type'   => 'artist',
 				'frequency'   => 'weekly',
 				'country'     => 'eg',
 				'browse_id'   => 'FEmusic_charts',
-				'target_slug' => 'youtube-top-artists-weekly',
+				'target_slug' => 'youtube-top-artists-eg-weekly',
+				'alt_slugs'   => array( 'youtube-top-artists-weekly', 'top-artists-egyptian', 'top-artists-eg' ),
 			),
 			'top-videos-weekly' => array(
 				'id'          => 'top-videos-weekly',
-				'label'       => 'YouTube Top Videos Egypt (Weekly)',
+				'label'       => 'أفضل الفيديوهات الموسيقية في مصر (أسبوعي) — YouTube Top Videos Egypt Weekly',
+				'title_ar'    => 'أفضل الفيديوهات الموسيقية - مصر (أسبوعي)',
 				'url'         => 'https://charts.youtube.com/charts/TopVideos/eg/weekly',
 				'item_type'   => 'video',
 				'frequency'   => 'weekly',
 				'country'     => 'eg',
 				'playlist_id' => 'VLPL4fGSI1pDJn4EhpZkSSpdyWUet73FalVU',
-				'target_slug' => 'youtube-top-videos-weekly',
+				'target_slug' => 'youtube-top-videos-eg-weekly',
+				'alt_slugs'   => array( 'youtube-top-videos-weekly', 'top-videos-eg-weekly' ),
 			),
 		);
 	}
@@ -391,6 +399,14 @@ class YouTubeChartsService {
 		$definition   = $chart_id ? $source_mgr->get_definition( $chart_id ) : null;
 		if ( ! $definition && ! empty( $chart['target_slug'] ) ) {
 			$definition = $source_mgr->get_definition_by_slug( $chart['target_slug'] );
+			if ( ! $definition && ! empty( $chart['alt_slugs'] ) ) {
+				foreach ( $chart['alt_slugs'] as $alt_slug ) {
+					$definition = $source_mgr->get_definition_by_slug( $alt_slug );
+					if ( $definition ) {
+						break;
+					}
+				}
+			}
 			if ( $definition ) {
 				$chart_id = (int) $definition->id;
 			}
@@ -398,9 +414,10 @@ class YouTubeChartsService {
 
 		// Auto-create definition if none exists yet for this YouTube chart
 		if ( ! $definition ) {
+			$title_ar = ! empty( $chart['title_ar'] ) ? $chart['title_ar'] : $chart['label'];
 			$def_data = array(
 				'title'          => $chart['label'],
-				'title_ar'       => $chart['label'],
+				'title_ar'       => $title_ar,
 				'slug'           => $chart['target_slug'],
 				'item_type'      => $chart['item_type'],
 				'chart_type'     => $chart['item_type'] === 'artist' ? 'top-artists' : ( $chart['item_type'] === 'video' ? 'top-videos' : 'top-songs' ),
@@ -409,12 +426,29 @@ class YouTubeChartsService {
 				'frequency'      => $chart['frequency'],
 				'is_public'      => 1,
 				'accent_color'   => '#FF0000',
-				'chart_summary'  => 'Official ' . $chart['label'] . ' by YouTube Charts',
+				'chart_summary'  => 'Official ' . $chart['label'] . ' by YouTube Charts (Egypt)',
 			);
 			$new_def_id = $source_mgr->save_definition( $def_data );
 			if ( $new_def_id ) {
 				$definition = $source_mgr->get_definition( $new_def_id );
 				$chart_id   = (int) $new_def_id;
+			}
+		} else {
+			// Ensure country_code is 'eg' and update Arabic title if missing
+			$update_def = array();
+			if ( empty( $definition->country_code ) || $definition->country_code !== 'eg' ) {
+				$update_def['country_code'] = 'eg';
+			}
+			if ( empty( $definition->title_ar ) && ! empty( $chart['title_ar'] ) ) {
+				$update_def['title_ar'] = $chart['title_ar'];
+			}
+			if ( ! empty( $update_def ) ) {
+				$wpdb->update(
+					$wpdb->prefix . 'charts_definitions',
+					$update_def,
+					array( 'id' => (int) $definition->id )
+				);
+				$definition = $source_mgr->get_definition( (int) $definition->id );
 			}
 		}
 

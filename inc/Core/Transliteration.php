@@ -40,36 +40,38 @@ class Transliteration {
         global $wpdb;
         $norm = mb_strtolower($text);
 
-        // Check charts_artists if type is artist or any
-        if (in_array($type, ['artist', 'any'], true)) {
-            $ar_artist = $wpdb->get_var($wpdb->prepare(
-                "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE (LOWER(display_name_en) = %s OR normalized_name = %s) AND display_name IS NOT NULL AND display_name != '' LIMIT 1",
-                $norm, $norm
-            ));
-            if ($ar_artist && self::has_arabic($ar_artist)) {
-                return $ar_artist;
+        if ( ! empty( $wpdb ) && method_exists( $wpdb, 'get_var' ) ) {
+            // Check charts_artists if type is artist or any
+            if (in_array($type, ['artist', 'any'], true)) {
+                $ar_artist = $wpdb->get_var($wpdb->prepare(
+                    "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE (LOWER(display_name_en) = %s OR normalized_name = %s) AND display_name IS NOT NULL AND display_name != '' LIMIT 1",
+                    $norm, $norm
+                ));
+                if ($ar_artist && self::has_arabic($ar_artist)) {
+                    return $ar_artist;
+                }
             }
-        }
 
-        // Check charts_tracks if type is track or any
-        if (in_array($type, ['track', 'any'], true)) {
-            $ar_track = $wpdb->get_var($wpdb->prepare(
-                "SELECT title FROM {$wpdb->prefix}charts_tracks WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
-                $norm, $norm
-            ));
-            if ($ar_track && self::has_arabic($ar_track)) {
-                return $ar_track;
+            // Check charts_tracks if type is track or any
+            if (in_array($type, ['track', 'any'], true)) {
+                $ar_track = $wpdb->get_var($wpdb->prepare(
+                    "SELECT title FROM {$wpdb->prefix}charts_tracks WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
+                    $norm, $norm
+                ));
+                if ($ar_track && self::has_arabic($ar_track)) {
+                    return $ar_track;
+                }
             }
-        }
 
-        // Check charts_albums if type is album or any
-        if (in_array($type, ['album', 'any'], true)) {
-            $ar_album = $wpdb->get_var($wpdb->prepare(
-                "SELECT title FROM {$wpdb->prefix}charts_albums WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
-                $norm, $norm
-            ));
-            if ($ar_album && self::has_arabic($ar_album)) {
-                return $ar_album;
+            // Check charts_albums if type is album or any
+            if (in_array($type, ['album', 'any'], true)) {
+                $ar_album = $wpdb->get_var($wpdb->prepare(
+                    "SELECT title FROM {$wpdb->prefix}charts_albums WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
+                    $norm, $norm
+                ));
+                if ($ar_album && self::has_arabic($ar_album)) {
+                    return $ar_album;
+                }
             }
         }
 

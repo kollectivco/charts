@@ -275,18 +275,26 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 						<div class="youtube-import-controls" style="display:none;">
 							<?php $yt_catalog = \Charts\Services\YouTubeChartsService::get_chart_catalog(); ?>
 							<div class="form-group">
-								<label class="premium-label" for="youtube_chart_key"><?php esc_html_e( 'Official YouTube Chart', 'charts' ); ?></label>
+								<label class="premium-label" for="youtube_chart_key"><?php esc_html_e( 'Official YouTube Chart (مصر)', 'charts' ); ?></label>
 								<select name="youtube_chart_key" id="youtube_chart_key" class="premium-select">
 									<?php foreach ( $yt_catalog as $yt_k => $yt_c ) : ?>
-										<option value="<?php echo esc_attr( $yt_k ); ?>" data-item-type="<?php echo esc_attr( $yt_c['item_type'] ); ?>" data-frequency="<?php echo esc_attr( $yt_c['frequency'] ); ?>" data-target-slug="<?php echo esc_attr( $yt_c['target_slug'] ); ?>" data-url="<?php echo esc_attr( $yt_c['url'] ); ?>">
+										<option value="<?php echo esc_attr( $yt_k ); ?>" data-country="<?php echo esc_attr( $yt_c['country'] ?? 'eg' ); ?>" data-item-type="<?php echo esc_attr( $yt_c['item_type'] ); ?>" data-frequency="<?php echo esc_attr( $yt_c['frequency'] ); ?>" data-target-slug="<?php echo esc_attr( $yt_c['target_slug'] ); ?>" data-alt-slugs="<?php echo esc_attr( implode( ',', $yt_c['alt_slugs'] ?? array() ) ); ?>" data-url="<?php echo esc_attr( $yt_c['url'] ); ?>">
 											<?php echo esc_html( $yt_c['label'] ); ?>
 										</option>
 									<?php endforeach; ?>
 								</select>
-								<p class="youtube-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;color:#ef4444;font-weight:600;">
-									<span class="dashicons dashicons-video-alt3" style="font-size:16px;vertical-align:middle;margin-right:4px;"></span>
-									<span id="youtube-selected-link"><?php echo esc_html( $yt_catalog['top-videos-daily']['url'] ); ?></span>
+								<div class="youtube-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;display:flex;align-items:center;gap:8px;">
+									<span class="youtube-market-badge" style="background:#ef4444;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">
+										🇪🇬 مصر (EG Market)
+									</span>
+									<span id="youtube-selected-link" style="color:#ef4444;font-weight:600;word-break:break-all;">
+										<?php echo esc_html( $yt_catalog['top-videos-daily']['url'] ); ?>
+									</span>
+								</div>
+								<p style="margin-top:6px;font-size:11px;color:#64748b;">
+									<?php esc_html_e( 'Sync directly from official YouTube Charts Egypt without uploading a CSV file.', 'charts' ); ?>
 								</p>
+							</div>
 						</div>
 
 						<div class="spotify-import-controls" style="display:none;">
