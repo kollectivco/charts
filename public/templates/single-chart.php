@@ -367,7 +367,7 @@ if ( ! $is_mobile ) {
 											</div>
 											<div class="kc-details-item kc-details-cta">
 												<?php $resolved_type = ! empty( $e->item_type ) ? $e->item_type : ( $is_album_chart ? 'album' : ( $is_artist_chart ? 'artist' : 'track' ) ); ?>
-												<a href="<?php echo home_url('/charts/' . $resolved_type . '/' . $e->item_slug . '/'); ?>" class="kc-view-all"><?php echo $label; ?></a>
+												<a href="<?php echo home_url('/charts/' . $resolved_type . '/' . $e->item_slug . '/'); ?>" class="kc-view-all"><?php echo \Charts\Core\Translation::get('Details'); ?></a>
 											</div>
 										</div>
 									</div>

@@ -112,9 +112,8 @@ class SoundchartsImporter {
 		$period_id = $this->flow->ensure_period( $chart['frequency'], $period_date );
 		if ( ! $period_id ) return new \WP_Error( 'soundcharts_period_failed', __( 'Could not create a chart period for this Soundcharts snapshot.', 'charts' ) );
 
-		if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
-			$this->flow->wipe_period( $source_id, $period_id );
-		}
+		// Clean slate: always wipe the period for this source so new import is strictly 100 entries with no old leftovers
+		$this->flow->wipe_period( $source_id, $period_id );
 
 		$wpdb->insert( $wpdb->prefix . 'charts_import_runs', array(
 			'source_id'   => $source_id,
@@ -142,20 +141,25 @@ class SoundchartsImporter {
 			$artist_names = \Charts\Services\Normalizer::split_artists( $credits );
 			if ( empty( $artist_names ) && $credits !== '' ) $artist_names = array( $credits );
 			$artist_ids = array();
+			$ar_artist_names = array();
 			foreach ( $artist_names as $artist_name ) {
-				$artist_id = \Charts\Core\EntityManager::ensure_artist( $artist_name );
+				$ar_artist = class_exists( '\Charts\Core\Transliteration' ) ? \Charts\Core\Transliteration::arabize_text( $artist_name, 'artist' ) : $artist_name;
+				$effective_artist = ( $ar_artist && \Charts\Core\Transliteration::has_arabic( $ar_artist ) ) ? $ar_artist : $artist_name;
+				$ar_artist_names[] = $effective_artist;
+				$artist_id = \Charts\Core\EntityManager::ensure_artist( $effective_artist, array(
+					'display_name_en' => $artist_name,
+				) );
 				if ( $artist_id ) $artist_ids[] = $artist_id;
 			}
 			$primary_artist_id = $artist_ids[0] ?? 0;
 			if ( ! $primary_artist_id ) { $skipped++; continue; }
 
-			// Arabize title & credits by searching references & database links (No Franco)
-			$ar_title   = class_exists( '\Charts\Core\Transliteration' ) ? \Charts\Core\Transliteration::arabize_text( $title, ( $item_type === 'album' ? 'album' : 'track' ) ) : $title;
-			$ar_credits = class_exists( '\Charts\Core\Transliteration' ) ? \Charts\Core\Transliteration::arabize_text( $credits, 'artist' ) : $credits;
+			// Arabize title by searching references & database links (No Franco)
+			$ar_title        = class_exists( '\Charts\Core\Transliteration' ) ? \Charts\Core\Transliteration::arabize_text( $title, ( $item_type === 'album' ? 'album' : 'track' ) ) : $title;
+			$effective_title = ( $ar_title && \Charts\Core\Transliteration::has_arabic( $ar_title ) ) ? $ar_title : $title;
+			$title_en        = ( $effective_title !== $title ) ? $title : '';
 
-			$effective_title   = ( $ar_title && \Charts\Core\Transliteration::has_arabic( $ar_title ) ) ? $ar_title : $title;
-			$effective_credits = ( $ar_credits && \Charts\Core\Transliteration::has_arabic( $ar_credits ) ) ? $ar_credits : $credits;
-			$title_en          = ( $effective_title !== $title ) ? $title : '';
+			$effective_credits = ! empty( $ar_artist_names ) ? implode( ', ', $ar_artist_names ) : $credits;
 			$credits_en        = ( $effective_credits !== $credits ) ? $credits : '';
 
 			if ( $item_type === 'album' ) {
@@ -182,12 +186,29 @@ class SoundchartsImporter {
 			if ( ! $existing_item ) $created++;
 
 			$metric_value = absint( $item['metric'] ?? 0 );
+			$prev_pos     = ! empty( $item['oldPosition'] ) ? absint( $item['oldPosition'] ) : null;
+			$weeks_count  = ( stripos( (string) ( $item['timeOnChartUnit'] ?? '' ), 'week' ) !== false ) ? max( 1, absint( $item['timeOnChart'] ?? 1 ) ) : 1;
+			$peak_pos     = ! empty( $item['peakPosition'] ) ? absint( $item['peakPosition'] ) : ( ( $prev_pos && $prev_pos < $rank ) ? $prev_pos : $rank );
+
+			$move_dir = 'same'; $move_val = 0;
+			if ( $prev_pos === null || $prev_pos <= 0 ) {
+				$move_dir = $weeks_count > 1 ? 're-entry' : 'new';
+			} elseif ( $rank < $prev_pos ) {
+				$move_dir = 'up'; $move_val = $prev_pos - $rank;
+			} elseif ( $rank > $prev_pos ) {
+				$move_dir = 'down'; $move_val = $rank - $prev_pos;
+			}
+
 			$row = array(
-				'rank'           => $rank,
-				'previous_rank'  => ! empty( $item['oldPosition'] ) ? absint( $item['oldPosition'] ) : null,
-				'peak_rank'      => $rank,
-				'weeks_on_chart' => ( stripos( (string) ( $item['timeOnChartUnit'] ?? '' ), 'week' ) !== false ) ? max( 1, absint( $item['timeOnChart'] ?? 1 ) ) : 1,
-				'raw_payload'    => $item,
+				'rank'               => $rank,
+				'previous_rank'      => $prev_pos,
+				'peak_rank'          => $peak_pos,
+				'weeks_on_chart'     => $weeks_count,
+				'movement_direction' => $move_dir,
+				'movement_value'     => $move_val,
+				'streams'            => ( strpos( $metric, 'stream' ) !== false ) ? $metric_value : 0,
+				'score'              => (float) $metric_value,
+				'raw_payload'        => $item,
 			);
 			$flat = array(
 				'track_name'      => $effective_title,
@@ -198,6 +219,7 @@ class SoundchartsImporter {
 				'item_slug'       => $item_slug,
 				'streams'         => ( strpos( $metric, 'stream' ) !== false ) ? $metric_value : 0,
 				'views_count'     => ( strpos( $metric, 'view' ) !== false ) ? $metric_value : 0,
+				'score'           => (float) $metric_value,
 			);
 			$entry_id = $this->flow->upsert_entry( $source_id, $period_id, $item_type, $item_id, $row, $flat );
 			if ( $entry_id ) {
