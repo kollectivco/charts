@@ -46,6 +46,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_billboard_get_weeks', array( self::class, 'handle_billboard_get_weeks' ) );
 		add_action( 'wp_ajax_charts_soundcharts_catalog', array( self::class, 'handle_soundcharts_catalog' ) );
 		add_action( 'wp_ajax_charts_youtube_sync', array( self::class, 'handle_youtube_sync' ) );
+		add_action( 'wp_ajax_charts_spotify_sync', array( self::class, 'handle_spotify_sync' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -953,6 +954,18 @@ class Bootstrap {
 				return false;
 			}
 			\Charts\Core\Notify::success( sprintf( __( 'YouTube Charts imported %d entries directly from YouTube live streams.', 'charts' ), $result['imported_count'] ), __( 'YouTube Sync Complete', 'charts' ) );
+			return array( 'run_id' => time() );
+		}
+
+		if ( $platform === 'spotify' && empty( $_FILES['import_file']['tmp_name'] ) ) {
+			// Spotify Live Sync (Official Charts & Curated Playlists)
+			$spotify_item_key = sanitize_text_field( $_POST['spotify_item_key'] ?? 'regional-eg-weekly' );
+			$result = \Charts\Services\SpotifySyncService::sync_to_chart( $spotify_item_key, $chart_id );
+			if ( is_wp_error( $result ) ) {
+				\Charts\Core\Notify::error( $result->get_error_message(), __( 'Spotify Sync Failed', 'charts' ) );
+				return false;
+			}
+			\Charts\Core\Notify::success( sprintf( __( 'Spotify imported %d entries successfully.', 'charts' ), $result['imported_count'] ), __( 'Spotify Sync Complete', 'charts' ) );
 			return array( 'run_id' => time() );
 		}
 		
@@ -3642,6 +3655,35 @@ class Bootstrap {
 		wp_send_json_success( array(
 			'message' => sprintf(
 				$result['item_type'] === 'artist' ? __( 'تم استيراد %d فنان بنجاح من قوائم YouTube الرسمية.', 'charts' ) : __( 'تم استيراد %d عنصر بنجاح من قوائم YouTube الرسمية.', 'charts' ),
+				$result['imported_count']
+			),
+			'data'    => $result,
+		) );
+	}
+
+	/**
+	 * AJAX: Direct 1-Click Sync Spotify Chart or Playlist to Database
+	 */
+	public static function handle_spotify_sync() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => 'Security check failed.' ) );
+		}
+		@set_time_limit(300);
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+
+		$item_key = sanitize_text_field( $_POST['spotify_item_key'] ?? 'regional-eg-weekly' );
+		$chart_id = intval( $_POST['chart_id'] ?? 0 );
+
+		$result = \Charts\Services\SpotifySyncService::sync_to_chart( $item_key, $chart_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array(
+			'message' => sprintf(
+				$result['item_type'] === 'artist' ? __( 'تم استيراد %d فنان بنجاح من قوائم Spotify.', 'charts' ) : __( 'تم استيراد %d أغنية بنجاح من قوائم Spotify.', 'charts' ),
 				$result['imported_count']
 			),
 			'data'    => $result,

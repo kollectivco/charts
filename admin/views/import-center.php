@@ -147,7 +147,7 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									</div>
 									<div class="platform-text">
 										<strong>Spotify</strong>
-										<span>CSV Intelligence</span>
+										<span>Live Charts, Playlists & CSV</span>
 									</div>
 									<div class="platform-check">
 										<span class="dashicons dashicons-yes-alt"></span>
@@ -286,6 +286,43 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 								<p class="youtube-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;color:#ef4444;font-weight:600;">
 									<span class="dashicons dashicons-video-alt3" style="font-size:16px;vertical-align:middle;margin-right:4px;"></span>
 									<span id="youtube-selected-link"><?php echo esc_html( $yt_catalog['top-videos-daily']['url'] ); ?></span>
+								</p>
+						</div>
+
+						<div class="spotify-import-controls" style="display:none;">
+							<?php 
+							$spotify_catalog = \Charts\Services\SpotifySyncService::get_catalog(); 
+							$spotify_charts = array_filter( $spotify_catalog, function($item) { return $item['category'] === 'charts'; } );
+							$spotify_playlists = array_filter( $spotify_catalog, function($item) { return $item['category'] === 'playlist'; } );
+							?>
+							<div class="form-group">
+								<label class="premium-label" for="spotify_item_key"><?php esc_html_e( 'Spotify Source (Official Chart or Curated Playlist)', 'charts' ); ?></label>
+								<select name="spotify_item_key" id="spotify_item_key" class="premium-select">
+									<optgroup label="<?php esc_attr_e( 'Official Spotify Charts (قوائم سبوتيفاي الرسمية)', 'charts' ); ?>">
+										<?php foreach ( $spotify_charts as $sp_k => $sp_c ) : ?>
+											<option value="<?php echo esc_attr( $sp_k ); ?>" data-category="charts" data-item-type="<?php echo esc_attr( $sp_c['item_type'] ); ?>" data-frequency="<?php echo esc_attr( $sp_c['frequency'] ); ?>" data-target-slug="<?php echo esc_attr( $sp_c['target_slug'] ); ?>" data-url="<?php echo esc_attr( $sp_c['url'] ); ?>">
+												<?php echo esc_html( $sp_c['label'] ); ?>
+											</option>
+										<?php endforeach; ?>
+									</optgroup>
+									<optgroup label="<?php esc_attr_e( 'Curated Spotify Playlists (قوائم التشغيل المختارة)', 'charts' ); ?>">
+										<?php foreach ( $spotify_playlists as $sp_k => $sp_c ) : ?>
+											<option value="<?php echo esc_attr( $sp_k ); ?>" data-category="playlist" data-item-type="<?php echo esc_attr( $sp_c['item_type'] ); ?>" data-frequency="<?php echo esc_attr( $sp_c['frequency'] ); ?>" data-target-slug="<?php echo esc_attr( $sp_c['target_slug'] ); ?>" data-url="<?php echo esc_attr( $sp_c['url'] ); ?>">
+												<?php echo esc_html( $sp_c['label'] ); ?>
+											</option>
+										<?php endforeach; ?>
+									</optgroup>
+								</select>
+								<div class="spotify-catalog-status" aria-live="polite" style="margin-top:8px;font-size:12px;display:flex;align-items:center;gap:8px;">
+									<span class="spotify-category-badge" id="spotify-category-badge" style="background:#1DB954;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">
+										<?php esc_html_e( 'Official Chart', 'charts' ); ?>
+									</span>
+									<span id="spotify-selected-link" style="color:#1DB954;font-weight:600;word-break:break-all;">
+										<?php echo esc_html( $spotify_catalog['regional-eg-weekly']['url'] ); ?>
+									</span>
+								</div>
+								<p style="margin-top:6px;font-size:11px;color:#64748b;">
+									<?php esc_html_e( 'Sync directly from Spotify link without uploading a CSV file, or optionally drop a CSV file below.', 'charts' ); ?>
 								</p>
 							</div>
 						</div>
