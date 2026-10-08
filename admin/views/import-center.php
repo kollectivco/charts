@@ -330,8 +330,20 @@ $pre_source  = $_GET['source'] ?? 'spotify';
 									</span>
 								</div>
 								<p style="margin-top:6px;font-size:11px;color:#64748b;">
-									<?php esc_html_e( 'Sync directly from Spotify link without uploading a CSV file, or optionally drop a CSV file below.', 'charts' ); ?>
+									<?php esc_html_e( 'Sync directly from Spotify without uploading a file. Optionally attach a CSV override below.', 'charts' ); ?>
 								</p>
+								<!-- Optional CSV Upload for Spotify -->
+								<div id="spotify-csv-toggle-wrap" style="margin-top:14px;">
+									<button type="button" id="spotify-csv-toggle" style="background:none;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px;width:100%;transition:all 0.2s;">
+										<span class="dashicons dashicons-upload" style="font-size:16px;width:16px;height:16px;"></span>
+										<?php esc_html_e( 'Attach CSV Override (Optional)', 'charts' ); ?>
+									</button>
+									<div id="spotify-csv-zone" style="display:none;margin-top:10px;border:2px dashed #e2e8f0;border-radius:12px;padding:20px;text-align:center;background:#fafafa;cursor:pointer;position:relative;" onclick="document.getElementById('import_file').click()">
+										<span class="dashicons dashicons-media-spreadsheet" style="font-size:28px;width:28px;height:28px;color:#94a3b8;display:block;margin:0 auto 8px;"></span>
+										<p style="margin:0;font-size:13px;font-weight:600;color:#64748b;"><?php esc_html_e('Click to select CSV file', 'charts'); ?></p>
+										<div id="spotify-csv-file-name" style="margin-top:6px;font-size:11px;color:#94a3b8;"></div>
+									</div>
+								</div>
 							</div>
 						</div>
 						<div class="file-nexus-zone" id="drop-zone">

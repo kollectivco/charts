@@ -177,7 +177,7 @@ jQuery(document).ready(function($) {
             $('.billboard-import-controls').toggle(billboard);
             $('.youtube-import-controls').toggle(youtube);
             $('.spotify-import-controls').toggle(spotify);
-            $dropZone.toggle(!soundcharts && !billboard && !youtube);
+            $dropZone.toggle(!soundcharts && !billboard && !youtube && !spotify);
             
             $('.import-source-step-title').text(soundcharts ? 'Choose Soundcharts Chart' : (billboard ? 'Configure Billboard API' : (youtube ? 'Select YouTube Official Chart' : (spotify ? 'Select Spotify Chart or Playlist' : 'Upload Chart Data'))));
             $('.import-source-step-description').text(soundcharts ? 'Select the content type, platform, and live chart to import.' : (billboard ? 'Select the target Billboard chart and week to fetch directly.' : (youtube ? 'Select the official YouTube charts list to stream directly.' : (spotify ? 'Select official Spotify chart or curated playlist to ingest directly.' : 'Provide the raw export file for intelligence parsing.'))));
@@ -523,6 +523,23 @@ jQuery(document).ready(function($) {
             }
             filterChartsByPlatform();
             checkReadiness();
+        });
+
+        // Spotify optional CSV toggle
+        $(document).on('click', '#spotify-csv-toggle', function() {
+            const $zone = $('#spotify-csv-zone');
+            const isOpen = $zone.is(':visible');
+            $zone.slideToggle(200);
+            $(this).find('.dashicons').toggleClass('dashicons-upload', isOpen).toggleClass('dashicons-no', !isOpen);
+        });
+
+        // Update Spotify CSV file name label when file selected
+        $fileInput.on('change.spotify', function() {
+            const file = this.files[0];
+            if (file && $('[name="platform"]:checked').val() === 'spotify') {
+                $('#spotify-csv-file-name').text('✔ ' + file.name);
+                $('#spotify-csv-toggle').css({ 'border-color': '#1DB954', 'color': '#1DB954' });
+            }
         });
 
         $form.on('submit', function() {
