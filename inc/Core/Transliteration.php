@@ -101,7 +101,7 @@ class Transliteration {
             $delimiters = [' feat. ', ' feat ', ' ft. ', ' ft ', ' & ', ' and ', ', '];
             foreach ($delimiters as $delim) {
                 if (stripos($text, $delim) !== false) {
-                    $parts = explode($delim, $text);
+                    $parts = preg_split('/' . preg_quote($delim, '/') . '/i', $text);
                     $ar_parts = [];
                     $any_changed = false;
                     foreach ($parts as $p) {
