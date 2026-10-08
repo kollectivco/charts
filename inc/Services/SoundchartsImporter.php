@@ -34,14 +34,16 @@ class SoundchartsImporter {
 		}
 
 		$item_type = $entity_type === 'album' ? 'album' : 'track';
-		if ( ( $definition->item_type ?? 'track' ) !== $item_type ) {
+		$def_item_type = trim( (string) ( $definition->item_type ?? '' ) );
+		if ( $def_item_type && $def_item_type !== 'any' && $def_item_type !== $item_type ) {
 			return new \WP_Error( 'soundcharts_target_type_mismatch', __( 'The destination chart must use the same entity type as the selected Soundcharts chart.', 'charts' ) );
 		}
 		$definition_platform = sanitize_key( $definition->platform ?? 'all' );
 		if ( ! in_array( $definition_platform, array( 'all', $platform ), true ) ) {
 			return new \WP_Error( 'soundcharts_target_platform_mismatch', __( 'The destination chart is configured for a different data platform.', 'charts' ) );
 		}
-		if ( strtolower( (string) $definition->country_code ) !== strtolower( $country ) ) {
+		$def_country = strtolower( trim( (string) ( $definition->country_code ?? '' ) ) );
+		if ( $def_country !== '' && $def_country !== 'all' && $def_country !== strtolower( $country ) ) {
 			return new \WP_Error( 'soundcharts_target_country_mismatch', __( 'The destination chart must use the same market as the selected Soundcharts chart.', 'charts' ) );
 		}
 		// Validate the submitted slug against the current API catalogue before importing it.
@@ -256,6 +258,19 @@ class SoundchartsImporter {
 		$id         = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d LIMIT 1", $normalized, $artist_id ) );
 		if ( ! $id && ! empty( $title_en ) ) {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND primary_artist_id = %d LIMIT 1", mb_strtolower( $title_en ), mb_strtolower( $title_en ), $artist_id ) );
+		}
+		if ( ! $id ) {
+			$len = mb_strlen( $normalized, 'UTF-8' );
+			$candidates = $wpdb->get_results( $wpdb->prepare(
+				"SELECT id, normalized_title FROM $table WHERE primary_artist_id = %d AND CHAR_LENGTH(normalized_title) BETWEEN %d AND %d",
+				$artist_id, max( 1, $len - 3 ), $len + 3
+			) );
+			foreach ( $candidates as $cand ) {
+				if ( \Charts\Core\EntityManager::mb_levenshtein( $normalized, $cand->normalized_title ) <= 2 ) {
+					$id = $cand->id;
+					break;
+				}
+			}
 		}
 		if ( $id ) {
 			$updates = array();

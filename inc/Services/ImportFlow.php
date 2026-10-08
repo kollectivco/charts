@@ -205,11 +205,15 @@ class ImportFlow {
 		$source_url   = esc_url_raw( $flat['source_url'] ?? $row['source_url'] ?? '' );
 
 
-		// Resolve canonical slug if missing
-		$item_slug = $flat['item_slug'] ?? null;
-		if ( ! $item_slug && $item_id ) {
-			$suffix = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'album' ) ? 'albums' : ( ( $item_type === 'track' ) ? 'tracks' : 'videos' ) );
-			$item_slug = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$suffix} WHERE id = %d", $item_id ) );
+		// Always re-fetch slug from the canonical entity row (never trust stale flat data)
+		$item_slug = null;
+		if ( $item_id ) {
+			$suffix_map = array( 'track' => 'tracks', 'video' => 'videos', 'album' => 'albums', 'artist' => 'artists' );
+			$tbl_suffix = $suffix_map[ $item_type ] ?? 'tracks';
+			$item_slug  = $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_{$tbl_suffix} WHERE id = %d", $item_id ) );
+		}
+		if ( ! $item_slug ) {
+			$item_slug = $flat['item_slug'] ?? null; // fallback only
 		}
 
 		$existing_id = $wpdb->get_var( $wpdb->prepare(

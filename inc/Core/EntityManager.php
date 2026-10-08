@@ -161,6 +161,28 @@ class EntityManager {
 			}
 		}
 
+		// 5. Fuzzy match (Levenshtein ≤ 2) — catches diacritics/minor spelling variants
+		if ( ! $existing_id && mb_strlen( $normalized, 'UTF-8' ) >= 3 ) {
+			$len = mb_strlen( $normalized, 'UTF-8' );
+			$candidates = $wpdb->get_results( $wpdb->prepare(
+				"SELECT id, normalized_name, display_name_en FROM $table
+				 WHERE CHAR_LENGTH(normalized_name) BETWEEN %d AND %d",
+				max( 1, $len - 3 ), $len + 3
+			) );
+			foreach ( $candidates as $cand ) {
+				if ( self::mb_levenshtein( $normalized, $cand->normalized_name ) <= 2 ) {
+					$existing_id = $cand->id;
+					break;
+				}
+				if ( $name_en && ! empty( $cand->display_name_en ) ) {
+					if ( self::mb_levenshtein( mb_strtolower( $name_en, 'UTF-8' ), mb_strtolower( $cand->display_name_en, 'UTF-8' ) ) <= 2 ) {
+						$existing_id = $cand->id;
+						break;
+					}
+				}
+			}
+		}
+
 		if ( $existing_id ) {
 			$existing_id = (int) $existing_id;
 			// Backfill missing metadata on existing artist
@@ -249,6 +271,28 @@ class EntityManager {
 				}
 				$title      = $ar_title;
 				$normalized = mb_strtolower( $title );
+			}
+		}
+
+		// 5. Fuzzy match for tracks (same-artist, Levenshtein ≤ 2)
+		if ( ! $sql_id && mb_strlen( $normalized, 'UTF-8' ) >= 3 ) {
+			$len = mb_strlen( $normalized, 'UTF-8' );
+			$candidates = $wpdb->get_results( $wpdb->prepare(
+				"SELECT id, normalized_title, title_en FROM $table
+				 WHERE primary_artist_id = %d AND CHAR_LENGTH(normalized_title) BETWEEN %d AND %d",
+				$artist_id, max( 1, $len - 3 ), $len + 3
+			) );
+			foreach ( $candidates as $cand ) {
+				if ( self::mb_levenshtein( $normalized, $cand->normalized_title ) <= 2 ) {
+					$sql_id = $cand->id;
+					break;
+				}
+				if ( $title_en && ! empty( $cand->title_en ) ) {
+					if ( self::mb_levenshtein( mb_strtolower( $title_en, 'UTF-8' ), mb_strtolower( $cand->title_en, 'UTF-8' ) ) <= 2 ) {
+						$sql_id = $cand->id;
+						break;
+					}
+				}
 			}
 		}
 
@@ -418,5 +462,35 @@ class EntityManager {
 		}
 		
 		return $results;
+	}
+
+	/**
+	 * Multibyte-safe Levenshtein distance (supports Arabic/Unicode).
+	 * Returns 999 if strings differ in length by more than 5 characters (early exit).
+	 */
+	public static function mb_levenshtein( $s1, $s2 ) {
+		$s1 = (string) $s1;
+		$s2 = (string) $s2;
+		if ( $s1 === $s2 ) return 0;
+		$l1 = mb_strlen( $s1, 'UTF-8' );
+		$l2 = mb_strlen( $s2, 'UTF-8' );
+		if ( $l1 === 0 ) return $l2;
+		if ( $l2 === 0 ) return $l1;
+		if ( abs( $l1 - $l2 ) > 5 ) return 999;
+		$a1 = preg_split( '//u', $s1, -1, PREG_SPLIT_NO_EMPTY );
+		$a2 = preg_split( '//u', $s2, -1, PREG_SPLIT_NO_EMPTY );
+		$dp = range( 0, $l2 );
+		for ( $i = 1; $i <= $l1; $i++ ) {
+			$prev  = $dp;
+			$dp[0] = $i;
+			for ( $j = 1; $j <= $l2; $j++ ) {
+				$dp[ $j ] = min(
+					$prev[ $j ] + 1,
+					$dp[ $j - 1 ] + 1,
+					$prev[ $j - 1 ] + ( $a1[ $i - 1 ] === $a2[ $j - 1 ] ? 0 : 1 )
+				);
+			}
+		}
+		return $dp[ $l2 ];
 	}
 }
