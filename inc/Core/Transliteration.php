@@ -153,9 +153,7 @@ class Transliteration {
      * Convert Western numbers to Eastern Arabic numerals.
      */
     public static function to_arabic_numerals($number) {
-        $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        $eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-        return str_replace($western, $eastern, (string)$number);
+        return (string) $number; // Disabled because UI fonts (like Inter) lack Arabic Indic numeral glyphs, causing missing glyph blocks (tofu).
     }
 
     /**
