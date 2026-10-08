@@ -70,9 +70,13 @@ foreach($appearances as $app) {
 }
 $appearances = $valid_appearances;
 
-$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
-$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
-$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
+if ( $type === 'album' ) {
+	$artist_ids = array();
+} else {
+	$j_table = ( $type === 'track' ) ? "{$wpdb->prefix}charts_track_artists" : "{$wpdb->prefix}charts_video_artists";
+	$id_col  = ( $type === 'track' ) ? 'track_id' : 'video_id';
+	$artist_ids = $wpdb->get_col( $wpdb->prepare( "SELECT artist_id FROM $j_table WHERE $id_col = %d", $item->id ) ) ?: array();
+}
 if ( empty($artist_ids) && !empty($item->primary_artist_id) ) $artist_ids = array($item->primary_artist_id);
 
 $site_title = get_bloginfo('name');
@@ -83,7 +87,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html($resolved['title']); ?></title>
+    <title><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
@@ -103,7 +107,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($item);
             <div style="display: flex; gap: 20px; align-items: center;">
                 <img src="<?php echo esc_url($item->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 100px; height: 100px; border-radius: 12px; object-fit: cover; box-shadow: var(--kc-shadow-sm);">
                 <div style="flex: 1;">
-                    <h2 style="font-size: 24px; font-weight: 900; margin: 0; line-height: 1.1;"><?php echo esc_html($resolved['title']); ?></h2>
+                    <h2 style="font-size: 24px; font-weight: 900; margin: 0; line-height: 1.1;"><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></h2>
                     <?php 
                         if ( ! empty($artist_ids) ) :
                             foreach ( $artist_ids as $a_id ) :

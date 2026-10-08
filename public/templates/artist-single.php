@@ -205,7 +205,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 				<?php 
 					$resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 				?>
-				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class($resolved['title']); ?>" style="margin: 0; line-height: 1;"><?php echo esc_html($resolved['title']); ?></h1>
+				<h1 class="kc-page-title <?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($resolved['title'])); ?>" style="margin: 0; line-height: 1;"><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></h1>
 
 				<?php if ( ! empty($genres) ) : ?>
 					<div style="display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;">
@@ -309,8 +309,8 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 											$a_resolved  = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 										?>
 										<div>
-											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class($pt_resolved['title']); ?>"><?php echo esc_html($pt_resolved['title']); ?></span>
-											<span style="display: block; font-size: 11px; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class($a_resolved['title']); ?>"><?php echo esc_html($a_resolved['title']); ?></span>
+											<span style="display: block; font-size: 14px; font-weight: 800; color: var(--k-text);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($pt_resolved['title'])); ?>"><?php echo esc_html(\Charts\Core\Translation::get($pt_resolved['title'])); ?></span>
+											<span style="display: block; font-size: 11px; color: var(--k-text-muted);" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($a_resolved['title'])); ?>"><?php echo esc_html(\Charts\Core\Translation::get($a_resolved['title'])); ?></span>
 										</div>
 									</div>
 									<div style="display: flex; align-items: center; gap: 20px;">
@@ -379,7 +379,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						<div class="kc-card" style="display: flex; align-items: center; gap: 16px;">
 							<img src="<?php echo esc_url($album->cover_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover;">
 							<div>
-								<h4 style="font-size: 14px; font-weight: 900; margin: 0;"><?php echo esc_html($album->title); ?></h4>
+								<h4 style="font-size: 14px; font-weight: 900; margin: 0;"><?php echo esc_html(\Charts\Core\Translation::get($album->title)); ?></h4>
 								<?php if ( ! empty($album->release_date) ) : ?>
 								<span style="display: block; font-size: 11px; color: var(--k-text-muted); margin-top: 4px;"><?php echo date('Y', strtotime($album->release_date)); ?></span>
 								<?php endif; ?>

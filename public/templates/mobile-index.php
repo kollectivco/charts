@@ -61,7 +61,7 @@ $site_title = get_bloginfo('name');
                             <div class="kc-hero-overlay"></div>
                             <div class="kc-hero-info" style="padding: 32px;">
                                 <span class="kc-meta" style="color:#fff; opacity:0.8; font-size: 10px; font-weight: 900; letter-spacing: 0.15em;"><?php echo esc_html($s['badge'] ?: 'INTELLIGENCE'); ?></span>
-                                <h3 style="color:#fff; font-size: 32px; margin-top:8px; line-height: 1;"><?php echo esc_html($s['title']); ?></h3>
+                                <h3 style="color:#fff; font-size: 32px; margin-top:8px; line-height: 1;"><?php echo esc_html(\Charts\Core\Translation::get($s['title'])); ?></h3>
                             </div>
                         </a>
                     <?php endforeach; ?>

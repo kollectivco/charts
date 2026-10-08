@@ -86,7 +86,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html($resolved['title']); ?></title>
+    <title><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
@@ -104,7 +104,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
         <!-- Hero -->
         <section class="kc-section" style="padding: 32px 20px; text-align: center;">
             <img src="<?php echo esc_url($display_image); ?>" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; box-shadow: var(--kc-shadow-sm); margin: 0 auto 16px;">
-            <h2 style="font-size: 32px; font-weight: 950; margin: 0; line-height: 1;"><?php echo esc_html($resolved['title']); ?></h2>
+            <h2 style="font-size: 32px; font-weight: 950; margin: 0; line-height: 1;"><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></h2>
             <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
                 <span style="background: var(--kc-primary); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 20px; text-transform: uppercase;">Billboard Artist</span>
             </div>
@@ -135,7 +135,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
                     <a href="<?php echo esc_url($pt_url); ?>" class="kc-row" style="padding: 12px 16px; background:var(--kc-surface); border-radius:12px; border:1px solid var(--kc-divider); text-decoration:none;">
                         <img src="<?php echo esc_url(\Charts\Core\PublicIntegration::resolve_artwork($pt, $pt->item_type)); ?>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
                         <div class="kc-row-info">
-                            <span class="kc-row-title" style="font-size:14px;"><?php echo esc_html($pt_resolved['title']); ?></span>
+                            <span class="kc-row-title" style="font-size:14px;"><?php echo esc_html(\Charts\Core\Translation::get($pt_resolved['title'])); ?></span>
                             <span class="kc-row-sub" style="font-size:10px;">Explorer Insights &larr;</span>
                         </div>
                     </a>

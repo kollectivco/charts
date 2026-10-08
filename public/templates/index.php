@@ -146,7 +146,7 @@ $section_order         = explode(',', Settings::get('homepage.section_order'));
 									$art_title = \Charts\Core\Translation::get($resolved['title']);
 									$trending_tag = \Charts\Core\Translation::get(Settings::get('labels.trending_artist_tag', 'فنان متصدر'));
 								?>
-								<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class($art_title); ?>"><?php echo esc_html($art_title); ?></h3>
+								<h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($art_title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($art_title)); ?></h3>
 								<p style="margin: 4px 0 0; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;" class="<?php echo \Charts\Core\Typography::get_font_class($trending_tag); ?>"><?php echo esc_html($trending_tag); ?></p>
 							</div>
 						</a>

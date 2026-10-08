@@ -62,8 +62,8 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 							</div>
 							<img src="<?php echo esc_url( $img ); ?>" style="width: 64px; height: 64px; border-radius: 8px; object-fit: cover;">
 							<div style="flex-grow: 1;">
-								<h3 style="font-size: 18px; font-weight: 950; color: var(--k-text); margin: 0; line-height: 1.2;" class="<?php echo \Charts\Core\Typography::get_font_class($video->title); ?>"><?php echo esc_html( $video->title ); ?></h3>
-								<span style="display: block; font-size: 12px; font-weight: 700; color: var(--k-text-muted); margin-top: 4px;" class="<?php echo \Charts\Core\Typography::get_font_class($video->artist_name); ?>"><?php echo esc_html( $video->artist_name ); ?></span>
+								<h3 style="font-size: 18px; font-weight: 950; color: var(--k-text); margin: 0; line-height: 1.2;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($video->title)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($video->title)); ?></h3>
+								<span style="display: block; font-size: 12px; font-weight: 700; color: var(--k-text-muted); margin-top: 4px;" class="<?php echo \Charts\Core\Typography::get_font_class(\Charts\Core\Translation::get($video->artist_name)); ?>"><?php echo esc_html(\Charts\Core\Translation::get($video->artist_name)); ?></span>
 							</div>
 							<div class="kc-row-meta" style="display: flex; gap: 40px; margin-right: 40px; text-align: right;">
 								<div>

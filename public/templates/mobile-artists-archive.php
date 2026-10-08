@@ -49,7 +49,7 @@ $site_title = get_bloginfo('name');
                         <div class="kc-row" style="padding: 14px 20px;">
                             <img src="<?php echo esc_url($img); ?>" class="kc-row-img" style="width:48px; height:48px; border-radius: 50%;">
                             <div class="kc-row-info">
-                                <span class="kc-row-title"><?php echo esc_html($a->display_name); ?></span>
+                                <span class="kc-row-title"><?php echo esc_html(\Charts\Core\Translation::get($a->display_name)); ?></span>
                                 <span class="kc-row-sub"><?php echo number_format($a->appearance_count); ?> Chart Entries</span>
                             </div>
                             <div class="kc-chevron">

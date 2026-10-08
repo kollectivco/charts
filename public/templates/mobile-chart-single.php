@@ -35,7 +35,7 @@ $site_title = get_bloginfo('name');
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html($current_def->title); ?> — Mobile Mode</title>
+    <title><?php echo esc_html(\Charts\Core\Translation::get($current_def->title)); ?> — Mobile Mode</title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
@@ -51,7 +51,7 @@ $site_title = get_bloginfo('name');
     
     <header class="kc-header" style="display:flex; align-items:center; gap:16px; padding: 16px 20px; border-bottom:1px solid var(--kc-divider); position:sticky; top:0; z-index:100; background:var(--kc-surface);">
         <a href="<?php echo esc_url($link('/charts')); ?>" style="color:var(--kc-text); text-decoration:none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></a>
-        <h1 style="font-size: 18px; margin:0; line-height:1;"><?php echo esc_html($current_def->title); ?></h1>
+        <h1 style="font-size: 18px; margin:0; line-height:1;"><?php echo esc_html(\Charts\Core\Translation::get($current_def->title)); ?></h1>
     </header>
 
     <main class="kc-content">
@@ -75,8 +75,8 @@ $site_title = get_bloginfo('name');
                     
                     <div style="flex:1;">
                         <span style="display:inline-block; background:<?php echo $accent; ?>15; color:<?php echo $accent; ?>; font-size:10px; font-weight:900; padding:4px 10px; border-radius:6px; text-transform:uppercase; margin-bottom:8px;">Featured Number One</span>
-                        <h2 style="font-size:24px; font-weight:950; margin:0; line-height:1.1; color:var(--kc-text);"><?php echo esc_html($resolved_top['title']); ?></h2>
-                        <span style="display:block; font-size:14px; color:var(--kc-text-muted); margin-top:4px; font-weight:700;"><?php echo esc_html($resolved_top['subtitle']); ?></span>
+                        <h2 style="font-size:24px; font-weight:950; margin:0; line-height:1.1; color:var(--kc-text);"><?php echo esc_html(\Charts\Core\Translation::get($resolved_top['title'])); ?></h2>
+                        <span style="display:block; font-size:14px; color:var(--kc-text-muted); margin-top:4px; font-weight:700;"><?php echo esc_html(\Charts\Core\Translation::get($resolved_top['subtitle'])); ?></span>
                     </div>
                 </div>
 
@@ -107,8 +107,8 @@ $site_title = get_bloginfo('name');
                         <span class="kc-rank"><?php echo \Charts\Core\Transliteration::to_arabic_numerals($e->rank_position); ?></span>
                         <img src="<?php echo esc_url($resolve_art($e)); ?>" class="kc-row-img" style="width:48px; height:48px;">
                         <div class="kc-row-info">
-                            <span class="kc-row-title"><?php echo esc_html($resolved['title']); ?></span>
-                            <span class="kc-row-sub"><?php echo esc_html($resolved['subtitle']); ?></span>
+                            <span class="kc-row-title"><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></span>
+                            <span class="kc-row-sub"><?php echo esc_html(\Charts\Core\Translation::get($resolved['subtitle'])); ?></span>
                         </div>
                         
                         <div style="text-align:right; margin-right: 12px;">

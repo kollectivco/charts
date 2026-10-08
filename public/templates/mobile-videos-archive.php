@@ -49,8 +49,8 @@ $site_title = get_bloginfo('name');
                         <div class="kc-row" style="padding: 14px 20px;">
                             <img src="<?php echo esc_url($img); ?>" class="kc-row-img" style="width:48px; height:48px; border-radius: 8px;">
                             <div class="kc-row-info">
-                                <span class="kc-row-title"><?php echo esc_html($v->title); ?></span>
-                                <span class="kc-row-sub"><?php echo esc_html($v->artist_name); ?></span>
+                                <span class="kc-row-title"><?php echo esc_html(\Charts\Core\Translation::get($v->title)); ?></span>
+                                <span class="kc-row-sub"><?php echo esc_html(\Charts\Core\Translation::get($v->artist_name)); ?></span>
                             </div>
                             <div class="kc-chevron">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
