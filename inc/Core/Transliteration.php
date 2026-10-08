@@ -22,55 +22,73 @@ class Transliteration {
     
     private static $cache = [];
 
-    public static function arabize_text($text, $type = "any") {
-        if (empty($text)) return $text;
+    public static function arabize_text($text, $type = 'any') {
+        $text = trim((string)$text);
+        if (empty($text)) return '';
 
-        global $wpdb;
-        $norm = mb_strtolower(trim($text), "UTF-8");
-        $cache_key = $type . "_" . $norm;
-        
+        // Cache check
+        $cache_key = $type . "_" . mb_strtolower($text, "UTF-8");
         if (isset(self::$cache[$cache_key])) {
             return self::$cache[$cache_key];
         }
 
-        // 1. Exact manual mapping override (fastest)
-        $override = $wpdb->get_var($wpdb->prepare(
-            "SELECT string_ar FROM {$wpdb->prefix}charts_translations WHERE string_en = %s LIMIT 1",
-            trim($text)
-        ));
-        if ($override && self::has_arabic($override)) {
-            return self::$cache[$cache_key] = $override;
+        // If it already contains Arabic, keep it as is
+        if (self::has_arabic($text)) {
+            return self::$cache[$cache_key] = $text;
         }
 
-        // 2. Database lookups for Entities (without LOWER function in queries for index performance)
-        if (class_exists("\Charts\Core\EntityManager")) {
-            // Check charts_artists
-            if (in_array($type, ["artist", "any"], true)) {
+        // 1. Check Reference Dictionary
+        if (class_exists('\Charts\Core\Translation')) {
+            // Check default strings and kcharts_translations option
+            $saved = get_option('kcharts_translations', []);
+            if (is_array($saved) && !empty($saved[$text])) {
+                $translated = $saved[$text];
+            } else {
+                $defaults = \Charts\Core\Translation::get_all_registered();
+                if (!empty($defaults[$text])) {
+                    $translated = $defaults[$text];
+                } else {
+                    $translated = $text; // fallback
+                }
+            }
+
+            if ($translated !== $text && self::has_arabic($translated)) {
+                return self::$cache[$cache_key] = $translated;
+            }
+        }
+
+        // 2. Check Database Links & References (Artists, Tracks, Albums)
+        global $wpdb;
+        $norm = mb_strtolower($text, "UTF-8");
+
+        if ( ! empty( $wpdb ) && method_exists( $wpdb, 'get_var' ) ) {
+            // Check charts_artists if type is artist or any
+            if (in_array($type, ['artist', 'any'], true)) {
                 $ar_artist = $wpdb->get_var($wpdb->prepare(
                     "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE (display_name_en = %s OR normalized_name = %s) AND display_name IS NOT NULL AND display_name != '' LIMIT 1",
-                    trim($text), $norm
+                    $text, $norm
                 ));
                 if ($ar_artist && self::has_arabic($ar_artist)) {
                     return self::$cache[$cache_key] = $ar_artist;
                 }
             }
 
-            // Check charts_tracks
-            if (in_array($type, ["track", "any"], true)) {
+            // Check charts_tracks if type is track or any
+            if (in_array($type, ['track', 'any'], true)) {
                 $ar_track = $wpdb->get_var($wpdb->prepare(
                     "SELECT title FROM {$wpdb->prefix}charts_tracks WHERE (title_en = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
-                    trim($text), $norm
+                    $text, $norm
                 ));
                 if ($ar_track && self::has_arabic($ar_track)) {
                     return self::$cache[$cache_key] = $ar_track;
                 }
             }
 
-            // Check charts_albums
-            if (in_array($type, ["album", "any"], true)) {
+            // Check charts_albums if type is album or any
+            if (in_array($type, ['album', 'any'], true)) {
                 $ar_album = $wpdb->get_var($wpdb->prepare(
                     "SELECT title FROM {$wpdb->prefix}charts_albums WHERE (title_en = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
-                    trim($text), $norm
+                    $text, $norm
                 ));
                 if ($ar_album && self::has_arabic($ar_album)) {
                     return self::$cache[$cache_key] = $ar_album;
@@ -78,9 +96,9 @@ class Transliteration {
             }
         }
 
-        // 3. Multi-artist / compound string handling
-        if ($type === "artist" || $type === "any") {
-            $delimiters = [" feat. ", " feat ", " ft. ", " ft ", " & ", " and ", ", "];
+        // 3. Multi-artist / compound string handling (e.g. "Amr Diab, Mohamed Hamaki" or "Ahmed Saad feat. Nordo")
+        if ($type === 'artist' || $type === 'any') {
+            $delimiters = [' feat. ', ' feat ', ' ft. ', ' ft ', ' & ', ' and ', ', '];
             foreach ($delimiters as $delim) {
                 if (stripos($text, $delim) !== false) {
                     $parts = explode($delim, $text);
@@ -88,19 +106,20 @@ class Transliteration {
                     $any_changed = false;
                     foreach ($parts as $p) {
                         $p_trimmed = trim($p);
-                        $ar_p = self::arabize_text($p_trimmed, "artist");
+                        $ar_p = self::arabize_text($p_trimmed, 'artist');
                         if ($ar_p !== $p_trimmed && self::has_arabic($ar_p)) {
                             $any_changed = true;
                         }
                         $ar_parts[] = $ar_p;
                     }
                     if ($any_changed) {
-                        return self::$cache[$cache_key] = implode("، ", $ar_parts);
+                        return self::$cache[$cache_key] = implode('، ', $ar_parts);
                     }
                 }
             }
         }
 
+        // 4. Return clean original Latin/English name if no reference match found (NEVER Franco)
         return self::$cache[$cache_key] = $text;
     }
 
