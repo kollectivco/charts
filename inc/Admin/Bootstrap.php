@@ -308,6 +308,12 @@ class Bootstrap {
 				break;
 
 			case 'backfill_media':
+			case 'clear_all_caches':
+				self::clear_frontend_caches();
+				\Charts\Core\Notify::success( __( 'All system caches, object caches, and transients have been successfully cleared.', 'charts' ), __( 'Caches Cleared', 'charts' ) );
+				$processed = true;
+				break;
+
 			case 'backfill_media_v2':
 				$manager = new \Charts\Services\AssetManager();
 				$results = $manager->backfill_all();
