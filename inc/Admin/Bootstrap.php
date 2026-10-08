@@ -19,6 +19,22 @@ class Bootstrap {
 		// One-Time Migrations & Cleanup
 		self::run_one_time_migrations();
 		
+		if ( is_admin() && ! get_option('charts_slugs_healed_v3445') ) {
+			global $wpdb;
+			$wpdb->query("UPDATE {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_tracks t ON e.item_id = t.id SET e.item_slug = t.slug WHERE e.item_type = 'track'");
+			$wpdb->query("UPDATE {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_artists a ON e.item_id = a.id SET e.item_slug = a.slug WHERE e.item_type = 'artist'");
+			$wpdb->query("UPDATE {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_albums a ON e.item_id = a.id SET e.item_slug = a.slug WHERE e.item_type = 'album'");
+			$wpdb->query("UPDATE {$wpdb->prefix}charts_entries e JOIN {$wpdb->prefix}charts_videos v ON e.item_id = v.id SET e.item_slug = v.slug WHERE e.item_type = 'video'");
+			
+			// Cleanup orphans left behind by UPDATE IGNORE on older schemas
+			$wpdb->query("DELETE FROM {$wpdb->prefix}charts_entries WHERE item_type = 'track' AND item_id NOT IN (SELECT id FROM {$wpdb->prefix}charts_tracks)");
+			$wpdb->query("DELETE FROM {$wpdb->prefix}charts_entries WHERE item_type = 'artist' AND item_id NOT IN (SELECT id FROM {$wpdb->prefix}charts_artists)");
+			$wpdb->query("DELETE FROM {$wpdb->prefix}charts_entries WHERE item_type = 'album' AND item_id NOT IN (SELECT id FROM {$wpdb->prefix}charts_albums)");
+			$wpdb->query("DELETE FROM {$wpdb->prefix}charts_entries WHERE item_type = 'video' AND item_id NOT IN (SELECT id FROM {$wpdb->prefix}charts_videos)");
+
+			update_option('charts_slugs_healed_v3445', 1);
+		}
+
 		// AJAX Handlers
 		add_action( 'wp_ajax_charts_run_import', array( self::class, 'handle_run_import' ) );
 		add_action( 'wp_ajax_charts_recalculate_intel', array( self::class, 'handle_recalculate_intel' ) );
