@@ -63,19 +63,16 @@ class SoundchartsImporter {
 
 		$ranking = array();
 		$offset  = 0;
-		$total   = 100; // Strict limit: Cap import data from Soundcharts to 100 (never 200)
+		$total   = min( 1000, max( 1, absint( $chart['maxResults'] ?? 100 ) ) );
 		for ( $page = 0; $page < 10 && $offset < $total; $page++ ) {
-			$limit_to_fetch = min( 100, $total - $offset );
-			$response = $this->api->get_latest_ranking( $entity_type, $chart_slug, $limit_to_fetch, $offset );
+			$response = $this->api->get_latest_ranking( $entity_type, $chart_slug, 100, $offset );
 			if ( is_wp_error( $response ) ) return $response;
 			$items = (array) ( $response['items'] ?? array() );
 			if ( empty( $items ) ) break;
 			$ranking = array_merge( $ranking, $items );
+			$total   = min( 1000, max( $total, absint( $response['page']['total'] ?? 0 ) ) );
 			$offset += count( $items );
-			if ( count( $ranking ) >= $total || count( $items ) < $limit_to_fetch ) break;
-		}
-		if ( count( $ranking ) > 100 ) {
-			$ranking = array_slice( $ranking, 0, 100 );
+			if ( count( $items ) < 100 ) break;
 		}
 		if ( empty( $ranking ) ) return new \WP_Error( 'soundcharts_empty_ranking', __( 'Soundcharts returned no entries for this chart.', 'charts' ) );
 
@@ -114,8 +111,9 @@ class SoundchartsImporter {
 		$period_id = $this->flow->ensure_period( $chart['frequency'], $period_date );
 		if ( ! $period_id ) return new \WP_Error( 'soundcharts_period_failed', __( 'Could not create a chart period for this Soundcharts snapshot.', 'charts' ) );
 
-		// Clean slate: always wipe the period for this source so new import is strictly 100 entries with no old leftovers
-		$this->flow->wipe_period( $source_id, $period_id );
+		if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+			$this->flow->wipe_period( $source_id, $period_id );
+		}
 
 		$wpdb->insert( $wpdb->prefix . 'charts_import_runs', array(
 			'source_id'   => $source_id,
