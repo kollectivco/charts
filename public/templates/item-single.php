@@ -211,7 +211,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 						</div>
 						<?php endif; ?>
 
-						<!-- PREMIUM PREDICTION WIDGETS -->
+						<?php /* PREMIUM PREDICTION WIDGETS TEMPORARILY DISABLED
 						<div class="forecast-nexus-card" style="grid-column: span 2; background: #fff; border: 1px solid var(--k-border); border-radius: 20px; padding: 24px; margin-top: 10px; box-shadow: var(--k-shadow-sm); position: relative; overflow: hidden;">
 							<div class="forecast-badge" style="background: linear-gradient(90deg, #6366f1, #fe025b); color: #fff; font-size: 9px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 30px; display: inline-block; margin-bottom: 15px; letter-spacing: 0.05em;">
 								FORECAST MATRIX
@@ -311,6 +311,7 @@ if ( ! $is_mobile ) { \Charts\Core\PublicIntegration::get_header(); }
 					<?php else : ?>
 						<p style="font-size: 11px; color: var(--k-text-muted); grid-column: span 2;"><?php echo \Charts\Core\Translation::get('Analytics still processing for this item.'); ?></p>
 					<?php endif; ?>
+					*/ ?>
 				</div>
 
 			</div>
