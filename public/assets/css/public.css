@@ -1564,6 +1564,7 @@
 	min-width: 0;
 }
 .kc-featured-rank-num {
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 	font-size: clamp(48px, 8vw, 120px) !important;
 	font-weight: 950;
 	line-height: 1;

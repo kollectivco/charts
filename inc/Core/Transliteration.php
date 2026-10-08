@@ -19,65 +19,68 @@ class Transliteration {
      * Arabize text by searching in references, dictionaries, and database links.
      * Guaranteed: Translates to real Arabic, NEVER Franco-Arabic.
      */
-    public static function arabize_text($text, $type = 'any') {
-        $text = trim((string)$text);
-        if (empty($text)) return '';
+    
+    private static $cache = [];
 
-        // If it already contains Arabic, keep it as is
-        if (self::has_arabic($text)) {
-            return $text;
-        }
+    public static function arabize_text($text, $type = "any") {
+        if (empty($text)) return $text;
 
-        // 1. Check Reference Dictionary (Translation::$default_strings and kcharts_translations option)
-        if (class_exists('\Charts\Core\Translation')) {
-            $translated = \Charts\Core\Translation::get($text);
-            if ($translated !== $text && self::has_arabic($translated)) {
-                return $translated;
-            }
-        }
-
-        // 2. Check Database Links & References (Artists, Tracks, Albums)
         global $wpdb;
-        $norm = mb_strtolower($text);
+        $norm = mb_strtolower(trim($text), "UTF-8");
+        $cache_key = $type . "_" . $norm;
+        
+        if (isset(self::$cache[$cache_key])) {
+            return self::$cache[$cache_key];
+        }
 
-        if ( ! empty( $wpdb ) && method_exists( $wpdb, 'get_var' ) ) {
-            // Check charts_artists if type is artist or any
-            if (in_array($type, ['artist', 'any'], true)) {
+        // 1. Exact manual mapping override (fastest)
+        $override = $wpdb->get_var($wpdb->prepare(
+            "SELECT string_ar FROM {$wpdb->prefix}charts_translations WHERE string_en = %s LIMIT 1",
+            trim($text)
+        ));
+        if ($override && self::has_arabic($override)) {
+            return self::$cache[$cache_key] = $override;
+        }
+
+        // 2. Database lookups for Entities (without LOWER function in queries for index performance)
+        if (class_exists("\Charts\Core\EntityManager")) {
+            // Check charts_artists
+            if (in_array($type, ["artist", "any"], true)) {
                 $ar_artist = $wpdb->get_var($wpdb->prepare(
-                    "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE (LOWER(display_name_en) = %s OR normalized_name = %s) AND display_name IS NOT NULL AND display_name != '' LIMIT 1",
-                    $norm, $norm
+                    "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE (display_name_en = %s OR normalized_name = %s) AND display_name IS NOT NULL AND display_name != '' LIMIT 1",
+                    trim($text), $norm
                 ));
                 if ($ar_artist && self::has_arabic($ar_artist)) {
-                    return $ar_artist;
+                    return self::$cache[$cache_key] = $ar_artist;
                 }
             }
 
-            // Check charts_tracks if type is track or any
-            if (in_array($type, ['track', 'any'], true)) {
+            // Check charts_tracks
+            if (in_array($type, ["track", "any"], true)) {
                 $ar_track = $wpdb->get_var($wpdb->prepare(
-                    "SELECT title FROM {$wpdb->prefix}charts_tracks WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
-                    $norm, $norm
+                    "SELECT title FROM {$wpdb->prefix}charts_tracks WHERE (title_en = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
+                    trim($text), $norm
                 ));
                 if ($ar_track && self::has_arabic($ar_track)) {
-                    return $ar_track;
+                    return self::$cache[$cache_key] = $ar_track;
                 }
             }
 
-            // Check charts_albums if type is album or any
-            if (in_array($type, ['album', 'any'], true)) {
+            // Check charts_albums
+            if (in_array($type, ["album", "any"], true)) {
                 $ar_album = $wpdb->get_var($wpdb->prepare(
-                    "SELECT title FROM {$wpdb->prefix}charts_albums WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
-                    $norm, $norm
+                    "SELECT title FROM {$wpdb->prefix}charts_albums WHERE (title_en = %s OR normalized_title = %s) AND title IS NOT NULL AND title != '' LIMIT 1",
+                    trim($text), $norm
                 ));
                 if ($ar_album && self::has_arabic($ar_album)) {
-                    return $ar_album;
+                    return self::$cache[$cache_key] = $ar_album;
                 }
             }
         }
 
-        // 3. Multi-artist / compound string handling (e.g. "Amr Diab, Mohamed Hamaki" or "Ahmed Saad feat. Nordo")
-        if ($type === 'artist' || $type === 'any') {
-            $delimiters = [' feat. ', ' feat ', ' ft. ', ' ft ', ' & ', ' and ', ', '];
+        // 3. Multi-artist / compound string handling
+        if ($type === "artist" || $type === "any") {
+            $delimiters = [" feat. ", " feat ", " ft. ", " ft ", " & ", " and ", ", "];
             foreach ($delimiters as $delim) {
                 if (stripos($text, $delim) !== false) {
                     $parts = explode($delim, $text);
@@ -85,29 +88,22 @@ class Transliteration {
                     $any_changed = false;
                     foreach ($parts as $p) {
                         $p_trimmed = trim($p);
-                        $ar_p = self::arabize_text($p_trimmed, 'artist');
+                        $ar_p = self::arabize_text($p_trimmed, "artist");
                         if ($ar_p !== $p_trimmed && self::has_arabic($ar_p)) {
                             $any_changed = true;
                         }
                         $ar_parts[] = $ar_p;
                     }
                     if ($any_changed) {
-                        return implode('، ', $ar_parts);
+                        return self::$cache[$cache_key] = implode("، ", $ar_parts);
                     }
                 }
             }
         }
 
-        // 4. Return clean original Latin/English name if no reference match found (NEVER Franco)
-        return $text;
+        return self::$cache[$cache_key] = $text;
     }
 
-    /**
-     * Resolve the final display name:
-     * 1. If English preferred mode is on -> return English alternate if provided.
-     * 2. If original is in English/Latin, search references and links for Arabic name.
-     * 3. Otherwise return clean original name (No Franco).
-     */
     public static function resolve_display($original, $english_alt, $mode = 'original') {
         if (empty($original)) return '';
         
@@ -153,7 +149,9 @@ class Transliteration {
      * Convert Western numbers to Eastern Arabic numerals.
      */
     public static function to_arabic_numerals($number) {
-        return (string) $number; // Disabled because UI fonts (like Inter) lack Arabic Indic numeral glyphs, causing missing glyph blocks (tofu).
+        $western = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        $eastern = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+        return str_replace($western, $eastern, (string)$number);
     }
 
     /**

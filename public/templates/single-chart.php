@@ -211,12 +211,12 @@ if ( ! $is_mobile ) {
 					?>
 					<div class="kc-featured-inner">
 						<div class="kc-featured-media">
-							<div class="kc-featured-rank-num" style="color: <?php echo esc_attr($chart_color); ?>;">1</div>
+							<div class="kc-featured-rank-num" style="color: <?php echo esc_attr($chart_color); ?>;">١</div>
 							<img class="kc-featured-img" src="<?php echo esc_url($top->resolved_image ?: CHARTS_URL . 'public/assets/img/placeholder.png'); ?>" alt="<?php echo esc_attr($top_artist ?: $top_track); ?>">
 						</div>
 						<div class="kc-featured-info">
 							<div class="kc-featured-badge-row">
-								<span class="kc-featured-badge" style="background: <?php echo esc_attr($chart_color); ?>;">#1 الأسبوع ده</span>
+								<span class="kc-featured-badge" style="background: <?php echo esc_attr($chart_color); ?>;">#١ الأسبوع ده</span>
 								<?php if ( $top->movement_direction === 'up' && ! empty($top->movement_value) ) : ?>
 									<span class="kc-featured-movement">+<?php echo \Charts\Core\Transliteration::to_arabic_numerals(intval($top->movement_value)); ?></span>
 								<?php elseif ( $top->movement_direction === 'down' && ! empty($top->movement_value) ) : ?>
