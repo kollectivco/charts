@@ -252,7 +252,7 @@ class SoundchartsImporter {
 	private function ensure_album( $title, $artist_id, $image, $title_en = '' ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_albums';
-		$normalized = mb_strtolower( trim( $title ) );
+		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( trim( $title ) );
 		$id         = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d LIMIT 1", $normalized, $artist_id ) );
 		if ( ! $id && ! empty( $title_en ) ) {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND primary_artist_id = %d LIMIT 1", mb_strtolower( $title_en ), mb_strtolower( $title_en ), $artist_id ) );

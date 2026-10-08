@@ -127,7 +127,7 @@ class EntityManager {
 		$display_name = trim( $display_name );
 		if ( empty( $display_name ) ) return 0;
 
-		$normalized = mb_strtolower( $display_name );
+		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_artist( $display_name ) : mb_strtolower( $display_name );
 		$table = $wpdb->prefix . 'charts_artists';
 
 		// 1. Exact match on normalized_name or display_name
@@ -157,7 +157,7 @@ class EntityManager {
 					$name_en = $display_name;
 				}
 				$display_name = $ar_name;
-				$normalized   = mb_strtolower( $display_name );
+				$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_artist( $display_name ) : mb_strtolower( $display_name );
 			}
 		}
 
@@ -211,7 +211,7 @@ class EntityManager {
 			if ( $ar_name && $ar_name !== $display_name && \Charts\Core\Transliteration::has_arabic( $ar_name ) ) {
 				if ( empty( $name_en ) ) $name_en = $display_name;
 				$display_name = $ar_name;
-				$normalized   = mb_strtolower( $display_name );
+				$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_artist( $display_name ) : mb_strtolower( $display_name );
 			}
 		}
 
@@ -241,7 +241,7 @@ class EntityManager {
 		$title = trim( $title );
 		if ( empty( $title ) ) return 0;
 
-		$normalized = mb_strtolower( $title );
+		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( $title );
 		$table = $wpdb->prefix . 'charts_tracks';
 		$title_en = ! empty( $data['title_en'] ) ? trim( $data['title_en'] ) : '';
 
@@ -254,9 +254,6 @@ class EntityManager {
 		}
 
 		// 3. Match by English title if available
-		if ( ! $sql_id ) {
-			$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE LOWER(title_en) = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
-		}
 		if ( ! $sql_id && ! empty( $title_en ) ) {
 			$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (LOWER(title_en) = %s OR normalized_title = %s) AND primary_artist_id = %d", mb_strtolower( $title_en ), mb_strtolower( $title_en ), $artist_id ) );
 		}
@@ -270,7 +267,7 @@ class EntityManager {
 					$title_en = $title;
 				}
 				$title      = $ar_title;
-				$normalized = mb_strtolower( $title );
+				$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( $title );
 			}
 		}
 
@@ -323,7 +320,7 @@ class EntityManager {
 			if ( $ar_title && $ar_title !== $title && \Charts\Core\Transliteration::has_arabic( $ar_title ) ) {
 				if ( empty( $title_en ) ) $title_en = $title;
 				$title      = $ar_title;
-				$normalized = mb_strtolower( $title );
+				$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( $title );
 			}
 		}
 
@@ -354,7 +351,7 @@ class EntityManager {
 	 */
 	public static function ensure_video( $title, $artist_id, $data = array() ) {
 		global $wpdb;
-		$normalized = mb_strtolower( trim( $title ) );
+		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( trim( $title ) );
 		$table = $wpdb->prefix . 'charts_videos';
 
 		if ( ! empty( $data['youtube_id'] ) ) {
@@ -363,7 +360,28 @@ class EntityManager {
 		}
 
 		$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d", $normalized, $artist_id ) );
-		if ( $id ) return (int) $id;
+		
+		if ( ! $id ) {
+			$len = mb_strlen( $normalized, 'UTF-8' );
+			$candidates = $wpdb->get_results( $wpdb->prepare(
+				"SELECT id, normalized_title FROM $table WHERE primary_artist_id = %d AND CHAR_LENGTH(normalized_title) BETWEEN %d AND %d",
+				$artist_id, max( 1, $len - 3 ), $len + 3
+			) );
+			foreach ( $candidates as $cand ) {
+				if ( self::mb_levenshtein( $normalized, $cand->normalized_title ) <= 2 ) {
+					$id = $cand->id;
+					break;
+				}
+			}
+		}
+
+		if ( $id ) {
+			if ( ! empty( $data['thumbnail'] ) ) {
+				$curr = $wpdb->get_var( $wpdb->prepare("SELECT thumbnail FROM $table WHERE id = %d", $id) );
+				if (empty($curr)) $wpdb->update($table, ['thumbnail' => $data['thumbnail']], ['id' => $id]);
+			}
+			return (int) $id;
+		}
 
 		$slug = \Charts\Services\Slugger::unique( $table, $title . '-' . $artist_id, 'video-' . $artist_id );
 		$wpdb->insert( $table, array(
