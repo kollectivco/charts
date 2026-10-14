@@ -88,6 +88,7 @@ class Router {
             remove_action( 'wp_head', 'wlwmanifest_link' );
             remove_action( 'wp_head', 'wp_generator' );
             remove_action( 'wp_head', 'wp_shortlink_wp_head' );
+            remove_action( 'wp_head', '_wp_render_title_tag', 1 );
 
 			// Ensure mobile view isn't cached as the standard view
 			if ( ! defined('DONOTCACHEPAGE') ) define('DONOTCACHEPAGE', true);

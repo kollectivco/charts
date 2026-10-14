@@ -86,7 +86,7 @@ $resolved = \Charts\Core\PublicIntegration::resolve_display_name($artist);
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?php echo esc_html(\Charts\Core\Translation::get($resolved['title'])); ?></title>
+    <title><?php echo esc_html( \Charts\Core\SEO::generate_title( '' ) ); ?></title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
