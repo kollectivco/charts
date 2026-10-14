@@ -135,8 +135,12 @@ class SoundchartsImporter {
 			$title      = trim( sanitize_text_field( $entity['name'] ?? $entity['title'] ?? '' ) );
 			$credits    = trim( sanitize_text_field( $entity['creditName'] ?? $entity['artistName'] ?? $entity['artist'] ?? '' ) );
 			$image      = esc_url_raw( $entity['imageUrl'] ?? $entity['image'] ?? '' );
-			$rank       = absint( $item['position'] ?? 0 );
 			if ( $title === '' || $rank < 1 ) { $skipped++; continue; }
+
+			// Sideload external image to local server
+			if ( $image && class_exists( '\Charts\Services\MediaSideload' ) ) {
+				$image = \Charts\Services\MediaSideload::sideload( $image, ( $item_type === 'album' ? 'albums' : 'tracks' ), $title );
+			}
 
 			$artist_names = \Charts\Services\Normalizer::split_artists( $credits );
 			if ( empty( $artist_names ) && $credits !== '' ) $artist_names = array( $credits );
@@ -252,6 +256,11 @@ class SoundchartsImporter {
 	private function ensure_album( $title, $artist_id, $image, $title_en = '' ) {
 		global $wpdb;
 		$table      = $wpdb->prefix . 'charts_albums';
+
+		// Sideload external cover image to local server
+		if ( $image && class_exists( '\Charts\Services\MediaSideload' ) ) {
+			$image = \Charts\Services\MediaSideload::sideload( $image, 'albums', $title );
+		}
 		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( trim( $title ) );
 		$id         = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_title = %s AND primary_artist_id = %d LIMIT 1", $normalized, $artist_id ) );
 		if ( ! $id && ! empty( $title_en ) ) {

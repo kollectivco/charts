@@ -130,6 +130,11 @@ class EntityManager {
 		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_artist( $display_name ) : mb_strtolower( $display_name );
 		$table = $wpdb->prefix . 'charts_artists';
 
+		// Sideload external image to local server
+		if ( ! empty( $data['image'] ) && class_exists( '\Charts\Services\MediaSideload' ) ) {
+			$data['image'] = \Charts\Services\MediaSideload::sideload( $data['image'], 'artists', $display_name );
+		}
+
 		// 1. Exact match on normalized_name or display_name
 		$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE normalized_name = %s OR display_name = %s", $normalized, $display_name ) );
 
@@ -245,6 +250,11 @@ class EntityManager {
 		$table = $wpdb->prefix . 'charts_tracks';
 		$title_en = ! empty( $data['title_en'] ) ? trim( $data['title_en'] ) : '';
 
+		// Sideload external cover image to local server
+		if ( ! empty( $data['cover_image'] ) && class_exists( '\Charts\Services\MediaSideload' ) ) {
+			$data['cover_image'] = \Charts\Services\MediaSideload::sideload( $data['cover_image'], 'tracks', $title );
+		}
+
 		// 1. Exact match on normalized_title + artist
 		$sql_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE (normalized_title = %s OR title = %s) AND primary_artist_id = %d", $normalized, $title, $artist_id ) );
 
@@ -353,6 +363,11 @@ class EntityManager {
 		global $wpdb;
 		$normalized = class_exists('\Charts\Services\Normalizer') ? \Charts\Services\Normalizer::normalize_title( $title ) : mb_strtolower( trim( $title ) );
 		$table = $wpdb->prefix . 'charts_videos';
+
+		// Sideload external thumbnail to local server
+		if ( ! empty( $data['thumbnail'] ) && class_exists( '\Charts\Services\MediaSideload' ) ) {
+			$data['thumbnail'] = \Charts\Services\MediaSideload::sideload( $data['thumbnail'], 'videos', $title );
+		}
 
 		if ( ! empty( $data['youtube_id'] ) ) {
 			$id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE youtube_id = %s", $data['youtube_id'] ) );

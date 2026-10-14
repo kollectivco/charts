@@ -444,7 +444,15 @@ class PublicIntegration {
 	}
 
 	public static function resolve_artwork( $item, $type = 'track' ) {
-		return self::maximize_image(self::resolve_artwork_raw($item, $type));
+		$raw = self::resolve_artwork_raw( $item, $type );
+		if ( $raw && class_exists( '\Charts\Services\MediaSideload' ) && ! \Charts\Services\MediaSideload::is_local_url( $raw ) ) {
+			$folder = ( $type === 'artist' ) ? 'artists' : ( ( $type === 'album' ) ? 'albums' : ( ( $type === 'video' ) ? 'videos' : 'tracks' ) );
+			$local  = \Charts\Services\MediaSideload::get_local_if_exists( $raw, $folder );
+			if ( $local ) {
+				return self::maximize_image( $local );
+			}
+		}
+		return self::maximize_image( $raw );
 	}
 
 	public static function resolve_chart_image( $def, $preview_rows = [] ) {

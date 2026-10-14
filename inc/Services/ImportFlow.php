@@ -198,6 +198,10 @@ class ImportFlow {
 			$track_name = $artist_names;
 		}
 		$cover_image  = esc_url_raw( $flat['cover_image'] ?? $row['image'] ?? '' );
+		if ( $cover_image && class_exists( '\Charts\Services\MediaSideload' ) ) {
+			$sideload_folder = ( $item_type === 'artist' ) ? 'artists' : ( ( $item_type === 'album' ) ? 'albums' : ( ( $item_type === 'video' ) ? 'videos' : 'tracks' ) );
+			$cover_image = \Charts\Services\MediaSideload::sideload( $cover_image, $sideload_folder, $track_name );
+		}
 		$spotify_id   = sanitize_text_field( $flat['spotify_id'] ?? $row['spotify_track_id'] ?? '' );
 		$youtube_id   = sanitize_text_field( $flat['youtube_id'] ?? $row['youtube_id'] ?? '' );
 		$streams      = intval( $flat['streams'] ?? $row['streams'] ?? 0 );

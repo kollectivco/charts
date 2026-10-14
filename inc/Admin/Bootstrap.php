@@ -63,6 +63,7 @@ class Bootstrap {
 		add_action( 'wp_ajax_charts_soundcharts_catalog', array( self::class, 'handle_soundcharts_catalog' ) );
 		add_action( 'wp_ajax_charts_youtube_sync', array( self::class, 'handle_youtube_sync' ) );
 		add_action( 'wp_ajax_charts_spotify_sync', array( self::class, 'handle_spotify_sync' ) );
+		add_action( 'wp_ajax_charts_sideload_remote_media', array( self::class, 'handle_sideload_remote_media' ) );
 		
 		// Nav Menu Integration
 		add_action( 'admin_init', array( self::class, 'register_nav_menu_metabox' ) );
@@ -324,6 +325,17 @@ class Bootstrap {
 					$results['videos']['updated'], $results['videos']['processed']
 				);
 				\Charts\Core\Notify::success( $summary, __( 'Asset Backfill Complete', 'charts' ) );
+				$processed = true;
+				break;
+
+			case 'sideload_media_v2':
+				$results = \Charts\Services\MediaSideload::sideload_batch( 50 );
+				$summary = sprintf( 
+					__( 'تم فحص وتنزيل الصور محلياً بالسيرفر. المعالجة: %d، تم حفظها محلياً: %d، متبقي: %d صورة خارجية.', 'charts' ),
+					$results['processed'], $results['updated'], $results['remaining']
+				);
+				self::clear_frontend_caches();
+				\Charts\Core\Notify::success( $summary, __( 'تم حفظ الصور محلياً', 'charts' ) );
 				$processed = true;
 				break;
 
@@ -3946,6 +3958,25 @@ class Bootstrap {
 			),
 			'data'    => $result,
 		) );
+	}
+
+	/**
+	 * AJAX Handler: Batch Sideload Remote Media Images into local server storage.
+	 */
+	public static function handle_sideload_remote_media() {
+		if ( ! check_ajax_referer( 'charts_admin_action', '_wpnonce', false ) && ! check_ajax_referer( 'kcharts_save_v2', '_wpnonce', false ) && ! check_ajax_referer( 'charts_admin_action', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'charts' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'charts' ) ) );
+		}
+
+		$limit = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 30;
+		$results = \Charts\Services\MediaSideload::sideload_batch( $limit );
+		self::clear_frontend_caches();
+
+		wp_send_json_success( $results );
 	}
 
 }

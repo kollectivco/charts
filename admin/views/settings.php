@@ -240,6 +240,16 @@ $panel = [
                 'fields' => [
                     [ 'id' => 'maint_backfill', 'type' => 'custom', 'html' => '<button type="button" class="kb-btn kb-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=backfill_media_v2&_wpnonce='.wp_create_nonce('kcharts_save_v2')).'\'">Backfill Missing Media</button>' ],
                     [ 'id' => 'maint_integrity', 'type' => 'custom', 'html' => '<button type="button" class="kb-btn kb-btn-outline" onclick="location.href=\''.admin_url('admin.php?page=charts-settings&charts_action=run_integrity_check_v2&_wpnonce='.wp_create_nonce('kcharts_save_v2')).'\'">Reconcile Entity Links</button>' ],
+                    [ 'id' => 'maint_sideload', 'type' => 'custom', 'html' => '
+                        <div class="kb-field-wrap" style="padding:14px; background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); border-radius:12px; margin-top:8px;">
+                            <label style="font-weight:700; color:#4f46e5; display:block; margin-bottom:4px;">تنزيل وحفظ جميع الصور محلياً بالسيرفر (Sideload Images)</label>
+                            <p class="kb-field-desc" style="margin-bottom:12px; font-size:12px;">يقوم بفحص وتنزيل جميع بوسترات الأغاني وصور الفنانين من الروابط الخارجية (Soundcharts / Spotify / YouTube) وحفظها محلياً على سيرفرك في مجلد uploads لمنع الـ Hotlinking وحماية خصوصية مصادر البيانات وتسريع تحميل الصور.</p>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <button type="button" id="btn-sideload-all" class="kb-btn kb-btn-primary" onclick="chartsSideloadAllImages()">📥 تنزيل الصور محلياً بالسيرفر</button>
+                                <span id="sideload-progress" style="font-weight:600; font-size:13px; color:#4f46e5;"></span>
+                            </div>
+                        </div>
+                    ' ],
                 ]
             ],
             'danger_data' => [
@@ -566,4 +576,42 @@ jQuery(document).ready(function($) {
         }
     });
 });
+
+function chartsSideloadAllImages() {
+    var $ = jQuery;
+    var $btn = $('#btn-sideload-all');
+    var $status = $('#sideload-progress');
+    $btn.prop('disabled', true).text('جاري التنزيل...');
+    $status.text('بدء معالجة وتنزيل الصور...');
+
+    var totalUpdated = 0;
+
+    function runBatch() {
+        $.post(ajaxurl, {
+            action: 'charts_sideload_remote_media',
+            limit: 25,
+            _wpnonce: $('#_wpnonce').val() || $('[name="kcharts_save_v2"]').val() || ''
+        }, function(res) {
+            if (res.success && res.data) {
+                var d = res.data;
+                totalUpdated += d.updated;
+                if (d.remaining > 0) {
+                    $status.text('تم تنزيل ' + totalUpdated + ' صورة، متبقي ' + d.remaining + ' صورة خارجية...');
+                    setTimeout(runBatch, 400);
+                } else {
+                    $btn.prop('disabled', false).text('📥 تنزيل الصور محلياً بالسيرفر');
+                    $status.html('<span style="color:#10b981;">✅ تم تنزيل جميع الصور محلياً بالسيرفر بنجاح! (' + totalUpdated + ' صورة)</span>');
+                }
+            } else {
+                $btn.prop('disabled', false).text('📥 تنزيل الصور محلياً بالسيرفر');
+                $status.text(res.data && res.data.message ? res.data.message : '⚠️ اكتملت المعالجة.');
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false).text('📥 تنزيل الصور محلياً بالسيرفر');
+            $status.text('⚠️ حدث انقطاع في الاتصال، اضغط مجدداً للاستئناف.');
+        });
+    }
+
+    runBatch();
+}
 </script>
