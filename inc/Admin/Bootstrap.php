@@ -1213,6 +1213,8 @@ class Bootstrap {
 				'country_code'=> sanitize_text_field( $_POST['country'] ?? '' ),
 				'chart_slug'  => sanitize_text_field( $_POST['soundcharts_chart_slug'] ?? '' ),
 				'chart_id'    => $chart_id,
+				'period_date' => sanitize_text_field( $_POST['period_date'] ?? '' ),
+				'import_mode' => sanitize_key( $_POST['import_mode'] ?? 'merge' ),
 			) );
 			if ( is_wp_error( $result ) ) {
 				\Charts\Core\Notify::error( $result->get_error_message(), __( 'Soundcharts Import Failed', 'charts' ) );

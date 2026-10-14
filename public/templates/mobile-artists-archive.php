@@ -26,6 +26,7 @@ $site_title = get_bloginfo('name');
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title><?php echo esc_html( \Charts\Core\SEO::generate_title( '' ) ); ?></title>
+    <?php \Charts\Core\SEO::inject_favicon(); ?>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
     <?php wp_head(); ?>
 </head>

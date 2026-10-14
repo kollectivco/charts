@@ -19,6 +19,10 @@ class SoundchartsImporter {
 	 * @return array|\WP_Error
 	 */
 	public function run( array $args ) {
+		@set_time_limit( 300 );
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
 		global $wpdb;
 
 		$entity_type = sanitize_key( $args['entity_type'] ?? '' );
@@ -106,12 +110,14 @@ class SoundchartsImporter {
 		}
 		if ( ! $source_id ) return new \WP_Error( 'soundcharts_source_create_failed', __( 'Could not create the Soundcharts import source.', 'charts' ) );
 
-		$api_date = $response['related']['date'] ?? '';
-		$period_date = $api_date ? gmdate( 'Y-m-d', strtotime( $api_date ) ) : current_time( 'Y-m-d' );
-		$period_id = $this->flow->ensure_period( $chart['frequency'], $period_date );
+		$user_date   = ! empty( $args['period_date'] ) ? sanitize_text_field( $args['period_date'] ) : ( ! empty( $_POST['period_date'] ) ? sanitize_text_field( $_POST['period_date'] ) : '' );
+		$api_date    = $response['related']['date'] ?? '';
+		$period_date = $user_date ?: ( $api_date ? gmdate( 'Y-m-d', strtotime( $api_date ) ) : current_time( 'Y-m-d' ) );
+		$period_id   = $this->flow->ensure_period( $chart['frequency'], $period_date );
 		if ( ! $period_id ) return new \WP_Error( 'soundcharts_period_failed', __( 'Could not create a chart period for this Soundcharts snapshot.', 'charts' ) );
 
-		if ( isset( $_POST['import_mode'] ) && $_POST['import_mode'] === 'replace' ) {
+		$import_mode = sanitize_key( $args['import_mode'] ?? ( $_POST['import_mode'] ?? 'merge' ) );
+		if ( $import_mode === 'replace' ) {
 			$this->flow->wipe_period( $source_id, $period_id );
 		}
 
@@ -131,10 +137,11 @@ class SoundchartsImporter {
 		$skipped  = 0;
 		$metric   = strtolower( sanitize_text_field( $response['related']['chart']['metric']['type'] ?? '' ) );
 		foreach ( $ranking as $item ) {
-			$entity     = $item['song'] ?? $item['album'] ?? $item['item'] ?? array();
-			$title      = trim( sanitize_text_field( $entity['name'] ?? $entity['title'] ?? '' ) );
-			$credits    = trim( sanitize_text_field( $entity['creditName'] ?? $entity['artistName'] ?? $entity['artist'] ?? '' ) );
-			$image      = esc_url_raw( $entity['imageUrl'] ?? $entity['image'] ?? '' );
+			$entity  = $item['song'] ?? $item['album'] ?? $item['item'] ?? $item;
+			$title   = trim( sanitize_text_field( $entity['name'] ?? ( $entity['title'] ?? ( $item['name'] ?? ( $item['title'] ?? '' ) ) ) ) );
+			$credits = trim( sanitize_text_field( $entity['creditName'] ?? ( $entity['artistName'] ?? ( $entity['artist'] ?? ( $item['creditName'] ?? ( $item['artistName'] ?? ( $item['artist'] ?? '' ) ) ) ) ) ) );
+			$image   = esc_url_raw( $entity['imageUrl'] ?? ( $entity['image'] ?? ( $item['imageUrl'] ?? ( $item['image'] ?? '' ) ) ) );
+			$rank    = absint( $item['position'] ?? ( $item['rank'] ?? ( $item['currentPosition'] ?? 0 ) ) );
 			if ( $title === '' || $rank < 1 ) { $skipped++; continue; }
 
 			// Sideload external image to local server
@@ -144,6 +151,7 @@ class SoundchartsImporter {
 
 			$artist_names = \Charts\Services\Normalizer::split_artists( $credits );
 			if ( empty( $artist_names ) && $credits !== '' ) $artist_names = array( $credits );
+			if ( empty( $artist_names ) ) $artist_names = array( 'Various Artists' );
 			$artist_ids = array();
 			$ar_artist_names = array();
 			foreach ( $artist_names as $artist_name ) {
@@ -187,7 +195,7 @@ class SoundchartsImporter {
 				$item_slug = $item_id ? $wpdb->get_var( $wpdb->prepare( "SELECT slug FROM {$wpdb->prefix}charts_tracks WHERE id = %d", $item_id ) ) : '';
 			}
 			if ( ! $item_id ) { $skipped++; continue; }
-			if ( ! $existing_item ) $created++;
+			if ( ! $existing_item || \Charts\Core\EntityManager::$last_ensure_was_insert ) $created++;
 
 			$metric_value = absint( $item['metric'] ?? 0 );
 			$prev_pos     = ! empty( $item['oldPosition'] ) ? absint( $item['oldPosition'] ) : null;

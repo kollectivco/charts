@@ -220,6 +220,14 @@ class ImportFlow {
 			$item_slug = $flat['item_slug'] ?? null; // fallback only
 		}
 
+		// Clean up any old duplicate ranking entry for the same entity in this chart period
+		if ( $item_id > 0 ) {
+			$wpdb->query( $wpdb->prepare(
+				"DELETE FROM $table WHERE source_id = %d AND period_id = %d AND item_type = %s AND item_id = %d AND rank_position != %d",
+				$source_id, $period_id, $item_type ?: 'track', $item_id, $rank
+			) );
+		}
+
 		$existing_id = $wpdb->get_var( $wpdb->prepare(
 			"SELECT id FROM $table WHERE source_id = %d AND period_id = %d AND rank_position = %d",
 			$source_id, $period_id, $rank

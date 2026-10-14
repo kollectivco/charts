@@ -78,7 +78,7 @@ class MediaSideload {
 
 		// Download file
 		$response = wp_safe_remote_get( $clean_remote_url, array(
-			'timeout'     => 12,
+			'timeout'     => 3,
 			'redirection' => 5,
 			'headers'     => array(
 				'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

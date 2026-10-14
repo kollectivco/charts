@@ -35,29 +35,30 @@ class SEO {
 		add_filter( 'rank_math/frontend/description', array( self::class, 'generate_description' ), 99 );
 		add_filter( 'rank_math/frontend/canonical', array( self::class, 'generate_canonical' ), 99 );
 		add_filter( 'rank_math/frontend/robots', array( self::class, 'filter_rank_math_robots' ), 99 );
-		add_filter( 'rank_math/opengraph/facebook/title', array( self::class, 'generate_title' ), 99 );
-		add_filter( 'rank_math/opengraph/facebook/description', array( self::class, 'generate_description' ), 99 );
-		add_filter( 'rank_math/opengraph/facebook/image', array( self::class, 'generate_og_image' ), 99 );
-		add_filter( 'rank_math/opengraph/facebook/url', array( self::class, 'generate_canonical' ), 99 );
-		add_filter( 'rank_math/opengraph/facebook/type', array( self::class, 'generate_og_type' ), 99 );
-		add_filter( 'rank_math/opengraph/twitter/title', array( self::class, 'generate_title' ), 99 );
-		add_filter( 'rank_math/opengraph/twitter/description', array( self::class, 'generate_description' ), 99 );
-		add_filter( 'rank_math/opengraph/twitter/image', array( self::class, 'generate_og_image' ), 99 );
-		add_filter( 'rank_math/json_ld', array( self::class, 'filter_rank_math_json_ld' ), 99, 2 );
+		add_filter( 'rank_math/opengraph/facebook', function( $bool ) {
+			return self::get_current_route() ? false : $bool;
+		}, 999 );
+		add_filter( 'rank_math/opengraph/twitter', function( $bool ) {
+			return self::get_current_route() ? false : $bool;
+		}, 999 );
+		add_filter( 'rank_math/json_ld', function( $data, $jsonld ) {
+			if ( self::get_current_route() ) {
+				return array(); // Suppress Rank Math schema on charts routes because we output specialized schema directly
+			}
+			return $data;
+		}, 999, 2 );
 
 		// 6. Yoast SEO Integration
 		add_filter( 'wpseo_title', array( self::class, 'generate_title' ), 99 );
 		add_filter( 'wpseo_metadesc', array( self::class, 'generate_description' ), 99 );
 		add_filter( 'wpseo_canonical', array( self::class, 'generate_canonical' ), 99 );
 		add_filter( 'wpseo_robots', array( self::class, 'filter_yoast_robots' ), 99 );
-		add_filter( 'wpseo_opengraph_title', array( self::class, 'generate_title' ), 99 );
-		add_filter( 'wpseo_opengraph_desc', array( self::class, 'generate_description' ), 99 );
-		add_filter( 'wpseo_opengraph_image', array( self::class, 'generate_og_image' ), 99 );
-		add_filter( 'wpseo_opengraph_url', array( self::class, 'generate_canonical' ), 99 );
-		add_filter( 'wpseo_opengraph_type', array( self::class, 'generate_og_type' ), 99 );
-		add_filter( 'wpseo_twitter_title', array( self::class, 'generate_title' ), 99 );
-		add_filter( 'wpseo_twitter_description', array( self::class, 'generate_description' ), 99 );
-		add_filter( 'wpseo_twitter_image', array( self::class, 'generate_og_image' ), 99 );
+		add_filter( 'wpseo_opengraph', function( $bool ) {
+			return self::get_current_route() ? false : $bool;
+		}, 999 );
+		add_filter( 'wpseo_twitter', function( $bool ) {
+			return self::get_current_route() ? false : $bool;
+		}, 999 );
 
 		// 7. All in One SEO (AIOSEO) Integration
 		add_filter( 'aioseo_title', array( self::class, 'generate_title' ), 99 );
@@ -470,19 +471,100 @@ class SEO {
 	}
 
 	/**
-	 * Inject Meta Tags & Social Graph for clean rooms, mobile mode, or when no SEO plugin is active.
+	 * Detect official site icon / favicon across WordPress Core, Elementor, Theme mods, and filesystem.
+	 */
+	public static function get_favicon_url() {
+		// 1. WordPress Site Icon (Configured via Appearance -> Customize -> Site Identity)
+		if ( function_exists( 'has_site_icon' ) && has_site_icon() ) {
+			$icon = get_site_icon_url( 192 );
+			if ( ! empty( $icon ) ) {
+				return $icon;
+			}
+		}
+
+		// 2. Charts Branding Setting
+		$charts_fav = Settings::get( 'branding.favicon' );
+		if ( ! empty( $charts_fav ) ) {
+			return $charts_fav;
+		}
+
+		// 3. WordPress Site Icon ID option
+		$site_icon_id = get_option( 'site_icon' );
+		if ( $site_icon_id ) {
+			$icon = wp_get_attachment_image_url( (int) $site_icon_id, 'full' );
+			if ( $icon ) {
+				return $icon;
+			}
+		}
+
+		// 4. Elementor Active Kit Site Favicon
+		$kit_id = get_option( 'elementor_active_kit' );
+		if ( $kit_id ) {
+			$kit_meta = get_post_meta( $kit_id, '_elementor_page_settings', true );
+			if ( ! empty( $kit_meta['site_favicon']['url'] ) ) {
+				return $kit_meta['site_favicon']['url'];
+			}
+		}
+
+		// 5. Theme Custom Logo fallback
+		$custom_logo_id = get_theme_mod( 'custom_logo' );
+		if ( $custom_logo_id ) {
+			$logo_url = wp_get_attachment_image_url( (int) $custom_logo_id, 'full' );
+			if ( $logo_url ) {
+				return $logo_url;
+			}
+		}
+
+		// 6. Charts Branding Logo fallback
+		$charts_logo = Settings::get( 'branding.logo' );
+		if ( ! empty( $charts_logo ) ) {
+			return $charts_logo;
+		}
+
+		// 7. Root /favicon.ico file if exists
+		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'favicon.ico' ) ) {
+			return home_url( '/favicon.ico' );
+		}
+
+		// 8. Theme directory favicon.ico
+		if ( function_exists( 'get_stylesheet_directory' ) && file_exists( get_stylesheet_directory() . '/favicon.ico' ) ) {
+			return get_stylesheet_directory_uri() . '/favicon.ico';
+		}
+
+		return home_url( '/favicon.ico' );
+	}
+
+	/**
+	 * Output standard and high-DPI favicon tags.
+	 */
+	public static function inject_favicon() {
+		static $injected = false;
+		if ( $injected ) return;
+		$injected = true;
+
+		$icon = self::get_favicon_url();
+		if ( empty( $icon ) ) return;
+
+		$apple_icon = ( function_exists( 'has_site_icon' ) && has_site_icon() ) ? get_site_icon_url( 180 ) : $icon;
+		$icon_32    = ( function_exists( 'has_site_icon' ) && has_site_icon() ) ? get_site_icon_url( 32 ) : $icon;
+		$icon_192   = ( function_exists( 'has_site_icon' ) && has_site_icon() ) ? get_site_icon_url( 192 ) : $icon;
+		?>
+		<!-- Site Favicon & Touch Icons -->
+		<link rel="icon" href="<?php echo esc_url( $icon_32 ); ?>" sizes="32x32">
+		<link rel="icon" href="<?php echo esc_url( $icon_192 ); ?>" sizes="192x192">
+		<link rel="apple-touch-icon" href="<?php echo esc_url( $apple_icon ); ?>">
+		<meta name="msapplication-TileImage" content="<?php echo esc_url( $icon_192 ); ?>">
+		<?php
+	}
+
+	/**
+	 * Inject Meta Tags & Social Graph for all Charts pages (desktop & mobile).
 	 */
 	public static function inject_meta_tags() {
 		$route = self::get_current_route();
 		if ( ! $route ) return;
 
-		$has_active_seo_plugin = class_exists( 'RankMath' ) || defined( 'WPSEO_VERSION' ) || function_exists( 'aioseo' );
-		$is_mobile = get_query_var( 'mobile_view' ) || isset( $_GET['mobile_view'] );
-
-		// Desktop with an SEO plugin delegates to our filter hooks above
-		if ( $has_active_seo_plugin && ! $is_mobile ) {
-			return;
-		}
+		self::inject_favicon();
 
 		$title = self::generate_title( '' );
 		$desc  = self::generate_description( '' );
@@ -764,14 +846,9 @@ class SEO {
 	}
 
 	/**
-	 * Inject Structured Data (JSON-LD) when Rank Math is not active or on mobile mode.
+	 * Inject Structured Data (JSON-LD) for all Charts pages (desktop & mobile).
 	 */
 	public static function inject_structured_data() {
-		$is_mobile = get_query_var( 'mobile_view' ) || isset( $_GET['mobile_view'] );
-		if ( class_exists( 'RankMath' ) && ! $is_mobile ) {
-			return;
-		}
-
 		$schemas = self::build_schema_data();
 		if ( empty( $schemas ) ) return;
 
@@ -805,18 +882,32 @@ class SEO {
 
 	public static function get_chart_definition( $slug ) {
 		if ( empty( $slug ) ) return null;
+		$slug = rawurldecode( (string) $slug );
 		$manager = new \Charts\Admin\SourceManager();
-		return $manager->get_definition_by_slug( $slug );
+		$def = $manager->get_definition_by_slug( $slug );
+		if ( ! $def ) {
+			$def = $manager->get_definition_by_slug( sanitize_title( $slug ) );
+		}
+		return $def;
 	}
 
 	public static function get_artist_by_slug( $slug ) {
 		if ( empty( $slug ) ) return null;
-		return \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
+		$slug = rawurldecode( (string) $slug );
+		$artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', $slug );
+		if ( ! $artist ) {
+			$artist = \Charts\Core\EntityManager::get_entity_by_slug( 'artist', sanitize_title( $slug ) );
+		}
+		return $artist;
 	}
 
 	public static function get_item_by_slug( $type, $slug ) {
 		if ( empty( $slug ) ) return null;
+		$slug = rawurldecode( (string) $slug );
 		$item = \Charts\Core\EntityManager::get_entity_by_slug( $type, $slug );
+		if ( ! $item ) {
+			$item = \Charts\Core\EntityManager::get_entity_by_slug( $type, sanitize_title( $slug ) );
+		}
 		if ( $item && ! empty( $item->primary_artist_id ) ) {
 			global $wpdb;
 			$artist_name = $wpdb->get_var( $wpdb->prepare( "SELECT display_name FROM {$wpdb->prefix}charts_artists WHERE id = %d", $item->primary_artist_id ) );
